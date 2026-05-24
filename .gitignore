@@ -1,0 +1,67 @@
+# IDEs
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.iml
+*.swp
+.DS_Store
+Thumbs.db
+
+# Java / Maven
+backend/**/target/
+backend/**/.mvn/
+backend/**/*.log
+backend/**/HELP.md
+*.class
+
+# Node / Next.js
+web/node_modules/
+web/.next/
+web/out/
+web/build/
+web/.env.local
+web/.env.*.local
+
+# React Native
+mobile/node_modules/
+mobile/android/build/
+mobile/android/app/build/
+mobile/android/.gradle/
+mobile/ios/build/
+mobile/ios/Pods/
+mobile/ios/DerivedData/
+mobile/.expo/
+mobile/dist/
+mobile/web-build/
+mobile/.env.local
+
+# Logs
+*.log
+logs/
+
+# Env files (jamais commit)
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Secrets
+**/secrets.yml
+**/secrets.json
+**/*.key
+**/*.pem
+
+# OS
+*.tmp
+*.bak
+
+# Docker volumes locaux
+infra/data/
+
+# Coverage reports
+**/coverage/
+**/.nyc_output/
+
+# OpenAPI generated
+shared/types/generated/

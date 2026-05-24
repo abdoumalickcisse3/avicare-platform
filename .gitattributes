@@ -1,0 +1,55 @@
+# Default behavior: normalize line endings to LF on commit
+* text=auto eol=lf
+
+# Explicitly declare text files
+*.java       text diff=java
+*.xml        text
+*.properties text
+*.yml        text
+*.yaml       text
+*.json       text
+*.md         text
+*.html       text
+*.css        text
+*.scss       text
+*.js         text
+*.jsx        text
+*.ts         text
+*.tsx        text
+*.mjs        text
+*.sh         text eol=lf
+*.sql        text
+*.gradle     text
+Dockerfile   text
+Makefile     text
+
+# Shell scripts always LF (avoids breakage on macOS/Linux execution)
+*.sh         text eol=lf
+
+# Windows-specific files always CRLF (rare here, but safe)
+*.bat        text eol=crlf
+*.cmd        text eol=crlf
+
+# Binary files (never diff, never normalize)
+*.png        binary
+*.jpg        binary
+*.jpeg       binary
+*.gif        binary
+*.ico        binary
+*.svg        text
+*.webp       binary
+*.pdf        binary
+*.zip        binary
+*.gz         binary
+*.tar        binary
+*.jar        binary
+*.war        binary
+*.class      binary
+*.woff       binary
+*.woff2      binary
+*.ttf        binary
+*.otf        binary
+*.eot        binary
+*.mp4        binary
+*.mp3        binary
+*.keystore   binary
