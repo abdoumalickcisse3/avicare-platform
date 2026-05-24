@@ -1,0 +1,62 @@
+# =====================================================================
+# AviCare Platform — Local dev environment
+# =====================================================================
+# NOTE on host port mapping:
+#   Doc 02 §3.4 specifies 5432:5432 (Postgres) and 6379:6379 (Redis).
+#   On this dev machine those host ports are already taken by:
+#     - 5432: postgresql@18 (Homebrew, used by other projects)
+#     - 5433: legacy ginaartech_postgres container (avicare-pro)
+#     - 5435: ajup-postgres container (another project)
+#     - 6379: legacy ginaartech_redis container (avicare-pro)
+#   To keep them all running, we expose Postgres on 5434 and Redis on
+#   6380 on the host. Inside the Docker network the containers still
+#   listen on the standard 5432/6379. The Spring Boot dev profile picks
+#   up DB_PORT / REDIS_PORT env vars (defaults set in application-dev.yml).
+# =====================================================================
+
+name: avicare-platform-dev
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: avicare-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: avicare
+      POSTGRES_USER: avicare
+      POSTGRES_PASSWORD: avicare_dev_pwd
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U avicare"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: avicare-redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: avicare-mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+
+volumes:
+  postgres_data:
+  redis_data:
