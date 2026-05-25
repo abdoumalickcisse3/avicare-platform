@@ -3,12 +3,7 @@ name: Mobile CI
 on:
   push:
     branches: [main, develop]
-    paths:
-      - 'mobile/**'
-      - '.github/workflows/mobile.yml'
   pull_request:
-    paths:
-      - 'mobile/**'
 
 jobs:
   lint-and-test:

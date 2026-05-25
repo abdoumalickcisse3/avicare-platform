@@ -3,12 +3,7 @@ name: Web CI
 on:
   push:
     branches: [main, develop]
-    paths:
-      - 'web/**'
-      - '.github/workflows/web.yml'
   pull_request:
-    paths:
-      - 'web/**'
 
 jobs:
   build:
