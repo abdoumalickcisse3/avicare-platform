@@ -12,6 +12,7 @@ on:
 
 jobs:
   build:
+    name: Web build
     runs-on: ubuntu-latest
 
     steps:

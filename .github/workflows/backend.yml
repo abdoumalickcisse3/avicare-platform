@@ -12,6 +12,7 @@ on:
 
 jobs:
   build:
+    name: Backend build
     runs-on: ubuntu-latest
 
     services:
