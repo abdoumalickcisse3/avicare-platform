@@ -55,6 +55,7 @@ Sprint A1 complete. Mono-repo en place avec backend Spring Boot, web Next.js, mo
 - `.github/workflows/web.yml` : `npm ci` + lint + `tsc --noEmit` + build
 - `.github/workflows/mobile.yml` : `npm ci` + lint (soft) + `tsc --noEmit`
 - Les 3 workflows verts au push de clôture A1
+- Pas de `paths:` filters sur les triggers : chaque CI tourne sur chaque push/PR, condition nécessaire pour des required status checks stricts (cf. ADR 002)
 
 ### Notes — Écarts documentés vs doc 02 (cohabitation locale)
 
@@ -68,6 +69,10 @@ Cinq services tournent déjà sur les ports standards (postgresql@18 Homebrew, g
 | Expo Metro | 8081 | **8082** | — |
 
 La CI utilise les ports standards (5432) — pas de conflit dans un environnement isolé.
+
+### Notes — Branch protection différée
+
+La protection serveur de la branche `main` (required PR, required status checks stricts, no force-push, no delete) **n'est pas activée** à la clôture A1 : les endpoints GitHub (branch protection ET rulesets) renvoient HTTP 403 sur les repos privés en plan free. Voir [`docs/decisions/002-branch-protection-deferred.md`](docs/decisions/002-branch-protection-deferred.md) — la commande `gh api` est prête à l'emploi pour le jour où on upgrade GitHub Pro ou on passe le repo public.
 
 ### Notes — Spring Security
 
