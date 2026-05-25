@@ -10,10 +10,12 @@ Thumbs.db
 
 # Java / Maven
 backend/**/target/
-backend/**/.mvn/
 backend/**/*.log
 backend/**/HELP.md
 *.class
+# Note: backend/.mvn/wrapper/ MUST be versioned (Maven Wrapper). Only the
+# transient .mvn caches should be ignored. If those appear later, add
+# `backend/**/.mvn/extensions/` etc. as needed.
 
 # Node / Next.js
 web/node_modules/

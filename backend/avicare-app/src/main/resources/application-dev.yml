@@ -1,0 +1,39 @@
+# Dev profile.
+#
+# Host ports differ from doc 02 §3.14: Postgres defaults to 5434 and Redis
+# to 6380 because the standard 5432/6379 are held by other services on the
+# dev machine (see infra/docker-compose.yml header for the full story).
+# Containers still expose 5432/6379 internally — only host mappings change.
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5434}/${DB_NAME:avicare}
+    username: ${DB_USER:avicare}
+    password: ${DB_PASSWORD:avicare_dev_pwd}
+    hikari:
+      maximum-pool-size: 10
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6380}
+
+logging:
+  level:
+    root: INFO
+    com.avicare: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
