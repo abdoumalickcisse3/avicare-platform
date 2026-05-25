@@ -1,0 +1,48 @@
+{
+  "folders": [
+    { "name": "📚 Root", "path": "." },
+    { "name": "☕ Backend", "path": "backend" },
+    { "name": "🌐 Web", "path": "web" },
+    { "name": "📱 Mobile", "path": "mobile" },
+    { "name": "📖 Docs", "path": "docs" },
+    { "name": "🏗️ Infra", "path": "infra" }
+  ],
+  "settings": {
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    },
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.format.settings.url": "https://raw.githubusercontent.com/google/styleguide/gh-pages/eclipse-java-google-style.xml",
+    "[java]": {
+      "editor.defaultFormatter": "redhat.java",
+      "editor.tabSize": 4
+    },
+    "[typescript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescriptreact]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "files.exclude": {
+      "**/.git": true,
+      "**/.DS_Store": true,
+      "**/node_modules": true,
+      "**/target": true,
+      "**/.next": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "vscjava.vscode-java-pack",
+      "vmware.vscode-spring-boot",
+      "redhat.java",
+      "esbenp.prettier-vscode",
+      "dbaeumer.vscode-eslint",
+      "bradlc.vscode-tailwindcss",
+      "GitHub.copilot",
+      "ms-azuretools.vscode-docker",
+      "yzhang.markdown-all-in-one"
+    ]
+  }
+}
