@@ -43,8 +43,22 @@ Même en solo, on travaille en PR (jamais de commit direct sur `main`).
 - 1 PR = 1 sujet (pas de "fourre-tout")
 - Titre = titre du dernier commit ou résumé du sprint
 - Description : checklist de ce qui est fait + screenshots si UI
-- CI verte avant merge
-- Squash & merge par défaut (un seul commit propre sur `main`)
+- CI verte avant merge — **sauf pendant l'incident GitHub Actions en cours**, où on bascule sur la checklist "Local validation" ci-dessous (voir [`docs/decisions/003-github-actions-incident.md`](docs/decisions/003-github-actions-incident.md))
+- Rebase merge par défaut (historique linéaire propre sur `main`)
+
+### Local validation checklist (pendant l'incident GitHub Actions)
+
+Tant que les workflows GitHub Actions ne se déclenchent plus (incident officiel, cf. ADR-003), exécuter **toutes** ces étapes localement avant chaque merge sur `main` :
+
+1. `cd backend && ./mvnw clean verify` — build complet, tous les tests doivent passer, **et** Jacoco doit générer son rapport sans warning bloquant
+2. `make backend-run` — l'app doit démarrer sans erreur de boot
+3. `curl http://localhost:8080/actuator/health` — doit retourner `{"status":"UP"}` HTTP 200
+4. Tous les tests unitaires des modules touchés sont verts (`Tests run: N, Failures: 0, Errors: 0`)
+5. Couverture Jacoco du module modifié ≥ seuil défini dans [`docs/05-securite-rbac.md`](docs/05-securite-rbac.md) §7.4 (70% par défaut, 80% pour `common-security`, 90% pour `FarmAccessChecker`)
+
+Si l'une de ces étapes échoue : **ne pas merger**. Fixer d'abord.
+
+**Vérification quotidienne** : un coup d'œil à https://www.githubstatus.com en début de session. Dès que GitHub Actions repasse au vert, repousser un commit vide pour confirmer que les workflows triggent à nouveau, puis revenir à la routine "CI verte avant merge" et clore ADR-003.
 
 ## Conventions de code
 
