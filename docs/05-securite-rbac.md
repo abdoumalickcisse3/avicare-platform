@@ -2219,54 +2219,108 @@ response.setHeader("Set-Cookie",
 
 ### 🎯 But en 1 phrase
 
-Helper static pour récupérer le user courant et ses fermes accessibles depuis n'importe où dans le code.
+Helper static qui expose le user courant et ses fermes accessibles depuis n'importe où dans le code, alimenté par le `JwtFilter` à chaque requête.
+
+### 🧠 Choix d'implémentation
+
+Le module `common-tenancy` possède **son propre `ThreadLocal`** plutôt que de déléguer à `SecurityContextHolder` de Spring Security. Raison : `SecurityContextHolder` n'est peuplé qu'avec un `Authentication` Spring, et lire le `principal` complet (`AvicarePrincipal`) depuis `common-tenancy` exigerait d'importer du `common-security` — ce qui contredit l'ordre des dépendances établi en §0.4 (`common-security → common-tenancy`). En gardant un store neutre (record `TenantData`), `common-tenancy` reste indépendant et `common-security` (Sprint A2 Session 4b) sera le seul à `set()` et `clear()`.
 
 ### 📝 Code complet
+
+`common-tenancy/src/main/java/com/avicare/common/tenancy/context/TenantData.java` :
 
 ```java
 package com.avicare.common.tenancy.context;
 
-import com.avicare.common.security.principal.AvicarePrincipal;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-
 import java.util.List;
-import java.util.Optional;
+import java.util.Objects;
 
 /**
- * Helpers static pour accéder au contexte tenant courant.
+ * Immutable per-request tenancy data, stored in {@link TenancyContext}.
+ *
+ * @param userId            identifier of the authenticated user
+ * @param accessibleFarmIds farms the user has access to (empty list = none)
+ * @param isSuperAdmin      true when the user bypasses farm-scoping
  */
-public final class TenancyContext {
+public record TenantData(Long userId, List<Long> accessibleFarmIds, boolean isSuperAdmin) {
 
-    private TenancyContext() {}
-
-    public static Optional<AvicarePrincipal> currentPrincipal() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !auth.isAuthenticated()) return Optional.empty();
-        Object details = auth.getDetails();
-        if (details instanceof AvicarePrincipal p) return Optional.of(p);
-        return Optional.empty();
-    }
-
-    public static Long currentUserId() {
-        return currentPrincipal()
-            .map(AvicarePrincipal::userId)
-            .orElseThrow(() -> new IllegalStateException("No authenticated user"));
-    }
-
-    public static List<Long> accessibleFarmIds() {
-        return currentPrincipal()
-            .map(AvicarePrincipal::accessibleFarmIds)
-            .orElse(List.of());
-    }
-
-    public static boolean isSuperAdmin() {
-        return currentPrincipal()
-            .map(AvicarePrincipal::isSuperAdmin)
-            .orElse(false);
+    public TenantData {
+        Objects.requireNonNull(userId, "userId must not be null");
+        Objects.requireNonNull(accessibleFarmIds, "accessibleFarmIds must not be null");
+        accessibleFarmIds = List.copyOf(accessibleFarmIds);
     }
 }
 ```
+
+`common-tenancy/src/main/java/com/avicare/common/tenancy/context/TenancyContext.java` :
+
+```java
+package com.avicare.common.tenancy.context;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
+/**
+ * ThreadLocal store for the current request's tenancy data.
+ * Populated by the JwtFilter (common-security) and read by services.
+ *
+ * Producers MUST clear the context in a finally block — recycled Tomcat
+ * threads will otherwise leak tenancy between requests.
+ */
+public final class TenancyContext {
+
+    private static final ThreadLocal<TenantData> CONTEXT = new ThreadLocal<>();
+
+    private TenancyContext() {}
+
+    public static void set(TenantData data) {
+        Objects.requireNonNull(data, "TenantData must not be null");
+        CONTEXT.set(data);
+    }
+
+    public static TenantData get() {
+        TenantData data = CONTEXT.get();
+        if (data == null) {
+            throw new IllegalStateException(
+                "No tenancy context bound to the current thread. " +
+                "Did the authentication filter run, and did it call TenancyContext.set(...)?");
+        }
+        return data;
+    }
+
+    public static Optional<TenantData> tryGet() {
+        return Optional.ofNullable(CONTEXT.get());
+    }
+
+    public static boolean isSet() {
+        return CONTEXT.get() != null;
+    }
+
+    public static void clear() {
+        CONTEXT.remove();
+    }
+
+    public static Long currentUserId()       { return get().userId(); }
+    public static List<Long> accessibleFarmIds() { return get().accessibleFarmIds(); }
+    public static boolean isSuperAdmin()     { return get().isSuperAdmin(); }
+}
+```
+
+### 🔄 Producer pattern obligatoire (JwtFilter, Session 4b)
+
+Tout code qui peuple `TenancyContext` DOIT le faire dans un `try/finally`. `clear()` appelle `ThreadLocal.remove()` (jamais `set(null)`, qui laisserait une entrée dangling dans le map des thread-locals).
+
+```java
+try {
+    TenancyContext.set(tenantData);
+    chain.doFilter(request, response);
+} finally {
+    TenancyContext.clear();
+}
+```
+
+Oublier le `clear()` est un **bug multi-tenant** : la requête suivante servie par le même thread voit la tenancy précédente. Le test `TenancyContextTest.isolatesBetweenThreads` couvre cette garantie.
 
 ### 🔄 Usage dans un service
 
@@ -2290,6 +2344,12 @@ public class BatchService {
     }
 }
 ```
+
+### ℹ️ Note d'évolution
+
+Le draft initial de cette section codait `TenancyContext` comme un thin facade au-dessus de `SecurityContextHolder`, lisant un `AvicarePrincipal` depuis `Authentication.getDetails()`. Cette forme importait `com.avicare.common.security.principal.AvicarePrincipal` depuis `common-tenancy`, ce qui inversait l'ordre des dépendances de §0.4 (cycle `common-tenancy → common-security → common-tenancy`) et bloquait l'implémentation tant que `common-security` n'existait pas.
+
+L'implémentation actuelle — décidée et livrée en Sprint A2 Session 3 (commit `134d8ac`, PR #8) — résout le cycle en donnant à `common-tenancy` son propre store. `common-security` (Session 4b) viendra peupler le contexte depuis `JwtFilter` via le pattern `try/finally` ci-dessus.
 
 ---
 
