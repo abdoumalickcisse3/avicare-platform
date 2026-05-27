@@ -43,22 +43,18 @@ Même en solo, on travaille en PR (jamais de commit direct sur `main`).
 - 1 PR = 1 sujet (pas de "fourre-tout")
 - Titre = titre du dernier commit ou résumé du sprint
 - Description : checklist de ce qui est fait + screenshots si UI
-- CI verte avant merge — **sauf pendant l'incident GitHub Actions en cours**, où on bascule sur la checklist "Local validation" ci-dessous (voir [`docs/decisions/003-github-actions-incident.md`](docs/decisions/003-github-actions-incident.md))
+- **CI verte avant merge** — vérifier `gh pr checks <n>` (Backend, Web, Mobile / lint-and-test tous `pass`) avant `gh pr merge`
 - Rebase merge par défaut (historique linéaire propre sur `main`)
 
-### Local validation checklist (pendant l'incident GitHub Actions)
+### Pre-PR local validation (recommandée)
 
-Tant que les workflows GitHub Actions ne se déclenchent plus (incident officiel, cf. ADR-003), exécuter **toutes** ces étapes localement avant chaque merge sur `main` :
+Lancer la checklist suivante avant de pusher une PR reste un bon réflexe — c'est plus rapide que d'attendre le retour CI, et ça réduit le nombre de pushs correctifs sur la branche. **Optionnel** dans le cas nominal, mais **obligatoire** si jamais GitHub Actions retombe en incident (cf. [`docs/decisions/003-github-actions-incident.md`](docs/decisions/003-github-actions-incident.md) — l'ADR contient l'historique et la procédure de bascule en cas de récidive).
 
 1. `cd backend && ./mvnw clean verify` — build complet, tous les tests doivent passer, **et** Jacoco doit générer son rapport sans warning bloquant
 2. `make backend-run` — l'app doit démarrer sans erreur de boot
 3. `curl http://localhost:8080/actuator/health` — doit retourner `{"status":"UP"}` HTTP 200
 4. Tous les tests unitaires des modules touchés sont verts (`Tests run: N, Failures: 0, Errors: 0`)
 5. Couverture Jacoco du module modifié ≥ seuil défini dans [`docs/05-securite-rbac.md`](docs/05-securite-rbac.md) §7.4 (70% par défaut, 80% pour `common-security`, 90% pour `FarmAccessChecker`)
-
-Si l'une de ces étapes échoue : **ne pas merger**. Fixer d'abord.
-
-**Vérification quotidienne** : un coup d'œil à https://www.githubstatus.com en début de session. Dès que GitHub Actions repasse au vert, repousser un commit vide pour confirmer que les workflows triggent à nouveau, puis revenir à la routine "CI verte avant merge" et clore ADR-003.
 
 ## Conventions de code
 
@@ -113,3 +109,35 @@ Si l'une de ces étapes échoue : **ne pas merger**. Fixer d'abord.
 3. Ne demande pas à Claude Code de prendre des décisions d'architecture — demande à Claude (dans le chat)
 4. Commits progressifs : ne laisse pas Claude Code commit 50 fichiers en un coup
 5. Review chaque PR à toi-même avant merge
+
+## Pitfalls connus
+
+### Piège M2 stale lors du runtime local
+
+**Symptôme**
+
+- `./mvnw verify` passe (tests verts via classpath reactor)
+- Mais `make backend-run` boot une app qui utilise un JAR `common-*` **stale** depuis `~/.m2`
+- Conséquence : un `@Component` / `@RestControllerAdvice` / Filter fraîchement ajouté n'est **jamais instancié** au runtime
+- Bug silencieux : aucune erreur, juste le comportement attendu absent (header manquant, exception non interceptée, etc.)
+
+**Diagnostic**
+
+```bash
+jar tf ~/.m2/repository/com/avicare/common-<module>/0.1.0-SNAPSHOT/common-<module>-0.1.0-SNAPSHOT.jar | grep <ClassName>
+```
+
+Si la classe ajoutée n'apparaît pas → JAR stale.
+
+**Solution rapide (ponctuelle)**
+
+```bash
+cd backend && ./mvnw install -DskipTests
+make backend-run
+```
+
+**Fix permanent (déjà en place)**
+
+Le `Makefile` préfixe désormais la cible `backend-run` par `./mvnw install -DskipTests -pl avicare-app -am`, ce qui pousse les JARs `common-*` frais dans `~/.m2` avant chaque `spring-boot:run`. Coût : ~2-3s d'install au démarrage local — négligeable face au temps de debug économisé. Le piège ne se manifeste plus si on passe toujours par `make backend-run`. Il peut encore mordre si on appelle `./mvnw spring-boot:run -pl avicare-app ...` directement sans installer d'abord.
+
+Découvert en Sprint A2 Session 2b (cf. [ADR-003](docs/decisions/003-github-actions-incident.md) §Action items).

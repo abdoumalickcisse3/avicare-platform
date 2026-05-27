@@ -1,7 +1,7 @@
 # ADR 003 — Incident GitHub Actions du 26 mai 2026 & workflow de validation locale
 
 **Date** : 2026-05-26
-**Statut** : Accepté — Cause externe identifiée (incident GitHub résolu côté infra)
+**Statut** : Résolu — Incident GitHub Actions terminé le 2026-05-27, workflows fonctionnels depuis PR #5 et PR #6
 **Auteur** : Abdou Malick Cisse
 
 ## Contexte
@@ -58,13 +58,30 @@ C'est une cause différente — et indépendante — de [`002-branch-protection-
 - Lancer `./mvnw clean verify` **en début ET fin** de chaque sprint pour borner le risque
 - Une fois l'incident résolu, re-pousser un commit vide (`git commit --allow-empty -m "ci: poke after GH Actions incident"`) pour reconfirmer que les workflows triggent à nouveau, et fermer cet ADR comme "résolu et workflow restauré"
 
-## Action items pour plus tard
+## Résolution
 
-À traiter quand l'incident sera résolu (ou en parallèle si urgent) :
+**Date de résolution** : 2026-05-27.
+
+**Validation** : 3 CI vertes consécutives sur deux PRs successives :
+
+- PR #5 (`docs: add CLAUDE.md with mandatory context rules`) — Backend CI 56s, Web CI 46s, Mobile CI 24s
+- PR #6 (`feat(common-api): RFC 7807 error handler + correlation ID filter`) — Backend build 1m16s, Web build 42s, lint-and-test 21s
+
+**Actions appliquées dans la PR de clôture** :
+
+- Retour au workflow normal "CI verte avant merge" (la branche feature s'attend à `gh pr checks <n>` tous verts avant `gh pr merge`)
+- Renommage de la section "Local validation checklist (pendant l'incident GitHub Actions)" dans [`CONTRIBUTING.md`](../../CONTRIBUTING.md) en "Pre-PR local validation (recommandée)" — elle reste utile comme bon réflexe avant push, mais cesse d'être un gate de merge
+- Ajout d'une section **Pitfalls connus** dans [`CONTRIBUTING.md`](../../CONTRIBUTING.md) documentant le piège M2 stale (cf. action items ci-dessous)
+- Patch du `Makefile` : `make backend-run` exécute désormais `./mvnw install -DskipTests -pl avicare-app -am` en amont, ce qui pousse les JARs `common-*` frais vers `~/.m2` avant `spring-boot:run` et élimine le bug silencieux découvert en Session 2b
+
+**En cas de récidive** : retomber sur la checklist locale comme gate temporaire (l'ADR reste lisible dans l'historique), ouvrir un ADR-004 si la cause diffère.
+
+## Action items pour plus tard
 
 - [ ] **Upgrade `actions/checkout@v4` → `v5`** dans les 3 workflows. `v4` génère un warning "Node.js 20 deprecated" qui finira par devenir bloquant.
 - [ ] **Investiguer le warning** `"No files found with path backend/**/target/surefire-reports/"` dans `backend.yml` (upload des surefire reports). Soit on n'a pas de tests générant des reports, soit le path est faux. À regarder dans un prochain passage CI.
 - [ ] **Évaluer un upgrade GitHub Pro** ($4/mois) si l'incident se reproduit régulièrement OU si on veut profiter d'avantages connexes (branch protection sans dépendre du status public/private — cf. ADR-002).
+- [x] **Piège M2 stale documenté** : `make backend-run` résolvait `common-*` depuis `~/.m2` au lieu du reactor. Découvert en Session 2b (Filter @Component jamais instancié au runtime alors que les tests passaient). Fix appliqué dans la PR de clôture (Makefile + section Pitfalls dans CONTRIBUTING.md).
 
 ## Référence
 
