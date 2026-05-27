@@ -30,8 +30,11 @@ restart: down up
 logs:
 	docker-compose -f infra/docker-compose.yml logs -f
 
+# Install common-* JARs to ~/.m2 before spring-boot:run, otherwise the app
+# picks up stale dependency JARs and new @Component / Filter / @ControllerAdvice
+# beans go silently missing at runtime (cf. CONTRIBUTING.md "Pitfalls connus").
 backend-run:
-	cd backend && ./mvnw spring-boot:run -pl avicare-app -Dspring-boot.run.profiles=dev
+	cd backend && ./mvnw install -DskipTests -pl avicare-app -am && ./mvnw spring-boot:run -pl avicare-app -Dspring-boot.run.profiles=dev
 
 backend-test:
 	cd backend && ./mvnw test
