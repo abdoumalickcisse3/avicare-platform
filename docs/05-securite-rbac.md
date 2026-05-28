@@ -1327,24 +1327,22 @@ avicare:
 ```java
 package com.avicare.common.security.jwt;
 
-import lombok.Data;
+import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-import java.time.Duration;
-
-@Data
 @ConfigurationProperties(prefix = "avicare.security.jwt")
-public class JwtProperties {
-
-    private String privateKeyPath;
-    private String publicKeyPath;
-    private String privateKey;        // contenu PEM direct (prod)
-    private String publicKey;
-    private String issuer;
-    private Duration accessTokenTtl;
-    private Duration refreshTokenTtl;
-}
+public record JwtProperties(
+    String issuer,
+    Duration accessTokenTtl,
+    Duration refreshTokenTtl,
+    String privateKeyPath,
+    String publicKeyPath,
+    String privateKey,        // contenu PEM direct (prod, depuis env vars)
+    String publicKey
+) {}
 ```
+
+> En Spring Boot 3.x, le binding constructor sur un `record` est par défaut — pas besoin d'`@ConstructorBinding` (déprécié). Activer le binding via `@EnableConfigurationProperties(JwtProperties.class)` sur une classe `@Configuration` (chez nous : `config/JwtConfig.java`). L'immutabilité est désirable ici puisque les champs portent du matériel cryptographique.
 
 ### 📝 `KeyLoader.java`
 
@@ -1428,22 +1426,25 @@ public class KeyLoader {
 
 ### 🎯 But en 1 phrase
 
-Génère, valide et extrait les claims des JWT.
+Génère et valide des JWT signés RS256, en travaillant directement sur `AvicarePrincipal` (sérialisation/désérialisation des claims encapsulée).
 
 ### 📝 Code complet
 
 ```java
 package com.avicare.common.security.jwt;
 
+import com.avicare.common.security.exception.ExpiredTokenException;
+import com.avicare.common.security.exception.InvalidTokenException;
+import com.avicare.common.security.exception.WrongTokenTypeException;
+import com.avicare.common.security.principal.AvicarePrincipal;
 import com.avicare.common.security.principal.Membership;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
+import jakarta.annotation.PostConstruct;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.time.Instant;
@@ -1451,105 +1452,160 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class JwtService {
 
+    private static final String CLAIM_EMAIL = "email";
+    private static final String CLAIM_ROLE = "role";
+    private static final String CLAIM_MEMBERSHIPS = "memberships";
+    private static final String CLAIM_TYPE = "type";
+    private static final String TYPE_ACCESS = "access";
+    private static final String TYPE_REFRESH = "refresh";
+
     private final JwtProperties props;
     private final KeyLoader keyLoader;
+    private final ObjectMapper objectMapper;
 
     private RSAPrivateKey privateKey;
     private RSAPublicKey publicKey;
 
-    @Autowired
-    public void init() {
-        this.privateKey = keyLoader.loadPrivateKey();
-        this.publicKey = keyLoader.loadPublicKey();
-        log.info("JWT keys loaded successfully (RSA 2048)");
-    }
-
     /**
-     * Génère un access token JWT.
+     * Charge les clés une fois au démarrage. En cas d'échec on log un WARN
+     * et le service reste inerte (toute opération throw IllegalStateException
+     * plus tard via requireKeys()). Permet à l'app de booter avant que les
+     * clés ne soient provisionnées (Sprint A3).
      */
-    public String generateAccessToken(
-        Long userId,
-        String email,
-        String role,
-        List<Membership> memberships
-    ) {
-        Instant now = Instant.now();
-        Instant exp = now.plus(props.getAccessTokenTtl());
-
-        return Jwts.builder()
-            .setIssuer(props.getIssuer())
-            .setSubject(userId.toString())
-            .setId(UUID.randomUUID().toString())
-            .setIssuedAt(Date.from(now))
-            .setExpiration(Date.from(exp))
-            .addClaims(Map.of(
-                "email", email,
-                "role", role,
-                "memberships", memberships,
-                "type", "access"
-            ))
-            .signWith(privateKey, SignatureAlgorithm.RS256)
-            .compact();
-    }
-
-    /**
-     * Génère un refresh token JWT.
-     */
-    public String generateRefreshToken(Long userId) {
-        Instant now = Instant.now();
-        Instant exp = now.plus(props.getRefreshTokenTtl());
-
-        return Jwts.builder()
-            .setIssuer(props.getIssuer())
-            .setSubject(userId.toString())
-            .setId(UUID.randomUUID().toString())
-            .setIssuedAt(Date.from(now))
-            .setExpiration(Date.from(exp))
-            .addClaims(Map.of("type", "refresh"))
-            .signWith(privateKey, SignatureAlgorithm.RS256)
-            .compact();
-    }
-
-    /**
-     * Valide et extrait les claims d'un token.
-     * @throws io.jsonwebtoken.JwtException si invalide
-     */
-    public Claims validateAndExtract(String token) {
-        return Jwts.parserBuilder()
-            .setSigningKey(publicKey)
-            .requireIssuer(props.getIssuer())
-            .build()
-            .parseClaimsJws(token)
-            .getBody();
-    }
-
-    /**
-     * Extrait le userId sans vérifier (utile pour lookup blacklist par exemple).
-     * NE PAS utiliser pour décider d'auth.
-     */
-    public Long extractUserIdUnsafe(String token) {
+    @PostConstruct
+    void init() {
         try {
-            Claims claims = validateAndExtract(token);
-            return Long.parseLong(claims.getSubject());
-        } catch (Exception e) {
-            return null;
+            this.privateKey = keyLoader.loadPrivateKey();
+            this.publicKey = keyLoader.loadPublicKey();
+            log.info("JWT keys loaded successfully (RSA 2048)");
+        } catch (RuntimeException e) {
+            log.warn(
+                "JWT keys not configured; JwtService is inert until keys are provided. Cause: {}",
+                e.getMessage());
+        }
+    }
+
+    /** Génère un access token court depuis un AvicarePrincipal complet. */
+    public String generateAccessToken(AvicarePrincipal principal) {
+        requireKeys();
+        Instant now = Instant.now();
+        Instant exp = now.plus(props.accessTokenTtl());
+
+        return Jwts.builder()
+            .issuer(props.issuer())
+            .subject(principal.userId().toString())
+            .id(UUID.randomUUID().toString())
+            .issuedAt(Date.from(now))
+            .expiration(Date.from(exp))
+            .claims(Map.of(
+                CLAIM_EMAIL, principal.email(),
+                CLAIM_ROLE, principal.role(),
+                CLAIM_MEMBERSHIPS, principal.memberships(),
+                CLAIM_TYPE, TYPE_ACCESS))
+            .signWith(privateKey, Jwts.SIG.RS256)
+            .compact();
+    }
+
+    /** Génère un refresh token long ne portant que le userId. */
+    public String generateRefreshToken(Long userId) {
+        requireKeys();
+        Instant now = Instant.now();
+        Instant exp = now.plus(props.refreshTokenTtl());
+
+        return Jwts.builder()
+            .issuer(props.issuer())
+            .subject(userId.toString())
+            .id(UUID.randomUUID().toString())
+            .issuedAt(Date.from(now))
+            .expiration(Date.from(exp))
+            .claims(Map.of(CLAIM_TYPE, TYPE_REFRESH))
+            .signWith(privateKey, Jwts.SIG.RS256)
+            .compact();
+    }
+
+    /**
+     * Vérifie signature + issuer + expiration + type=access, et reconstruit
+     * le principal depuis les claims.
+     */
+    public AvicarePrincipal validateAccessToken(String token) {
+        Claims claims = parseClaims(token);
+        requireType(claims, TYPE_ACCESS);
+
+        Long userId = Long.parseLong(claims.getSubject());
+        String email = claims.get(CLAIM_EMAIL, String.class);
+        String role = claims.get(CLAIM_ROLE, String.class);
+        List<Membership> memberships = objectMapper.convertValue(
+            claims.get(CLAIM_MEMBERSHIPS), new TypeReference<List<Membership>>() {});
+
+        return new AvicarePrincipal(userId, email, role, memberships);
+    }
+
+    /** Vérifie un refresh token et retourne le userId. */
+    public Long validateRefreshToken(String token) {
+        Claims claims = parseClaims(token);
+        requireType(claims, TYPE_REFRESH);
+        return Long.parseLong(claims.getSubject());
+    }
+
+    private Claims parseClaims(String token) {
+        requireKeys();
+        try {
+            return Jwts.parser()
+                .verifyWith(publicKey)
+                .requireIssuer(props.issuer())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+        } catch (ExpiredJwtException e) {
+            throw new ExpiredTokenException(e);
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new InvalidTokenException(e.getMessage(), e);
+        }
+    }
+
+    private void requireType(Claims claims, String expected) {
+        String actual = claims.get(CLAIM_TYPE, String.class);
+        if (!expected.equals(actual)) {
+            throw new WrongTokenTypeException(expected, String.valueOf(actual));
+        }
+    }
+
+    private void requireKeys() {
+        if (privateKey == null || publicKey == null) {
+            throw new IllegalStateException(
+                "JwtService is not initialized: configure 'avicare.security.jwt.*' RSA keys.");
         }
     }
 }
 ```
 
+### 🛡️ Exceptions levées
+
+Toutes les exceptions levées par les méthodes `validate*` héritent de `TokenValidationException` (`extends org.springframework.security.core.AuthenticationException`), elle-même mappée automatiquement 401 par le `GlobalExceptionHandler` de `common-api`.
+
+| Cas | Exception | HTTP via handler |
+|---|---|---|
+| Signature invalide / token malformé / parse error | `InvalidTokenException` | 401 |
+| TTL expirée | `ExpiredTokenException` | 401 |
+| Type incorrect (access présenté à `validateRefresh` ou inverse) | `WrongTokenTypeException` | 401 |
+| Clés non configurées au runtime | `IllegalStateException` (catch-all) | 500 |
+
 ### ⚠️ Pièges fréquents
 
-- **`@Autowired public void init()`** : initialise les clés UNE FOIS au démarrage, pas à chaque appel. Spring appelle init après l'injection.
+- **`@PostConstruct` (jakarta.annotation)**, pas `@Autowired` : on initialise les clés UNE FOIS après injection des dépendances. `@Autowired` sur une méthode sans paramètres est un no-op.
 - **`requireIssuer`** : sécurité supplémentaire, refuse les tokens d'un autre émetteur.
-- **`SignatureAlgorithm.RS256`** : doit matcher entre génération et validation.
+- **`Jwts.SIG.RS256`** : algorithme déduit de la clé RSA ; doit matcher entre génération et validation.
 - **Ne JAMAIS logger un token complet**. C'est aussi sensible qu'un mot de passe.
+- **Pas de `extractUserIdUnsafe`** : la version initiale du draft proposait une méthode qui extrayait le subject SANS valider la signature, utilisée pour un lookup blacklist. C'est un anti-pattern (vulnérable à la forge de tokens). Si une blacklist Redis est nécessaire en Session 4b, exposer une API qui valide d'abord puis retourne aussi le `jti` (ex. `record(AvicarePrincipal principal, String jti)`).
 
 ---
 
@@ -1558,6 +1614,8 @@ public class JwtService {
 ### 🎯 But en 1 phrase
 
 Filtre Spring Security qui extrait le JWT de chaque requête, le valide, et met le user dans le contexte de sécurité.
+
+> ⚠️ **À aligner en Session 4b** — Le code ci-dessous reflète le draft initial qui appelait `jwtService.validateAndExtract(token) → Claims` puis reconstruisait l'`AvicarePrincipal` localement via `buildPrincipal(claims)`. La PR #10 (Session 4a) a livré une API plus encapsulée : `jwtService.validateAccessToken(token) → AvicarePrincipal` qui throw directement `InvalidTokenException` / `ExpiredTokenException` / `WrongTokenTypeException`. Session 4b adaptera le filter en conséquence. Le check blacklist Redis sur le `jti` reste à concevoir (probablement un wrapper `record(AvicarePrincipal principal, String jti)` ou une méthode `validateAccessTokenWithJti(...)` côté `JwtService`).
 
 ### 📝 Code complet
 
@@ -2210,6 +2268,23 @@ response.setHeader("Set-Cookie",
     "avicare_access_token=" + accessToken +
     "; HttpOnly; Secure; SameSite=Lax; Path=/api/; Max-Age=900");
 ```
+
+---
+
+## Annexe — Évolutions du doc 05 après implémentation
+
+Plusieurs décisions d'implémentation ont divergé du draft initial. Cette annexe en garde la trace pour qu'un lecteur revenant sur le doc n'ait pas à recroiser code et historique Git.
+
+| Section | Décision initiale | Décision actuelle | Justification | Trace |
+|---|---|---|---|---|
+| §3.1 `JwtProperties` | `@Data class` mutable | `record` immutable | Convention Spring Boot 3.x (constructor binding), cohérence codebase (`TenantData`, `AvicarePrincipal`, `Membership`, etc.), immutabilité pour un objet portant du matériel crypto | PR #10 |
+| §3.2 `JwtService` — API jjwt | 0.11 (`.setX(...)`, `parserBuilder`, `parseClaimsJws`) | 0.12 (`.X(...)`, `Jwts.parser()`, `verifyWith`, `parseSignedClaims`) | Le parent pom gère `jjwt-bom 0.12.6` ; l'API 0.11 ne compile pas | PR #10 |
+| §3.2 `JwtService.init()` | `@Autowired` | `@PostConstruct` + try/catch graceful | `@Autowired` sur méthode sans paramètres est un no-op (bug du draft). Le try/catch permet à l'app de booter sans clés configurées (Sprint A3 les provisionnera) | PR #10 |
+| §3.2 `JwtService` surface API | `(Long, String, String, List<Membership>)` + `Claims` | `(AvicarePrincipal)` + `AvicarePrincipal` | Encapsule la sérialisation/désérialisation des memberships dans `JwtService`, supprime la plomberie `buildPrincipal(claims)` côté `JwtFilter` | PR #10 |
+| §3.2 `extractUserIdUnsafe` | Présent | Supprimé | Anti-pattern (extraction sans validation de signature). Si une blacklist Redis a besoin du `jti`, exposer une API qui valide d'abord et retourne aussi le `jti` | PR #10 |
+| §4.1 `TenancyContext` | Thin facade sur `SecurityContextHolder` + import `AvicarePrincipal` | Store ThreadLocal autonome + record `TenantData` neutre | Le draft créait un cycle d'imports `common-tenancy → common-security → common-tenancy` qui contredit §0.4 | PR #8 + PR #9 |
+
+*Cette annexe est à mettre à jour par chaque PR qui ré-aligne la spec sur l'implémentation.*
 
 ---
 
