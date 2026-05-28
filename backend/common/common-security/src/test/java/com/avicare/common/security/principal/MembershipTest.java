@@ -11,7 +11,7 @@ class MembershipTest {
 
   @Test
   void exactPermission_matches() {
-    Membership m = new Membership(1L, "FARMER", List.of("poultry:write"));
+    Membership m = new Membership(1L, FarmRole.FARMER, List.of("poultry:write"));
 
     assertThat(m.hasPermission("poultry:write")).isTrue();
     assertThat(m.hasPermission("poultry:read")).isFalse();
@@ -20,7 +20,7 @@ class MembershipTest {
 
   @Test
   void resourceWildcard_grantsEveryVerbOnThatResource() {
-    Membership m = new Membership(1L, "MANAGER", List.of("poultry:*"));
+    Membership m = new Membership(1L, FarmRole.MANAGER, List.of("poultry:*"));
 
     assertThat(m.hasPermission("poultry:read")).isTrue();
     assertThat(m.hasPermission("poultry:write")).isTrue();
@@ -30,7 +30,7 @@ class MembershipTest {
 
   @Test
   void starPermission_grantsEverything() {
-    Membership m = new Membership(1L, "OWNER", List.of("*"));
+    Membership m = new Membership(1L, FarmRole.OWNER, List.of("*"));
 
     assertThat(m.hasPermission("poultry:write")).isTrue();
     assertThat(m.hasPermission("anything:anything")).isTrue();
@@ -40,7 +40,7 @@ class MembershipTest {
   @Test
   void permissionsAreDefensivelyCopied() {
     List<String> mutable = new ArrayList<>(List.of("poultry:read"));
-    Membership m = new Membership(1L, "FARMER", mutable);
+    Membership m = new Membership(1L, FarmRole.FARMER, mutable);
 
     mutable.add("poultry:write");
 
@@ -49,12 +49,36 @@ class MembershipTest {
   }
 
   @Test
+  void hasRole_singleCandidate_matches() {
+    Membership m = new Membership(1L, FarmRole.OWNER, List.of());
+
+    assertThat(m.hasRole(FarmRole.OWNER)).isTrue();
+    assertThat(m.hasRole(FarmRole.FARMER)).isFalse();
+  }
+
+  @Test
+  void hasRole_multipleCandidates_matchesIfAny() {
+    Membership m = new Membership(1L, FarmRole.MANAGER, List.of());
+
+    assertThat(m.hasRole(FarmRole.OWNER, FarmRole.MANAGER)).isTrue();
+    assertThat(m.hasRole(FarmRole.OWNER, FarmRole.MANAGER, FarmRole.FARMER)).isTrue();
+    assertThat(m.hasRole(FarmRole.OWNER, FarmRole.FARMER)).isFalse();
+  }
+
+  @Test
+  void hasRole_emptyArray_returnsFalse() {
+    Membership m = new Membership(1L, FarmRole.OWNER, List.of());
+
+    assertThat(m.hasRole()).isFalse();
+  }
+
+  @Test
   void nullArguments_throwNpe() {
     assertThatNullPointerException()
-        .isThrownBy(() -> new Membership(null, "FARMER", List.of()));
+        .isThrownBy(() -> new Membership(null, FarmRole.FARMER, List.of()));
     assertThatNullPointerException()
         .isThrownBy(() -> new Membership(1L, null, List.of()));
     assertThatNullPointerException()
-        .isThrownBy(() -> new Membership(1L, "FARMER", null));
+        .isThrownBy(() -> new Membership(1L, FarmRole.FARMER, null));
   }
 }

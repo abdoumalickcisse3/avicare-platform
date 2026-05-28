@@ -15,14 +15,16 @@ import java.util.Objects;
  *   <li>{@code "<resource>:*"} — grants every verb on a given resource
  * </ul>
  *
- * <p>{@code permissions} is defensively copied to make this record fully immutable.
+ * <p>{@code permissions} is defensively copied to make this record fully immutable. They are
+ * typically initialized from {@link FarmRole#defaultPermissions()} at sign-up time and stored on
+ * the {@code user_farm.permissions} JSONB column, where they can be overridden per row without
+ * changing the role.
  *
  * @param farmId identifier of the farm
- * @param farmRole role label scoped to this farm (e.g. {@code "OWNER"}, {@code "MANAGER"},
- *     {@code "FARMER"})
+ * @param farmRole tenant-level role on this farm
  * @param permissions explicit permission strings granted on this farm
  */
-public record Membership(Long farmId, String farmRole, List<String> permissions) {
+public record Membership(Long farmId, FarmRole farmRole, List<String> permissions) {
 
   public Membership {
     Objects.requireNonNull(farmId, "farmId must not be null");
@@ -45,5 +47,20 @@ public record Membership(Long farmId, String farmRole, List<String> permissions)
       }
     }
     return permissions.contains(permission);
+  }
+
+  /**
+   * Whether this membership's role is one of the given candidates.
+   *
+   * <p>Used by {@code FarmAccessChecker.hasRole(farmId, FarmRole...)} (Session 4b-1) for SpEL
+   * expressions in {@code @PreAuthorize}.
+   */
+  public boolean hasRole(FarmRole... candidates) {
+    for (FarmRole candidate : candidates) {
+      if (this.farmRole == candidate) {
+        return true;
+      }
+    }
+    return false;
   }
 }
