@@ -7,7 +7,9 @@ import com.avicare.common.security.exception.ExpiredTokenException;
 import com.avicare.common.security.exception.InvalidTokenException;
 import com.avicare.common.security.exception.WrongTokenTypeException;
 import com.avicare.common.security.principal.AvicarePrincipal;
+import com.avicare.common.security.principal.FarmRole;
 import com.avicare.common.security.principal.Membership;
+import com.avicare.common.security.principal.UserRole;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.security.KeyPair;
 import java.time.Duration;
@@ -50,10 +52,11 @@ class JwtServiceTest {
     return new AvicarePrincipal(
         42L,
         "alice@avicare.io",
-        "USER",
+        UserRole.USER,
         List.of(
-            new Membership(100L, "OWNER", List.of("*")),
-            new Membership(200L, "FARMER", List.of("poultry:read", "poultry:write"))));
+            new Membership(100L, FarmRole.OWNER, List.of("*")),
+            new Membership(
+                200L, FarmRole.FARMER, List.of("poultry:read", "poultry:write"))));
   }
 
   @Test
@@ -126,18 +129,75 @@ class JwtServiceTest {
   @Test
   void roundTripsMembershipsThroughClaims() {
     JwtService svc = normalService();
-    Membership m1 = new Membership(1L, "OWNER", List.of("*"));
-    Membership m2 = new Membership(2L, "FARMER", List.of("poultry:read"));
+    Membership m1 = new Membership(1L, FarmRole.OWNER, List.of("*"));
+    Membership m2 = new Membership(2L, FarmRole.FARMER, List.of("poultry:read"));
     AvicarePrincipal original =
-        new AvicarePrincipal(7L, "bob@avicare.io", "USER", List.of(m1, m2));
+        new AvicarePrincipal(7L, "bob@avicare.io", UserRole.USER, List.of(m1, m2));
 
     String token = svc.generateAccessToken(original);
     AvicarePrincipal restored = svc.validateAccessToken(token);
 
     assertThat(restored.memberships()).hasSize(2);
+    assertThat(restored.memberships().get(0).farmRole()).isEqualTo(FarmRole.OWNER);
     assertThat(restored.memberships().get(0).hasPermission("anything:anything")).isTrue();
+    assertThat(restored.memberships().get(1).farmRole()).isEqualTo(FarmRole.FARMER);
     assertThat(restored.memberships().get(1).hasPermission("poultry:read")).isTrue();
     assertThat(restored.memberships().get(1).hasPermission("poultry:write")).isFalse();
+  }
+
+  @Test
+  void roundTripsUserRoleAsEnum() {
+    JwtService svc = normalService();
+    AvicarePrincipal adminPrincipal =
+        new AvicarePrincipal(1L, "boss@avicare.io", UserRole.ADMIN, List.of());
+
+    String token = svc.generateAccessToken(adminPrincipal);
+    AvicarePrincipal restored = svc.validateAccessToken(token);
+
+    assertThat(restored.role()).isEqualTo(UserRole.ADMIN);
+    assertThat(restored.isAdmin()).isTrue();
+  }
+
+  @Test
+  void rejectsTokenWithUnknownRole() throws Exception {
+    JwtService svc = normalService();
+    String forged = forgeAccessTokenWithRoleClaim("PHANTOM_ROLE");
+
+    assertThatThrownBy(() -> svc.validateAccessToken(forged))
+        .isInstanceOf(InvalidTokenException.class)
+        .hasMessageContaining("Cannot reconstruct principal");
+  }
+
+  /** Builds an access token whose {@code role} claim is an arbitrary string. */
+  private static String forgeAccessTokenWithRoleClaim(String role) {
+    JwtProperties props =
+        new JwtProperties(
+            "avicare-test",
+            Duration.ofMinutes(15),
+            Duration.ofDays(7),
+            null,
+            null,
+            privatePem,
+            publicPem);
+    KeyLoader loader = new KeyLoader(new DefaultResourceLoader(), props);
+    java.security.interfaces.RSAPrivateKey pk = loader.loadPrivateKey();
+
+    java.util.Date now = new java.util.Date();
+    java.util.Date exp = new java.util.Date(now.getTime() + 60_000);
+    return io.jsonwebtoken.Jwts.builder()
+        .issuer("avicare-test")
+        .subject("1")
+        .id(java.util.UUID.randomUUID().toString())
+        .issuedAt(now)
+        .expiration(exp)
+        .claims(
+            java.util.Map.of(
+                "email", "phantom@avicare.io",
+                "role", role,
+                "memberships", java.util.List.of(),
+                "type", "access"))
+        .signWith(pk, io.jsonwebtoken.Jwts.SIG.RS256)
+        .compact();
   }
 
   @Test

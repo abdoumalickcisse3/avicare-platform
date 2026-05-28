@@ -5,6 +5,7 @@ import com.avicare.common.security.exception.InvalidTokenException;
 import com.avicare.common.security.exception.WrongTokenTypeException;
 import com.avicare.common.security.principal.AvicarePrincipal;
 import com.avicare.common.security.principal.Membership;
+import com.avicare.common.security.principal.UserRole;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
@@ -122,14 +123,17 @@ public class JwtService {
     Claims claims = parseClaims(token);
     requireType(claims, TYPE_ACCESS);
 
-    Long userId = Long.parseLong(claims.getSubject());
-    String email = claims.get(CLAIM_EMAIL, String.class);
-    String role = claims.get(CLAIM_ROLE, String.class);
-    List<Membership> memberships =
-        objectMapper.convertValue(
-            claims.get(CLAIM_MEMBERSHIPS), new TypeReference<List<Membership>>() {});
-
-    return new AvicarePrincipal(userId, email, role, memberships);
+    try {
+      Long userId = Long.parseLong(claims.getSubject());
+      String email = claims.get(CLAIM_EMAIL, String.class);
+      UserRole role = UserRole.valueOf(claims.get(CLAIM_ROLE, String.class));
+      List<Membership> memberships =
+          objectMapper.convertValue(
+              claims.get(CLAIM_MEMBERSHIPS), new TypeReference<List<Membership>>() {});
+      return new AvicarePrincipal(userId, email, role, memberships);
+    } catch (IllegalArgumentException | NullPointerException e) {
+      throw new InvalidTokenException("Cannot reconstruct principal: " + e.getMessage(), e);
+    }
   }
 
   /**

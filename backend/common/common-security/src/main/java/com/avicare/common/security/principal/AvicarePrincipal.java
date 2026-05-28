@@ -2,12 +2,13 @@ package com.avicare.common.security.principal;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Authenticated user representation, built by the JWT layer and carried through the request.
  *
- * <p>The {@code role} field is the platform-wide role (e.g. {@code "SUPER_ADMIN"},
- * {@code "ADMIN"}, {@code "USER"}). Per-farm roles and permissions live in {@link Membership}s.
+ * <p>The {@code role} field is the platform-wide role (see {@link UserRole}). Per-farm authority
+ * lives in {@link Membership}s — one per (user, farm) couple.
  *
  * <p>{@code memberships} is defensively copied; the record is fully immutable.
  *
@@ -17,10 +18,7 @@ import java.util.Objects;
  * @param memberships per-farm memberships
  */
 public record AvicarePrincipal(
-    Long userId, String email, String role, List<Membership> memberships) {
-
-  public static final String ROLE_SUPER_ADMIN = "SUPER_ADMIN";
-  public static final String ROLE_ADMIN = "ADMIN";
+    Long userId, String email, UserRole role, List<Membership> memberships) {
 
   public AvicarePrincipal {
     Objects.requireNonNull(userId, "userId must not be null");
@@ -29,25 +27,22 @@ public record AvicarePrincipal(
     memberships = List.copyOf(memberships);
   }
 
-  /** Whether the user is a platform super-admin (bypasses every farm check). */
-  public boolean isSuperAdmin() {
-    return ROLE_SUPER_ADMIN.equals(role);
+  /** Whether the user is platform staff (bypasses every tenant-level check). */
+  public boolean isAdmin() {
+    return role == UserRole.ADMIN;
   }
 
-  /** Whether the user is at least an admin (admin or super-admin). */
-  public boolean isAdmin() {
-    return ROLE_ADMIN.equals(role) || isSuperAdmin();
+  /** This user's membership on the given farm, if any. */
+  public Optional<Membership> membershipOf(Long farmId) {
+    return memberships.stream().filter(m -> m.farmId().equals(farmId)).findFirst();
   }
 
   /**
-   * Whether the user has any membership on the given farm. Super-admins always return
-   * {@code true}.
+   * Whether the user can reach the given farm. Platform admins always return {@code true};
+   * everyone else needs a membership on it.
    */
   public boolean hasFarmAccess(Long farmId) {
-    if (isSuperAdmin()) {
-      return true;
-    }
-    return memberships.stream().anyMatch(m -> m.farmId().equals(farmId));
+    return isAdmin() || membershipOf(farmId).isPresent();
   }
 
   /** Farm identifiers the user has any membership on. Empty for users with no memberships. */
