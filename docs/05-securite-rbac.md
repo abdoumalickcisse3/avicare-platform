@@ -1766,11 +1766,37 @@ Si quoi que ce soit échoue : on log et on continue **sans** mettre l'auth. Le `
 
 ---
 
-## 3.4 — `AvicarePrincipal` et `Membership`
+## 3.4 — `UserRole`, `FarmRole`, `AvicarePrincipal` et `Membership`
+
+> Le RBAC repose sur **deux enums typés** (cf. Décisions 11 et 12 du doc `00-vision-strategique`) :
+> `UserRole` pour le rôle plateforme porté dans le JWT, `FarmRole` pour le rôle tenant porté par
+> chaque `Membership`. On ne compare plus de strings magiques (`"SUPER_ADMIN"`, `"OWNER"`...).
 
 ### 📝 Code complet
 
-`AvicarePrincipal.java` :
+`UserRole.java` — rôle plateforme à **2 niveaux** (YAGNI V1) :
+
+```java
+package com.avicare.common.security.principal;
+
+/**
+ * Platform-level role carried in the JWT.
+ *
+ * <p>Two-level system (YAGNI for V1): every actual user is a {@link #USER}; only AviCare platform
+ * staff is {@link #ADMIN}. Tenant-level authority is handled separately by {@link FarmRole} via
+ * the per-farm {@link Membership}s.
+ */
+public enum UserRole {
+
+  /** AviCare platform staff. Bypasses every tenant-level access check. */
+  ADMIN,
+
+  /** Standard user. Access is scoped to their farm memberships. */
+  USER
+}
+```
+
+`FarmRole.java` — rôle tenant à **5 personas** + `defaultPermissions()` :
 
 ```java
 package com.avicare.common.security.principal;
@@ -1778,58 +1804,155 @@ package com.avicare.common.security.principal;
 import java.util.List;
 
 /**
- * Représente l'utilisateur authentifié.
- * Stocké dans SecurityContextHolder via JwtFilter.
+ * Tenant-level role inside a single farm (OWNER, MANAGER, FARMER, VETERINARIAN, BUYER).
+ *
+ * <p>{@link #defaultPermissions()} returns the baseline {@code resource:verb} permissions granted
+ * when the role is assigned. They are stored on each {@code Membership} and can be overridden per
+ * row (JSONB column {@code user_farm.permissions}) without changing the role itself. The defaults
+ * are deliberately conservative for V1 and will be enriched in Sprint B+.
  */
-public record AvicarePrincipal(
-    Long userId,
-    String email,
-    String role,
-    List<Membership> memberships
-) {
+public enum FarmRole {
+  OWNER,
+  MANAGER,
+  FARMER,
+  VETERINARIAN,
+  BUYER;
 
-    public boolean isSuperAdmin() {
-        return "SUPER_ADMIN".equals(role);
-    }
-
-    public boolean isAdmin() {
-        return "ADMIN".equals(role) || isSuperAdmin();
-    }
-
-    public boolean hasFarmAccess(Long farmId) {
-        if (isSuperAdmin()) return true;
-        return memberships.stream().anyMatch(m -> m.farmId().equals(farmId));
-    }
-
-    public List<Long> accessibleFarmIds() {
-        return memberships.stream().map(Membership::farmId).toList();
-    }
+  /**
+   * Baseline {@code resource:verb} permissions for this role. {@code "*"} = full access (OWNER),
+   * {@code "resource:*"} = every verb on the resource, {@code "resource:verb"} = specific verb.
+   * BUYER scoping ("sees only their own orders") is enforced at the service layer, not by RBAC.
+   */
+  public List<String> defaultPermissions() {
+    return switch (this) {
+      case OWNER -> List.of("*");
+      case MANAGER ->
+          List.of(
+              "poultry:*",
+              "health:*",
+              "commercial:*",
+              "inventory:*",
+              "finance:read",
+              "settings:read");
+      case FARMER ->
+          List.of("poultry:read", "poultry:write", "health:read", "health:write");
+      case VETERINARIAN -> List.of("health:read", "health:write", "poultry:read");
+      case BUYER -> List.of("commercial:read", "finance:read");
+    };
+  }
 }
 ```
 
-`Membership.java` :
+`AvicarePrincipal.java` — `role` est désormais un `UserRole`, le record est immutable (constructeur
+compact défensif), `isSuperAdmin()` a disparu au profit de `isAdmin()`, et `membershipOf()` expose
+le membership d'une ferme :
 
 ```java
 package com.avicare.common.security.principal;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
-public record Membership(
-    Long farmId,
-    String farmRole,        // OWNER, MANAGER, FARMER, etc.
-    List<String> permissions
-) {
+/**
+ * Authenticated user representation, built by the JWT layer and carried through the request.
+ *
+ * <p>The {@code role} field is the platform-wide role (see {@link UserRole}). Per-farm authority
+ * lives in {@link Membership}s — one per (user, farm) couple. {@code memberships} is defensively
+ * copied; the record is fully immutable.
+ */
+public record AvicarePrincipal(
+    Long userId, String email, UserRole role, List<Membership> memberships) {
 
-    public boolean hasPermission(String permission) {
-        // Wildcard global
-        if (permissions.contains("*")) return true;
-        // Wildcard resource (e.g. "poultry:*" pour "poultry:write")
-        if (permission.contains(":")) {
-            String resource = permission.substring(0, permission.indexOf(':')) + ":*";
-            if (permissions.contains(resource)) return true;
-        }
-        return permissions.contains(permission);
+  public AvicarePrincipal {
+    Objects.requireNonNull(userId, "userId must not be null");
+    Objects.requireNonNull(role, "role must not be null");
+    Objects.requireNonNull(memberships, "memberships must not be null");
+    memberships = List.copyOf(memberships);
+  }
+
+  /** Whether the user is platform staff (bypasses every tenant-level check). */
+  public boolean isAdmin() {
+    return role == UserRole.ADMIN;
+  }
+
+  /** This user's membership on the given farm, if any. */
+  public Optional<Membership> membershipOf(Long farmId) {
+    return memberships.stream().filter(m -> m.farmId().equals(farmId)).findFirst();
+  }
+
+  /**
+   * Whether the user can reach the given farm. Platform admins always return {@code true};
+   * everyone else needs a membership on it.
+   */
+  public boolean hasFarmAccess(Long farmId) {
+    return isAdmin() || membershipOf(farmId).isPresent();
+  }
+
+  /** Farm identifiers the user has any membership on. Empty for users with no memberships. */
+  public List<Long> accessibleFarmIds() {
+    return memberships.stream().map(Membership::farmId).toList();
+  }
+}
+```
+
+`Membership.java` — `farmRole` est désormais un `FarmRole`, le record est immutable, et `hasRole()`
+teste l'appartenance à un ensemble de rôles candidats :
+
+```java
+package com.avicare.common.security.principal;
+
+import java.util.List;
+import java.util.Objects;
+
+/**
+ * One user-to-farm membership: the user's role on a single farm and the explicit permissions
+ * granted on that farm.
+ *
+ * <p>Permission format is {@code "resource:verb"} (e.g. {@code "poultry:write"}); {@code "*"} grants
+ * everything and {@code "<resource>:*"} grants every verb on a resource. {@code permissions} is
+ * defensively copied. They are typically initialized from {@link FarmRole#defaultPermissions()} at
+ * sign-up time and stored on {@code user_farm.permissions} (JSONB), overridable per row.
+ */
+public record Membership(Long farmId, FarmRole farmRole, List<String> permissions) {
+
+  public Membership {
+    Objects.requireNonNull(farmId, "farmId must not be null");
+    Objects.requireNonNull(farmRole, "farmRole must not be null");
+    Objects.requireNonNull(permissions, "permissions must not be null");
+    permissions = List.copyOf(permissions);
+  }
+
+  /** Whether this membership grants the given permission, honoring {@code *} wildcards. */
+  public boolean hasPermission(String permission) {
+    Objects.requireNonNull(permission, "permission must not be null");
+    if (permissions.contains("*")) {
+      return true;
     }
+    int colon = permission.indexOf(':');
+    if (colon > 0) {
+      String resourceWildcard = permission.substring(0, colon) + ":*";
+      if (permissions.contains(resourceWildcard)) {
+        return true;
+      }
+    }
+    return permissions.contains(permission);
+  }
+
+  /**
+   * Whether this membership's role is one of the given candidates.
+   *
+   * <p>Used by {@code FarmAccessChecker.hasRole(farmId, FarmRole...)} (Session 4b-1) for SpEL
+   * expressions in {@code @PreAuthorize}.
+   */
+  public boolean hasRole(FarmRole... candidates) {
+    for (FarmRole candidate : candidates) {
+      if (this.farmRole == candidate) {
+        return true;
+      }
+    }
+    return false;
+  }
 }
 ```
 
@@ -2283,6 +2406,9 @@ Plusieurs décisions d'implémentation ont divergé du draft initial. Cette anne
 | §3.2 `JwtService` surface API | `(Long, String, String, List<Membership>)` + `Claims` | `(AvicarePrincipal)` + `AvicarePrincipal` | Encapsule la sérialisation/désérialisation des memberships dans `JwtService`, supprime la plomberie `buildPrincipal(claims)` côté `JwtFilter` | PR #10 |
 | §3.2 `extractUserIdUnsafe` | Présent | Supprimé | Anti-pattern (extraction sans validation de signature). Si une blacklist Redis a besoin du `jti`, exposer une API qui valide d'abord et retourne aussi le `jti` | PR #10 |
 | §4.1 `TenancyContext` | Thin facade sur `SecurityContextHolder` + import `AvicarePrincipal` | Store ThreadLocal autonome + record `TenantData` neutre | Le draft créait un cycle d'imports `common-tenancy → common-security → common-tenancy` qui contredit §0.4 | PR #8 + PR #9 |
+| §3.4 `AvicarePrincipal` / `Membership` | `role: String`, `farmRole: String`, `isSuperAdmin()` | `role: UserRole`, `farmRole: FarmRole`, enums `UserRole`/`FarmRole` (+ `defaultPermissions()`), `membershipOf()`, `hasRole(FarmRole...)`, constructeurs compacts immutables | Refactor RBAC en enums typés (Décisions 11-12 du doc 00), supprime les strings magiques, prépare `FarmAccessChecker` (Session 4b-1) | PR #12 + cette PR |
+
+> §3.4 est aligné (PR #12 + cette PR docs). §3.3 (`JwtFilter`) sera aligné après Session 4b-2.
 
 *Cette annexe est à mettre à jour par chaque PR qui ré-aligne la spec sur l'implémentation.*
 
