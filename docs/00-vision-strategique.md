@@ -214,6 +214,8 @@ Les bundles sont des **collections d'entitlements** côté DB — le code de ges
 | 8 | Règle d'or | Tout ce qui appartient à l'éleveur est paramétrable (3 couches) |
 | 9 | Repo | Nouveau repo `avicare-platform`, mono-repo |
 | 10 | Legacy | Ancien repo `avicare-pro` figé, ARCHITECTURE.md gardé comme bible métier |
+| 11 | RBAC plateforme (`UserRole`) | 2 niveaux : `ADMIN` (staff AviCare) / `USER` (éleveur) — YAGNI V1, ajout d'un 3e rôle reste non-breaking |
+| 12 | RBAC tenant (`FarmRole`) | 5 personas par ferme : `OWNER`, `MANAGER`, `FARMER`, `VETERINARIAN`, `BUYER`, avec `defaultPermissions()` conservateurs (`resource:verb`), surchargeables par membership |
 
 ---
 
