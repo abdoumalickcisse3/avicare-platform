@@ -12,8 +12,6 @@ import java.io.IOException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -44,14 +42,16 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * while public routes still work. This keeps the filter's single responsibility to "authenticate if
  * possible".
  *
- * <p>Ordered just after {@code CorrelationIdFilter} ({@link Ordered#HIGHEST_PRECEDENCE}) so the
- * correlation id is already in the MDC when this filter logs.
+ * <p>This filter runs inside the Spring Security chain only — {@code SecurityConfig} places it via
+ * {@code addFilterBefore(..., UsernamePasswordAuthenticationFilter.class)} and disables its
+ * standalone servlet registration (a {@code FilterRegistrationBean} with {@code enabled=false}).
+ * Registering it as a plain servlet filter as well would run it before Spring Security's
+ * {@code SecurityContextHolderFilter}, which then resets the context and drops the authentication.
  *
  * <p>Cookie-based extraction (web httpOnly cookie, doc 05 §3.8) and the Redis {@code jti} blacklist
  * are deferred to Sprint A3, where the auth controller that issues those cookies/tokens lands.
  */
 @Component
-@Order(Ordered.HIGHEST_PRECEDENCE + 50)
 @RequiredArgsConstructor
 @Slf4j
 public class JwtFilter extends OncePerRequestFilter {

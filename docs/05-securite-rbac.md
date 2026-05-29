@@ -1613,156 +1613,115 @@ Toutes les exceptions levées par les méthodes `validate*` héritent de `TokenV
 
 ### 🎯 But en 1 phrase
 
-Filtre Spring Security qui extrait le JWT de chaque requête, le valide, et met le user dans le contexte de sécurité.
+Filtre Spring Security qui extrait le JWT de chaque requête, le valide, et met le user dans le contexte de sécurité **et** le contexte de tenancy.
 
-> ⚠️ **À aligner en Session 4b** — Le code ci-dessous reflète le draft initial qui appelait `jwtService.validateAndExtract(token) → Claims` puis reconstruisait l'`AvicarePrincipal` localement via `buildPrincipal(claims)`. La PR #10 (Session 4a) a livré une API plus encapsulée : `jwtService.validateAccessToken(token) → AvicarePrincipal` qui throw directement `InvalidTokenException` / `ExpiredTokenException` / `WrongTokenTypeException`. Session 4b adaptera le filter en conséquence. Le check blacklist Redis sur le `jti` reste à concevoir (probablement un wrapper `record(AvicarePrincipal principal, String jti)` ou une méthode `validateAccessTokenWithJti(...)` côté `JwtService`).
+> ✅ **Aligné code ↔ doc (PR #15, commit `e209675`, Session 4b-2).** Le filtre consomme l'API encapsulée `jwtService.validateAccessToken(token) → AvicarePrincipal` (qui throw `InvalidTokenException` / `ExpiredTokenException` / `WrongTokenTypeException`, toutes filles de `TokenValidationException extends AuthenticationException`). Décisions V1 : **extraction header `Bearer` uniquement** (le cookie httpOnly arrive Sprint A3 avec l'auth-controller qui le pose), et **pas de blacklist Redis** ici (le `jti` n'est pas exposé par `JwtService` ; conception différée Sprint A3).
 
 ### 📝 Code complet
 
 ```java
 package com.avicare.common.security.jwt;
 
+import com.avicare.common.security.exception.TokenValidationException;
 import com.avicare.common.security.principal.AvicarePrincipal;
-import com.avicare.common.security.principal.Membership;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
+import com.avicare.common.tenancy.context.TenancyContext;
+import com.avicare.common.tenancy.context.TenantData;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Optional;
-
 @Component
+@Order(Ordered.HIGHEST_PRECEDENCE + 50) // juste après CorrelationIdFilter (HIGHEST_PRECEDENCE)
 @RequiredArgsConstructor
 @Slf4j
 public class JwtFilter extends OncePerRequestFilter {
 
-    public static final String COOKIE_NAME = "avicare_access_token";
-    public static final String HEADER_NAME = "Authorization";
-    public static final String BEARER_PREFIX = "Bearer ";
-    public static final String BLACKLIST_KEY_PREFIX = "jwt:blacklist:";
+  public static final String HEADER_NAME = "Authorization";
+  public static final String BEARER_PREFIX = "Bearer ";
 
-    private final JwtService jwtService;
-    private final StringRedisTemplate redis;
-    private final ObjectMapper objectMapper;
+  private final JwtService jwtService;
 
-    @Override
-    protected void doFilterInternal(
-        HttpServletRequest request,
-        HttpServletResponse response,
-        FilterChain chain
-    ) throws ServletException, IOException {
+  @Override
+  protected void doFilterInternal(
+      HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+      throws ServletException, IOException {
 
-        Optional<String> tokenOpt = extractToken(request);
+    String token = extractToken(request);
 
-        if (tokenOpt.isEmpty()) {
-            chain.doFilter(request, response);
-            return;
-        }
-
-        String token = tokenOpt.get();
-
-        try {
-            Claims claims = jwtService.validateAndExtract(token);
-
-            // Check token type (must be "access")
-            String type = claims.get("type", String.class);
-            if (!"access".equals(type)) {
-                log.warn("Invalid token type: {}", type);
-                chain.doFilter(request, response);
-                return;
-            }
-
-            // Check blacklist
-            String jti = claims.getId();
-            if (Boolean.TRUE.equals(redis.hasKey(BLACKLIST_KEY_PREFIX + jti))) {
-                log.warn("Blacklisted token used: {}", jti);
-                chain.doFilter(request, response);
-                return;
-            }
-
-            // Build principal
-            AvicarePrincipal principal = buildPrincipal(claims);
-
-            // Build authentication
-            UsernamePasswordAuthenticationToken auth =
-                new UsernamePasswordAuthenticationToken(
-                    principal.userId(),       // principal = userId (Long)
-                    null,                     // credentials non utilisés
-                    List.of(new SimpleGrantedAuthority("ROLE_" + principal.role()))
-                );
-            auth.setDetails(principal);       // principal complet dans details
-
-            SecurityContextHolder.getContext().setAuthentication(auth);
-
-        } catch (JwtException ex) {
-            log.warn("Invalid JWT: {}", ex.getMessage());
-            // Ne pas bloquer la requête ici : le @PreAuthorize rejettera plus loin
-        }
-
-        chain.doFilter(request, response);
+    if (token != null) {
+      try {
+        authenticate(jwtService.validateAccessToken(token));
+      } catch (TokenValidationException e) {
+        // Token invalide/expiré/mauvais type : on reste non authentifié et la
+        // couche d'autorisation renverra 401 sur les routes protégées.
+        log.warn("Rejected JWT: {}", e.getMessage());
+      }
     }
 
-    private Optional<String> extractToken(HttpServletRequest request) {
-        // 1. Try Authorization header first (mobile)
-        String header = request.getHeader(HEADER_NAME);
-        if (header != null && header.startsWith(BEARER_PREFIX)) {
-            return Optional.of(header.substring(BEARER_PREFIX.length()));
-        }
-
-        // 2. Try cookie (web)
-        if (request.getCookies() != null) {
-            for (Cookie cookie : request.getCookies()) {
-                if (COOKIE_NAME.equals(cookie.getName())) {
-                    return Optional.of(cookie.getValue());
-                }
-            }
-        }
-
-        return Optional.empty();
+    try {
+      chain.doFilter(request, response);
+    } finally {
+      // Nettoyage OBLIGATOIRE : Tomcat recycle les threads, un oubli ici ferait
+      // fuiter l'identité d'un user vers la requête suivante du même thread.
+      TenancyContext.clear();
+      SecurityContextHolder.clearContext();
     }
+  }
 
-    @SuppressWarnings("unchecked")
-    private AvicarePrincipal buildPrincipal(Claims claims) {
-        Long userId = Long.parseLong(claims.getSubject());
-        String email = claims.get("email", String.class);
-        String role = claims.get("role", String.class);
+  private void authenticate(AvicarePrincipal principal) {
+    // 1. TenancyContext (consommé par les helpers de scoping ferme)
+    TenancyContext.set(
+        new TenantData(principal.userId(), principal.accessibleFarmIds(), principal.isAdmin()));
 
-        // Memberships sérialisés comme List<Map>, on les remap
-        List<?> rawMemberships = claims.get("memberships", List.class);
-        List<Membership> memberships = rawMemberships.stream()
-            .map(m -> objectMapper.convertValue(m, Membership.class))
-            .toList();
+    // 2. SecurityContextHolder : principal = userId (Long), details = AvicarePrincipal
+    //    (la forme que lit FarmAccessChecker via auth.getDetails())
+    var auth =
+        new UsernamePasswordAuthenticationToken(
+            principal.userId(), null, buildAuthorities(principal));
+    auth.setDetails(principal);
+    SecurityContextHolder.getContext().setAuthentication(auth);
 
-        return new AvicarePrincipal(userId, email, role, memberships);
+    log.debug("JWT authenticated userId={} role={}", principal.userId(), principal.role());
+  }
+
+  private String extractToken(HttpServletRequest request) {
+    String header = request.getHeader(HEADER_NAME);
+    if (header != null && header.startsWith(BEARER_PREFIX)) {
+      String token = header.substring(BEARER_PREFIX.length()).trim();
+      return token.isEmpty() ? null : token;
     }
+    return null;
+  }
+
+  private List<GrantedAuthority> buildAuthorities(AvicarePrincipal principal) {
+    return List.of(new SimpleGrantedAuthority("ROLE_" + principal.role().name()));
+  }
 }
 ```
 
 ### 🔄 Flux d'exécution
 
-1. Requête arrive avec `Authorization: Bearer eyJ...` ou cookie `avicare_access_token`
-2. `JwtFilter` extract le token
-3. `JwtService.validateAndExtract()` vérifie signature + expiration
-4. Check Redis blacklist (token révoqué ?)
-5. Build `AvicarePrincipal` depuis les claims
-6. Met dans `SecurityContextHolder`
-7. Chain.doFilter() → la requête continue
+1. Requête arrive avec `Authorization: Bearer eyJ...`
+2. `JwtFilter` extrait le token (header `Bearer` uniquement)
+3. `JwtService.validateAccessToken()` vérifie signature + issuer + expiration + type `access`, et reconstruit l'`AvicarePrincipal`
+4. Population de `TenancyContext` (`TenantData`) **et** `SecurityContextHolder` (`Authentication` : principal=`userId`, details=`AvicarePrincipal`, autorité `ROLE_<UserRole>`)
+5. `chain.doFilter()` → la requête continue
+6. **`finally`** : `TenancyContext.clear()` + `SecurityContextHolder.clearContext()`
 
-Si quoi que ce soit échoue : on log et on continue **sans** mettre l'auth. Le `@PreAuthorize` rejettera plus tard avec `AccessDeniedException`.
+Si l'extraction échoue (pas de header) ou si le token est invalide : on log et on continue **sans** poser l'auth. La couche d'autorisation (`anyRequest().authenticated()` + l'`AuthenticationEntryPoint` de la `SecurityConfig`, §3.7) renvoie alors un **401 RFC 7807**. Sur un endpoint annoté `@PreAuthorize`, un refus de `@farmAccess` lèvera une `AccessDeniedException` → **403 RFC 7807** via l'`AccessDeniedHandler`.
 
 ---
 
@@ -2280,102 +2239,153 @@ public class ServiceAuthInterceptor implements HandlerInterceptor {
 
 ### 🎯 But en 1 phrase
 
-Configuration centrale de Spring Security : chaîne de filtres, routes publiques/protégées, CORS, intégration du `JwtFilter`.
+Configuration centrale de Spring Security : chaîne de filtres, routes publiques/protégées, CORS, intégration du `JwtFilter`, et réponses d'erreur RFC 7807.
+
+> ✅ **Aligné code ↔ doc (PR #15, commit `e209675`, Session 4b-2).** Décisions Session 4b-2 reflétées ci-dessous : **`PasswordEncoder` omis** (sera ajouté Sprint A3 avec login/signup) et **blacklist Redis `jti` différée** (Sprint A3). Les réponses 401/403 sont des `ProblemDetailResponse` RFC 7807 (réutilisé de `common-api`).
 
 ### 📝 Code complet
 
 ```java
 package com.avicare.common.security.config;
 
+import com.avicare.common.api.error.ProblemDetailResponse;
 import com.avicare.common.security.jwt.JwtFilter;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.net.URI;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.MDC;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.List;
-
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity  // active @PreAuthorize
+@EnableMethodSecurity // active @PreAuthorize (PAS @EnableGlobalMethodSecurity, déprécié en SB 3.x)
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtFilter jwtFilter;
+  private static final String ERROR_TYPE_BASE = "https://avicare.com/errors/";
+  private static final String MDC_CORRELATION_ID = "correlationId";
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(csrf -> csrf.disable())   // stateless, pas besoin CSRF
-            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers(
-                    "/api/v1/auth/signup",
-                    "/api/v1/auth/login",
-                    "/api/v1/auth/refresh"
-                ).permitAll()
-                .requestMatchers("/api/public/**").permitAll()
-                .requestMatchers("/actuator/health", "/actuator/info").permitAll()
-                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                .anyRequest().authenticated()
-            )
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+  private final JwtFilter jwtFilter;
+  private final ObjectMapper objectMapper;
 
-        return http.build();
-    }
+  @Bean
+  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    return http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
+        .csrf(csrf -> csrf.disable()) // stateless (JWT) : pas de session, pas de CSRF
+        .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .authorizeHttpRequests(
+            auth ->
+                auth.requestMatchers(HttpMethod.OPTIONS, "/**")
+                    .permitAll()
+                    .requestMatchers("/actuator/health/**", "/actuator/info")
+                    .permitAll()
+                    .requestMatchers("/api/v1/auth/**")
+                    .permitAll() // login/signup/refresh — implémentés Sprint A3
+                    .requestMatchers("/swagger-ui/**", "/v3/api-docs/**")
+                    .permitAll()
+                    .anyRequest()
+                    .authenticated())
+        .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+        .exceptionHandling(
+            ex ->
+                ex.authenticationEntryPoint(authenticationEntryPoint())
+                    .accessDeniedHandler(accessDeniedHandler()))
+        .build();
+  }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(12);  // strong work factor
-    }
+  // ⚠️ Les exceptions levées DANS la filter chain (auth manquante, accès refusé au
+  // niveau requête) ne traversent PAS le DispatcherServlet, donc le
+  // @RestControllerAdvice de common-api ne les voit pas : elles sont traitées par
+  // l'ExceptionTranslationFilter via cet entry point / ce handler. On y reproduit
+  // donc le format RFC 7807 pour garder des réponses uniformes (Règle 5 du doc 00).
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
-        // En dev, accepte localhost. En prod, sera surchargé par env vars.
-        config.setAllowedOrigins(List.of(
-            "http://localhost:3000",   // Next.js dev
-            "http://localhost:19006"   // Expo dev
-        ));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
-        config.setExposedHeaders(List.of("X-Correlation-Id"));
-        config.setAllowCredentials(true);  // pour les cookies httpOnly
-        config.setMaxAge(3600L);
+  @Bean
+  public AuthenticationEntryPoint authenticationEntryPoint() {
+    return (request, response, authException) ->
+        writeProblem(
+            response, request, HttpServletResponse.SC_UNAUTHORIZED,
+            "authentication-failed", "Authentication Failed", "AUTHENTICATION_FAILED",
+            "Full authentication is required to access this resource");
+  }
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-        return source;
-    }
+  @Bean
+  public AccessDeniedHandler accessDeniedHandler() {
+    return (request, response, accessDeniedException) ->
+        writeProblem(
+            response, request, HttpServletResponse.SC_FORBIDDEN,
+            "access-denied", "Access Denied", "ACCESS_DENIED",
+            "You do not have permission to access this resource");
+  }
+
+  @Bean
+  public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration config = new CorsConfiguration();
+    config.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:19006"));
+    config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+    config.setAllowedHeaders(List.of("*"));
+    config.setExposedHeaders(List.of("X-Correlation-Id"));
+    config.setAllowCredentials(true);
+    config.setMaxAge(3600L);
+
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", config);
+    return source;
+  }
+
+  private void writeProblem(
+      HttpServletResponse response, HttpServletRequest request, int status,
+      String typeSlug, String title, String code, String detail) throws IOException {
+    ProblemDetailResponse body =
+        ProblemDetailResponse.builder()
+            .type(URI.create(ERROR_TYPE_BASE + typeSlug))
+            .title(title)
+            .status(status)
+            .detail(detail)
+            .instance(URI.create(request.getRequestURI()))
+            .code(code)
+            .traceId(MDC.get(MDC_CORRELATION_ID))
+            .build();
+    response.setStatus(status);
+    response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
+    objectMapper.writeValue(response.getWriter(), body);
+  }
 }
 ```
 
-### ⚠️ Action requise : retirer l'exclude au démarrage Sprint A2
+### ⚠️ Action requise : retirer l'exclude au démarrage Sprint A2 (fait — PR #15)
 
-Dans `AvicareApplication.java`, retirer :
+Dans `AvicareApplication.java`, on a retiré les excludes :
 
 ```java
 // AVANT (Sprint A1)
-@SpringBootApplication(exclude = {SecurityAutoConfiguration.class})
+@SpringBootApplication(exclude = {
+    SecurityAutoConfiguration.class, ManagementWebSecurityAutoConfiguration.class})
 
-// APRÈS (Sprint A2)
+// APRÈS (Sprint A2, PR #15)
 @SpringBootApplication
 ```
 
-Avec la `SecurityConfig` qu'on vient de créer, l'auto-config Spring Security est désormais **utile** : elle pré-configure plein de choses qu'on personnalise.
+Avec la `SecurityConfig` ci-dessus, l'auto-config Spring Security devient **utile** : elle pré-configure ce qu'on personnalise. `ManagementWebSecurityAutoConfiguration` se désactive d'elle-même dès qu'un `SecurityFilterChain` est défini, donc notre chaîne gouverne aussi `/actuator/**`.
+
+> **Note routes publiques** — `/actuator/health/**` (le `/**` matche aussi `/actuator/health` exact via AntPathMatcher), `/actuator/info`, `/api/v1/auth/**`, swagger, et les pré-flight `OPTIONS`. Tout le reste est `authenticated()`.
 
 ---
 
@@ -2424,8 +2434,12 @@ Plusieurs décisions d'implémentation ont divergé du draft initial. Cette anne
 | §4.1 `TenancyContext` | Thin facade sur `SecurityContextHolder` + import `AvicarePrincipal` | Store ThreadLocal autonome + record `TenantData` neutre | Le draft créait un cycle d'imports `common-tenancy → common-security → common-tenancy` qui contredit §0.4 | PR #8 + PR #9 |
 | §3.4 `AvicarePrincipal` / `Membership` | `role: String`, `farmRole: String`, `isSuperAdmin()` | `role: UserRole`, `farmRole: FarmRole`, enums `UserRole`/`FarmRole` (+ `defaultPermissions()`), `membershipOf()`, `hasRole(FarmRole...)`, constructeurs compacts immutables | Refactor RBAC en enums typés (Décisions 11-12 du doc 00), supprime les strings magiques, prépare `FarmAccessChecker` (Session 4b-1) | PR #12 + cette PR |
 | §3.5 `FarmAccessChecker` | `isSuperAdmin()`, stream sur `memberships()`, rôles String dans les tests | `isAdmin()`, `membershipOf(farmId)`, ajout `hasRole(Long, FarmRole...)`, tests sur enums | Alignement sur le refactor RBAC (PR #12) ; `hasRole` honore le contrat annoncé dans le javadoc de `Membership.hasRole` | Session 4b-1 |
+| §3.3 `JwtFilter` | `validateAndExtract → Claims` + `buildPrincipal`, blacklist Redis `jti`, extraction cookie + header, pas de cleanup | `validateAccessToken → AvicarePrincipal`, **header `Bearer` uniquement**, peuple `TenancyContext` + `SecurityContextHolder`, cleanup `finally`, `@Order(HIGHEST_PRECEDENCE+50)`, blacklist Redis et cookie httpOnly différés Sprint A3 | PR #15 (commit `e209675`) |
+| §3.7 `SecurityConfig` | `SecurityFilterChain` + `passwordEncoder` + CORS, sans gestion d'erreur | `SecurityFilterChain` stateless, routes publiques (`/actuator/health/**`, `/actuator/info`, `/api/v1/auth/**`, swagger, `OPTIONS`), `JwtFilter` avant `UsernamePasswordAuthenticationFilter`, `@EnableMethodSecurity`, **`AuthenticationEntryPoint`/`AccessDeniedHandler` RFC 7807** ; `PasswordEncoder` différé Sprint A3 | PR #15 (commit `e209675`) |
 
-> §3.4 et §3.5 sont alignés. §3.3 (`JwtFilter`) sera aligné après Session 4b-2.
+> ✅ §3.1 → §3.7 sont tous alignés code ↔ doc.
+
+📌 **Sprint A2 clôturé — tag `v0.2.0-common`.** Tous les `common-*` sont alignés code ↔ doc. Les prochaines évolutions documentaires interviendront en Sprint A3+ avec l'implémentation de l'authentification end-user (login, refresh, password encoder, blacklist Redis).
 
 *Cette annexe est à mettre à jour par chaque PR qui ré-aligne la spec sur l'implémentation.*
 

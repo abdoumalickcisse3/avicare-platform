@@ -10,6 +10,7 @@ import java.net.URI;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.MDC;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -75,6 +76,20 @@ public class SecurityConfig {
                 ex.authenticationEntryPoint(authenticationEntryPoint())
                     .accessDeniedHandler(accessDeniedHandler()))
         .build();
+  }
+
+  /**
+   * Prevents Spring Boot from also registering {@link JwtFilter} as a plain servlet filter. As a
+   * {@code @Component} of type {@code Filter} it would otherwise run before the Spring Security
+   * chain (and its {@code SecurityContextHolderFilter}), which resets the context and drops the
+   * authentication we just set. The filter is wired exclusively through {@code addFilterBefore}
+   * above.
+   */
+  @Bean
+  public FilterRegistrationBean<JwtFilter> jwtFilterRegistration(JwtFilter filter) {
+    FilterRegistrationBean<JwtFilter> registration = new FilterRegistrationBean<>(filter);
+    registration.setEnabled(false);
+    return registration;
   }
 
   /** Returns a uniform RFC 7807 401 when an unauthenticated user hits a protected route. */
