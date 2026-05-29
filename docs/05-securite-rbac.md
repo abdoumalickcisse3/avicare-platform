@@ -1987,6 +1987,7 @@ C'est LE bean appelé depuis toutes les annotations `@PreAuthorize` pour vérifi
 package com.avicare.common.security.access;
 
 import com.avicare.common.security.principal.AvicarePrincipal;
+import com.avicare.common.security.principal.FarmRole;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -1996,36 +1997,33 @@ import org.springframework.stereotype.Component;
  * Bean SpEL pour la vérification des permissions tenant.
  *
  * Usage : @PreAuthorize("@farmAccess.hasPermission(#farmId, 'poultry:write')")
+ *
+ * Le principal courant est lu depuis Authentication.getDetails() (alimenté par
+ * le JwtFilter — Session 4b-2). Les admins plateforme (isAdmin()) bypassent
+ * tout ; sinon l'accès est borné au Membership de la ferme. Sans principal
+ * authentifié, toutes les méthodes refusent (fail-closed).
  */
 @Component("farmAccess")
 @Slf4j
 public class FarmAccessChecker {
 
-    /**
-     * Vérifie si l'utilisateur courant a une permission sur une ferme.
-     *
-     * @param farmId     identifiant de la ferme
-     * @param permission permission au format "resource:verb" (ex: "poultry:write")
-     * @return true si autorisé, false sinon
-     */
+    /** Vrai si l'utilisateur courant détient la permission "resource:verb" sur la ferme. */
     public boolean hasPermission(Long farmId, String permission) {
         AvicarePrincipal principal = currentPrincipal();
         if (principal == null) return false;
 
-        // Super admin platform : bypass complet
-        if (principal.isSuperAdmin()) {
-            log.debug("Access granted via SUPER_ADMIN for user {}", principal.userId());
+        // Admin plateforme : bypass complet
+        if (principal.isAdmin()) {
+            log.debug("Access granted via platform ADMIN for user {}", principal.userId());
             return true;
         }
 
-        return principal.memberships().stream()
-            .filter(m -> m.farmId().equals(farmId))
-            .anyMatch(m -> m.hasPermission(permission));
+        return principal.membershipOf(farmId)
+            .map(m -> m.hasPermission(permission))
+            .orElse(false);
     }
 
-    /**
-     * Vérifie si l'utilisateur a AU MOINS UNE des permissions listées.
-     */
+    /** Vrai si l'utilisateur a AU MOINS UNE des permissions listées. */
     public boolean hasAnyPermission(Long farmId, String... permissions) {
         for (String perm : permissions) {
             if (hasPermission(farmId, perm)) return true;
@@ -2033,9 +2031,7 @@ public class FarmAccessChecker {
         return false;
     }
 
-    /**
-     * Vérifie si l'utilisateur a TOUTES les permissions listées.
-     */
+    /** Vrai si l'utilisateur a TOUTES les permissions listées. */
     public boolean hasAllPermissions(Long farmId, String... permissions) {
         for (String perm : permissions) {
             if (!hasPermission(farmId, perm)) return false;
@@ -2043,22 +2039,26 @@ public class FarmAccessChecker {
         return true;
     }
 
-    /**
-     * Vérifie juste l'accès (lecture) à la ferme.
-     */
+    /** Vrai si l'utilisateur peut simplement atteindre la ferme (membership, ou admin). */
     public boolean hasAccess(Long farmId) {
         AvicarePrincipal principal = currentPrincipal();
+        return principal != null && principal.hasFarmAccess(farmId);
+    }
+
+    /** Vrai si le rôle de l'utilisateur sur la ferme est l'un des candidats (admins bypassent). */
+    public boolean hasRole(Long farmId, FarmRole... candidates) {
+        AvicarePrincipal principal = currentPrincipal();
         if (principal == null) return false;
-        if (principal.isSuperAdmin()) return true;
-        return principal.hasFarmAccess(farmId);
+        if (principal.isAdmin()) return true;
+        return principal.membershipOf(farmId)
+            .map(m -> m.hasRole(candidates))
+            .orElse(false);
     }
 
     private AvicarePrincipal currentPrincipal() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated()) return null;
-        Object details = auth.getDetails();
-        if (details instanceof AvicarePrincipal p) return p;
-        return null;
+        return auth.getDetails() instanceof AvicarePrincipal p ? p : null;
     }
 }
 ```
@@ -2112,7 +2112,9 @@ public final class PermissionConstants {
 package com.avicare.common.security.access;
 
 import com.avicare.common.security.principal.AvicarePrincipal;
+import com.avicare.common.security.principal.FarmRole;
 import com.avicare.common.security.principal.Membership;
+import com.avicare.common.security.principal.UserRole;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -2127,23 +2129,24 @@ class FarmAccessCheckerTest {
     private final FarmAccessChecker checker = new FarmAccessChecker();
 
     @AfterEach
-    void cleanup() {
+    void clearContext() {
         SecurityContextHolder.clearContext();
     }
 
     @Test
-    void superAdminCanAccessAnyFarm() {
-        setPrincipal(new AvicarePrincipal(1L, "admin@avicare.com", "SUPER_ADMIN", List.of()));
+    void platformAdminBypassesEveryCheck() {
+        setPrincipal(new AvicarePrincipal(1L, "admin@avicare.com", UserRole.ADMIN, List.of()));
 
         assertThat(checker.hasPermission(99L, "poultry:write")).isTrue();
         assertThat(checker.hasAccess(99L)).isTrue();
+        assertThat(checker.hasRole(99L, FarmRole.BUYER)).isTrue();
     }
 
     @Test
     void userWithExactPermissionGetsAccess() {
         setPrincipal(new AvicarePrincipal(
-            2L, "user@avicare.com", "USER",
-            List.of(new Membership(42L, "FARMER", List.of("poultry:write")))
+            2L, "user@avicare.com", UserRole.USER,
+            List.of(new Membership(42L, FarmRole.FARMER, List.of("poultry:write")))
         ));
 
         assertThat(checker.hasPermission(42L, "poultry:write")).isTrue();
@@ -2154,11 +2157,10 @@ class FarmAccessCheckerTest {
     @Test
     void userWithWildcardResourceGetsAccess() {
         setPrincipal(new AvicarePrincipal(
-            3L, "manager@avicare.com", "USER",
-            List.of(new Membership(42L, "MANAGER", List.of("poultry:*")))
+            3L, "manager@avicare.com", UserRole.USER,
+            List.of(new Membership(42L, FarmRole.MANAGER, List.of("poultry:*")))
         ));
 
-        assertThat(checker.hasPermission(42L, "poultry:write")).isTrue();
         assertThat(checker.hasPermission(42L, "poultry:read")).isTrue();
         assertThat(checker.hasPermission(42L, "poultry:delete")).isTrue();
         assertThat(checker.hasPermission(42L, "health:write")).isFalse();
@@ -2167,8 +2169,8 @@ class FarmAccessCheckerTest {
     @Test
     void userWithStarPermissionGetsEverything() {
         setPrincipal(new AvicarePrincipal(
-            4L, "owner@avicare.com", "USER",
-            List.of(new Membership(42L, "OWNER", List.of("*")))
+            4L, "owner@avicare.com", UserRole.USER,
+            List.of(new Membership(42L, FarmRole.OWNER, List.of("*")))
         ));
 
         assertThat(checker.hasPermission(42L, "poultry:write")).isTrue();
@@ -2176,8 +2178,22 @@ class FarmAccessCheckerTest {
     }
 
     @Test
+    void hasRoleMatchesMembershipRoleOnTargetFarm() {
+        setPrincipal(new AvicarePrincipal(
+            5L, "vet@avicare.com", UserRole.USER,
+            List.of(new Membership(42L, FarmRole.VETERINARIAN, List.of("health:read")))
+        ));
+
+        assertThat(checker.hasRole(42L, FarmRole.VETERINARIAN)).isTrue();
+        assertThat(checker.hasRole(42L, FarmRole.OWNER, FarmRole.MANAGER)).isFalse();
+        assertThat(checker.hasRole(99L, FarmRole.VETERINARIAN)).isFalse();
+    }
+
+    @Test
     void noAuthenticationDeniesAccess() {
         assertThat(checker.hasPermission(42L, "poultry:write")).isFalse();
+        assertThat(checker.hasAccess(42L)).isFalse();
+        assertThat(checker.hasRole(42L, FarmRole.OWNER)).isFalse();
     }
 
     private void setPrincipal(AvicarePrincipal principal) {
@@ -2407,8 +2423,9 @@ Plusieurs décisions d'implémentation ont divergé du draft initial. Cette anne
 | §3.2 `extractUserIdUnsafe` | Présent | Supprimé | Anti-pattern (extraction sans validation de signature). Si une blacklist Redis a besoin du `jti`, exposer une API qui valide d'abord et retourne aussi le `jti` | PR #10 |
 | §4.1 `TenancyContext` | Thin facade sur `SecurityContextHolder` + import `AvicarePrincipal` | Store ThreadLocal autonome + record `TenantData` neutre | Le draft créait un cycle d'imports `common-tenancy → common-security → common-tenancy` qui contredit §0.4 | PR #8 + PR #9 |
 | §3.4 `AvicarePrincipal` / `Membership` | `role: String`, `farmRole: String`, `isSuperAdmin()` | `role: UserRole`, `farmRole: FarmRole`, enums `UserRole`/`FarmRole` (+ `defaultPermissions()`), `membershipOf()`, `hasRole(FarmRole...)`, constructeurs compacts immutables | Refactor RBAC en enums typés (Décisions 11-12 du doc 00), supprime les strings magiques, prépare `FarmAccessChecker` (Session 4b-1) | PR #12 + cette PR |
+| §3.5 `FarmAccessChecker` | `isSuperAdmin()`, stream sur `memberships()`, rôles String dans les tests | `isAdmin()`, `membershipOf(farmId)`, ajout `hasRole(Long, FarmRole...)`, tests sur enums | Alignement sur le refactor RBAC (PR #12) ; `hasRole` honore le contrat annoncé dans le javadoc de `Membership.hasRole` | Session 4b-1 |
 
-> §3.4 est aligné (PR #12 + cette PR docs). §3.3 (`JwtFilter`) sera aligné après Session 4b-2.
+> §3.4 et §3.5 sont alignés. §3.3 (`JwtFilter`) sera aligné après Session 4b-2.
 
 *Cette annexe est à mettre à jour par chaque PR qui ré-aligne la spec sur l'implémentation.*
 
