@@ -1,0 +1,18 @@
+# Test profile for security wiring tests.
+#
+# The security integration test only needs the web layer + Spring Security +
+# actuator. We exclude the persistence stack (datasource, JPA, Flyway, Redis)
+# so the context boots without Postgres/Redis running — keeping the test fast,
+# hermetic and CI-friendly (no Docker/Testcontainers required).
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration
+      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+  flyway:
+    enabled: false

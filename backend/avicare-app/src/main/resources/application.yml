@@ -8,6 +8,18 @@ server:
   port: ${SERVER_PORT:8080}
   shutdown: graceful
 
+avicare:
+  security:
+    jwt:
+      issuer: ${JWT_ISSUER:avicare-platform}
+      access-token-ttl: 15m
+      refresh-token-ttl: 7d
+      # RSA keys are intentionally absent in dev: JwtService boots inert (logs a
+      # WARN) until keys are provisioned (Sprint A3 / env vars in prod). The app
+      # still starts so the security filter chain and public routes work.
+      private-key: ${JWT_PRIVATE_KEY:}
+      public-key: ${JWT_PUBLIC_KEY:}
+
 management:
   endpoints:
     web:

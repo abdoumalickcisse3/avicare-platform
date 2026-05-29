@@ -19,14 +19,23 @@
             <artifactId>common-api</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.avicare</groupId>
+            <artifactId>common-tenancy</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
+        <!-- Brings spring-web (OncePerRequestFilter, servlet API, Tomcat) needed by
+             JwtFilter; also makes this module's SecurityFilterChain wireable in the app. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter</artifactId>
+            <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+        <!-- Full Spring Security (web + config + core): EnableWebSecurity, HttpSecurity,
+             SecurityFilterChain. Supersedes the previous spring-security-core-only dep. -->
         <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-core</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
         <dependency>
