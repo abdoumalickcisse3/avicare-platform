@@ -1,0 +1,44 @@
+package com.avicare.security;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+
+/**
+ * End-to-end check that Spring Security is now actively wired into the application: public routes
+ * stay open, everything else demands authentication and gets a uniform RFC 7807 401.
+ *
+ * <p>This is the assertion that protects the boot smoke test described in the session plan — if
+ * {@code /actuator/health} ever stops being public, this test goes red before a deploy can.
+ */
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
+class SecurityIntegrationTest {
+
+  @Autowired private MockMvc mockMvc;
+
+  @Test
+  void healthEndpoint_isPublic() throws Exception {
+    mockMvc.perform(get("/actuator/health")).andExpect(status().isOk());
+  }
+
+  @Test
+  void unauthenticatedProtectedRoute_returns401ProblemDetails() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/anything"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.status").value(401))
+        .andExpect(jsonPath("$.code").value("AUTHENTICATION_FAILED"));
+  }
+}
