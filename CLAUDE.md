@@ -107,6 +107,63 @@ Valider en local AVANT merge tant que ADR-003 est actif.
 
 ---
 
+## 🗃️ Base de données & Flyway (Sprint A3+)
+
+### Migrations
+
+- **Immuabilité absolue** : une migration mergée ne se modifie JAMAIS → créer une migration corrective.
+- Naming doc 04 : `V<n>__snake_case.sql` (double underscore), une migration = un sujet.
+- Location : `backend/avicare-app/src/main/resources/db/migration/`
+- Toute migration doit tourner sans erreur sous Testcontainers avant merge.
+
+### Conventions SQL (cf. doc 04 §1 — verrouillées)
+
+- Tables : `snake_case` **pluriel** (`users`, `farms`, `user_farms`).
+- IDs : `BIGSERIAL PRIMARY KEY`. Enums : `VARCHAR` + `CHECK (... IN (...))`.
+- Horodatages : **`TIMESTAMP`** (sans TZ, UTC). Financier : `NUMERIC(12,2)`. JSON : `JSONB`.
+- Audit : `created_at`/`updated_at` (via **trigger** `trg_<table>_updated_at`).
+  `deleted_at TIMESTAMP NULL` **uniquement** sur tables à soft delete (pas `users`, qui utilise `is_active`).
+- FK explicites `REFERENCES ... ON DELETE ...` ; index sur FK et colonnes filtrées.
+- Index partiel `WHERE deleted_at IS NULL` (et unique partiel) seulement si la table porte `deleted_at`.
+
+## 🗄️ JPA / Hibernate 6.4 (Sprint A3+)
+
+- `@Entity` sur classes mutables (jamais sur records) ; `@Table(name=...)` explicite.
+- `@Id @GeneratedValue(strategy = IDENTITY)` (BIGSERIAL). `@Enumerated(EnumType.STRING)` (jamais ORDINAL).
+- `created_at`/`updated_at` : **gérés par le trigger DB** → mapper en lecture seule
+  (`@Column(insertable=false, updatable=false)`), **pas** de `@UpdateTimestamp` (évite le double writer).
+- Soft delete : `@SQLDelete` + **`@SQLRestriction("deleted_at IS NULL")`** (`@Where` déprécié en HB6).
+- Relations `@ManyToOne(fetch = LAZY)` ; éviter N+1 via `@EntityGraph` / `JOIN FETCH`. Pas de bidirectionnel sans raison.
+- Repositories : `JpaRepository<E, Long>`, dérivation de méthodes, `@Query` JPQL si complexe.
+- Services : `@Service` + `@RequiredArgsConstructor` ; `@Transactional` sur écriture, `(readOnly=true)` sur lecture ; `@Valid` sur DTOs entrants.
+
+## 🧪 Tests DB (Sprint A3+)
+
+- `@DataJpaTest` + Testcontainers (`PostgreSQLContainer`) pour les slices repository.
+- `@SpringBootTest` + `@AutoConfigureMockMvc` + Testcontainers pour l'E2E auth.
+  (Le profil `test` DB-less existant reste pour les tests web/sécurité sans DB.)
+- `@DynamicPropertySource` pour la datasource ; `withReuse(true)` en local.
+- Préférer le slice rapide ; éviter `@DirtiesContext`. Si build CI > 5 min, alerter.
+
+## 🔐 Auth (Sprint A3+) — détails dans doc 05
+
+- Hash mots de passe : `BCryptPasswordEncoder(strength=12)`. Jamais de mot de passe en clair / dans un `toString()`.
+- Refresh token : source de vérité = table `refresh_tokens` (colonne `token`, révocation via `revoked_at`),
+  cache révocations Redis. **Rotation + logout/logout-all : voir doc 05.**
+- Endpoints publics (déjà actés dans `common-security` `SecurityConfig`) :
+  `/actuator/health/**`, `/actuator/info`, `/api/v1/auth/**`, `/swagger-ui/**`, `/v3/api-docs/**` ; tout le reste authentifié.
+- Access token en header `Bearer` ; refresh token en cookie `httpOnly SameSite=Lax Secure` (prod).
+
+## ✅ Checklist pré-merge (Sprint A3+, complète A2)
+
+1. `cd backend && ./mvnw clean verify` vert (cf. ADR-003 : valider en local).
+2. App démarre (`make backend-run`) + `/actuator/health` → UP.
+3. Migration Flyway ajoutée : a tourné sur DB clean en test ; **aucune migration mergée modifiée**.
+4. Couverture du module ≥ 80 % pour le code sécurité-critique.
+5. Commit sans signature Claude ; CI vertes avant merge.
+
+---
+
 ## 🤝 Style d'interaction attendu
 
 ### Mode "demande avant d'agir"
@@ -161,4 +218,4 @@ Pour chaque session de travail :
 
 ---
 
-_Ce fichier évoluera avec le projet. À jour pour Sprint A2._
+_Ce fichier évoluera avec le projet. À jour pour Sprint A3._
