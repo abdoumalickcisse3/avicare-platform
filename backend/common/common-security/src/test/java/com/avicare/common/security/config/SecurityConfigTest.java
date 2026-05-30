@@ -42,7 +42,8 @@ class SecurityConfigTest {
     assertThat(body.get("status").asInt()).isEqualTo(401);
     assertThat(body.get("code").asText()).isEqualTo("AUTHENTICATION_FAILED");
     assertThat(body.get("title").asText()).isEqualTo("Authentication Failed");
-    assertThat(body.get("type").asText()).isEqualTo("https://avicare.com/errors/authentication-failed");
+    assertThat(body.get("type").asText())
+        .isEqualTo("https://avicare.com/errors/authentication-failed");
     assertThat(body.get("instance").asText()).isEqualTo("/api/v1/batches");
   }
 
@@ -51,9 +52,7 @@ class SecurityConfigTest {
     MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/batches");
     MockHttpServletResponse response = new MockHttpServletResponse();
 
-    config
-        .accessDeniedHandler()
-        .handle(request, response, new AccessDeniedException("denied"));
+    config.accessDeniedHandler().handle(request, response, new AccessDeniedException("denied"));
 
     assertThat(response.getStatus()).isEqualTo(403);
     assertThat(response.getContentType()).isEqualTo(MediaType.APPLICATION_PROBLEM_JSON_VALUE);

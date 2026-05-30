@@ -37,16 +37,16 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * the next request served by the same thread.
  *
  * <p>A missing, malformed or invalid token is <b>not</b> rejected here — the filter simply leaves
- * the contexts empty and lets the chain proceed. Authorization then fails downstream:
- * {@code SecurityConfig}'s {@code anyRequest().authenticated()} returns 401 for protected routes,
- * while public routes still work. This keeps the filter's single responsibility to "authenticate if
+ * the contexts empty and lets the chain proceed. Authorization then fails downstream: {@code
+ * SecurityConfig}'s {@code anyRequest().authenticated()} returns 401 for protected routes, while
+ * public routes still work. This keeps the filter's single responsibility to "authenticate if
  * possible".
  *
  * <p>This filter runs inside the Spring Security chain only — {@code SecurityConfig} places it via
  * {@code addFilterBefore(..., UsernamePasswordAuthenticationFilter.class)} and disables its
  * standalone servlet registration (a {@code FilterRegistrationBean} with {@code enabled=false}).
- * Registering it as a plain servlet filter as well would run it before Spring Security's
- * {@code SecurityContextHolderFilter}, which then resets the context and drops the authentication.
+ * Registering it as a plain servlet filter as well would run it before Spring Security's {@code
+ * SecurityContextHolderFilter}, which then resets the context and drops the authentication.
  *
  * <p>Cookie-based extraction (web httpOnly cookie, doc 05 §3.8) and the Redis {@code jti} blacklist
  * are deferred to Sprint A3, where the auth controller that issues those cookies/tokens lands.

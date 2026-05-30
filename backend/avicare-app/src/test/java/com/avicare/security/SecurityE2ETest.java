@@ -104,7 +104,8 @@ class SecurityE2ETest {
 
   private String tokenFor(Long userId, Membership membership) {
     return jwtService.generateAccessToken(
-        new AvicarePrincipal(userId, "user" + userId + "@avicare.com", UserRole.USER, List.of(membership)));
+        new AvicarePrincipal(
+            userId, "user" + userId + "@avicare.com", UserRole.USER, List.of(membership)));
   }
 
   /** Test-only controller protected by the tenant-level SpEL check. */
@@ -118,7 +119,8 @@ class SecurityE2ETest {
     }
   }
 
-  // --- in-memory RSA key material (mirrors common-security's RsaTestKeys, which is package-private) ---
+  // --- in-memory RSA key material (mirrors common-security's RsaTestKeys, which is
+  // package-private) ---
 
   private static KeyPair generateKeys() {
     try {
@@ -131,7 +133,8 @@ class SecurityE2ETest {
   }
 
   private static String privatePem(KeyPair pair) {
-    String b64 = Base64.getEncoder().encodeToString(((RSAPrivateKey) pair.getPrivate()).getEncoded());
+    String b64 =
+        Base64.getEncoder().encodeToString(((RSAPrivateKey) pair.getPrivate()).getEncoded());
     return "-----BEGIN PRIVATE KEY-----\n" + wrap(b64) + "\n-----END PRIVATE KEY-----";
   }
 

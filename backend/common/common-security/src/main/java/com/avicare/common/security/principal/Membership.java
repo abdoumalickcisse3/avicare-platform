@@ -7,8 +7,8 @@ import java.util.Objects;
  * One user-to-farm membership: the user's role on a single farm and the explicit permissions
  * granted on that farm.
  *
- * <p>Permission format is {@code "resource:verb"} (e.g. {@code "poultry:write"}). Two wildcards
- * are honored:
+ * <p>Permission format is {@code "resource:verb"} (e.g. {@code "poultry:write"}). Two wildcards are
+ * honored:
  *
  * <ul>
  *   <li>{@code "*"} — grants every permission

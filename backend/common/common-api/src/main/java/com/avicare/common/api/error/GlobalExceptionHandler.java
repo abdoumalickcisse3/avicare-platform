@@ -17,8 +17,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**
- * Centralized exception handler that converts every thrown exception to an RFC 7807 Problem
- * Details response, attaching the current correlation ID for traceability.
+ * Centralized exception handler that converts every thrown exception to an RFC 7807 Problem Details
+ * response, attaching the current correlation ID for traceability.
  */
 @RestControllerAdvice
 @Slf4j

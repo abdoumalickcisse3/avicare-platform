@@ -17,13 +17,13 @@ import org.springframework.stereotype.Component;
 /**
  * Loads RSA key pairs used to sign and verify JWTs.
  *
- * <p>Each {@code load*} method prefers the raw PEM string in {@link JwtProperties} over the
- * Spring resource path, which lets prod read keys from environment variables while keeping dev
- * easy with a classpath file.
+ * <p>Each {@code load*} method prefers the raw PEM string in {@link JwtProperties} over the Spring
+ * resource path, which lets prod read keys from environment variables while keeping dev easy with a
+ * classpath file.
  *
- * <p>PEM parsing is intentionally tolerant: header/footer lines are stripped and every
- * whitespace character is removed before Base64 decoding, so files with mixed line endings or
- * indentation don't trip the loader.
+ * <p>PEM parsing is intentionally tolerant: header/footer lines are stripped and every whitespace
+ * character is removed before Base64 decoding, so files with mixed line endings or indentation
+ * don't trip the loader.
  */
 @Component
 @RequiredArgsConstructor

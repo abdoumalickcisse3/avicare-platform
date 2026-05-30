@@ -25,12 +25,14 @@ final class RsaTestKeys {
   }
 
   static String privatePem(KeyPair pair) {
-    String base64 = Base64.getEncoder().encodeToString(((RSAPrivateKey) pair.getPrivate()).getEncoded());
+    String base64 =
+        Base64.getEncoder().encodeToString(((RSAPrivateKey) pair.getPrivate()).getEncoded());
     return "-----BEGIN PRIVATE KEY-----\n" + wrap(base64) + "\n-----END PRIVATE KEY-----";
   }
 
   static String publicPem(KeyPair pair) {
-    String base64 = Base64.getEncoder().encodeToString(((RSAPublicKey) pair.getPublic()).getEncoded());
+    String base64 =
+        Base64.getEncoder().encodeToString(((RSAPublicKey) pair.getPublic()).getEncoded());
     return "-----BEGIN PUBLIC KEY-----\n" + wrap(base64) + "\n-----END PUBLIC KEY-----";
   }
 

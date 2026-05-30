@@ -9,8 +9,7 @@ import org.junit.jupiter.api.Test;
 
 class AvicarePrincipalTest {
 
-  private static final Membership OWNER_OF_42 =
-      new Membership(42L, FarmRole.OWNER, List.of("*"));
+  private static final Membership OWNER_OF_42 = new Membership(42L, FarmRole.OWNER, List.of("*"));
   private static final Membership FARMER_AT_43 =
       new Membership(43L, FarmRole.FARMER, List.of("poultry:read"));
 
@@ -33,8 +32,7 @@ class AvicarePrincipalTest {
   @Test
   void user_hasFarmAccess_onlyForMemberships() {
     AvicarePrincipal user =
-        new AvicarePrincipal(
-            3L, "u@a.io", UserRole.USER, List.of(OWNER_OF_42, FARMER_AT_43));
+        new AvicarePrincipal(3L, "u@a.io", UserRole.USER, List.of(OWNER_OF_42, FARMER_AT_43));
 
     assertThat(user.hasFarmAccess(42L)).isTrue();
     assertThat(user.hasFarmAccess(43L)).isTrue();
@@ -44,8 +42,7 @@ class AvicarePrincipalTest {
   @Test
   void membershipOf_returnsMatchingMembership() {
     AvicarePrincipal user =
-        new AvicarePrincipal(
-            3L, "u@a.io", UserRole.USER, List.of(OWNER_OF_42, FARMER_AT_43));
+        new AvicarePrincipal(3L, "u@a.io", UserRole.USER, List.of(OWNER_OF_42, FARMER_AT_43));
 
     assertThat(user.membershipOf(42L)).contains(OWNER_OF_42);
     assertThat(user.membershipOf(43L)).contains(FARMER_AT_43);
@@ -53,8 +50,7 @@ class AvicarePrincipalTest {
 
   @Test
   void membershipOf_returnsEmptyForUnknownFarm() {
-    AvicarePrincipal user =
-        new AvicarePrincipal(3L, "u@a.io", UserRole.USER, List.of(OWNER_OF_42));
+    AvicarePrincipal user = new AvicarePrincipal(3L, "u@a.io", UserRole.USER, List.of(OWNER_OF_42));
 
     assertThat(user.membershipOf(999L)).isEmpty();
   }
@@ -62,8 +58,7 @@ class AvicarePrincipalTest {
   @Test
   void accessibleFarmIds_returnsMembershipFarms() {
     AvicarePrincipal user =
-        new AvicarePrincipal(
-            3L, "u@a.io", UserRole.USER, List.of(OWNER_OF_42, FARMER_AT_43));
+        new AvicarePrincipal(3L, "u@a.io", UserRole.USER, List.of(OWNER_OF_42, FARMER_AT_43));
 
     assertThat(user.accessibleFarmIds()).containsExactly(42L, 43L);
   }
