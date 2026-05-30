@@ -26,8 +26,8 @@ import java.util.Optional;
  *
  * <p>Forgetting the {@code clear()} call is a multi-tenant security bug: the next request handled
  * by the same thread sees the previous user's farms. {@link #clear()} delegates to {@link
- * ThreadLocal#remove()} (never {@code set(null)} which keeps the entry alive in the
- * thread-locals map).
+ * ThreadLocal#remove()} (never {@code set(null)} which keeps the entry alive in the thread-locals
+ * map).
  */
 public final class TenancyContext {
 

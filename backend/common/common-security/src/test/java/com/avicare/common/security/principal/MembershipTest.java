@@ -76,9 +76,7 @@ class MembershipTest {
   void nullArguments_throwNpe() {
     assertThatNullPointerException()
         .isThrownBy(() -> new Membership(null, FarmRole.FARMER, List.of()));
-    assertThatNullPointerException()
-        .isThrownBy(() -> new Membership(1L, null, List.of()));
-    assertThatNullPointerException()
-        .isThrownBy(() -> new Membership(1L, FarmRole.FARMER, null));
+    assertThatNullPointerException().isThrownBy(() -> new Membership(1L, null, List.of()));
+    assertThatNullPointerException().isThrownBy(() -> new Membership(1L, FarmRole.FARMER, null));
   }
 }

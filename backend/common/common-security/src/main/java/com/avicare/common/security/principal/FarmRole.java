@@ -16,8 +16,8 @@ import java.util.List;
  * </ul>
  *
  * <p>{@link #defaultPermissions()} returns the baseline {@code resource:verb} permissions granted
- * when the role is assigned. The permissions are then stored on each {@code Membership} row and
- * can be overridden individually (via the JSONB column on {@code user_farm.permissions}) without
+ * when the role is assigned. The permissions are then stored on each {@code Membership} row and can
+ * be overridden individually (via the JSONB column on {@code user_farm.permissions}) without
  * changing the role itself.
  *
  * <p>The defaults are deliberately conservative for V1 and will be enriched in Sprint B+ as each
@@ -31,8 +31,8 @@ public enum FarmRole {
   BUYER;
 
   /**
-   * Baseline {@code resource:verb} permissions for this role. Returns an immutable list (every
-   * call yields the same canonical list — safe to share).
+   * Baseline {@code resource:verb} permissions for this role. Returns an immutable list (every call
+   * yields the same canonical list — safe to share).
    *
    * <p>Convention:
    *
@@ -56,8 +56,7 @@ public enum FarmRole {
               "inventory:*",
               "finance:read",
               "settings:read");
-      case FARMER ->
-          List.of("poultry:read", "poultry:write", "health:read", "health:write");
+      case FARMER -> List.of("poultry:read", "poultry:write", "health:read", "health:write");
       case VETERINARIAN -> List.of("health:read", "health:write", "poultry:read");
       case BUYER -> List.of("commercial:read", "finance:read");
     };

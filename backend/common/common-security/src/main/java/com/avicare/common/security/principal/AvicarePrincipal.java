@@ -38,8 +38,8 @@ public record AvicarePrincipal(
   }
 
   /**
-   * Whether the user can reach the given farm. Platform admins always return {@code true};
-   * everyone else needs a membership on it.
+   * Whether the user can reach the given farm. Platform admins always return {@code true}; everyone
+   * else needs a membership on it.
    */
   public boolean hasFarmAccess(Long farmId) {
     return isAdmin() || membershipOf(farmId).isPresent();

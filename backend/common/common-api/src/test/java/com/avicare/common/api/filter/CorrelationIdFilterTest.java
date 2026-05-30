@@ -34,8 +34,7 @@ class CorrelationIdFilterTest {
         .andExpect(status().isOk())
         .andExpect(header().exists(CorrelationIdFilter.HEADER_NAME))
         .andExpect(
-            header()
-                .string(CorrelationIdFilter.HEADER_NAME, Matchers.matchesPattern(UUID_REGEX)));
+            header().string(CorrelationIdFilter.HEADER_NAME, Matchers.matchesPattern(UUID_REGEX)));
   }
 
   @Test
@@ -52,8 +51,7 @@ class CorrelationIdFilterTest {
         .perform(get("/__test/ping").header(CorrelationIdFilter.HEADER_NAME, "   "))
         .andExpect(status().isOk())
         .andExpect(
-            header()
-                .string(CorrelationIdFilter.HEADER_NAME, Matchers.matchesPattern(UUID_REGEX)));
+            header().string(CorrelationIdFilter.HEADER_NAME, Matchers.matchesPattern(UUID_REGEX)));
   }
 
   @RestController

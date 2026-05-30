@@ -36,8 +36,7 @@ class JwtServiceTest {
 
   private static JwtService service(Duration accessTtl, Duration refreshTtl, String pubPem) {
     JwtProperties props =
-        new JwtProperties(
-            "avicare-test", accessTtl, refreshTtl, null, null, privatePem, pubPem);
+        new JwtProperties("avicare-test", accessTtl, refreshTtl, null, null, privatePem, pubPem);
     KeyLoader loader = new KeyLoader(new DefaultResourceLoader(), props);
     JwtService svc = new JwtService(props, loader, new ObjectMapper());
     svc.init();
@@ -55,8 +54,7 @@ class JwtServiceTest {
         UserRole.USER,
         List.of(
             new Membership(100L, FarmRole.OWNER, List.of("*")),
-            new Membership(
-                200L, FarmRole.FARMER, List.of("poultry:read", "poultry:write"))));
+            new Membership(200L, FarmRole.FARMER, List.of("poultry:read", "poultry:write"))));
   }
 
   @Test
@@ -192,10 +190,14 @@ class JwtServiceTest {
         .expiration(exp)
         .claims(
             java.util.Map.of(
-                "email", "phantom@avicare.io",
-                "role", role,
-                "memberships", java.util.List.of(),
-                "type", "access"))
+                "email",
+                "phantom@avicare.io",
+                "role",
+                role,
+                "memberships",
+                java.util.List.of(),
+                "type",
+                "access"))
         .signWith(pk, io.jsonwebtoken.Jwts.SIG.RS256)
         .compact();
   }

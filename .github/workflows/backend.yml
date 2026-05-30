@@ -38,6 +38,10 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      - name: Check formatting (Spotless)
+        working-directory: ./backend
+        run: ./mvnw -B spotless:check
+
       - name: Build with Maven
         working-directory: ./backend
         run: ./mvnw -B clean package

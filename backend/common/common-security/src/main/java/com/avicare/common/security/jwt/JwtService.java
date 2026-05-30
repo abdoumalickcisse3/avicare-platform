@@ -112,8 +112,8 @@ public class JwtService {
   }
 
   /**
-   * Verify an access token (signature, issuer, expiration, type) and rebuild the principal from
-   * its claims.
+   * Verify an access token (signature, issuer, expiration, type) and rebuild the principal from its
+   * claims.
    *
    * @throws InvalidTokenException if the token is malformed or fails the signature check
    * @throws ExpiredTokenException if the token has expired

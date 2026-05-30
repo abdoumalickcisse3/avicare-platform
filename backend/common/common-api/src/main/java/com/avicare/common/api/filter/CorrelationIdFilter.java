@@ -13,8 +13,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * Reads or generates an {@code X-Correlation-Id} for each HTTP request and puts it in the SLF4J
- * MDC so every log line emitted while processing the request carries the same id.
+ * Reads or generates an {@code X-Correlation-Id} for each HTTP request and puts it in the SLF4J MDC
+ * so every log line emitted while processing the request carries the same id.
  *
  * <p>Runs at {@link Ordered#HIGHEST_PRECEDENCE} so the correlation id is available to every filter
  * downstream.
