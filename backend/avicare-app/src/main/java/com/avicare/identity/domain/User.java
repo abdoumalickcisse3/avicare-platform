@@ -20,8 +20,9 @@ import lombok.ToString;
  * UserRole}. Tenant-level authority lives on {@link com.avicare.tenancy.domain.UserFarm}
  * memberships, not here.
  *
- * <p>{@code createdAt}/{@code updatedAt} are owned by the database (column {@code DEFAULT NOW()} and
- * the {@code trg_users_updated_at} trigger), so they are mapped read-only and populated on reload.
+ * <p>{@code createdAt}/{@code updatedAt} are owned by the database (column {@code DEFAULT NOW()}
+ * and the {@code trg_users_updated_at} trigger), so they are mapped read-only and populated on
+ * reload.
  */
 @Entity
 @Table(name = "users")

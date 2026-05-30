@@ -24,8 +24,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 /**
  * Proves the V1 Flyway migration runs on a clean PostgreSQL and that the identity/tenancy JPA
  * mappings agree with the resulting schema. Hibernate runs with {@code ddl-auto=validate}, so a
- * mismatch between an entity and a migrated column fails the context. The round-trip then checks the
- * trigger-owned timestamps, the JSONB permissions column, the {@link FarmRole}/{@link UserRole}
+ * mismatch between an entity and a migrated column fails the context. The round-trip then checks
+ * the trigger-owned timestamps, the JSONB permissions column, the {@link FarmRole}/{@link UserRole}
  * string enums, and the {@code @SQLRestriction} soft-delete filter.
  */
 @DataJpaTest
@@ -34,8 +34,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 class IdentityTenancyMappingTest {
 
   @Container
-  static final PostgreSQLContainer<?> POSTGRES =
-      new PostgreSQLContainer<>("postgres:16-alpine");
+  static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine");
 
   @DynamicPropertySource
   static void datasource(DynamicPropertyRegistry registry) {

@@ -18,9 +18,9 @@ import org.hibernate.annotations.SQLRestriction;
 /**
  * A tenant (formerly "site"). Every business row in the platform is scoped to a {@code farm_id}.
  *
- * <p>Soft-deletable: {@link SQLDelete} turns {@code delete} into an {@code UPDATE ... SET deleted_at
- * = NOW()} (which also fires {@code trg_farms_updated_at}), and {@link SQLRestriction} transparently
- * filters out soft-deleted rows on every read. The owning user is referenced by id.
+ * <p>Soft-deletable: {@link SQLDelete} turns {@code delete} into an {@code UPDATE ... SET
+ * deleted_at = NOW()} (which also fires {@code trg_farms_updated_at}), and {@link SQLRestriction}
+ * transparently filters out soft-deleted rows on every read. The owning user is referenced by id.
  */
 @Entity
 @Table(name = "farms")
