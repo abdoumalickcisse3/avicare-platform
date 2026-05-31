@@ -10,6 +10,10 @@ import com.avicare.common.security.principal.FarmRole;
 import com.avicare.common.security.principal.Membership;
 import com.avicare.common.security.principal.UserRole;
 import com.avicare.common.tenancy.context.TenancyContext;
+import com.avicare.identity.repository.RefreshTokenRepository;
+import com.avicare.identity.repository.UserRepository;
+import com.avicare.tenancy.repository.FarmRepository;
+import com.avicare.tenancy.repository.UserFarmRepository;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.interfaces.RSAPrivateKey;
@@ -26,6 +30,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -51,6 +56,12 @@ class SecurityE2ETest {
 
   @Autowired private MockMvc mockMvc;
   @Autowired private JwtService jwtService;
+
+  // The DB-less `test` profile excludes JPA autoconfig; mock the repositories the auth beans need.
+  @MockitoBean private UserRepository userRepository;
+  @MockitoBean private RefreshTokenRepository refreshTokenRepository;
+  @MockitoBean private FarmRepository farmRepository;
+  @MockitoBean private UserFarmRepository userFarmRepository;
 
   @DynamicPropertySource
   static void jwtKeys(DynamicPropertyRegistry registry) {

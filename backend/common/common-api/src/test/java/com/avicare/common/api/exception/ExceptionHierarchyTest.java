@@ -64,4 +64,15 @@ class ExceptionHierarchyTest {
         .containsEntry("current", 10L)
         .containsEntry("limit", 5L);
   }
+
+  @Test
+  void unauthorizedException_buildsCodeAndStatus() {
+    UnauthorizedException ex =
+        new UnauthorizedException("BAD_CREDENTIALS", "Invalid email or password");
+
+    assertThat(ex).isInstanceOf(BusinessException.class);
+    assertThat(ex.getCode()).isEqualTo("BAD_CREDENTIALS");
+    assertThat(ex.getStatus()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    assertThat(ex.getMessage()).isEqualTo("Invalid email or password");
+  }
 }
