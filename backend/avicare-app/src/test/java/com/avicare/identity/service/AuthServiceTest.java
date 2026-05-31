@@ -18,6 +18,7 @@ import com.avicare.identity.dto.request.SignupRequest;
 import com.avicare.identity.dto.response.AuthTokens;
 import com.avicare.identity.mapper.IdentityMapper;
 import com.avicare.identity.repository.UserRepository;
+import com.avicare.identity.spi.MembershipProvider;
 import com.avicare.support.RsaKeys;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.security.KeyPair;
@@ -70,9 +71,17 @@ class AuthServiceTest {
     userRepository = Mockito.mock(UserRepository.class);
     refreshTokenService = Mockito.mock(RefreshTokenService.class);
     IdentityMapper mapper = Mappers.getMapper(IdentityMapper.class);
+    // No-membership provider: A3-2 token-shape behavior is unchanged by tenancy.
+    MembershipProvider membershipProvider = userId -> java.util.List.of();
     authService =
         new AuthService(
-            userRepository, refreshTokenService, jwtService, jwtProperties, ENCODER, mapper);
+            userRepository,
+            refreshTokenService,
+            jwtService,
+            jwtProperties,
+            ENCODER,
+            mapper,
+            membershipProvider);
   }
 
   @Test

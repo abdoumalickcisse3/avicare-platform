@@ -14,8 +14,8 @@ import com.avicare.identity.dto.response.AuthTokens;
 import com.avicare.identity.dto.response.UserResponse;
 import com.avicare.identity.mapper.IdentityMapper;
 import com.avicare.identity.repository.UserRepository;
+import com.avicare.identity.spi.MembershipProvider;
 import java.time.LocalDateTime;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,9 +25,9 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * End-user authentication: sign-up, login, token refresh and logout.
  *
- * <p>Access tokens carry the {@link AvicarePrincipal}. In Sprint A3-2 the principal is minted with
- * <b>no memberships</b>: farm memberships land with the tenancy context (A3-3), after which login
- * and refresh will populate them. The platform role defaults to {@code USER}.
+ * <p>Access tokens carry the {@link AvicarePrincipal}. Farm memberships are resolved through the
+ * {@link MembershipProvider} seam (implemented by the tenancy context), so identity never depends
+ * on tenancy. The platform role defaults to {@code USER}.
  */
 @Service
 @RequiredArgsConstructor
@@ -40,6 +40,7 @@ public class AuthService {
   private final JwtProperties jwtProperties;
   private final PasswordEncoder passwordEncoder;
   private final IdentityMapper identityMapper;
+  private final MembershipProvider membershipProvider;
 
   /** Register a new USER account and return an initial token pair. */
   @Transactional
@@ -125,7 +126,11 @@ public class AuthService {
   }
 
   private AvicarePrincipal toPrincipal(User user) {
-    return new AvicarePrincipal(user.getId(), user.getEmail(), user.getRole(), List.of());
+    return new AvicarePrincipal(
+        user.getId(),
+        user.getEmail(),
+        user.getRole(),
+        membershipProvider.membershipsFor(user.getId()));
   }
 
   private User loadUser(Long userId) {
