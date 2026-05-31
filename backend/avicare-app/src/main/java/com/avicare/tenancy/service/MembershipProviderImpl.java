@@ -23,7 +23,7 @@ public class MembershipProviderImpl implements MembershipProvider {
   @Override
   @Transactional(readOnly = true)
   public List<Membership> membershipsFor(Long userId) {
-    return userFarmRepository.findByUserIdAndIsActiveTrue(userId).stream()
+    return userFarmRepository.findByUserIdAndActiveTrue(userId).stream()
         .map(uf -> new Membership(uf.getFarmId(), uf.getRole(), uf.getPermissions()))
         .toList();
   }

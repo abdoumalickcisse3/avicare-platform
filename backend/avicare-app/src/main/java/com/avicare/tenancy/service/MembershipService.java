@@ -45,7 +45,7 @@ public class MembershipService {
 
   @Transactional(readOnly = true)
   public List<MemberResponse> listMembers(Long farmId) {
-    return userFarmRepository.findByFarmIdAndIsActiveTrue(farmId).stream()
+    return userFarmRepository.findByFarmIdAndActiveTrue(farmId).stream()
         .map(tenancyMapper::toResponse)
         .toList();
   }

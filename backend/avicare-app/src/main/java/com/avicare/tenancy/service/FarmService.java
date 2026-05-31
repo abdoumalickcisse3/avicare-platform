@@ -65,7 +65,7 @@ public class FarmService {
       farms = farmRepository.findAll();
     } else {
       List<Long> farmIds =
-          userFarmRepository.findByUserIdAndIsActiveTrue(userId).stream()
+          userFarmRepository.findByUserIdAndActiveTrue(userId).stream()
               .map(UserFarm::getFarmId)
               .toList();
       farms = farmRepository.findAllById(farmIds);

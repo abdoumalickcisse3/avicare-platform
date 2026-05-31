@@ -34,7 +34,7 @@ public class TenancyFacadeImpl implements TenancyFacade {
 
   @Override
   public List<Long> getAccessibleFarmIds(Long userId) {
-    return userFarmRepository.findByUserIdAndIsActiveTrue(userId).stream()
+    return userFarmRepository.findByUserIdAndActiveTrue(userId).stream()
         .map(UserFarm::getFarmId)
         .toList();
   }
