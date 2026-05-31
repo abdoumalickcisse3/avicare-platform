@@ -31,6 +31,52 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6380}
 
+avicare:
+  security:
+    jwt:
+      # DEV-ONLY throwaway RSA-2048 keypair so the app can mint/verify JWTs locally
+      # out of the box. NEVER used in prod: the prod profile reads the keys from the
+      # JWT_PRIVATE_KEY / JWT_PUBLIC_KEY env vars (see application.yml). Safe to commit.
+      private-key: |
+        -----BEGIN PRIVATE KEY-----
+        MIIEuwIBADANBgkqhkiG9w0BAQEFAASCBKUwggShAgEAAoIBAQC3qnF5noL3gDzE
+        Tx52Mol6rK7BI6ox3LXWYvGJtU3bMx8bfnX1M+k0TJDl9h8ipyYmWEyoCY/tYxHL
+        x0o3t8hUJ8rQ7QTxlYWbUhEOMGu7P6FmusfgbZz8cyt1FjehNhqJ+2edRXrzdQE3
+        1f51vjz2/xGmX9+IDqyy752DuMWuefLwF3eRVFs31OEDKCt1BQ9A5VbnfsXHwrka
+        Bf5rSJ3awmAybXhRaaKh7W7xSUBRqLQ5kBwqxZTjTviMqxhyvSp+Gla/qYQaBPU6
+        QRUxfvIdzjvp2P2wTcVR37HDXK/yZgxW5s0VHAFdZNdn7nLDeluHxfcMXIS+tiHW
+        3WenIdpJAgMBAAECgf8shU8Y5PATKy1W2oGWCMaDdh+RByJlEEXnTmoFd4nn38Oc
+        ZosxZQBpu0IPJv2eBTvWneYv8eiOBi6ttuhxYEYEkhKJknkD3brMa7S2rZRTT3ze
+        lL2JYl4PDL9tzR+SkO5sLsv9RVpdxfDMwsukvviWdSGLCECnHgP3zchSpb6a01Ff
+        OsACM6FjYi7CJrViwVChyJuLRLQqWjyiWtI46fRPGIpfyHRq2HFRGVhWdJhssQRq
+        o9YxUj6CpS3LrxcuFH8XWWTnoMlu6pik9qFJifd+bkCZawMcF+zm1njess+x4f4J
+        1u139k4ao1WzavhZzckXj3oyu22p1D5l6oD64RMCgYEA/zyyMfjf1A4y6I64AFzi
+        m3Ux+TKj3I5kB2O4BUaS5DPImeLzSiPCSVEC78Zy3Pwma5EmuclkNUIXBCVBoGr5
+        UYckap3PEwPXfim5DZeEHha46Tvc47yYBIb/D+yiP0wJVxLsLTeg5Qbw+opvbP5l
+        tJnDgypSHqfBsgLxetf8O+cCgYEAuDb7V91o9Bz4T2sKFotV4OUxHgQ04Bm9Stzj
+        W2AEEL11PSbzqrdNK0SY7TVJQa4qhEI74KoRa1NLHPwIE4VXobZHkp5wOdRAIu6Y
+        UNLO7C+dIYKnTSzMwX/+fP/3HTVCubdD3+llIDCkeSWQbEDbQHR9PS/JecWtixSU
+        jTWd8k8CgYEA4fA61d23VaIUEqVz4G5Y8sB1smDPiQhLJ/dwCMuGcJgedYrfTrwE
+        2p3p+ZM0Tsauw/3DyCasnDCa60KHq5fGiBMXe4GisvRtp/MLKyr6+x+mJGCnkrl5
+        4FgYJWKV5W5Lvlaz1vstZFAWtdIh/Nvd8FdFKTEnbJeX8RqF5PaZA/UCgYAzvf3L
+        KD2ak6iLZh1nR6vPh5DMRZI0gAZTSMfzmnyJ1y1fB9nZUbMzPAlYV2dEM49tpsz6
+        xcouwy6N7Zy3HvUGTxS7chVDqQJ6zVmrGgtU++q+xtwHKVY546GvqpXWdmdPktJV
+        ylDFQeRwwsRWI8Fx0UZ8MTf+JDAiqJ0xLKY4sQKBgAoCEC2XSak6rhiCEJ54pcZ9
+        OXRoTjzsrF7dZo5dvDhlPZGAi6ExZIb4G6XHe9r4FtQGvucoKFPKm8PIiRI5mTjt
+        7l+HvxVtLB+41f6OpSBZUlzn8IXVBWtfQaVarZNBTcyE6wjeTCccNf+3tV3XHzgm
+        O9/8s4YagaBcaWQGzm4d
+        -----END PRIVATE KEY-----
+      public-key: |
+        -----BEGIN PUBLIC KEY-----
+        MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAt6pxeZ6C94A8xE8edjKJ
+        eqyuwSOqMdy11mLxibVN2zMfG3519TPpNEyQ5fYfIqcmJlhMqAmP7WMRy8dKN7fI
+        VCfK0O0E8ZWFm1IRDjBruz+hZrrH4G2c/HMrdRY3oTYaiftnnUV683UBN9X+db48
+        9v8Rpl/fiA6ssu+dg7jFrnny8Bd3kVRbN9ThAygrdQUPQOVW537Fx8K5GgX+a0id
+        2sJgMm14UWmioe1u8UlAUai0OZAcKsWU4074jKsYcr0qfhpWv6mEGgT1OkEVMX7y
+        Hc476dj9sE3FUd+xw1yv8mYMVubNFRwBXWTXZ+5yw3pbh8X3DFyEvrYh1t1npyHa
+        SQIDAQAB
+        -----END PUBLIC KEY-----
+
 logging:
   level:
     root: INFO

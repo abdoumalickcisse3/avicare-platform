@@ -5,12 +5,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.avicare.identity.repository.RefreshTokenRepository;
+import com.avicare.identity.repository.UserRepository;
+import com.avicare.tenancy.repository.FarmRepository;
+import com.avicare.tenancy.repository.UserFarmRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
@@ -26,6 +31,13 @@ import org.springframework.test.web.servlet.MockMvc;
 class SecurityIntegrationTest {
 
   @Autowired private MockMvc mockMvc;
+
+  // The DB-less `test` profile excludes JPA autoconfig, so the identity/tenancy repositories the
+  // auth beans depend on are mocked to let the full web context load.
+  @MockitoBean private UserRepository userRepository;
+  @MockitoBean private RefreshTokenRepository refreshTokenRepository;
+  @MockitoBean private FarmRepository farmRepository;
+  @MockitoBean private UserFarmRepository userFarmRepository;
 
   @Test
   void healthEndpoint_isPublic() throws Exception {
