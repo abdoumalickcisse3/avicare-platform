@@ -6,8 +6,8 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * Data access for {@link UserFarm} memberships. {@link #findByUserIdAndActiveTrue(Long)} backs
- * both the central {@code getAccessibleFarmIds(userId)} multi-tenancy lookup and the JWT membership
+ * Data access for {@link UserFarm} memberships. {@link #findByUserIdAndActiveTrue(Long)} backs both
+ * the central {@code getAccessibleFarmIds(userId)} multi-tenancy lookup and the JWT membership
  * claims.
  */
 public interface UserFarmRepository extends JpaRepository<UserFarm, Long> {
