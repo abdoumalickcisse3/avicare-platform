@@ -14,6 +14,9 @@ import com.avicare.parameters.repository.FarmSettingRepository;
 import com.avicare.parameters.repository.PriceListItemRepository;
 import com.avicare.parameters.repository.PriceListRepository;
 import com.avicare.parameters.repository.UserSettingRepository;
+import com.avicare.subscription.repository.SubscriptionChangeRequestRepository;
+import com.avicare.subscription.repository.SubscriptionModuleRepository;
+import com.avicare.subscription.repository.SubscriptionRepository;
 import com.avicare.tenancy.repository.FarmRepository;
 import com.avicare.tenancy.repository.UserFarmRepository;
 import org.junit.jupiter.api.Test;
@@ -52,6 +55,9 @@ class SecurityIntegrationTest {
   @MockitoBean private PriceListRepository priceListRepository;
   @MockitoBean private PriceListItemRepository priceListItemRepository;
   @MockitoBean private AlertThresholdRepository alertThresholdRepository;
+  @MockitoBean private SubscriptionRepository subscriptionRepository;
+  @MockitoBean private SubscriptionModuleRepository subscriptionModuleRepository;
+  @MockitoBean private SubscriptionChangeRequestRepository subscriptionChangeRequestRepository;
 
   @Test
   void healthEndpoint_isPublic() throws Exception {
