@@ -12,9 +12,12 @@ import com.avicare.common.security.principal.UserRole;
 import com.avicare.common.tenancy.context.TenancyContext;
 import com.avicare.identity.repository.RefreshTokenRepository;
 import com.avicare.identity.repository.UserRepository;
+import com.avicare.parameters.repository.AlertThresholdRepository;
 import com.avicare.parameters.repository.CatalogItemRepository;
 import com.avicare.parameters.repository.FarmCatalogItemRepository;
 import com.avicare.parameters.repository.FarmSettingRepository;
+import com.avicare.parameters.repository.PriceListItemRepository;
+import com.avicare.parameters.repository.PriceListRepository;
 import com.avicare.parameters.repository.UserSettingRepository;
 import com.avicare.tenancy.repository.FarmRepository;
 import com.avicare.tenancy.repository.UserFarmRepository;
@@ -70,6 +73,9 @@ class SecurityE2ETest {
   @MockitoBean private UserSettingRepository userSettingRepository;
   @MockitoBean private CatalogItemRepository catalogItemRepository;
   @MockitoBean private FarmCatalogItemRepository farmCatalogItemRepository;
+  @MockitoBean private PriceListRepository priceListRepository;
+  @MockitoBean private PriceListItemRepository priceListItemRepository;
+  @MockitoBean private AlertThresholdRepository alertThresholdRepository;
 
   @DynamicPropertySource
   static void jwtKeys(DynamicPropertyRegistry registry) {
