@@ -2,6 +2,14 @@
 
 > Document de référence pour toutes les migrations DB de la V1.
 > À donner en contexte à Claude Code à chaque sprint où on ajoute des tables.
+>
+> ⚠️ **Statut (mis à jour Sprint A5).** Ce document a été rédigé au démarrage comme
+> *plan* du schéma. Les migrations réellement mergées (V1→V5) ont divergé de ce
+> draft sur plusieurs points (décisions A2–A4 : RBAC YAGNI, feature gating OFF/HARD,
+> bundles sans table dédiée, etc.). **En cas de doute, le code fait foi**, pas les
+> blocs SQL détaillés ci-dessous (conservés comme intention initiale). Les écarts
+> implémentés sont recensés dans l'**Annexe — alignement code ↔ doc (Sprint A3–A5)**
+> en fin de document, et le tableau de séquençage du §2 reflète l'état réel.
 
 ---
 
@@ -62,21 +70,38 @@ CREATE TRIGGER trg_<table>_updated_at
 
 ## 2. Vue d'ensemble du séquençage Flyway
 
+### Migrations réellement mergées (état du code)
+
 | Version | Fichier | Sprint | Tables principales |
 |---|---|---|---|
 | V1 | `V1__init_identity_tenancy.sql` | A3 | users, refresh_tokens, farms, user_farms |
-| V2 | `V2__init_subscription_entitlements.sql` | A4 | subscriptions, entitlements, subscription_change_requests, bundles |
-| V3 | `V3__init_parameters.sql` | A4 | catalog_items, farm_settings, user_settings, farm_catalog_items, price_lists, price_list_items, client_price_lists, alert_thresholds |
-| V4 | `V4__init_livestock_socle.sql` | A5 | breeds, production_units, lifecycle_events |
-| V5 | `V5__init_poultry_batches.sql` | B1 | poultry_batches, daily_records |
-| V6 | `V6__init_poultry_broiler.sql` | B1 | weighing_samples, growth_performance |
-| V7 | `V7__init_poultry_layer.sql` | B2 | egg_collection_configs, egg_collections, egg_tray_stocks, daily_egg_productions |
-| V8 | `V8__init_poultry_slaughter.sql` | B1-B2 | slaughter_records |
-| V9 | `V9__init_health.sql` | B3 | vaccination_programs, vaccination_schedules, treatments, vet_visits, mortality_records, health_events |
-| V10 | `V10__init_inventory.sql` | B4 | stock_categories, stocks, stock_movements, suppliers, purchase_orders, purchase_order_items, feed_formulas |
-| V11 | `V11__init_commercial.sql` | B5 | clients, orders, order_items, sales, sale_items, deliveries, delivery_items, invoices, invoice_items, payments |
-| V12 | `V12__init_finance.sql` | B6 | expense_categories, expenses, employees, salaries, salary_advances, batch_cost_allocations |
-| V13 | `V13__init_notifications.sql` | C1 | notifications, notification_preferences, alerts |
+| V2 | `V2__subscription.sql` | A4 | subscriptions, subscription_modules, subscription_change_requests *(pas de `bundles`/`entitlements` — cf. Annexe / Décision 15)* |
+| V3 | `V3__parameters.sql` | A4 | catalog_items, farm_settings, user_settings, farm_catalog_items, price_lists, price_list_items, alert_thresholds |
+| V4 | `V4__seed_reference_data.sql` | A4 | *(seed only)* catalog_items : modules, bundles, breeds, vaccines, expense_categories |
+| V5 | `V5__init_livestock_socle.sql` | A5 | breeds, production_units, lifecycle_events |
+
+> **Décalage vs plan initial.** Le draft prévoyait `V4 = livestock`. En pratique le
+> **seed** a pris V4 et le **livestock socle** est devenu **V5** (les migrations
+> mergées sont immuables — règle d'or n°2). Tout le plan ci-dessous est donc
+> décalé de +1 à partir du livestock.
+
+### Plan prévisionnel (non encore mergé — numéros indicatifs, à confirmer au sprint)
+
+| Version | Sprint | Tables principales |
+|---|---|---|
+| V6 | B1 | poultry_batches, daily_records |
+| V7 | B1 | weighing_samples, growth_performance |
+| V8 | B2 | egg_collection_configs, egg_collections, egg_tray_stocks, daily_egg_productions |
+| V9 | B1-B2 | slaughter_records |
+| V10 | B3 | vaccination_programs, vaccination_schedules, treatments, vet_visits, mortality_records, health_events |
+| V11 | B4 | stock_categories, stocks, stock_movements, suppliers, purchase_orders, purchase_order_items, feed_formulas |
+| V12 | B5 | clients, orders, order_items, sales, sale_items, deliveries, delivery_items, invoices, invoice_items, payments |
+| V13 | B6 | expense_categories, expenses, employees, salaries, salary_advances, batch_cost_allocations |
+| V14 | C1 | notifications, notification_preferences, alerts |
+
+> Les blocs SQL détaillés du §3 ci-dessous restent le **draft initial** (intention).
+> Pour V1–V5 (déjà mergé), l'**Annexe** en fin de document décrit ce qui a réellement
+> été construit et pourquoi.
 
 ---
 
@@ -1923,4 +1948,99 @@ Respecte STRICTEMENT les conventions de naming et les règles d'évolution.
 
 ---
 
+## Annexe — alignement code ↔ doc (Sprint A3–A5)
+
+> Recense les écarts entre les blocs SQL « draft » du §3 et les migrations
+> **réellement mergées** sur `main` (V1→V5). Le code fait foi. Conventions
+> générales (§1) confirmées par le code : `TIMESTAMP` (sans TZ), `NUMERIC(12,2)`
+> pour le monétaire, `BIGSERIAL`, enums en `VARCHAR + CHECK`, trigger
+> `update_updated_at_column()` réutilisé sur chaque table.
+
+### V1 — `V1__init_identity_tenancy.sql` (Sprint A3)
+
+- **`users.role`** : `CHECK (role IN ('ADMIN','USER'))` — **pas** `SUPER_ADMIN`.
+  Décision 11 (RBAC plateforme YAGNI : 2 niveaux en V1). L'enum code est
+  `UserRole{ADMIN, USER}`.
+- **`user_farms.role`** : `CHECK (... IN ('OWNER','MANAGER','FARMER','VETERINARIAN','BUYER'))`
+  — `VETERINARIAN`, **pas** `ACCOUNTANT` (Décision 12, enum `FarmRole`).
+- Le `CHECK` SQL doit refléter exactement l'enum (`@Enumerated(STRING)`) : une
+  valeur absente de l'enum ferait échouer le mapping à la lecture.
+- Tables au **pluriel** (`users`, `farms`, `user_farms`, `refresh_tokens`).
+  `users` n'a **pas** de `deleted_at` (utilise `is_active`) ; `farms` est
+  soft-deletable.
+
+### V2 — `V2__subscription.sql` (Sprint A4)
+
+Réécrit par rapport au draft (qui décrivait `bundles` + `entitlements` +
+`bundle_entitlement_templates`). **Décision 15 : les bundles sont des collections
+d'entitlements, sans table dédiée.** Tables réelles :
+
+- **`subscriptions`** : `plan_key VARCHAR`, `status` défaut `TRIAL`
+  (`TRIAL/ACTIVE/SUSPENDED/CANCELLED/EXPIRED`), `started_at TIMESTAMP`,
+  `expires_at`, `trial_ends_at`, `UNIQUE(farm_id)`. Pas de `bundle_code`,
+  `start_date DATE`, `auto_renew`, `custom_pricing`.
+- **`subscription_modules`** (remplace `entitlements`) : `module_key`,
+  `mode VARCHAR CHECK ('OFF','HARD')` (Décision 14 — SHADOW/SOFT différés),
+  `expires_at`, `UNIQUE(subscription_id, module_key)`.
+- **`subscription_change_requests`** : workflow `status CHECK ('DRAFT','SUBMITTED','APPROVED','REJECTED')`
+  (pas `PENDING`), `requested_plan`, `requested_modules JSONB`, `requested_by`,
+  `reviewer_id`, `reviewed_at`, `reason`. Création/soumission par l'OWNER ferme,
+  approbation/rejet par un ADMIN plateforme.
+- **Pas de** `bundles`, `entitlements`, `bundle_entitlement_templates` en base :
+  modules et bundles sont seedés comme `catalog_items` (cf. V4).
+
+### V3 — `V3__parameters.sql` (Sprint A4)
+
+- **`catalog_items`** : modèle `category` / `key` / `value JSONB` / `locale`
+  (NULL = universel) / `is_active`. **Pas** les colonnes du draft
+  (`species`, `code`, `name_fr/wo/en`, `metadata`, `sort_order`). Unicité via
+  **index partiels** : `(category,key,locale) WHERE locale IS NOT NULL` et
+  `(category,key) WHERE locale IS NULL`.
+- **`farm_settings`** / **`user_settings`** : `(farm_id|user_id, key, value JSONB)`,
+  `UNIQUE` sur (scope, key).
+- **`farm_catalog_items`** : surcharges/désactivations ferme du catalogue
+  (`is_disabled`, `catalog_item_id` nullable).
+- **`price_lists`** (soft delete `deleted_at` — seule table parameters concernée)
+  + **`price_list_items`** (`unit_price NUMERIC(12,2)`, `currency` défaut `XOF`).
+- **`alert_thresholds`** : `threshold_type`, `threshold_value NUMERIC(12,3)`
+  (pas `NUMERIC(15,4)`), `severity CHECK ('INFO','WARNING','CRITICAL')`.
+- **Pas de** `client_price_lists` (reporté ; non requis en V1).
+
+### V4 — `V4__seed_reference_data.sql` (Sprint A4, seed only)
+
+Insère des `catalog_items` plateforme (locale NULL), **sans demo data**
+(Décision 17 — pas de ferme/user de démo) :
+
+- `modules` (16 — tous V1+V2+, `value {label, scope, wave}`, Décision 13),
+- `bundles` (4 — `starter_volaille`, `pro_volaille`, `ferme_complete`,
+  `tabaski_edition` ; `value {modules[], price_xof, quotas}` — Décision 15),
+- `breeds` (5 souches volaille), `vaccines` (4), `expense_categories` (7)
+  (cf. doc 06 §3).
+
+### V5 — `V5__init_livestock_socle.sql` (Sprint A5)
+
+Correspond au draft « V4 livestock » (renuméroté V5). Conforme au §3, avec :
+
+- **`breeds`** seedé **depuis `catalog_items` (category `'breeds'`)** en dérivant
+  l'espèce du `value` JSONB (`UPPER(value->>'species')`) — et **non** depuis une
+  hypothétique `category='breed'` avec colonnes `species/name_fr` (qui n'existent
+  pas dans notre `catalog_items`).
+- **`production_units`** : table parente, héritage **JPA `JOINED`**. L'entité
+  `ProductionUnit` est **concrète** (une racine JOINED abstraite sans sous-classe
+  n'est pas requêtable par Hibernate) ; les sous-classes par espèce
+  (`PoultryBatch`, B1+) ajoutent leur table joignant sur `id` sans toucher le parent.
+- **`lifecycle_events`** : événements génériques (`quantity_delta`, `details JSONB`),
+  append-only.
+
+### Dette / à corriger plus tard
+
+- Les **blocs SQL détaillés du §3** pour V1–V5 restent le draft initial (non
+  réécrits ici pour limiter le bruit). Les réécrire intégralement pourra se faire
+  si le doc devient une référence consultée telle quelle.
+- La numérotation prévisionnelle V6+ (§2) est **indicative** : à confirmer au
+  démarrage de chaque sprint B+.
+
+---
+
 _Document créé en démarrage du projet. À mettre à jour à chaque nouvelle migration majeure._
+_Annexe d'alignement ajoutée au Sprint A5 (réconciliation avec les migrations V1–V5)._
