@@ -12,6 +12,9 @@ import com.avicare.common.security.principal.UserRole;
 import com.avicare.common.tenancy.context.TenancyContext;
 import com.avicare.identity.repository.RefreshTokenRepository;
 import com.avicare.identity.repository.UserRepository;
+import com.avicare.livestock.repository.BreedRepository;
+import com.avicare.livestock.repository.LifecycleEventRepository;
+import com.avicare.livestock.repository.ProductionUnitRepository;
 import com.avicare.parameters.repository.AlertThresholdRepository;
 import com.avicare.parameters.repository.CatalogItemRepository;
 import com.avicare.parameters.repository.FarmCatalogItemRepository;
@@ -82,6 +85,9 @@ class SecurityE2ETest {
   @MockitoBean private SubscriptionRepository subscriptionRepository;
   @MockitoBean private SubscriptionModuleRepository subscriptionModuleRepository;
   @MockitoBean private SubscriptionChangeRequestRepository subscriptionChangeRequestRepository;
+  @MockitoBean private BreedRepository breedRepository;
+  @MockitoBean private ProductionUnitRepository productionUnitRepository;
+  @MockitoBean private LifecycleEventRepository lifecycleEventRepository;
 
   @DynamicPropertySource
   static void jwtKeys(DynamicPropertyRegistry registry) {
