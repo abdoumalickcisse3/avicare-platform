@@ -25,9 +25,10 @@ import org.hibernate.annotations.SQLRestriction;
  * adding their own table that joins on {@code id} — the parent {@code production_units} table and
  * the transverse contexts (health, commercial, inventory...) never change when a species is added.
  *
- * <p>Abstract on purpose: in Sprint A5 only the parent table exists, so no instance is persisted
- * directly yet. The farm and breed are referenced by id. Soft-deletable; timestamps are DB-owned
- * (trigger) and mapped read-only.
+ * <p>Concrete and queryable on its own (transverse contexts read/operate on units
+ * species-agnostically). Species subclasses add their own JOINED table that joins on {@code id}
+ * without changing this parent. The farm and breed are referenced by id. Soft-deletable; timestamps
+ * are DB-owned (trigger) and mapped read-only.
  */
 @Entity
 @Table(name = "production_units")
@@ -38,7 +39,7 @@ import org.hibernate.annotations.SQLRestriction;
 @Setter
 @NoArgsConstructor
 @ToString
-public abstract class ProductionUnit {
+public class ProductionUnit {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
