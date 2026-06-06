@@ -155,10 +155,10 @@ AviCare Platform = **outil sérieux d'éleveur professionnel africain**, pas un 
 
 ```css
 /* UI — interface, texte courant, titres */
---font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+--font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
 
 /* Data / code / numbers — chiffres tableaux, IDs, JSON */
---font-mono: 'Geist Mono', 'JetBrains Mono', Consolas, monospace;
+--font-mono: 'JetBrains Mono', Consolas, monospace;
 ```
 
 **Loading** : Google Fonts via Next.js `next/font` (CLS-safe, preload auto).
@@ -393,7 +393,7 @@ export const avicareTheme = createTheme({
     },
   },
   typography: {
-    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
+    fontFamily: '"Outfit", -apple-system, BlinkMacSystemFont, sans-serif',
     h1: { fontSize: '3rem', fontWeight: 700, lineHeight: 1.1 },
     h2: { fontSize: '2.25rem', fontWeight: 700, lineHeight: 1.15 },
     h3: { fontSize: '1.875rem', fontWeight: 600, lineHeight: 1.2 },
