@@ -59,7 +59,7 @@ const NAV_SECTIONS: NavSection[] = [
     heading: "Gestion",
     items: [
       { label: "Abonnement", href: "/abonnement", icon: CreditCard, enabled: false },
-      { label: "Paramètres", href: "/reglages", icon: Settings, enabled: false },
+      { label: "Réglages", href: "/reglages", icon: Settings, enabled: true },
     ],
   },
 ];
