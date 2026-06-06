@@ -4,15 +4,18 @@ import { Provider } from "react-redux";
 import { ThemeProvider } from "@mui/material/styles";
 import { makeStore } from "@/store/store";
 import { avicareTheme } from "@/theme";
+import { ToastProvider } from "@/components/feedback/ToastProvider";
 
-/** Render a component inside a fresh Redux store + the AviCare MUI theme. */
+/** Render a component inside a fresh Redux store + the AviCare MUI theme + toasts. */
 export function renderWithProviders(ui: ReactElement) {
   const store = makeStore();
   return {
     store,
     ...render(
       <Provider store={store}>
-        <ThemeProvider theme={avicareTheme}>{ui}</ThemeProvider>
+        <ThemeProvider theme={avicareTheme}>
+          <ToastProvider>{ui}</ToastProvider>
+        </ThemeProvider>
       </Provider>,
     ),
   };

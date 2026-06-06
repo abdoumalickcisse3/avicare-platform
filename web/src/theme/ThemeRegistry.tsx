@@ -4,6 +4,7 @@ import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { avicareTheme } from "./index";
+import { ToastProvider } from "@/components/feedback/ToastProvider";
 
 /**
  * Wraps the app with the MUI theme and the App-Router-aware Emotion cache
@@ -15,7 +16,7 @@ export function ThemeRegistry({ children }: { children: React.ReactNode }) {
     <AppRouterCacheProvider options={{ key: "mui" }}>
       <ThemeProvider theme={avicareTheme}>
         <CssBaseline />
-        {children}
+        <ToastProvider>{children}</ToastProvider>
       </ThemeProvider>
     </AppRouterCacheProvider>
   );
