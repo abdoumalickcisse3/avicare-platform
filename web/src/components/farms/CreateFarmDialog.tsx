@@ -99,7 +99,7 @@ export function CreateFarmDialog({ open, onClose, farm }: CreateFarmDialogProps)
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
-        <DialogTitle sx={{ pr: 6 }}>
+        <DialogTitle component="div" sx={{ pr: 6 }}>
           <Typography variant="h5" sx={{ fontWeight: 700 }}>
             {isEdit ? "Modifier la ferme" : "Créer une nouvelle ferme"}
           </Typography>
