@@ -5,7 +5,7 @@ import { colors, radii, shadows } from "./tokens";
 
 /**
  * avicareTheme — MUI v7 theme implementing docs/10-design-system.md §7.
- * Green primary / orange-Sénégal accent, Inter typography, custom component
+ * Green primary / orange-Sénégal accent, Outfit typography, custom component
  * overrides so the app never looks like generic Material Design. The primary
  * CTA is orange (containedPrimary), buttons are not uppercased, cards use 12px
  * radius with subtle borders instead of MUI elevation shadows.
@@ -42,7 +42,7 @@ export const avicareTheme = createTheme({
     divider: colors.neutral[200],
   },
   typography: {
-    fontFamily: 'var(--font-sans), "Inter", -apple-system, BlinkMacSystemFont, sans-serif',
+    fontFamily: 'var(--font-sans), "Outfit", -apple-system, BlinkMacSystemFont, sans-serif',
     h1: { fontSize: "3rem", fontWeight: 700, lineHeight: 1.1 },
     h2: { fontSize: "2.25rem", fontWeight: 700, lineHeight: 1.15 },
     h3: { fontSize: "1.875rem", fontWeight: 600, lineHeight: 1.2 },
