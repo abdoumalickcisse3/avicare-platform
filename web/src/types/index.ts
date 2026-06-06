@@ -71,3 +71,53 @@ export interface InviteMemberInput {
   email: string;
   role: FarmRole;
 }
+
+/** Subscription lifecycle status (mirrors backend SubscriptionStatus). */
+export type SubscriptionStatus =
+  | "TRIAL"
+  | "ACTIVE"
+  | "SUSPENDED"
+  | "CANCELLED"
+  | "EXPIRED";
+
+/** Feature activation mode (mirrors backend FeatureMode). */
+export type FeatureMode = "OFF" | "HARD";
+
+/** A single activated module (mirrors backend ModuleResponse). */
+export interface SubscriptionModule {
+  moduleKey: string;
+  mode: FeatureMode;
+  expiresAt: string | null;
+}
+
+/** A farm's subscription (mirrors backend SubscriptionResponse). */
+export interface Subscription {
+  id: number;
+  farmId: number;
+  status: SubscriptionStatus;
+  planKey: string | null;
+  expiresAt: string | null;
+  modules: SubscriptionModule[];
+}
+
+/** Change-request lifecycle status (mirrors backend RequestStatus). */
+export type RequestStatus = "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED";
+
+/** A subscription change request (mirrors backend ChangeRequestResponse). */
+export interface ChangeRequest {
+  id: number;
+  subscriptionId: number;
+  requestedPlan: string | null;
+  requestedModules: string[];
+  status: RequestStatus;
+  requestedBy: number;
+  reviewerId: number | null;
+  reviewedAt: string | null;
+  reason: string | null;
+}
+
+/** A user account setting (mirrors backend SettingResponse — value is JSONB). */
+export interface AccountSetting {
+  key: string;
+  value: Record<string, unknown>;
+}
