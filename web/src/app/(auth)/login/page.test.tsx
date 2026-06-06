@@ -12,10 +12,10 @@ describe("LoginPage", () => {
   it("renders the login form", () => {
     renderWithProviders(<LoginPage />);
     expect(
-      screen.getByRole("heading", { name: "Connexion" }),
+      screen.getByRole("heading", { name: "Bienvenue" }),
     ).toBeInTheDocument();
     expect(screen.getByLabelText(/adresse e-mail/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/mot de passe/i)).toBeInTheDocument();
+    expect(screen.getByLabelText("Mot de passe")).toBeInTheDocument();
   });
 
   it("shows validation errors on empty submit", async () => {
@@ -33,7 +33,7 @@ describe("LoginPage", () => {
     renderWithProviders(<LoginPage />);
 
     await user.type(screen.getByLabelText(/adresse e-mail/i), "not-an-email");
-    await user.type(screen.getByLabelText(/mot de passe/i), "secret123");
+    await user.type(screen.getByLabelText("Mot de passe"), "secret123");
     await user.click(screen.getByRole("button", { name: /se connecter/i }));
 
     expect(await screen.findByText("Adresse e-mail invalide")).toBeInTheDocument();

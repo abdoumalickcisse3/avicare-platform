@@ -11,14 +11,17 @@ import {
   Box,
   Button,
   CircularProgress,
+  InputAdornment,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
+import { ArrowRight, Mail } from "lucide-react";
 import { useLoginMutation } from "@/store/api/authApi";
 import { useAppDispatch } from "@/store/hooks";
 import { setTokens } from "@/store/slices/authSlice";
 import { apiErrorMessage } from "@/lib/apiError";
+import { PasswordField } from "@/components/forms/PasswordField";
 
 const loginSchema = z.object({
   email: z.email("Adresse e-mail invalide"),
@@ -53,10 +56,10 @@ export default function LoginPage() {
     <Stack spacing={3}>
       <Box>
         <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
-          Connexion
+          Bienvenue
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Accédez à votre espace AviCare.
+          Veuillez entrer vos identifiants pour accéder à votre exploitation.
         </Typography>
       </Box>
 
@@ -76,6 +79,15 @@ export default function LoginPage() {
                 fullWidth
                 error={!!fieldState.error}
                 helperText={fieldState.error?.message}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Mail size={18} />
+                      </InputAdornment>
+                    ),
+                  },
+                }}
               />
             )}
           />
@@ -83,10 +95,9 @@ export default function LoginPage() {
             name="password"
             control={control}
             render={({ field, fieldState }) => (
-              <TextField
+              <PasswordField
                 {...field}
                 label="Mot de passe"
-                type="password"
                 autoComplete="current-password"
                 fullWidth
                 error={!!fieldState.error}
@@ -94,9 +105,13 @@ export default function LoginPage() {
               />
             )}
           />
-          <Typography variant="caption" color="text.secondary">
-            Mot de passe oublié ? (bientôt disponible)
-          </Typography>
+
+          <Box sx={{ textAlign: "right" }}>
+            <Link href="/forgot-password" style={{ fontWeight: 600 }}>
+              Mot de passe oublié ?
+            </Link>
+          </Box>
+
           <Button
             type="submit"
             variant="contained"
@@ -104,9 +119,11 @@ export default function LoginPage() {
             size="large"
             fullWidth
             disabled={isLoading}
+            endIcon={!isLoading ? <ArrowRight size={18} /> : null}
             startIcon={
               isLoading ? <CircularProgress size={18} color="inherit" /> : null
             }
+            sx={{ height: 48 }}
           >
             Se connecter
           </Button>

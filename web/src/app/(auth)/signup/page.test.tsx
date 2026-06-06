@@ -12,9 +12,10 @@ describe("SignupPage", () => {
   it("renders the signup form without a farm name field", () => {
     renderWithProviders(<SignupPage />);
     expect(
-      screen.getByRole("heading", { name: "Créer un compte" }),
+      screen.getByRole("heading", { name: "Créer votre compte" }),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText(/nom complet/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/prénom/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^nom$/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/téléphone/i)).toBeInTheDocument();
     expect(screen.queryByLabelText(/ferme/i)).not.toBeInTheDocument();
   });
@@ -25,19 +26,23 @@ describe("SignupPage", () => {
 
     await user.click(screen.getByRole("button", { name: /créer mon compte/i }));
 
-    expect(await screen.findByText("Nom complet requis")).toBeInTheDocument();
+    expect(await screen.findByText("Prénom requis")).toBeInTheDocument();
     expect(await screen.findByText("Adresse e-mail invalide")).toBeInTheDocument();
   });
 
-  it("enforces an 8-character minimum password", async () => {
+  it("rejects mismatched password confirmation", async () => {
     const user = userEvent.setup();
     renderWithProviders(<SignupPage />);
 
-    await user.type(screen.getByLabelText(/nom complet/i), "Awa Diop");
+    await user.type(screen.getByLabelText(/prénom/i), "Awa");
+    await user.type(screen.getByLabelText(/^nom$/i), "Diop");
     await user.type(screen.getByLabelText(/adresse e-mail/i), "awa@example.com");
-    await user.type(screen.getByLabelText(/mot de passe/i), "short");
+    await user.type(screen.getByLabelText("Mot de passe"), "password123");
+    await user.type(screen.getByLabelText(/confirmation/i), "different456");
     await user.click(screen.getByRole("button", { name: /créer mon compte/i }));
 
-    expect(await screen.findByText("8 caractères minimum")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Les mots de passe ne correspondent pas"),
+    ).toBeInTheDocument();
   });
 });

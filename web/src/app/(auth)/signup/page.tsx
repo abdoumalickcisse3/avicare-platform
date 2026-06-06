@@ -19,17 +19,21 @@ import { useSignupMutation } from "@/store/api/authApi";
 import { useAppDispatch } from "@/store/hooks";
 import { setTokens } from "@/store/slices/authSlice";
 import { apiErrorMessage } from "@/lib/apiError";
+import { PasswordField } from "@/components/forms/PasswordField";
 
-const signupSchema = z.object({
-  fullName: z.string().min(1, "Nom complet requis"),
-  email: z.email("Adresse e-mail invalide"),
-  password: z.string().min(8, "8 caractères minimum"),
-  phone: z
-    .string()
-    .max(30, "30 caractères maximum")
-    .optional()
-    .or(z.literal("")),
-});
+const signupSchema = z
+  .object({
+    firstName: z.string().min(1, "Prénom requis"),
+    lastName: z.string().min(1, "Nom requis"),
+    email: z.email("Adresse e-mail invalide"),
+    password: z.string().min(8, "8 caractères minimum"),
+    confirmPassword: z.string().min(1, "Veuillez confirmer le mot de passe"),
+    phone: z.string().max(30, "30 caractères maximum").optional().or(z.literal("")),
+  })
+  .refine((d) => d.password === d.confirmPassword, {
+    message: "Les mots de passe ne correspondent pas",
+    path: ["confirmPassword"],
+  });
 
 type SignupForm = z.infer<typeof signupSchema>;
 
@@ -41,14 +45,21 @@ export default function SignupPage() {
 
   const { control, handleSubmit } = useForm<SignupForm>({
     resolver: zodResolver(signupSchema),
-    defaultValues: { fullName: "", email: "", password: "", phone: "" },
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      phone: "",
+    },
   });
 
   const onSubmit = async (values: SignupForm) => {
     setServerError(null);
     try {
       const tokens = await signup({
-        fullName: values.fullName,
+        fullName: `${values.firstName} ${values.lastName}`.trim(),
         email: values.email,
         password: values.password,
         phone: values.phone ? values.phone : undefined,
@@ -64,10 +75,10 @@ export default function SignupPage() {
     <Stack spacing={3}>
       <Box>
         <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
-          Créer un compte
+          Créer votre compte
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Quelques informations pour démarrer.
+          Rejoignez l&apos;élite de l&apos;aviculture moderne au Sénégal.
         </Typography>
       </Box>
 
@@ -75,20 +86,38 @@ export default function SignupPage() {
 
       <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
         <Stack spacing={2.5}>
-          <Controller
-            name="fullName"
-            control={control}
-            render={({ field, fieldState }) => (
-              <TextField
-                {...field}
-                label="Nom complet"
-                autoComplete="name"
-                fullWidth
-                error={!!fieldState.error}
-                helperText={fieldState.error?.message}
-              />
-            )}
-          />
+          <Box
+            sx={{ display: "flex", gap: 2, flexDirection: { xs: "column", sm: "row" } }}
+          >
+            <Controller
+              name="firstName"
+              control={control}
+              render={({ field, fieldState }) => (
+                <TextField
+                  {...field}
+                  label="Prénom"
+                  autoComplete="given-name"
+                  fullWidth
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
+                />
+              )}
+            />
+            <Controller
+              name="lastName"
+              control={control}
+              render={({ field, fieldState }) => (
+                <TextField
+                  {...field}
+                  label="Nom"
+                  autoComplete="family-name"
+                  fullWidth
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
+                />
+              )}
+            />
+          </Box>
           <Controller
             name="email"
             control={control}
@@ -101,21 +130,6 @@ export default function SignupPage() {
                 fullWidth
                 error={!!fieldState.error}
                 helperText={fieldState.error?.message}
-              />
-            )}
-          />
-          <Controller
-            name="password"
-            control={control}
-            render={({ field, fieldState }) => (
-              <TextField
-                {...field}
-                label="Mot de passe"
-                type="password"
-                autoComplete="new-password"
-                fullWidth
-                error={!!fieldState.error}
-                helperText={fieldState.error?.message ?? "8 caractères minimum"}
               />
             )}
           />
@@ -134,6 +148,34 @@ export default function SignupPage() {
               />
             )}
           />
+          <Controller
+            name="password"
+            control={control}
+            render={({ field, fieldState }) => (
+              <PasswordField
+                {...field}
+                label="Mot de passe"
+                autoComplete="new-password"
+                fullWidth
+                error={!!fieldState.error}
+                helperText={fieldState.error?.message ?? "8 caractères minimum"}
+              />
+            )}
+          />
+          <Controller
+            name="confirmPassword"
+            control={control}
+            render={({ field, fieldState }) => (
+              <PasswordField
+                {...field}
+                label="Confirmation"
+                autoComplete="new-password"
+                fullWidth
+                error={!!fieldState.error}
+                helperText={fieldState.error?.message}
+              />
+            )}
+          />
           <Button
             type="submit"
             variant="contained"
@@ -144,6 +186,7 @@ export default function SignupPage() {
             startIcon={
               isLoading ? <CircularProgress size={18} color="inherit" /> : null
             }
+            sx={{ height: 48 }}
           >
             Créer mon compte
           </Button>
