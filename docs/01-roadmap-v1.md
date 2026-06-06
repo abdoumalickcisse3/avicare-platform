@@ -182,6 +182,29 @@ V1 est considérée comme terminée quand **TOUS** les critères suivants sont s
 
 ---
 
+### Sprint A6 — Rattrapage frontend (décision stratégique, hors plan initial)
+
+> **Contexte.** Les sprints A2→A5 ont été livrés **backend uniquement** (les
+> « Livrables web » d'A3/A4/A5 n'ont pas été faits). A6 rattrape ce socle web en
+> un sprint dédié, avant d'attaquer la Phase B. Référence design : `docs/10-design-system.md` ;
+> architecture : `docs/07-frontend-nextjs.md`.
+
+**Sessions :**
+- **A6-1** — Bootstrap : setup Next.js 16 + theme MUI `avicareTheme` + RTK Query + pages **login/signup** + AppShell minimal + dashboard placeholder.
+- **A6-2** — Pages **fermes** (liste/création) + **équipe** (membres/invitation).
+- **A6-3** — **Abonnement** (plan + modules) + **hub paramétrage** `/reglages`.
+
+**Critères d'acceptation :**
+- ✅ Un user peut s'inscrire, se connecter et atteindre le dashboard depuis l'UI web
+- ✅ Le theme respecte `docs/10` (palette vert/orange, Inter/Geist, pas de look MUI générique)
+- ✅ Les appels passent par le backend réel (JWT Bearer, gestion 401)
+
+> **Dette connue (A6-1).** Tokens stockés en `localStorage` en V1 (le backend ne pose
+> pas encore de cookie httpOnly — cf. A3-2) ; à aligner sur `docs/07 §5`
+> (access en mémoire + refresh cookie httpOnly) lors d'un sprint de durcissement sécu.
+
+---
+
 ## 4. Phase B — Cœur métier volaille (8-10 semaines)
 
 > **Objectif :** livrer TOUS les bounded contexts métier nécessaires pour qu'un éleveur de volaille puisse piloter sa ferme de A à Z, sur web ET sur mobile.

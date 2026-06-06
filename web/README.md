@@ -1,36 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AviCare — Web (Next.js)
 
-## Getting Started
+Frontend de la plateforme AviCare. Next.js 16 (App Router) + MUI v7 + Redux
+Toolkit / RTK Query. Voir `docs/07-frontend-nextjs.md` (architecture) et
+`docs/10-design-system.md` (design tokens / thème).
 
-First, run the development server:
+## Démarrage
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev   # http://localhost:3001
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Configurer l'URL du backend dans `web/.env.local` (non versionné) :
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+NEXT_PUBLIC_API_URL=http://localhost:8080
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Scripts
 
-## Learn More
+| Script | Rôle |
+|---|---|
+| `npm run dev` | serveur de dev (port 3001) |
+| `npm run build` | build de production (typecheck inclus) |
+| `npm run lint` | ESLint (`eslint-config-next`) |
+| `npm test` | tests Vitest (forms auth) |
 
-To learn more about Next.js, take a look at the following resources:
+## Architecture
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `src/app` — routes App Router. Groupes : `(auth)` (login/signup, layout
+  split-screen) et `(dashboard)` (AppShell + garde d'auth client).
+- `src/theme` — `avicareTheme` (MUI), tokens design (doc 10), fonts, `ThemeRegistry`.
+- `src/store` — store Redux, slices (`auth`, `ui`), `baseApi` RTK Query + `authApi`.
+- `src/lib` — helpers (storage tokens, parsing erreurs RFC 7807, format XOF/dates).
+- `src/components/layout` — `Header`, `Sidebar`, `AppShell`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Dette technique connue (V1)
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Stockage des tokens en `localStorage`** (`src/lib/storage.ts`). Le doc 07 §5
+  vise un access token en mémoire + refresh en cookie `httpOnly`. Tant que le
+  backend renvoie les tokens dans le corps de la réponse (cookie `httpOnly`
+  différé côté backend, cf. A3-2), on reste sur `localStorage`. La garde d'auth
+  est donc **côté client** (`(dashboard)/layout.tsx`), pas en edge/proxy.
+- **Pages reportées** : fermes / équipe / abonnement / paramètres (sessions
+  A6-2 et A6-3). La sidebar les liste en désactivé.
