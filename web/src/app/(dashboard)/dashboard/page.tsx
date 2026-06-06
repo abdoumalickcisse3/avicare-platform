@@ -14,6 +14,7 @@ import { Bird, CreditCard, TrendingUp, Warehouse } from "lucide-react";
 import { useGetProfileQuery } from "@/store/api/authApi";
 import { useAppDispatch } from "@/store/hooks";
 import { setCurrentUser } from "@/store/slices/authSlice";
+import { TrialBanner } from "@/components/dashboard/TrialBanner";
 import { colors } from "@/theme/tokens";
 
 interface Stat {
@@ -40,6 +41,8 @@ export default function DashboardPage() {
 
   return (
     <Stack spacing={4}>
+      <TrialBanner />
+
       <Box>
         {isLoading ? (
           <Skeleton variant="text" width={280} height={40} />
