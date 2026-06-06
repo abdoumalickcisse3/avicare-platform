@@ -67,6 +67,7 @@ export const baseApi = createApi({
     "Farm",
     "Member",
     "Subscription",
+    "Setting",
     "Catalog",
     "ProductionUnit",
   ],
