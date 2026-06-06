@@ -54,6 +54,27 @@ export const ALL_MODULE_KEYS: string[] = [
   "module.api_access",
 ];
 
+/** French labels for module keys (doc 00 §7). */
+export const MODULE_LABELS: Record<string, string> = {
+  "module.poultry.broiler": "Volaille chair",
+  "module.poultry.layer": "Volaille ponte",
+  "module.health.basic": "Suivi sanitaire",
+  "module.health.advanced": "Sanitaire avancé",
+  "module.commercial.basic": "Commercial",
+  "module.commercial.advanced": "Commercial avancé",
+  "module.inventory": "Stocks",
+  "module.finance": "Finance",
+  "module.kpi.advanced": "KPI avancés",
+  "module.buyer_portal": "Portail acheteur",
+  "module.qr_codes": "QR codes",
+  "module.api_access": "Accès API",
+};
+
+/** Human label for a module key, falling back to the raw key. */
+export function moduleLabel(key: string): string {
+  return MODULE_LABELS[key] ?? key;
+}
+
 export interface Bundle {
   /** Stable key used as the subscription planKey / change-request requestedPlan. */
   key: string;

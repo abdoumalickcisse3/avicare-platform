@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Alert,
   Box,
@@ -27,9 +27,12 @@ import { useToast } from "@/components/feedback/ToastProvider";
 import { colors } from "@/theme/tokens";
 import { CreateFarmDialog } from "./CreateFarmDialog";
 import { FarmTeamTab } from "./FarmTeamTab";
+import { FarmSubscriptionTab } from "./FarmSubscriptionTab";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
 type TabKey = "overview" | "team" | "subscription" | "settings";
+
+const TAB_KEYS: TabKey[] = ["overview", "team", "subscription", "settings"];
 
 const OVERVIEW_STATS = [
   { label: "Effectif total", hint: "Sujets actifs" },
@@ -50,11 +53,16 @@ function Placeholder({ children }: { children: React.ReactNode }) {
 
 export function FarmDetailView({ farmId }: { farmId: number }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { showToast } = useToast();
   const { data: farm, isLoading, error } = useGetFarmQuery(farmId);
   const [deleteFarm, { isLoading: deleting }] = useDeleteFarmMutation();
 
-  const [tab, setTab] = useState<TabKey>("overview");
+  const initialTabParam = searchParams.get("tab");
+  const initialTab: TabKey = TAB_KEYS.includes(initialTabParam as TabKey)
+    ? (initialTabParam as TabKey)
+    : "overview";
+  const [tab, setTab] = useState<TabKey>(initialTab);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -196,9 +204,7 @@ export function FarmDetailView({ farmId }: { farmId: number }) {
 
       {tab === "team" && <FarmTeamTab farmId={farmId} />}
 
-      {tab === "subscription" && (
-        <Placeholder>Gestion de l&apos;abonnement — à venir (Sprint A6-3).</Placeholder>
-      )}
+      {tab === "subscription" && <FarmSubscriptionTab farmId={farmId} />}
 
       {tab === "settings" && (
         <Placeholder>Paramètres de la ferme — à venir.</Placeholder>

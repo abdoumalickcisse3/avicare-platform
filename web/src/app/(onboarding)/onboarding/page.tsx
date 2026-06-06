@@ -183,9 +183,11 @@ export default function OnboardingPage() {
       return;
     }
     if (bundle.custom) {
-      window.location.href = `mailto:${CUSTOM_BUNDLE_EMAIL}?subject=${encodeURIComponent(
-        "Demande de plan sur mesure — AviCare",
-      )}`;
+      window.location.assign(
+        `mailto:${CUSTOM_BUNDLE_EMAIL}?subject=${encodeURIComponent(
+          "Demande de plan sur mesure — AviCare",
+        )}`,
+      );
       dispatch({ type: "GOTO", step: 3 });
       return;
     }
