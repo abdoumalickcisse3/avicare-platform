@@ -31,8 +31,11 @@ export const accountSettingsApi = baseApi.injectEndpoints({
   }),
 });
 
-export const { useGetAccountSettingsQuery, useUpsertSettingMutation } =
-  accountSettingsApi;
+export const {
+  useGetAccountSettingsQuery,
+  useLazyGetAccountSettingsQuery,
+  useUpsertSettingMutation,
+} = accountSettingsApi;
 
 /** Whether the onboarding-completed flag is set in a settings list. */
 export function isOnboardingCompleted(settings: AccountSetting[]): boolean {

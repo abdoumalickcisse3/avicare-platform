@@ -16,6 +16,10 @@ import {
   Typography,
 } from "@mui/material";
 import { useSignupMutation } from "@/store/api/authApi";
+import {
+  isOnboardingCompleted,
+  useLazyGetAccountSettingsQuery,
+} from "@/store/api/accountSettingsApi";
 import { useAppDispatch } from "@/store/hooks";
 import { setTokens } from "@/store/slices/authSlice";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -41,6 +45,7 @@ export default function SignupPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const [signup, { isLoading }] = useSignupMutation();
+  const [fetchSettings] = useLazyGetAccountSettingsQuery();
   const [serverError, setServerError] = useState<string | null>(null);
 
   const { control, handleSubmit } = useForm<SignupForm>({
@@ -65,7 +70,13 @@ export default function SignupPage() {
         phone: values.phone ? values.phone : undefined,
       }).unwrap();
       dispatch(setTokens(tokens));
-      router.replace("/dashboard");
+      // New accounts go through onboarding unless it is already completed.
+      try {
+        const settings = await fetchSettings().unwrap();
+        router.replace(isOnboardingCompleted(settings) ? "/dashboard" : "/onboarding");
+      } catch {
+        router.replace("/onboarding");
+      }
     } catch (err) {
       setServerError(apiErrorMessage(err));
     }
