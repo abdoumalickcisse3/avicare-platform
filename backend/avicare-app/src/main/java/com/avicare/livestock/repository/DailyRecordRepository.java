@@ -1,6 +1,7 @@
 package com.avicare.livestock.repository;
 
 import com.avicare.livestock.domain.DailyRecord;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -27,4 +28,14 @@ public interface DailyRecordRepository extends JpaRepository<DailyRecord, Long> 
           + "WHERE d.productionUnit.id = :unitId AND d.recordDate BETWEEN :start AND :end")
   int sumMortalityBetween(
       @Param("unitId") Long unitId, @Param("start") LocalDate start, @Param("end") LocalDate end);
+
+  @Query(
+      "SELECT COALESCE(SUM(d.feedKg), 0) FROM DailyRecord d "
+          + "WHERE d.productionUnit.id = :unitId AND d.recordDate <= :date")
+  BigDecimal sumFeedKgUpTo(@Param("unitId") Long unitId, @Param("date") LocalDate date);
+
+  @Query(
+      "SELECT COALESCE(SUM(d.waterL), 0) FROM DailyRecord d "
+          + "WHERE d.productionUnit.id = :unitId AND d.recordDate <= :date")
+  BigDecimal sumWaterLUpTo(@Param("unitId") Long unitId, @Param("date") LocalDate date);
 }
