@@ -8,6 +8,13 @@ export function ageInDays(startDate: string): number {
   return Math.max(0, days);
 }
 
+/** Whole days from now until a future ISO date (>= 0); null if no date. */
+export function daysUntil(date: string | null | undefined): number | null {
+  if (!date) return null;
+  const diff = new Date(date).getTime() - Date.now();
+  return Math.max(0, Math.ceil(diff / 86_400_000));
+}
+
 /** Cycle progress as a 0–100 percentage of the target age. */
 export function batchProgress(
   startDate: string,
