@@ -9,9 +9,11 @@ import com.avicare.identity.repository.RefreshTokenRepository;
 import com.avicare.identity.repository.UserRepository;
 import com.avicare.livestock.repository.BreedRepository;
 import com.avicare.livestock.repository.DailyRecordRepository;
+import com.avicare.livestock.repository.GrowthPerformanceRepository;
 import com.avicare.livestock.repository.LifecycleEventRepository;
 import com.avicare.livestock.repository.PoultryBatchRepository;
 import com.avicare.livestock.repository.ProductionUnitRepository;
+import com.avicare.livestock.repository.WeighingSampleRepository;
 import com.avicare.parameters.repository.AlertThresholdRepository;
 import com.avicare.parameters.repository.CatalogItemRepository;
 import com.avicare.parameters.repository.FarmCatalogItemRepository;
@@ -68,6 +70,8 @@ class SecurityIntegrationTest {
   @MockitoBean private LifecycleEventRepository lifecycleEventRepository;
   @MockitoBean private PoultryBatchRepository poultryBatchRepository;
   @MockitoBean private DailyRecordRepository dailyRecordRepository;
+  @MockitoBean private WeighingSampleRepository weighingSampleRepository;
+  @MockitoBean private GrowthPerformanceRepository growthPerformanceRepository;
 
   @Test
   void healthEndpoint_isPublic() throws Exception {

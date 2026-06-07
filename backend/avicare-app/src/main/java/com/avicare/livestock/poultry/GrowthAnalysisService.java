@@ -1,0 +1,234 @@
+package com.avicare.livestock.poultry;
+
+import com.avicare.common.api.exception.BusinessRuleException;
+import com.avicare.common.api.exception.NotFoundException;
+import com.avicare.livestock.domain.GrowthPerformance;
+import com.avicare.livestock.domain.PoultryBatch;
+import com.avicare.livestock.domain.WeighingSample;
+import com.avicare.livestock.repository.DailyRecordRepository;
+import com.avicare.livestock.repository.GrowthPerformanceRepository;
+import com.avicare.livestock.repository.PoultryBatchRepository;
+import com.avicare.livestock.repository.WeighingSampleRepository;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * Broiler growth analysis (Sprint B1-2): records sample weighings (deriving avg/min/max/std and
+ * uniformity) and recomputes a {@link GrowthPerformance} snapshot — GMQ (ADG), FCR (IC), cumulative
+ * mortality/feed/water, a linear maturity forecast and a target score.
+ *
+ * <p>V1 simplifications (validated): GMQ is cumulative ({@code weight / age}); FCR is {@code total
+ * feed / total live weight}; the target curve is a linear interpolation between a day-old chick
+ * ({@value #DAY_OLD_CHICK_WEIGHT_G} g) and the batch's {@code target_weight_g} at {@code
+ * target_age_days}; uniformity is the share of birds within ±10% of the mean.
+ */
+@Service
+@RequiredArgsConstructor
+public class GrowthAnalysisService {
+
+  static final int DAY_OLD_CHICK_WEIGHT_G = 40;
+  private static final BigDecimal UNIFORMITY_BAND = new BigDecimal("0.10");
+
+  public static final String SCORE_AHEAD = "AHEAD";
+  public static final String SCORE_ON_TARGET = "ON_TARGET";
+  public static final String SCORE_BEHIND = "BEHIND";
+
+  private final WeighingSampleRepository weighingSampleRepository;
+  private final GrowthPerformanceRepository growthPerformanceRepository;
+  private final PoultryBatchRepository poultryBatchRepository;
+  private final DailyRecordRepository dailyRecordRepository;
+
+  @Transactional
+  public WeighingSample recordWeighing(Long batchId, WeighingCommand cmd, Long userId) {
+    PoultryBatch batch = loadBatch(batchId);
+    List<Integer> weights = cmd.individualWeights();
+    if (weights == null || weights.isEmpty()) {
+      throw new BusinessRuleException("EMPTY_WEIGHING", "A weighing needs at least one weight");
+    }
+
+    int n = weights.size();
+    double sum = 0;
+    int min = weights.get(0);
+    int max = weights.get(0);
+    for (int w : weights) {
+      sum += w;
+      min = Math.min(min, w);
+      max = Math.max(max, w);
+    }
+    double mean = sum / n;
+    double variance = 0;
+    for (int w : weights) {
+      variance += (w - mean) * (w - mean);
+    }
+    variance /= n;
+    double std = Math.sqrt(variance);
+
+    double band = mean * 0.10;
+    long within = weights.stream().filter(w -> Math.abs(w - mean) <= band).count();
+    double uniformity = (within * 100.0) / n;
+
+    int ageDays = ageDays(batch, cmd.sampleDate());
+
+    WeighingSample sample = new WeighingSample();
+    sample.setPoultryBatchId(batchId);
+    sample.setSampleDate(cmd.sampleDate());
+    sample.setAgeDays(ageDays);
+    sample.setSampleSize(n);
+    sample.setIndividualWeights(weights);
+    sample.setAvgWeightG(scaled(mean, 3));
+    sample.setMinWeightG(scaled(min, 3));
+    sample.setMaxWeightG(scaled(max, 3));
+    sample.setStdDeviation(scaled(std, 3));
+    sample.setUniformityPercent(scaled(uniformity, 2));
+    sample.setNotes(cmd.notes());
+    sample.setRecordedBy(userId);
+    WeighingSample saved = weighingSampleRepository.save(sample);
+
+    computePerformance(batch, cmd.sampleDate());
+    return saved;
+  }
+
+  /** Recompute (upsert) the performance snapshot for the batch on the given date. */
+  @Transactional
+  public GrowthPerformance computePerformance(Long batchId, LocalDate date) {
+    return computePerformance(loadBatch(batchId), date);
+  }
+
+  private GrowthPerformance computePerformance(PoultryBatch batch, LocalDate date) {
+    Long batchId = batch.getId();
+    int ageDays = ageDays(batch, date);
+
+    BigDecimal currentWeightG =
+        weighingSampleRepository
+            .findFirstByPoultryBatchIdOrderBySampleDateDesc(batchId)
+            .map(WeighingSample::getAvgWeightG)
+            .orElse(null);
+
+    BigDecimal cumulativeFeedKg = dailyRecordRepository.sumFeedKgUpTo(batchId, date);
+    BigDecimal cumulativeWaterL = dailyRecordRepository.sumWaterLUpTo(batchId, date);
+
+    GrowthPerformance perf =
+        growthPerformanceRepository
+            .findByPoultryBatchIdAndSnapshotDate(batchId, date)
+            .orElseGet(GrowthPerformance::new);
+    perf.setPoultryBatchId(batchId);
+    perf.setSnapshotDate(date);
+    perf.setAgeDays(ageDays);
+    perf.setCurrentWeightG(currentWeightG);
+    perf.setCumulativeFeedKg(cumulativeFeedKg);
+    perf.setCumulativeWaterL(cumulativeWaterL);
+    perf.setCumulativeMortalityPercent(mortalityPercent(batch));
+    perf.setGmqGPerDay(gmq(currentWeightG, ageDays));
+    perf.setFeedConversionRatio(fcr(cumulativeFeedKg, currentWeightG, batch.getCurrentCount()));
+    perf.setForecastedTargetDate(forecast(batch, currentWeightG, date));
+    perf.setPerformanceScore(score(batch, currentWeightG, ageDays));
+    perf.setComputedAt(java.time.LocalDateTime.now());
+    return growthPerformanceRepository.save(perf);
+  }
+
+  @Transactional(readOnly = true)
+  public List<WeighingSample> listWeighings(Long batchId) {
+    return weighingSampleRepository.findByPoultryBatchIdOrderBySampleDateDesc(batchId);
+  }
+
+  @Transactional(readOnly = true)
+  public GrowthPerformance getLatestPerformance(Long batchId) {
+    return growthPerformanceRepository
+        .findFirstByPoultryBatchIdOrderBySnapshotDateDesc(batchId)
+        .orElseThrow(() -> NotFoundException.of("GrowthPerformance", batchId));
+  }
+
+  // --- helpers --------------------------------------------------------
+
+  private PoultryBatch loadBatch(Long batchId) {
+    return poultryBatchRepository
+        .findById(batchId)
+        .orElseThrow(() -> NotFoundException.of("PoultryBatch", batchId));
+  }
+
+  private static int ageDays(PoultryBatch batch, LocalDate date) {
+    return (int) Math.max(0, ChronoUnit.DAYS.between(batch.getStartDate(), date));
+  }
+
+  private static BigDecimal mortalityPercent(PoultryBatch batch) {
+    int initial = batch.getInitialCount();
+    if (initial <= 0) {
+      return null;
+    }
+    double dead = initial - batch.getCurrentCount();
+    return scaled(dead * 100.0 / initial, 2);
+  }
+
+  private static BigDecimal gmq(BigDecimal currentWeightG, int ageDays) {
+    if (currentWeightG == null || ageDays <= 0) {
+      return null;
+    }
+    return currentWeightG.divide(BigDecimal.valueOf(ageDays), 3, RoundingMode.HALF_UP);
+  }
+
+  /** FCR = total feed (kg) / total live weight (kg). */
+  private static BigDecimal fcr(BigDecimal feedKg, BigDecimal currentWeightG, int currentCount) {
+    if (feedKg == null || currentWeightG == null || currentCount <= 0) {
+      return null;
+    }
+    BigDecimal liveWeightKg =
+        currentWeightG
+            .divide(BigDecimal.valueOf(1000), 6, RoundingMode.HALF_UP)
+            .multiply(BigDecimal.valueOf(currentCount));
+    if (liveWeightKg.signum() == 0) {
+      return null;
+    }
+    return feedKg.divide(liveWeightKg, 3, RoundingMode.HALF_UP);
+  }
+
+  /** Linear target weight (g) at a given age, between a day-old chick and the batch target. */
+  private static Double targetWeightAt(PoultryBatch batch, int ageDays) {
+    Integer targetWeight = batch.getTargetWeightG();
+    Integer targetAge = batch.getTargetAgeDays();
+    if (targetWeight == null || targetAge == null || targetAge <= 0) {
+      return null;
+    }
+    if (ageDays >= targetAge) {
+      return (double) targetWeight;
+    }
+    return DAY_OLD_CHICK_WEIGHT_G
+        + (targetWeight - DAY_OLD_CHICK_WEIGHT_G) * ((double) ageDays / targetAge);
+  }
+
+  private static String score(PoultryBatch batch, BigDecimal currentWeightG, int ageDays) {
+    Double target = targetWeightAt(batch, ageDays);
+    if (currentWeightG == null || target == null || target <= 0) {
+      return null;
+    }
+    double ratio = currentWeightG.doubleValue() / target;
+    if (ratio > 1.05) {
+      return SCORE_AHEAD;
+    }
+    return ratio >= 0.95 ? SCORE_ON_TARGET : SCORE_BEHIND;
+  }
+
+  /** Project the date the batch reaches its target weight, from the current GMQ. */
+  private static LocalDate forecast(PoultryBatch batch, BigDecimal currentWeightG, LocalDate date) {
+    Integer targetWeight = batch.getTargetWeightG();
+    int ageDays = ageDays(batch, date);
+    BigDecimal gmq = gmq(currentWeightG, ageDays);
+    if (targetWeight == null || currentWeightG == null || gmq == null || gmq.signum() <= 0) {
+      return null;
+    }
+    if (currentWeightG.doubleValue() >= targetWeight) {
+      return date; // already reached
+    }
+    double daysLeft = (targetWeight - currentWeightG.doubleValue()) / gmq.doubleValue();
+    return date.plusDays((long) Math.ceil(daysLeft));
+  }
+
+  private static BigDecimal scaled(double value, int scale) {
+    return BigDecimal.valueOf(value).setScale(scale, RoundingMode.HALF_UP);
+  }
+}
