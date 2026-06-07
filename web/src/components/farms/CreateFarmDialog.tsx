@@ -23,6 +23,7 @@ import {
   useUpdateFarmMutation,
 } from "@/store/api/farmsApi";
 import { useToast } from "@/components/feedback/ToastProvider";
+import { useRefreshSession } from "@/hooks/useRefreshSession";
 import { apiErrorMessage } from "@/lib/apiError";
 import type { Farm, FarmInput } from "@/types";
 
@@ -57,6 +58,7 @@ interface CreateFarmDialogProps {
 export function CreateFarmDialog({ open, onClose, farm }: CreateFarmDialogProps) {
   const isEdit = Boolean(farm);
   const { showToast } = useToast();
+  const refreshSession = useRefreshSession();
   const [createFarm, { isLoading: creating }] = useCreateFarmMutation();
   const [updateFarm, { isLoading: updating }] = useUpdateFarmMutation();
   const isLoading = creating || updating;
@@ -88,6 +90,9 @@ export function CreateFarmDialog({ open, onClose, farm }: CreateFarmDialogProps)
         showToast("Ferme mise à jour.", "success");
       } else {
         await createFarm(body).unwrap();
+        // Refresh so the token carries the new farm's OWNER membership (owner-only
+        // actions like invite/subscription would otherwise 403 until next login).
+        await refreshSession();
         showToast("Ferme créée avec succès.", "success");
       }
       onClose();

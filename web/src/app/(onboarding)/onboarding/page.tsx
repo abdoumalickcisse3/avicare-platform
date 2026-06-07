@@ -30,6 +30,7 @@ import {
   useUpsertSettingMutation,
 } from "@/store/api/accountSettingsApi";
 import { useToast } from "@/components/feedback/ToastProvider";
+import { useRefreshSession } from "@/hooks/useRefreshSession";
 import { apiErrorMessage } from "@/lib/apiError";
 import { colors } from "@/theme/tokens";
 import {
@@ -102,6 +103,7 @@ function reducer(state: WizardState, action: Action): WizardState {
 export default function OnboardingPage() {
   const router = useRouter();
   const { showToast } = useToast();
+  const refreshSession = useRefreshSession();
   const [state, dispatch] = useReducer(reducer, initialState);
 
   const { data: farms, isLoading: farmsLoading } = useGetMyFarmsQuery();
@@ -168,6 +170,9 @@ export default function OnboardingPage() {
         name: state.farmName.trim(),
         location: state.location.trim() || undefined,
       }).unwrap();
+      // Refresh the token so it carries the new farm's OWNER membership before
+      // the owner-only module activation in step 2.
+      await refreshSession();
       dispatch({ type: "SET_FARM_ID", value: farm.id });
       dispatch({ type: "GOTO", step: 2 });
     } catch (err) {
