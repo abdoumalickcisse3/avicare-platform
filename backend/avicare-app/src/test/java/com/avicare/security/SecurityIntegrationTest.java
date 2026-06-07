@@ -8,7 +8,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.avicare.identity.repository.RefreshTokenRepository;
 import com.avicare.identity.repository.UserRepository;
 import com.avicare.livestock.repository.BreedRepository;
+import com.avicare.livestock.repository.DailyRecordRepository;
 import com.avicare.livestock.repository.LifecycleEventRepository;
+import com.avicare.livestock.repository.PoultryBatchRepository;
 import com.avicare.livestock.repository.ProductionUnitRepository;
 import com.avicare.parameters.repository.AlertThresholdRepository;
 import com.avicare.parameters.repository.CatalogItemRepository;
@@ -64,6 +66,8 @@ class SecurityIntegrationTest {
   @MockitoBean private BreedRepository breedRepository;
   @MockitoBean private ProductionUnitRepository productionUnitRepository;
   @MockitoBean private LifecycleEventRepository lifecycleEventRepository;
+  @MockitoBean private PoultryBatchRepository poultryBatchRepository;
+  @MockitoBean private DailyRecordRepository dailyRecordRepository;
 
   @Test
   void healthEndpoint_isPublic() throws Exception {
