@@ -70,6 +70,11 @@ export const baseApi = createApi({
     "Setting",
     "Catalog",
     "ProductionUnit",
+    "Breed",
+    "PoultryBatch",
+    "DailyRecord",
+    "Weighing",
+    "Performance",
   ],
   endpoints: () => ({}),
 });
