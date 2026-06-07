@@ -25,8 +25,8 @@ import { colors } from "@/theme/tokens";
 import {
   BUNDLES,
   CUSTOM_BUNDLE_EMAIL,
+  bundlePriceLabel,
   moduleLabel,
-  modulesForBundle,
   type Bundle,
 } from "@/constants/bundles";
 import type { SubscriptionStatus } from "@/types";
@@ -69,7 +69,7 @@ export function FarmSubscriptionTab({ farmId }: { farmId: number }) {
       const cr = await createChangeRequest({
         farmId,
         requestedPlan: bundle.key,
-        requestedModules: modulesForBundle(bundle, "MIXED"),
+        requestedModules: bundle.modules,
       }).unwrap();
       await submitChangeRequest({ farmId, requestId: cr.id }).unwrap();
       showToast("Demande de changement envoyée.", "success");
@@ -188,7 +188,7 @@ export function FarmSubscriptionTab({ farmId }: { farmId: number }) {
                   <Typography
                     sx={{ fontWeight: 700, color: colors.primary[700], mb: 1 }}
                   >
-                    {bundle.priceLabel}
+                    {bundlePriceLabel(bundle)}
                   </Typography>
                   <Stack spacing={0.5} sx={{ flex: 1, mb: 2 }}>
                     {bundle.features.map((f) => (
