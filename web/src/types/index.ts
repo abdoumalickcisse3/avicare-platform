@@ -121,3 +121,99 @@ export interface AccountSetting {
   key: string;
   value: Record<string, unknown>;
 }
+
+/* ------------------------------------------------------------------ */
+/* Poultry chair (Sprint B1) — mirrors the backend livestock contracts */
+/* ------------------------------------------------------------------ */
+
+export type BatchStatus = "PLANNED" | "ACTIVE" | "CLOSED" | "CANCELLED";
+
+/** A breed reference (mirrors backend BreedResponse). */
+export interface Breed {
+  id: number;
+  species: string;
+  code: string;
+  name: string;
+  farmId: number | null;
+  active: boolean;
+}
+
+/** A broiler batch (mirrors backend PoultryBatchResponse). */
+export interface PoultryBatch {
+  id: number;
+  farmId: number;
+  breedId: number;
+  name: string | null;
+  startDate: string;
+  status: BatchStatus;
+  currentCount: number;
+  initialCount: number;
+  targetWeightG: number | null;
+  targetAgeDays: number | null;
+}
+
+export interface CreateBatchInput {
+  breedId: number;
+  name?: string;
+  startDate?: string;
+  targetWeightG?: number;
+  targetAgeDays?: number;
+  initialCount: number;
+}
+
+/** A daily record (mirrors backend DailyRecordResponse). */
+export interface PoultryDailyRecord {
+  id: number;
+  productionUnitId: number;
+  recordDate: string;
+  mortalityCount: number;
+  feedKg: number;
+  waterL: number;
+  observations: string | null;
+}
+
+export interface DailyRecordInput {
+  recordDate: string;
+  mortalityCount: number;
+  feedKg?: number;
+  waterL?: number;
+  observations?: string;
+}
+
+/** A weighing sample (mirrors backend WeighingSampleResponse). */
+export interface WeighingSample {
+  id: number;
+  poultryBatchId: number;
+  sampleDate: string;
+  ageDays: number;
+  sampleSize: number;
+  avgWeightG: number;
+  minWeightG: number | null;
+  maxWeightG: number | null;
+  stdDeviation: number | null;
+  uniformityPercent: number | null;
+  notes: string | null;
+}
+
+export interface WeighingInput {
+  sampleDate: string;
+  individualWeights: number[];
+  notes?: string;
+}
+
+export type PerformanceScore = "AHEAD" | "ON_TARGET" | "BEHIND";
+
+/** A computed performance snapshot (mirrors backend GrowthPerformanceResponse). */
+export interface GrowthPerformance {
+  poultryBatchId: number;
+  snapshotDate: string;
+  ageDays: number;
+  currentWeightG: number | null;
+  gmqGPerDay: number | null;
+  feedConversionRatio: number | null;
+  cumulativeMortalityPercent: number | null;
+  cumulativeFeedKg: number | null;
+  cumulativeWaterL: number | null;
+  forecastedTargetDate: string | null;
+  performanceScore: PerformanceScore | null;
+}
