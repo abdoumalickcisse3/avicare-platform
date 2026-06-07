@@ -198,6 +198,10 @@ export default function OnboardingPage() {
     }
     const modules = modulesForBundle(bundle, state.livestockType ?? "MIXED");
     try {
+      // Ensure the token carries the farm's OWNER membership before the
+      // owner-only module calls — covers both fresh creation and a resumed
+      // session where the farm was created earlier (stale token).
+      await refreshSession();
       // Parallel activation; if any module fails we surface the error and stay
       // on the step (onboarding is not marked complete).
       await Promise.all(
