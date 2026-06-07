@@ -26,7 +26,7 @@ function makeFarm(overrides: Record<string, unknown> = {}) {
 test("login, list farms, create one, and view its detail", async ({ page }) => {
   const farms: ReturnType<typeof makeFarm>[] = [];
 
-  // The web app calls the API cross-origin (:3001 -> :8080), so mocked
+  // The web app calls the API cross-origin (:3000 -> :8080), so mocked
   // responses must carry CORS headers and answer the preflight, otherwise the
   // browser blocks them and RTK Query sees a network error.
   const corsHeaders = {
