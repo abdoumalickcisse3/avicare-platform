@@ -8,8 +8,11 @@ Toolkit / RTK Query. Voir `docs/07-frontend-nextjs.md` (architecture) et
 
 ```bash
 npm install
-npm run dev   # http://localhost:3001
+npm run dev   # http://localhost:3000
 ```
+
+> Le port est fixé à **3000** : le backend n'autorise le CORS que depuis
+> `http://localhost:3000` (cf. `common-security` `SecurityConfig`).
 
 Configurer l'URL du backend dans `web/.env.local` (non versionné) :
 
@@ -21,7 +24,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 
 | Script | Rôle |
 |---|---|
-| `npm run dev` | serveur de dev (port 3001) |
+| `npm run dev` | serveur de dev (port 3000, aligné CORS backend) |
 | `npm run build` | build de production (typecheck inclus) |
 | `npm run lint` | ESLint (`eslint-config-next`) |
 | `npm test` | tests Vitest (forms auth) |
