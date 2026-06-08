@@ -442,6 +442,13 @@ Format JSON structuré (Spring Boot par défaut) :
 - Redis connectivity (Sprint A3+ si Redis utilisé)
 - Disk space
 
+### Feature gating state (`/actuator/info`)
+
+`/actuator/info` expose `features.gatingEnabled` (booléen) pour rendre observable, par
+environnement, l'état du feature gating. En prod il doit valoir `true` ; un `false` signale
+le bypass dev (`avicare.features.gating-enabled=false`) qui ne doit jamais y tourner — cf.
+**ADR-004**. Le boot est refusé si le bypass est demandé sous profil `prod`.
+
 ### Reporter Sprint C5
 
 L'observabilité avancée (OpenTelemetry traces distribuées, Grafana dashboards, alerting Prometheus) est **différée à Sprint C5 (déploiement production)**. En attendant, les logs JSON + métriques Prometheus suffisent pour le développement et la bêta privée.

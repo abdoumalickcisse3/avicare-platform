@@ -47,6 +47,9 @@ class PoultryFlowIT {
     registry.add("spring.jpa.hibernate.ddl-auto", () -> "validate");
     registry.add("avicare.security.jwt.private-key", () -> RsaKeys.privatePem(KEYS));
     registry.add("avicare.security.jwt.public-key", () -> RsaKeys.publicPem(KEYS));
+    // Force gating ON so the feature gate is exercised even if a dev exported
+    // avicare.features.gating-enabled=false in their environment (ADR-004).
+    registry.add("avicare.features.gating-enabled", () -> "true");
   }
 
   @Autowired private MockMvc mockMvc;
