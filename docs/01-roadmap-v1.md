@@ -212,20 +212,19 @@ V1 est considérée comme terminée quand **TOUS** les critères suivants sont s
 ### Sprint B1 — Bounded context `poultry` chair (semaine 7)
 
 **Livrables backend :**
-- [ ] Migration Flyway V5 : `poultry_batches` (hérite de `production_units`)
-- [ ] Migration Flyway V6 : `daily_records` (saisies quotidiennes)
-- [ ] Migration Flyway V7 : `weighing_samples`, `growth_performance`
-- [ ] CRUD lots poulets chair
-- [ ] Saisies quotidiennes (mortalité, aliment, eau, poids, observations)
-- [ ] Pesées échantillon + calcul GMQ + IC + uniformité
-- [ ] Service `GrowthAnalysisService` (recalcul auto, projection maturité)
-- [ ] Validation contre `module.poultry.broiler` via `@features.isEnabled`
+- [x] Migration Flyway V6 : `poultry_batches` (hérite de `production_units`) + `daily_records` (saisies quotidiennes)
+- [x] Migration Flyway V7 : `weighing_samples`, `growth_performance`
+- [x] CRUD lots poulets chair
+- [x] Saisies quotidiennes (mortalité, aliment, eau, poids, observations)
+- [x] Pesées échantillon + calcul GMQ + IC + uniformité
+- [x] Service `GrowthAnalysisService` (recalcul auto, projection maturité)
+- [x] Validation contre `module.poultry.broiler` via `@features.isEnabled`
 
 **Livrables web :**
-- [ ] Page Liste des lots avec filtres + statuts
-- [ ] Page Détail lot avec courbes (Recharts)
-- [ ] Formulaire saisie quotidienne (avec pré-remplissage)
-- [ ] Formulaire pesée échantillon
+- [x] Page Liste des lots avec filtres + statuts
+- [x] Page Détail lot avec courbes (Recharts)
+- [x] Formulaire saisie quotidienne (avec pré-remplissage)
+- [x] Formulaire pesée échantillon
 
 **Critères d'acceptation :**
 - ✅ Un éleveur peut créer un lot de 1 000 poulets Cobb 500
