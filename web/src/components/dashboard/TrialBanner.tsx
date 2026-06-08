@@ -8,6 +8,7 @@ import { useAppSelector } from "@/store/hooks";
 import { useGetMyFarmsQuery } from "@/store/api/farmsApi";
 import { useGetSubscriptionQuery } from "@/store/api/subscriptionApi";
 import { getCookie, setCookie } from "@/lib/cookies";
+import { isFeatureGatingDisabled } from "@/lib/featureGating";
 import { colors } from "@/theme/tokens";
 
 const DISMISS_COOKIE = "avicare_trial_banner_dismissed";
@@ -60,6 +61,9 @@ export function TrialBanner() {
       />
     );
   }
+
+  // Dev bypass (ADR-004): no plan to choose, so hide the trial nudge entirely.
+  if (isFeatureGatingDisabled()) return null;
 
   if (dismissed || !subscription || subscription.status !== "TRIAL") return null;
 
