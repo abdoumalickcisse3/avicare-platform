@@ -32,6 +32,12 @@ spring:
       port: ${REDIS_PORT:6380}
 
 avicare:
+  features:
+    # DEV-ONLY: disable subscription feature gating so endpoints work without
+    # activating modules per farm (zero friction while building B2→C5). Default
+    # is true (gating enforced); a boot guard refuses this under a prod profile.
+    # See ADR-004. Re-enable for Phase C by removing this key.
+    gating-enabled: false
   security:
     jwt:
       # DEV-ONLY throwaway RSA-2048 keypair so the app can mint/verify JWTs locally

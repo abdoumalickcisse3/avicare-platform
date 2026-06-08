@@ -19,6 +19,10 @@ import org.springframework.stereotype.Component;
  * 14/15 — presence is the gate; the {@code FeatureMode} qualifies the refusal UX, not the switch).
  * Platform admins ({@link AvicarePrincipal#isAdmin()}) bypass the check, like {@code
  * FarmAccessChecker}.
+ *
+ * <p>When {@code avicare.features.gating-enabled} is {@code false} (dev-only bypass, see {@link
+ * FeaturesProperties} and ADR-004) every module is treated as enabled — useful while building the
+ * product. The default is {@code true} and a boot guard forbids the bypass under a prod profile.
  */
 @Component("features")
 @RequiredArgsConstructor
@@ -26,9 +30,14 @@ import org.springframework.stereotype.Component;
 public class FeatureChecker {
 
   private final SubscriptionFacade subscriptionFacade;
+  private final FeaturesProperties featuresProperties;
 
   /** Whether {@code moduleKey} is enabled for {@code farmId} (platform admins always pass). */
   public boolean isEnabled(Long farmId, String moduleKey) {
+    if (!featuresProperties.gatingEnabled()) {
+      log.warn("Feature gating DISABLED (dev bypass) — granting {} for farm {}", moduleKey, farmId);
+      return true;
+    }
     AvicarePrincipal principal = currentPrincipal();
     if (principal != null && principal.isAdmin()) {
       log.debug("Feature {} granted via platform ADMIN for user {}", moduleKey, principal.userId());
