@@ -38,7 +38,12 @@ import {
   BUNDLES,
   CUSTOM_BUNDLE_EMAIL,
   bundlePriceLabel,
+  type BundleKey,
 } from "@/constants/bundles";
+import {
+  DEV_BYPASS_BUNDLE_KEY,
+  isFeatureGatingDisabled,
+} from "@/lib/featureGating";
 import { colors } from "@/theme/tokens";
 
 const signupSchema = z
@@ -68,6 +73,9 @@ export default function SignupPage() {
   const [createFarm] = useCreateFarmMutation();
   const [enableModule] = useEnableModuleMutation();
   const [upsertSetting] = useUpsertSettingMutation();
+
+  // Dev-only: skip the plan step and auto-activate a full bundle (ADR-004).
+  const gatingDisabled = isFeatureGatingDisabled();
 
   const [step, setStep] = useState<1 | 2>(1);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
@@ -104,15 +112,22 @@ export default function SignupPage() {
 
   const goToStep2 = async () => {
     const valid = await trigger();
-    if (valid) setStep(2);
+    if (!valid) return;
+    // Dev bypass: no plan to choose — create straight away with a full bundle.
+    if (gatingDisabled) {
+      await handleCreate(DEV_BYPASS_BUNDLE_KEY);
+      return;
+    }
+    setStep(2);
   };
 
-  const handleCreate = async () => {
-    if (!selectedKey) {
+  const handleCreate = async (keyOverride?: BundleKey) => {
+    const key = keyOverride ?? selectedKey;
+    if (!key) {
       setBundleError(true);
       return;
     }
-    const bundle = BUNDLES.find((b) => b.key === selectedKey);
+    const bundle = BUNDLES.find((b) => b.key === key);
     if (!bundle) return;
 
     const v = getValues();
@@ -181,14 +196,16 @@ export default function SignupPage() {
         </Typography>
       </Box>
 
-      <Stepper activeStep={step - 1} alternativeLabel>
-        <Step>
-          <StepLabel>Vos informations</StepLabel>
-        </Step>
-        <Step>
-          <StepLabel>Votre formule</StepLabel>
-        </Step>
-      </Stepper>
+      {!gatingDisabled && (
+        <Stepper activeStep={step - 1} alternativeLabel>
+          <Step>
+            <StepLabel>Vos informations</StepLabel>
+          </Step>
+          <Step>
+            <StepLabel>Votre formule</StepLabel>
+          </Step>
+        </Stepper>
+      )}
 
       {serverError && <Alert severity="error">{serverError}</Alert>}
 
@@ -262,11 +279,20 @@ export default function SignupPage() {
             color="primary"
             size="large"
             fullWidth
-            endIcon={<ArrowRight size={18} />}
+            disabled={submitting}
+            endIcon={
+              gatingDisabled ? (
+                submitting ? (
+                  <CircularProgress size={18} color="inherit" />
+                ) : null
+              ) : (
+                <ArrowRight size={18} />
+              )
+            }
             onClick={goToStep2}
             sx={{ height: 48 }}
           >
-            Continuer
+            {gatingDisabled ? "Créer mon compte" : "Continuer"}
           </Button>
         </Stack>
       </Box>
@@ -345,7 +371,7 @@ export default function SignupPage() {
               fullWidth
               disabled={submitting}
               startIcon={submitting ? <CircularProgress size={18} color="inherit" /> : null}
-              onClick={handleCreate}
+              onClick={() => handleCreate()}
               sx={{ height: 48 }}
             >
               Créer mon compte

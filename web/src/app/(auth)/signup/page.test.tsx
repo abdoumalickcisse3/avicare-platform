@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "@/test/render";
@@ -128,5 +128,29 @@ describe("SignupPage (2-step wizard)", () => {
     localStorage.setItem("avicare_access_token", "existing");
     renderWithProviders(<SignupPage />);
     expect(m.replace).toHaveBeenCalledWith("/dashboard");
+  });
+});
+
+describe("SignupPage (dev gating bypass)", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("skips the plan step and creates the account directly when gating is off", async () => {
+    vi.stubEnv("NEXT_PUBLIC_FEATURES_GATING", "off");
+    const user = userEvent.setup();
+    renderWithProviders(<SignupPage />);
+
+    // No stepper / no plan cards — single "Créer mon compte" action on step 1.
+    expect(screen.queryByText("Votre formule")).not.toBeInTheDocument();
+    await fillStep1(user);
+    await user.click(screen.getByRole("button", { name: /créer mon compte/i }));
+
+    await waitFor(() => expect(m.replace).toHaveBeenCalledWith("/onboarding"));
+    expect(screen.queryByText("Starter Volaille")).not.toBeInTheDocument();
+    expect(m.signup).toHaveBeenCalledTimes(1);
+    expect(m.createFarm).toHaveBeenCalledWith({ name: "Ferme Test", location: undefined });
+    // "Ferme Complète" bundle activates every V1 module.
+    expect(m.enableModule).toHaveBeenCalledTimes(12);
   });
 });
