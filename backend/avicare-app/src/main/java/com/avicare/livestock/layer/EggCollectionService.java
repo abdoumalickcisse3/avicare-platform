@@ -1,5 +1,6 @@
 package com.avicare.livestock.layer;
 
+import com.avicare.common.api.exception.NotFoundException;
 import com.avicare.common.api.exception.ValidationException;
 import com.avicare.livestock.domain.EggCollection;
 import com.avicare.livestock.domain.LifecycleEvent;
@@ -82,6 +83,18 @@ public class EggCollectionService {
     lifecycleEventRepository.save(snapshot);
 
     return saved;
+  }
+
+  @Transactional(readOnly = true)
+  public EggCollection get(Long id) {
+    return eggCollectionRepository
+        .findById(id)
+        .orElseThrow(() -> NotFoundException.of("EggCollection", id));
+  }
+
+  @Transactional
+  public void delete(Long id) {
+    eggCollectionRepository.delete(get(id));
   }
 
   @Transactional(readOnly = true)
