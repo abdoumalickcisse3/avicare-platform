@@ -4,10 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Box,
+  Button,
   List,
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Skeleton,
   Stack,
   Typography,
 } from "@mui/material";
@@ -17,9 +19,11 @@ import {
   Drumstick,
   Egg,
   LayoutDashboard,
+  Lock,
   Settings,
   Warehouse,
 } from "lucide-react";
+import { useActiveModules } from "@/hooks/useActiveModules";
 import { colors } from "@/theme/tokens";
 
 export const SIDEBAR_WIDTH = 260;
@@ -29,16 +33,22 @@ interface NavItem {
   href: string;
   icon: typeof LayoutDashboard;
   enabled: boolean;
+  /** When set, the item only shows if this subscription module is active. */
+  requiredModule?: string;
 }
 
 interface NavSection {
   heading?: string;
   items: NavItem[];
+  /** Élevage section is gated by active modules and shows an empty-state CTA. */
+  moduleGated?: boolean;
 }
 
 /**
- * Navigation. Dashboard and Fermes are live in A6-2; the Élevage items are
- * Phase B placeholders, Abonnement/Paramètres land in A6-3.
+ * Navigation. The "Élevage" items are filtered by the active subscription
+ * modules of the selected farm (Décision 5: no farm.type — a farm's nature is
+ * its active modules). Fermes, Tableau de bord, Abonnement and Réglages are
+ * always visible.
  */
 const NAV_SECTIONS: NavSection[] = [
   {
@@ -49,10 +59,29 @@ const NAV_SECTIONS: NavSection[] = [
   },
   {
     heading: "Élevage",
+    moduleGated: true,
     items: [
-      { label: "Lots", href: "/elevage/lots", icon: Bird, enabled: true },
-      { label: "Œufs", href: "/elevage/oeufs", icon: Egg, enabled: true },
-      { label: "Poulets de chair", href: "/elevage/chair", icon: Drumstick, enabled: false },
+      {
+        label: "Lots",
+        href: "/elevage/lots",
+        icon: Bird,
+        enabled: true,
+        requiredModule: "module.poultry.broiler",
+      },
+      {
+        label: "Œufs",
+        href: "/elevage/oeufs",
+        icon: Egg,
+        enabled: true,
+        requiredModule: "module.poultry.layer",
+      },
+      {
+        label: "Poulets de chair",
+        href: "/elevage/chair",
+        icon: Drumstick,
+        enabled: false,
+        requiredModule: "module.poultry.broiler",
+      },
     ],
   },
   {
@@ -64,11 +93,116 @@ const NAV_SECTIONS: NavSection[] = [
   },
 ];
 
+const HEADING_SX = {
+  display: "block",
+  px: 1.5,
+  pt: 1.5,
+  pb: 0.5,
+  fontWeight: 600,
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
+  color: colors.neutral[500],
+} as const;
+
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const { isModuleActive, isLoading, farmId, hasFarm } = useActiveModules();
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(`${href}/`);
+
+  const renderItem = (item: NavItem) => {
+    const active = item.enabled && isActive(item.href);
+    const Icon = item.icon;
+    const button = (
+      <ListItemButton
+        selected={active}
+        disabled={!item.enabled}
+        onClick={onNavigate}
+        sx={{
+          borderRadius: 2,
+          mb: 0.5,
+          "&.Mui-selected": {
+            bgcolor: colors.primary[100],
+            color: colors.primary[700],
+            "& .MuiListItemIcon-root": { color: colors.primary[700] },
+            "&:hover": { bgcolor: colors.primary[100] },
+          },
+        }}
+      >
+        <ListItemIcon sx={{ minWidth: 36 }}>
+          <Icon size={20} />
+        </ListItemIcon>
+        <ListItemText
+          primary={item.label}
+          slotProps={{ primary: { sx: { fontSize: "0.9rem", fontWeight: 500 } } }}
+        />
+      </ListItemButton>
+    );
+
+    return item.enabled ? (
+      <Link key={item.href} href={item.href} style={{ display: "block", color: "inherit" }}>
+        {button}
+      </Link>
+    ) : (
+      <Box key={item.href}>{button}</Box>
+    );
+  };
+
+  const renderModuleGated = (section: NavSection) => {
+    if (isLoading) {
+      return (
+        <Box sx={{ px: 1, py: 0.5 }}>
+          {section.items.map((_, i) => (
+            <Skeleton
+              key={i}
+              variant="rounded"
+              height={40}
+              sx={{ mb: 0.5, borderRadius: 2 }}
+            />
+          ))}
+        </Box>
+      );
+    }
+
+    const visible = section.items.filter(
+      (it) => !it.requiredModule || isModuleActive(it.requiredModule),
+    );
+
+    if (visible.length === 0) {
+      return (
+        <Box
+          sx={{
+            mx: 1,
+            p: 2,
+            textAlign: "center",
+            border: `1px dashed ${colors.neutral[300]}`,
+            borderRadius: 2,
+          }}
+        >
+          <Box sx={{ color: colors.neutral[400], mb: 0.5 }}>
+            <Lock size={20} />
+          </Box>
+          <Typography variant="caption" sx={{ display: "block", color: colors.neutral[600], mb: 1 }}>
+            Activez un module pour commencer.
+          </Typography>
+          <Button
+            component={Link}
+            href={hasFarm ? `/fermes/${farmId}?tab=subscription` : "/fermes"}
+            onClick={onNavigate}
+            size="small"
+            variant="outlined"
+            color="primary"
+            fullWidth
+          >
+            Activer des modules
+          </Button>
+        </Box>
+      );
+    }
+
+    return <List disablePadding>{visible.map(renderItem)}</List>;
+  };
 
   return (
     <Box
@@ -90,67 +224,15 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         {NAV_SECTIONS.map((section, i) => (
           <Box key={section.heading ?? `section-${i}`} sx={{ mb: 1 }}>
             {section.heading && (
-              <Typography
-                variant="caption"
-                sx={{
-                  display: "block",
-                  px: 1.5,
-                  pt: 1.5,
-                  pb: 0.5,
-                  fontWeight: 600,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                  color: colors.neutral[500],
-                }}
-              >
+              <Typography variant="caption" sx={HEADING_SX}>
                 {section.heading}
               </Typography>
             )}
-            <List disablePadding>
-              {section.items.map((item) => {
-                const active = item.enabled && isActive(item.href);
-                const Icon = item.icon;
-                const button = (
-                  <ListItemButton
-                    selected={active}
-                    disabled={!item.enabled}
-                    onClick={onNavigate}
-                    sx={{
-                      borderRadius: 2,
-                      mb: 0.5,
-                      "&.Mui-selected": {
-                        bgcolor: colors.primary[100],
-                        color: colors.primary[700],
-                        "& .MuiListItemIcon-root": { color: colors.primary[700] },
-                        "&:hover": { bgcolor: colors.primary[100] },
-                      },
-                    }}
-                  >
-                    <ListItemIcon sx={{ minWidth: 36 }}>
-                      <Icon size={20} />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={item.label}
-                      slotProps={{
-                        primary: { sx: { fontSize: "0.9rem", fontWeight: 500 } },
-                      }}
-                    />
-                  </ListItemButton>
-                );
-
-                return item.enabled ? (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    style={{ display: "block", color: "inherit" }}
-                  >
-                    {button}
-                  </Link>
-                ) : (
-                  <Box key={item.href}>{button}</Box>
-                );
-              })}
-            </List>
+            {section.moduleGated ? (
+              renderModuleGated(section)
+            ) : (
+              <List disablePadding>{section.items.map(renderItem)}</List>
+            )}
           </Box>
         ))}
       </Box>
