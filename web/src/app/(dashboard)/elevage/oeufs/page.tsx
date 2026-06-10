@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Alert, Box, Button, Skeleton, Stack, Typography } from "@mui/material";
-import { Bird, Egg, Layers, Lock } from "lucide-react";
+import { Alert, Box, Button, Fab, Skeleton, Stack, Typography } from "@mui/material";
+import { Bird, Egg, Layers, Lock, Plus } from "lucide-react";
 import { useGetProductionUnitsQuery } from "@/store/api/productionUnitsApi";
 import { useGetBatchesQuery } from "@/store/api/poultryBatchesApi";
 import { useGetBreedsQuery } from "@/store/api/breedsApi";
@@ -17,6 +17,7 @@ import { colors } from "@/theme/tokens";
 import { LayerKpiCard } from "@/components/poultry-layer/LayerKpiCard";
 import { LayerUnitSummaryCard } from "@/components/poultry-layer/LayerUnitSummaryCard";
 import { TrayStockPanel } from "@/components/poultry-layer/TrayStockPanel";
+import { CreateLayerBatchDialog } from "@/components/poultry-layer/CreateLayerBatchDialog";
 
 const GRID_SX = {
   display: "grid",
@@ -26,6 +27,7 @@ const GRID_SX = {
 
 export default function EggProductionPage() {
   const { farmId, isLoading: farmLoading, hasFarm } = useSelectedFarm();
+  const [createOpen, setCreateOpen] = useState(false);
 
   const { data: units, isLoading: unitsLoading } = useGetProductionUnitsQuery(
     { farmId: farmId as number },
@@ -59,14 +61,30 @@ export default function EggProductionPage() {
 
   return (
     <Box sx={{ pb: { xs: 9, sm: 0 } }}>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Production d&apos;œufs
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Suivez la ponte, les collectes et le stock de plateaux.
-        </Typography>
-      </Box>
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        spacing={2}
+        sx={{ justifyContent: "space-between", alignItems: { sm: "center" }, mb: 3 }}
+      >
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            Production d&apos;œufs
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Suivez la ponte, les collectes et le stock de plateaux.
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<Plus size={18} />}
+          onClick={() => setCreateOpen(true)}
+          disabled={!hasFarm || featureLocked}
+          sx={{ display: { xs: "none", sm: "inline-flex" } }}
+        >
+          Nouveau lot de pondeuses
+        </Button>
+      </Stack>
 
       {!hasFarm && !farmLoading && (
         <Alert severity="info">
@@ -169,9 +187,17 @@ export default function EggProductionPage() {
                 <Typography variant="h6" sx={{ fontWeight: 600 }}>
                   Aucun lot de pondeuses
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Les lots de pondeuses créés pour cette ferme apparaîtront ici.
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Créez votre premier lot de pondeuses pour démarrer le suivi.
                 </Typography>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<Plus size={18} />}
+                  onClick={() => setCreateOpen(true)}
+                >
+                  Nouveau lot de pondeuses
+                </Button>
               </Box>
             ) : (
               <Box sx={GRID_SX}>
@@ -189,6 +215,26 @@ export default function EggProductionPage() {
 
           <TrayStockPanel farmId={farmId as number} />
         </Stack>
+      )}
+
+      {/* Mobile FAB — quick layer-lot creation on the go */}
+      {hasFarm && !featureLocked && (
+        <Fab
+          color="primary"
+          aria-label="Nouveau lot de pondeuses"
+          onClick={() => setCreateOpen(true)}
+          sx={{ position: "fixed", bottom: 24, right: 24, display: { xs: "flex", sm: "none" } }}
+        >
+          <Plus size={24} />
+        </Fab>
+      )}
+
+      {farmId && (
+        <CreateLayerBatchDialog
+          open={createOpen}
+          onClose={() => setCreateOpen(false)}
+          farmId={farmId}
+        />
       )}
     </Box>
   );

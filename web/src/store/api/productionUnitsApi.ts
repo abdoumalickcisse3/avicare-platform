@@ -1,5 +1,5 @@
 import { baseApi } from "./baseApi";
-import type { ProductionUnit } from "@/types";
+import type { ProductionUnit, ProductionUnitInput } from "@/types";
 
 /** Backend wraps every payload in { data, meta }; unwrap to the data field. */
 interface ApiEnvelope<T> {
@@ -29,8 +29,23 @@ export const productionUnitsApi = baseApi.injectEndpoints({
         { type: "ProductionUnit", id: unitId },
       ],
     }),
+    createProductionUnit: build.mutation<
+      ProductionUnit,
+      { farmId: number; body: ProductionUnitInput }
+    >({
+      query: ({ farmId, body }) => ({
+        url: `/api/v1/farms/${farmId}/production-units`,
+        method: "POST",
+        body,
+      }),
+      transformResponse: (r: ApiEnvelope<ProductionUnit>) => r.data,
+      invalidatesTags: [{ type: "ProductionUnit", id: "LIST" }],
+    }),
   }),
 });
 
-export const { useGetProductionUnitsQuery, useGetProductionUnitQuery } =
-  productionUnitsApi;
+export const {
+  useGetProductionUnitsQuery,
+  useGetProductionUnitQuery,
+  useCreateProductionUnitMutation,
+} = productionUnitsApi;
