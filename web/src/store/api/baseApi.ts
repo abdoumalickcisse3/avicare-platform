@@ -75,6 +75,10 @@ export const baseApi = createApi({
     "DailyRecord",
     "Weighing",
     "Performance",
+    "EggCollection",
+    "TrayStock",
+    "DailyProduction",
+    "LayerConfig",
   ],
   endpoints: () => ({}),
 });
