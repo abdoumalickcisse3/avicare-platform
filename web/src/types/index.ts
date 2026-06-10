@@ -134,6 +134,8 @@ export interface Breed {
   species: string;
   code: string;
   name: string;
+  /** broiler | layer for poultry (may be null for typeless breeds). */
+  type: string | null;
   farmId: number | null;
   active: boolean;
 }
@@ -206,6 +208,16 @@ export interface WeighingInput {
 /* ------------------------------------------------------------------ */
 
 export type UnitStatus = "PLANNED" | "ACTIVE" | "CLOSED" | "CANCELLED";
+
+/** Create a generic production unit (mirrors backend CreateProductionUnitRequest). */
+export interface ProductionUnitInput {
+  name?: string;
+  breedId: number;
+  unitKind?: "BATCH" | "INDIVIDUAL";
+  initialCount: number;
+  startDate: string;
+  notes?: string;
+}
 
 /** A generic production unit (mirrors backend ProductionUnitResponse). */
 export interface ProductionUnit {
