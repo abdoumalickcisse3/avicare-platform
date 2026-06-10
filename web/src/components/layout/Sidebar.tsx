@@ -51,7 +51,7 @@ const NAV_SECTIONS: NavSection[] = [
     heading: "Élevage",
     items: [
       { label: "Lots", href: "/elevage/lots", icon: Bird, enabled: true },
-      { label: "Œufs", href: "/elevage/oeufs", icon: Egg, enabled: false },
+      { label: "Œufs", href: "/elevage/oeufs", icon: Egg, enabled: true },
       { label: "Poulets de chair", href: "/elevage/chair", icon: Drumstick, enabled: false },
     ],
   },

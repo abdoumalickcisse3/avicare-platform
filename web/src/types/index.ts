@@ -201,6 +201,104 @@ export interface WeighingInput {
   notes?: string;
 }
 
+/* ------------------------------------------------------------------ */
+/* Poultry layer (ponte, Sprint B2) — mirrors the egg-production API   */
+/* ------------------------------------------------------------------ */
+
+export type UnitStatus = "PLANNED" | "ACTIVE" | "CLOSED" | "CANCELLED";
+
+/** A generic production unit (mirrors backend ProductionUnitResponse). */
+export interface ProductionUnit {
+  id: number;
+  farmId: number;
+  species: string;
+  unitKind: string;
+  breedId: number | null;
+  name: string | null;
+  startDate: string;
+  endDate: string | null;
+  currentCount: number;
+  status: UnitStatus;
+}
+
+/** An egg collection (mirrors backend EggCollectionResponse). */
+export interface EggCollection {
+  id: number;
+  unitId: number;
+  collectionDate: string;
+  timeslotKey: string;
+  totalEggs: number;
+  brokenEggs: number;
+  gradesCount: Record<string, number>;
+  collectorUserId: number | null;
+  notes: string | null;
+  createdBy: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EggCollectionInput {
+  unitId: number;
+  collectionDate: string;
+  timeslotKey: string;
+  totalEggs: number;
+  brokenEggs: number;
+  gradesCount?: Record<string, number>;
+  collectorUserId?: number;
+  notes?: string;
+}
+
+/** Farm-scoped tray stock (mirrors backend TrayStockResponse). */
+export interface TrayStock {
+  farmId: number;
+  fullTraysCount: number;
+  emptyTraysCount: number;
+  updatedAt: string;
+}
+
+export interface TrayStockUpdateInput {
+  fullTraysCount: number;
+  emptyTraysCount: number;
+}
+
+export interface TrayStockAdjustInput {
+  fullDelta: number;
+  emptyDelta: number;
+}
+
+/** A closed-day aggregate (mirrors backend DailyProductionResponse). */
+export interface DailyProduction {
+  unitId: number;
+  productionDate: string;
+  totalEggsCollected: number;
+  totalBrokenEggs: number;
+  gradesAggregate: Record<string, number>;
+  layingRatePct: number | null;
+  breakRatePct: number | null;
+  activeLayersCount: number;
+  closedAt: string | null;
+  closedById: number | null;
+}
+
+/** Rolling laying-rate average (mirrors backend RollingRateResponse). */
+export interface RollingRate {
+  unitId: number;
+  days: number;
+  avgLayingRatePct: number | null;
+}
+
+/** A resolved config entry (mirrors backend LayerConfigEntryResponse). */
+export interface LayerConfigEntry {
+  key: string;
+  value: Record<string, unknown>;
+}
+
+/** Tray settings (mirrors backend TraySettingsResponse). */
+export interface TraySettings {
+  traySize: number;
+  trayPriceXof: number;
+}
+
 export type PerformanceScore = "AHEAD" | "ON_TARGET" | "BEHIND";
 
 /** A computed performance snapshot (mirrors backend GrowthPerformanceResponse). */
