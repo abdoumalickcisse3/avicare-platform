@@ -2,12 +2,17 @@ package com.avicare.livestock.service;
 
 import com.avicare.common.api.exception.BusinessRuleException;
 import com.avicare.common.api.exception.NotFoundException;
+import com.avicare.livestock.domain.Breed;
 import com.avicare.livestock.domain.LifecycleEvent;
 import com.avicare.livestock.domain.ProductionUnit;
+import com.avicare.livestock.domain.Species;
+import com.avicare.livestock.domain.UnitKind;
 import com.avicare.livestock.domain.UnitStatus;
+import com.avicare.livestock.repository.BreedRepository;
 import com.avicare.livestock.repository.LifecycleEventRepository;
 import com.avicare.livestock.repository.ProductionUnitRepository;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -28,9 +33,11 @@ public class LivestockService {
 
   public static final String EVENT_MORTALITY = "MORTALITY";
   public static final String EVENT_COUNT_ADJUSTMENT = "COUNT_ADJUSTMENT";
+  public static final String EVENT_CREATED = "CREATED";
 
   private final ProductionUnitRepository productionUnitRepository;
   private final LifecycleEventRepository lifecycleEventRepository;
+  private final BreedRepository breedRepository;
 
   @Transactional(readOnly = true)
   public ProductionUnit getUnit(Long unitId) {
@@ -42,6 +49,60 @@ public class LivestockService {
   @Transactional(readOnly = true)
   public List<ProductionUnit> listByFarm(Long farmId) {
     return productionUnitRepository.findByFarmId(farmId);
+  }
+
+  /**
+   * Create a generic production unit (e.g. a layer/ponte lot) on a farm: validates the breed exists
+   * and is a POULTRY breed, seeds the count to {@code initialCount}, and journals a {@code CREATED}
+   * lifecycle event. Species-specific subclasses (broilers) keep their own create paths.
+   */
+  @Transactional
+  public ProductionUnit createUnit(
+      Long farmId,
+      Long breedId,
+      UnitKind unitKind,
+      String name,
+      int initialCount,
+      LocalDate startDate,
+      String notes,
+      Long userId) {
+    Breed breed =
+        breedRepository.findById(breedId).orElseThrow(() -> NotFoundException.of("Breed", breedId));
+    if (breed.getSpecies() != Species.POULTRY) {
+      throw new BusinessRuleException(
+          "BREED_SPECIES_MISMATCH", "Breed " + breed.getCode() + " is not a POULTRY breed");
+    }
+
+    ProductionUnit unit = new ProductionUnit();
+    unit.setFarmId(farmId);
+    unit.setSpecies(Species.POULTRY);
+    unit.setUnitKind(unitKind != null ? unitKind : UnitKind.BATCH);
+    unit.setBreedId(breed.getId());
+    unit.setName(name);
+    unit.setStartDate(startDate != null ? startDate : LocalDate.now());
+    unit.setCurrentCount(initialCount);
+    unit.setStatus(UnitStatus.ACTIVE);
+    unit.setCreatedBy(userId);
+    ProductionUnit saved = productionUnitRepository.save(unit);
+
+    Map<String, Object> details = new HashMap<>();
+    details.put("initial_count", initialCount);
+    details.put("breed_id", breed.getId());
+    details.put("breed_code", breed.getCode());
+    if (notes != null && !notes.isBlank()) {
+      details.put("notes", notes);
+    }
+
+    LifecycleEvent created = new LifecycleEvent();
+    created.setProductionUnitId(saved.getId());
+    created.setEventType(EVENT_CREATED);
+    created.setQuantityDelta(initialCount);
+    created.setReason("unit_created");
+    created.setDetails(details);
+    created.setCreatedBy(userId);
+    lifecycleEventRepository.save(created);
+
+    return saved;
   }
 
   @Transactional(readOnly = true)

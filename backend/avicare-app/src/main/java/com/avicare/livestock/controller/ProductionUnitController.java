@@ -4,6 +4,7 @@ import com.avicare.common.api.response.ApiResponse;
 import com.avicare.common.tenancy.context.TenancyContext;
 import com.avicare.livestock.domain.LifecycleEvent;
 import com.avicare.livestock.domain.ProductionUnit;
+import com.avicare.livestock.dto.request.CreateProductionUnitRequest;
 import com.avicare.livestock.dto.request.LifecycleEventRequest;
 import com.avicare.livestock.dto.request.RecordMortalityRequest;
 import com.avicare.livestock.dto.response.LifecycleEventResponse;
@@ -38,6 +39,12 @@ public class ProductionUnitController {
           + "T(com.avicare.common.security.principal.FarmRole).MANAGER, "
           + "T(com.avicare.common.security.principal.FarmRole).FARMER)";
 
+  // Creating a unit is structuring — restricted to OWNER/MANAGER (no FARMER).
+  private static final String CREATE_ROLES =
+      "@farmAccess.hasRole(#farmId, "
+          + "T(com.avicare.common.security.principal.FarmRole).OWNER, "
+          + "T(com.avicare.common.security.principal.FarmRole).MANAGER)";
+
   private final LivestockService livestockService;
 
   @GetMapping
@@ -47,6 +54,24 @@ public class ProductionUnitController {
         livestockService.listByFarm(farmId).stream()
             .map(ProductionUnitController::toResponse)
             .toList());
+  }
+
+  @PostMapping
+  @ResponseStatus(HttpStatus.CREATED)
+  @PreAuthorize(CREATE_ROLES)
+  public ApiResponse<ProductionUnitResponse> create(
+      @PathVariable Long farmId, @RequestBody @Valid CreateProductionUnitRequest request) {
+    ProductionUnit unit =
+        livestockService.createUnit(
+            farmId,
+            request.breedId(),
+            request.unitKind(),
+            request.name(),
+            request.initialCount(),
+            request.startDate(),
+            request.notes(),
+            TenancyContext.currentUserId());
+    return ApiResponse.of(toResponse(unit));
   }
 
   @GetMapping("/{unitId}")

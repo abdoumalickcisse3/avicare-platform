@@ -47,6 +47,10 @@ public class Breed {
   @Column(nullable = false)
   private String name;
 
+  /** broiler | layer (poultry), denormalised from the catalog (V10). Null for typeless breeds. */
+  @Column(name = "type")
+  private String type;
+
   @Column(name = "catalog_item_id")
   private Long catalogItemId;
 
