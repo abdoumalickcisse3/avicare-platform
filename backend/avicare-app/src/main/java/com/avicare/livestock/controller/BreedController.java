@@ -34,6 +34,12 @@ public class BreedController {
 
   private static BreedResponse toResponse(Breed b) {
     return new BreedResponse(
-        b.getId(), b.getSpecies(), b.getCode(), b.getName(), b.getFarmId(), b.isActive());
+        b.getId(),
+        b.getSpecies(),
+        b.getCode(),
+        b.getName(),
+        b.getType(),
+        b.getFarmId(),
+        b.isActive());
   }
 }

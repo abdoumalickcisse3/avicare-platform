@@ -13,6 +13,7 @@ import com.avicare.livestock.domain.ProductionUnit;
 import com.avicare.livestock.domain.Species;
 import com.avicare.livestock.domain.UnitKind;
 import com.avicare.livestock.domain.UnitStatus;
+import com.avicare.livestock.repository.BreedRepository;
 import com.avicare.livestock.repository.LifecycleEventRepository;
 import com.avicare.livestock.repository.ProductionUnitRepository;
 import java.util.Optional;
@@ -25,13 +26,16 @@ class LivestockServiceTest {
 
   private ProductionUnitRepository productionUnitRepository;
   private LifecycleEventRepository lifecycleEventRepository;
+  private BreedRepository breedRepository;
   private LivestockService service;
 
   @BeforeEach
   void setUp() {
     productionUnitRepository = Mockito.mock(ProductionUnitRepository.class);
     lifecycleEventRepository = Mockito.mock(LifecycleEventRepository.class);
-    service = new LivestockService(productionUnitRepository, lifecycleEventRepository);
+    breedRepository = Mockito.mock(BreedRepository.class);
+    service =
+        new LivestockService(productionUnitRepository, lifecycleEventRepository, breedRepository);
     lenient()
         .when(lifecycleEventRepository.save(any(LifecycleEvent.class)))
         .thenAnswer(i -> i.getArgument(0));
