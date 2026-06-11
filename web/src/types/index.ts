@@ -103,6 +103,18 @@ export interface Subscription {
 /** Change-request lifecycle status (mirrors backend RequestStatus). */
 export type RequestStatus = "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED";
 
+/** A subscription plan / pré-bundle (mirrors backend PlanResponse). */
+export interface Plan {
+  key: string;
+  label: string;
+  priceXof: number | null;
+  modules: string[];
+  quotas: Record<string, unknown> | null;
+  recommended: boolean;
+  custom: boolean;
+  wave: string;
+}
+
 /** A subscription change request (mirrors backend ChangeRequestResponse). */
 export interface ChangeRequest {
   id: number;

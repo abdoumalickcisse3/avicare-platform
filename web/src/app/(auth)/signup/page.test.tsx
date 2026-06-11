@@ -12,8 +12,50 @@ const m = vi.hoisted(() => ({
     unwrap: () => Promise.resolve({ accessToken: "a2", refreshToken: "r2", expiresIn: 900 }),
   })),
   createFarm: vi.fn(() => ({ unwrap: () => Promise.resolve({ id: 1 }) })),
-  enableModule: vi.fn(() => ({ unwrap: () => Promise.resolve({}) })),
+  applyPlan: vi.fn(() => ({ unwrap: () => Promise.resolve({}) })),
   upsert: vi.fn(() => ({ unwrap: () => Promise.resolve({}) })),
+  plans: [
+    {
+      key: "starter_volaille",
+      label: "Starter Volaille",
+      priceXof: 15000,
+      modules: ["module.poultry.broiler", "module.poultry.layer", "module.health.basic"],
+      quotas: null,
+      recommended: false,
+      custom: false,
+      wave: "V1",
+    },
+    {
+      key: "pro_volaille",
+      label: "Pro Volaille",
+      priceXof: 25000,
+      modules: ["module.poultry.broiler", "module.poultry.layer", "module.health.advanced"],
+      quotas: null,
+      recommended: true,
+      custom: false,
+      wave: "V1",
+    },
+    {
+      key: "ferme_complete",
+      label: "Ferme Complète",
+      priceXof: 45000,
+      modules: [],
+      quotas: null,
+      recommended: false,
+      custom: false,
+      wave: "V1",
+    },
+    {
+      key: "sur_mesure",
+      label: "Sur mesure",
+      priceXof: null,
+      modules: [],
+      quotas: null,
+      recommended: false,
+      custom: true,
+      wave: "V1",
+    },
+  ],
 }));
 
 vi.mock("next/navigation", () => ({
@@ -27,7 +69,8 @@ vi.mock("@/store/api/farmsApi", () => ({
   useCreateFarmMutation: () => [m.createFarm, {}],
 }));
 vi.mock("@/store/api/subscriptionApi", () => ({
-  useEnableModuleMutation: () => [m.enableModule, {}],
+  useGetPlansQuery: () => ({ data: m.plans }),
+  useApplyPlanMutation: () => [m.applyPlan, {}],
 }));
 vi.mock("@/store/api/accountSettingsApi", () => ({
   ONBOARDING_SETTING_KEY: "onboarding_completed",
@@ -100,8 +143,8 @@ describe("SignupPage (2-step wizard)", () => {
     await waitFor(() => expect(m.replace).toHaveBeenCalledWith("/onboarding"));
     expect(m.signup).toHaveBeenCalledTimes(1);
     expect(m.createFarm).toHaveBeenCalledWith({ name: "Ferme Test", location: undefined });
-    // Pro Volaille activates its 5 modules
-    expect(m.enableModule).toHaveBeenCalledTimes(5);
+    // Backend resolves the plan's modules — frontend just applies the plan key.
+    expect(m.applyPlan).toHaveBeenCalledWith({ farmId: 1, planKey: "pro_volaille" });
     expect(m.upsert).toHaveBeenCalledWith({
       key: "onboarding_completed",
       value: { completed: true },
@@ -150,7 +193,7 @@ describe("SignupPage (dev gating bypass)", () => {
     expect(screen.queryByText("Starter Volaille")).not.toBeInTheDocument();
     expect(m.signup).toHaveBeenCalledTimes(1);
     expect(m.createFarm).toHaveBeenCalledWith({ name: "Ferme Test", location: undefined });
-    // "Ferme Complète" bundle activates every V1 module.
-    expect(m.enableModule).toHaveBeenCalledTimes(12);
+    // Dev bypass applies the full "Ferme Complète" plan.
+    expect(m.applyPlan).toHaveBeenCalledWith({ farmId: 1, planKey: "ferme_complete" });
   });
 });

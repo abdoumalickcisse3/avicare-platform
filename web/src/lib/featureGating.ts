@@ -1,5 +1,3 @@
-import type { BundleKey } from "@/constants/bundles";
-
 /**
  * Dev-only mirror of the backend `avicare.features.gating-enabled=false` switch
  * (ADR-004). When `NEXT_PUBLIC_FEATURES_GATING=off`, the UI removes subscription
@@ -14,5 +12,5 @@ export function isFeatureGatingDisabled(): boolean {
   return process.env.NEXT_PUBLIC_FEATURES_GATING === "off";
 }
 
-/** Bundle auto-selected when gating is disabled (every V1 module enabled). */
-export const DEV_BYPASS_BUNDLE_KEY: BundleKey = "complete";
+/** Plan auto-applied when gating is disabled (every V1 module enabled). */
+export const DEV_BYPASS_BUNDLE_KEY = "ferme_complete";

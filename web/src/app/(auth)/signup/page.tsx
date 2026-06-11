@@ -23,7 +23,10 @@ import {
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { useSignupMutation } from "@/store/api/authApi";
 import { useCreateFarmMutation } from "@/store/api/farmsApi";
-import { useEnableModuleMutation } from "@/store/api/subscriptionApi";
+import {
+  useApplyPlanMutation,
+  useGetPlansQuery,
+} from "@/store/api/subscriptionApi";
 import {
   ONBOARDING_SETTING_KEY,
   useUpsertSettingMutation,
@@ -35,10 +38,9 @@ import { apiErrorMessage } from "@/lib/apiError";
 import { useRefreshSession } from "@/hooks/useRefreshSession";
 import { PasswordField } from "@/components/forms/PasswordField";
 import {
-  BUNDLES,
   CUSTOM_BUNDLE_EMAIL,
-  bundlePriceLabel,
-  type BundleKey,
+  moduleLabel,
+  planPriceLabel,
 } from "@/constants/bundles";
 import {
   DEV_BYPASS_BUNDLE_KEY,
@@ -71,8 +73,9 @@ export default function SignupPage() {
 
   const [signup] = useSignupMutation();
   const [createFarm] = useCreateFarmMutation();
-  const [enableModule] = useEnableModuleMutation();
+  const [applyPlan] = useApplyPlanMutation();
   const [upsertSetting] = useUpsertSettingMutation();
+  const { data: plans } = useGetPlansQuery();
 
   // Dev-only: skip the plan step and auto-activate a full bundle (ADR-004).
   const gatingDisabled = isFeatureGatingDisabled();
@@ -121,14 +124,13 @@ export default function SignupPage() {
     setStep(2);
   };
 
-  const handleCreate = async (keyOverride?: BundleKey) => {
+  const handleCreate = async (keyOverride?: string) => {
     const key = keyOverride ?? selectedKey;
     if (!key) {
       setBundleError(true);
       return;
     }
-    const bundle = BUNDLES.find((b) => b.key === key);
-    if (!bundle) return;
+    const isCustom = plans?.find((p) => p.key === key)?.custom ?? false;
 
     const v = getValues();
     setServerError(null);
@@ -156,13 +158,10 @@ export default function SignupPage() {
         await refreshSession();
       }
       const farmId = orch.current.farmId;
-      // c. Activate the bundle's modules in parallel (skipped for custom).
-      if (!bundle.custom && bundle.modules.length > 0) {
-        await Promise.all(
-          bundle.modules.map((moduleKey) =>
-            enableModule({ farmId, moduleKey }).unwrap(),
-          ),
-        );
+      // c. Apply the plan — the backend resolves its modules and activates them
+      // (skipped for the custom/quote plan, which has no instant activation).
+      if (!isCustom) {
+        await applyPlan({ farmId, planKey: key }).unwrap();
       }
       // d. Mark onboarding (account + plan) done.
       await upsertSetting({
@@ -170,7 +169,7 @@ export default function SignupPage() {
         value: { completed: true },
       }).unwrap();
 
-      if (bundle.custom) {
+      if (isCustom) {
         window.location.assign(
           `mailto:${CUSTOM_BUNDLE_EMAIL}?subject=${encodeURIComponent(
             "Demande de plan sur mesure — AviCare",
@@ -305,13 +304,16 @@ export default function SignupPage() {
           </Typography>
 
           <Stack spacing={1.5}>
-            {BUNDLES.map((b) => {
-              const selected = selectedKey === b.key;
+            {(plans ?? []).map((p) => {
+              const selected = selectedKey === p.key;
+              const features = p.custom
+                ? ["Sur devis · à la carte"]
+                : p.modules.map(moduleLabel);
               return (
                 <Card
-                  key={b.key}
+                  key={p.key}
                   onClick={() => {
-                    setSelectedKey(b.key);
+                    setSelectedKey(p.key);
                     setBundleError(false);
                   }}
                   role="radio"
@@ -323,19 +325,19 @@ export default function SignupPage() {
                     borderColor: selected ? colors.primary[500] : colors.neutral[200],
                     borderWidth: selected ? 2 : 1,
                     bgcolor: selected ? colors.primary[50] : colors.neutral[0],
-                    ...(b.highlighted && !selected
+                    ...(p.recommended && !selected
                       ? { borderColor: colors.primary[300] }
                       : {}),
                   }}
                 >
                   <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "baseline" }}>
-                    <Typography sx={{ fontWeight: 700 }}>{b.name}</Typography>
+                    <Typography sx={{ fontWeight: 700 }}>{p.label}</Typography>
                     <Typography sx={{ fontWeight: 700, color: colors.primary[700] }}>
-                      {bundlePriceLabel(b)}
+                      {planPriceLabel(p.priceXof)}
                     </Typography>
                   </Stack>
                   <Stack spacing={0.5} sx={{ mt: 1 }}>
-                    {b.features.map((f) => (
+                    {features.map((f) => (
                       <Stack key={f} direction="row" spacing={1} sx={{ alignItems: "center" }}>
                         <Box sx={{ color: colors.success.main, display: "flex" }}>
                           <Check size={14} />
