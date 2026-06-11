@@ -3,6 +3,7 @@ package com.avicare.subscription.controller;
 import com.avicare.common.api.response.ApiResponse;
 import com.avicare.subscription.domain.Subscription;
 import com.avicare.subscription.domain.SubscriptionModule;
+import com.avicare.subscription.dto.request.ApplyPlanRequest;
 import com.avicare.subscription.dto.request.EnableModuleRequest;
 import com.avicare.subscription.dto.response.ModuleResponse;
 import com.avicare.subscription.dto.response.SubscriptionResponse;
@@ -36,19 +37,30 @@ public class SubscriptionController {
   @GetMapping
   @PreAuthorize("@farmAccess.hasAccess(#farmId)")
   public ApiResponse<SubscriptionResponse> get(@PathVariable Long farmId) {
-    Subscription sub = subscriptionService.getOrCreate(farmId);
+    return ApiResponse.of(toResponse(subscriptionService.getOrCreate(farmId), farmId));
+  }
+
+  @PostMapping("/plan")
+  @PreAuthorize(
+      "@farmAccess.hasRole(#farmId, T(com.avicare.common.security.principal.FarmRole).OWNER)")
+  public ApiResponse<SubscriptionResponse> applyPlan(
+      @PathVariable Long farmId, @RequestBody @Valid ApplyPlanRequest request) {
+    Subscription sub = subscriptionService.applyPlan(farmId, request.planKey());
+    return ApiResponse.of(toResponse(sub, farmId));
+  }
+
+  private SubscriptionResponse toResponse(Subscription sub, Long farmId) {
     List<ModuleResponse> modules =
         subscriptionService.listModules(farmId).stream()
             .map(SubscriptionController::toModuleResponse)
             .toList();
-    return ApiResponse.of(
-        new SubscriptionResponse(
-            sub.getId(),
-            sub.getFarmId(),
-            sub.getStatus(),
-            sub.getPlanKey(),
-            sub.getExpiresAt(),
-            modules));
+    return new SubscriptionResponse(
+        sub.getId(),
+        sub.getFarmId(),
+        sub.getStatus(),
+        sub.getPlanKey(),
+        sub.getExpiresAt(),
+        modules);
   }
 
   @GetMapping("/modules")
