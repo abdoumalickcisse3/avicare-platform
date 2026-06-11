@@ -216,6 +216,11 @@ Les bundles sont des **collections d'entitlements** côté DB — le code de ges
 | 10 | Legacy | Ancien repo `avicare-pro` figé, ARCHITECTURE.md gardé comme bible métier |
 | 11 | RBAC plateforme (`UserRole`) | 2 niveaux : `ADMIN` (staff AviCare) / `USER` (éleveur) — YAGNI V1, ajout d'un 3e rôle reste non-breaking |
 | 12 | RBAC tenant (`FarmRole`) | 5 personas par ferme : `OWNER`, `MANAGER`, `FARMER`, `VETERINARIAN`, `BUYER`, avec `defaultPermissions()` conservateurs (`resource:verb`), surchargeables par membership |
+| 13 | Catalogue modules | Tous les modules V1+V2+ déclarés (future-proof), champ `wave` marque la disponibilité (cf. doc 04 / A4) |
+| 14 | Modes d'activation | `OFF`/`HARD` seulement ; `SHADOW`/`SOFT` différés (cf. doc 04 / A4) |
+| 15 | Bundles | Pas de table dédiée : collections d'entitlements via `catalog_items` (catégorie `bundles`) (cf. doc 04 / A4) |
+| 16 | Plans → Modules | Mapping porté **côté backend = source de vérité unique**, exposé via API (`GET /subscription/plans`) ; V1 : plans = pré-bundles **only** (pas d'à-la-carte — affine D7) ; quotas **indicatifs, non enforced** (marketing soft). Cf. ADR-005 |
+| 17 | Type d'élevage par ferme | Pas de `farm.type` (cohérent D5) ; `production_focus` métier stocké en `farm_settings` (`farm`/`production_focus`, JSONB `broiler`/`layer`) ; sidebar = (modules abonnés actifs) ∩ (focus ferme courante) |
 
 ---
 
