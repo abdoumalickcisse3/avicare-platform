@@ -24,6 +24,7 @@ import {
   Warehouse,
 } from "lucide-react";
 import { useActiveModules } from "@/hooks/useActiveModules";
+import { useCurrentFarmFocus } from "@/hooks/useCurrentFarmFocus";
 import { colors } from "@/theme/tokens";
 
 export const SIDEBAR_WIDTH = 260;
@@ -35,6 +36,8 @@ interface NavItem {
   enabled: boolean;
   /** When set, the item only shows if this subscription module is active. */
   requiredModule?: string;
+  /** When set, also requires the current farm's production focus (Décision 17). */
+  focusToken?: "broiler" | "layer";
 }
 
 interface NavSection {
@@ -67,6 +70,7 @@ const NAV_SECTIONS: NavSection[] = [
         icon: Bird,
         enabled: true,
         requiredModule: "module.poultry.broiler",
+        focusToken: "broiler",
       },
       {
         label: "Œufs",
@@ -74,6 +78,7 @@ const NAV_SECTIONS: NavSection[] = [
         icon: Egg,
         enabled: true,
         requiredModule: "module.poultry.layer",
+        focusToken: "layer",
       },
       {
         label: "Poulets de chair",
@@ -81,6 +86,7 @@ const NAV_SECTIONS: NavSection[] = [
         icon: Drumstick,
         enabled: false,
         requiredModule: "module.poultry.broiler",
+        focusToken: "broiler",
       },
     ],
   },
@@ -107,6 +113,12 @@ const HEADING_SX = {
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const { isModuleActive, isLoading, farmId, hasFarm } = useActiveModules();
+  const { focus } = useCurrentFarmFocus();
+
+  // An item passes the métier filter if the current farm's focus includes its
+  // token — or if the farm has no explicit focus (empty = don't filter).
+  const inFarmFocus = (item: NavItem) =>
+    !item.focusToken || focus.length === 0 || focus.includes(item.focusToken);
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(`${href}/`);
@@ -166,7 +178,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     }
 
     const visible = section.items.filter(
-      (it) => !it.requiredModule || isModuleActive(it.requiredModule),
+      (it) =>
+        (!it.requiredModule || isModuleActive(it.requiredModule)) && inFarmFocus(it),
     );
 
     if (visible.length === 0) {

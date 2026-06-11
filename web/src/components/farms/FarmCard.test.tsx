@@ -17,6 +17,7 @@ const baseFarm: Farm = {
   createdBy: 1,
   active: true,
   createdAt: "2026-01-01T00:00:00",
+  productionFocus: [],
 };
 
 describe("FarmCard", () => {

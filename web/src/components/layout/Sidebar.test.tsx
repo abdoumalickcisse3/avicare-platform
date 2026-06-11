@@ -12,6 +12,11 @@ vi.mock("@/hooks/useActiveModules", () => ({
   useActiveModules: () => activeModulesMock(),
 }));
 
+const focusMock = vi.fn();
+vi.mock("@/hooks/useCurrentFarmFocus", () => ({
+  useCurrentFarmFocus: () => focusMock(),
+}));
+
 function mockModules(active: string[], { isLoading = false } = {}) {
   activeModulesMock.mockReturnValue({
     farmId: 1,
@@ -22,8 +27,16 @@ function mockModules(active: string[], { isLoading = false } = {}) {
   });
 }
 
+function mockFocus(focus: string[]) {
+  focusMock.mockReturnValue({ focus, hasFarm: true, isLoading: false });
+}
+
 describe("Sidebar module filtering", () => {
-  beforeEach(() => activeModulesMock.mockReset());
+  beforeEach(() => {
+    activeModulesMock.mockReset();
+    focusMock.mockReset();
+    mockFocus([]); // default: no explicit focus → modules alone decide
+  });
 
   it("always shows Fermes and Réglages", () => {
     mockModules(["module.poultry.broiler"]);
@@ -53,6 +66,15 @@ describe("Sidebar module filtering", () => {
     renderWithProviders(<Sidebar />);
     expect(screen.getByText("Lots")).toBeInTheDocument();
     expect(screen.getByText("Œufs")).toBeInTheDocument();
+  });
+
+  it("further filters by the current farm's production focus", () => {
+    // Both modules active, but the farm is broiler-only → Œufs hidden.
+    mockModules(["module.poultry.broiler", "module.poultry.layer"]);
+    mockFocus(["broiler"]);
+    renderWithProviders(<Sidebar />);
+    expect(screen.getByText("Lots")).toBeInTheDocument();
+    expect(screen.queryByText("Œufs")).not.toBeInTheDocument();
   });
 
   it("shows the empty-state CTA when no module is active", () => {
