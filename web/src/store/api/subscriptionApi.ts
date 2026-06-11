@@ -2,6 +2,7 @@ import { baseApi } from "./baseApi";
 import type {
   ChangeRequest,
   FeatureMode,
+  Plan,
   Subscription,
   SubscriptionModule,
 } from "@/types";
@@ -13,10 +14,26 @@ interface ApiEnvelope<T> {
 
 export const subscriptionApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
+    /** Public catalog of V1 subscription plans (backend source of truth, Décision 16). */
+    getPlans: build.query<Plan[], void>({
+      query: () => "/api/v1/subscription/plans",
+      transformResponse: (r: ApiEnvelope<Plan[]>) => r.data,
+      providesTags: [{ type: "Subscription", id: "PLANS" }],
+    }),
     getSubscription: build.query<Subscription, number>({
       query: (farmId) => `/api/v1/farms/${farmId}/subscription`,
       transformResponse: (r: ApiEnvelope<Subscription>) => r.data,
       providesTags: (_r, _e, farmId) => [{ type: "Subscription", id: farmId }],
+    }),
+    /** Apply a plan to a farm: backend resolves its modules and reconciles them. */
+    applyPlan: build.mutation<Subscription, { farmId: number; planKey: string }>({
+      query: ({ farmId, planKey }) => ({
+        url: `/api/v1/farms/${farmId}/subscription/plan`,
+        method: "POST",
+        body: { planKey },
+      }),
+      transformResponse: (r: ApiEnvelope<Subscription>) => r.data,
+      invalidatesTags: (_r, _e, { farmId }) => [{ type: "Subscription", id: farmId }],
     }),
     enableModule: build.mutation<
       SubscriptionModule,
@@ -71,6 +88,8 @@ export const subscriptionApi = baseApi.injectEndpoints({
 });
 
 export const {
+  useGetPlansQuery,
+  useApplyPlanMutation,
   useGetSubscriptionQuery,
   useEnableModuleMutation,
   useListChangeRequestsQuery,

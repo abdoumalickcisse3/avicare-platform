@@ -13,10 +13,17 @@ const h = vi.hoisted(() => ({
         modules: { moduleKey: string; mode: string; expiresAt: string | null }[];
       }
     | undefined,
+  plans: [
+    { key: "starter_volaille", label: "Starter Volaille", priceXof: 15000, modules: ["module.poultry.broiler"], quotas: null, recommended: false, custom: false, wave: "V1" },
+    { key: "pro_volaille", label: "Pro Volaille", priceXof: 25000, modules: ["module.poultry.broiler", "module.poultry.layer"], quotas: null, recommended: true, custom: false, wave: "V1" },
+    { key: "ferme_complete", label: "Ferme Complète", priceXof: 45000, modules: [], quotas: null, recommended: false, custom: false, wave: "V1" },
+    { key: "sur_mesure", label: "Sur mesure", priceXof: null, modules: [], quotas: null, recommended: false, custom: true, wave: "V1" },
+  ],
 }));
 
 vi.mock("@/store/api/subscriptionApi", () => ({
   useGetSubscriptionQuery: () => ({ data: h.sub, isLoading: false, error: undefined }),
+  useGetPlansQuery: () => ({ data: h.plans }),
   useListChangeRequestsQuery: () => ({ data: [] }),
   useCreateChangeRequestMutation: () => [vi.fn(), { isLoading: false }],
   useSubmitChangeRequestMutation: () => [vi.fn(), { isLoading: false }],
@@ -42,7 +49,8 @@ describe("FarmSubscriptionTab", () => {
     expect(screen.getByText("Plan actuel")).toBeInTheDocument();
     expect(screen.getByText("Essai")).toBeInTheDocument();
     expect(screen.getByText(/expire le/i)).toBeInTheDocument();
-    expect(screen.getByText("Volaille chair")).toBeInTheDocument();
+    // "Volaille chair" shows both as the active-module chip and in plan cards.
+    expect(screen.getAllByText("Volaille chair").length).toBeGreaterThan(0);
     // bundle cards available to choose from (starter/pro/complete)
     expect(
       screen.getAllByRole("button", { name: /demander ce plan/i }).length,
@@ -54,7 +62,7 @@ describe("FarmSubscriptionTab", () => {
       id: 1,
       farmId: 3,
       status: "ACTIVE",
-      planKey: "pro",
+      planKey: "pro_volaille",
       expiresAt: null,
       modules: [],
     };

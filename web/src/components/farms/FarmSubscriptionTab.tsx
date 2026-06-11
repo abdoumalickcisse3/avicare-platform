@@ -14,6 +14,7 @@ import {
 import { Check } from "lucide-react";
 import {
   useCreateChangeRequestMutation,
+  useGetPlansQuery,
   useGetSubscriptionQuery,
   useListChangeRequestsQuery,
   useSubmitChangeRequestMutation,
@@ -23,13 +24,11 @@ import { useToast } from "@/components/feedback/ToastProvider";
 import { formatDate } from "@/lib/format";
 import { colors } from "@/theme/tokens";
 import {
-  BUNDLES,
   CUSTOM_BUNDLE_EMAIL,
-  bundlePriceLabel,
   moduleLabel,
-  type Bundle,
+  planPriceLabel,
 } from "@/constants/bundles";
-import type { SubscriptionStatus } from "@/types";
+import type { Plan, SubscriptionStatus } from "@/types";
 
 const STATUS_META: Record<
   SubscriptionStatus,
@@ -44,6 +43,7 @@ const STATUS_META: Record<
 
 export function FarmSubscriptionTab({ farmId }: { farmId: number }) {
   const { data: subscription, isLoading, error } = useGetSubscriptionQuery(farmId);
+  const { data: plans } = useGetPlansQuery();
   const { data: changeRequests } = useListChangeRequestsQuery(farmId);
   const [createChangeRequest, { isLoading: creating }] =
     useCreateChangeRequestMutation();
@@ -56,8 +56,8 @@ export function FarmSubscriptionTab({ farmId }: { farmId: number }) {
   );
   const requesting = creating || submitting;
 
-  const requestBundle = async (bundle: Bundle) => {
-    if (bundle.custom) {
+  const requestBundle = async (plan: Plan) => {
+    if (plan.custom) {
       window.location.assign(
         `mailto:${CUSTOM_BUNDLE_EMAIL}?subject=${encodeURIComponent(
           "Demande de plan sur mesure — AviCare",
@@ -68,8 +68,8 @@ export function FarmSubscriptionTab({ farmId }: { farmId: number }) {
     try {
       const cr = await createChangeRequest({
         farmId,
-        requestedPlan: bundle.key,
-        requestedModules: bundle.modules,
+        requestedPlan: plan.key,
+        requestedModules: plan.modules,
       }).unwrap();
       await submitChangeRequest({ farmId, requestId: cr.id }).unwrap();
       showToast("Demande de changement envoyée.", "success");
@@ -113,7 +113,7 @@ export function FarmSubscriptionTab({ farmId }: { farmId: number }) {
           </Stack>
           <Typography variant="body1">
             {subscription.planKey
-              ? (BUNDLES.find((b) => b.key === subscription.planKey)?.name ??
+              ? (plans?.find((p) => p.key === subscription.planKey)?.label ??
                 subscription.planKey)
               : "Essai gratuit"}
           </Typography>
@@ -179,19 +179,22 @@ export function FarmSubscriptionTab({ farmId }: { farmId: number }) {
             gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" },
           }}
         >
-          {BUNDLES.map((bundle) => {
-            const isCurrent = subscription.planKey === bundle.key;
+          {(plans ?? []).map((plan) => {
+            const isCurrent = subscription.planKey === plan.key;
+            const features = plan.custom
+              ? ["Sur devis · à la carte"]
+              : plan.modules.map(moduleLabel);
             return (
-              <Card key={bundle.key} sx={{ display: "flex", flexDirection: "column" }}>
+              <Card key={plan.key} sx={{ display: "flex", flexDirection: "column" }}>
                 <CardContent sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                  <Typography sx={{ fontWeight: 700 }}>{bundle.name}</Typography>
+                  <Typography sx={{ fontWeight: 700 }}>{plan.label}</Typography>
                   <Typography
                     sx={{ fontWeight: 700, color: colors.primary[700], mb: 1 }}
                   >
-                    {bundlePriceLabel(bundle)}
+                    {planPriceLabel(plan.priceXof)}
                   </Typography>
                   <Stack spacing={0.5} sx={{ flex: 1, mb: 2 }}>
-                    {bundle.features.map((f) => (
+                    {features.map((f) => (
                       <Stack key={f} direction="row" spacing={1} sx={{ alignItems: "center" }}>
                         <Box sx={{ color: colors.success.main, display: "flex" }}>
                           <Check size={14} />
@@ -201,15 +204,15 @@ export function FarmSubscriptionTab({ farmId }: { farmId: number }) {
                     ))}
                   </Stack>
                   <Button
-                    variant={bundle.custom ? "outlined" : "contained"}
+                    variant={plan.custom ? "outlined" : "contained"}
                     color="primary"
                     fullWidth
-                    disabled={isCurrent || (!bundle.custom && (requesting || Boolean(pending)))}
-                    onClick={() => requestBundle(bundle)}
+                    disabled={isCurrent || (!plan.custom && (requesting || Boolean(pending)))}
+                    onClick={() => requestBundle(plan)}
                   >
                     {isCurrent
                       ? "Plan actuel"
-                      : bundle.custom
+                      : plan.custom
                         ? "Contacter un expert"
                         : "Demander ce plan"}
                   </Button>
