@@ -21,4 +21,7 @@ public interface ParametersFacade {
 
   /** The effective catalog of a category for a farm (platform items + farm customizations). */
   List<CatalogEntryInfo> listForFarm(Long farmId, String category);
+
+  /** The platform-level catalog of a category (no farm context, e.g. subscription plans). */
+  List<CatalogEntryInfo> listPlatform(String category);
 }

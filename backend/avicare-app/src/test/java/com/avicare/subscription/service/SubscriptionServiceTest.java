@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import com.avicare.parameters.api.ParametersFacade;
 import com.avicare.subscription.domain.FeatureMode;
 import com.avicare.subscription.domain.Subscription;
 import com.avicare.subscription.domain.SubscriptionModule;
@@ -20,13 +21,17 @@ class SubscriptionServiceTest {
 
   private SubscriptionRepository subscriptionRepository;
   private SubscriptionModuleRepository subscriptionModuleRepository;
+  private ParametersFacade parametersFacade;
   private SubscriptionService service;
 
   @BeforeEach
   void setUp() {
     subscriptionRepository = Mockito.mock(SubscriptionRepository.class);
     subscriptionModuleRepository = Mockito.mock(SubscriptionModuleRepository.class);
-    service = new SubscriptionService(subscriptionRepository, subscriptionModuleRepository);
+    parametersFacade = Mockito.mock(ParametersFacade.class);
+    service =
+        new SubscriptionService(
+            subscriptionRepository, subscriptionModuleRepository, parametersFacade);
   }
 
   private Subscription subscription() {

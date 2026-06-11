@@ -34,4 +34,11 @@ public class ParametersFacadeImpl implements ParametersFacade {
         .map(e -> new CatalogEntryInfo(e.category(), e.key(), e.value(), e.custom()))
         .toList();
   }
+
+  @Override
+  public List<CatalogEntryInfo> listPlatform(String category) {
+    return catalogService.listPlatform(category).stream()
+        .map(e -> new CatalogEntryInfo(e.category(), e.key(), e.value(), e.custom()))
+        .toList();
+  }
 }
