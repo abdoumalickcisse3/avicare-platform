@@ -7,7 +7,48 @@ et ce projet adhère au [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0
 
 ## [Unreleased]
 
-_Rien encore. Le sprint A2 (common-*) démarre ici._
+_Rien en attente. Prochain : Sprint B3 (santé)._
+
+> Note : le changelog n'a pas été tenu entre 0.1.0 et 0.7.0 ; l'historique
+> intermédiaire (A2 → B1) est tracé par les tags Git et les PRs. Reprise du
+> journal à 0.7.0.
+
+## [0.7.0-poultry-layer] — 2026-06-11
+
+Sprint B2 complet — module **Volaille ponte** (jalon B.M2). Production d'œufs
+opérationnelle de bout en bout, plus deux décisions structurantes (Plan→Modules
+backend, focus de production par ferme).
+
+### Added — Volaille ponte (backend)
+
+- Migrations `V8` (egg_collections + egg_tray_stocks), `V9` (daily_egg_productions),
+  `V10` (breeds.type), `V11` (seed plans).
+- API REST `egg-production` (collectes, stock plateaux, clôture journalière,
+  config) gatée `module.poultry.layer` ; `POST /production-units` (création de lot
+  pondeuse, OWNER/MANAGER) ; exposition de `breed.type` (broiler/layer).
+- ITs Testcontainers : `LayerFlowIT` (flux ponte HTTP complet), `ProductionUnitCreateIT`.
+
+### Added — Volaille ponte (frontend)
+
+- Pages `/elevage/oeufs` (overview + détail 4 onglets, courbe taux de ponte),
+  `CreateLayerBatchDialog`, `EggCollectionDialog`, `CloseDayButton`, `/reglages/ponte`.
+
+### Added — Décision 16 (Plan → Modules backend)
+
+- `GET /subscription/plans` (public) + `POST /farms/{id}/subscription/plan` (apply,
+  réconciliation) ; mapping source de vérité dans le catalogue `bundles` (ADR-005).
+  Le frontend consomme l'API ; `bundles.ts` réduit aux libellés.
+
+### Added — Décision 17 (production_focus par ferme)
+
+- `productionFocus[]` sur les fermes (stocké en `farm_settings`, sans migration) ;
+  sélecteur « Type d'élevage » à la création ; sidebar = modules abonnés ∩ focus
+  de la ferme courante (ADR-006).
+
+### Fixed
+
+- `breedsApi` envoie le paramètre `species` requis (dropdown souches vide).
+- `V11` : précédence du cast `::jsonb` dans le seed des plans.
 
 ## [0.1.0-setup] — 2026-05-25
 
@@ -91,5 +132,6 @@ La protection serveur de la branche `main` (required PR, required status checks 
 
 ---
 
-[Unreleased]: https://github.com/abdoumalickcisse3/avicare-platform/compare/v0.1.0-setup...main
+[Unreleased]: https://github.com/abdoumalickcisse3/avicare-platform/compare/v0.7.0-poultry-layer...main
+[0.7.0-poultry-layer]: https://github.com/abdoumalickcisse3/avicare-platform/compare/v0.6.0-poultry-chair...v0.7.0-poultry-layer
 [0.1.0-setup]: https://github.com/abdoumalickcisse3/avicare-platform/releases/tag/v0.1.0-setup

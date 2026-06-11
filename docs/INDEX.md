@@ -81,13 +81,13 @@ Pour toute décision d'architecture non documentée, ME DEMANDER avant d'agir.
 
 À mettre à jour à chaque fin de sprint dans le CHANGELOG.md :
 
-- [ ] Sprint A1 — Setup mono-repo
-- [ ] Sprint A2 — common-* squelette
-- [ ] Sprint A3 — identity + tenancy
-- [ ] Sprint A4 — subscription + parameters
-- [ ] Sprint A5 — livestock socle
-- [ ] Sprint B1 — poultry chair
-- [ ] Sprint B2 — poultry ponte
+- [x] Sprint A1 — Setup mono-repo
+- [x] Sprint A2 — common-* squelette
+- [x] Sprint A3 — identity + tenancy
+- [x] Sprint A4 — subscription + parameters
+- [x] Sprint A5 — livestock socle
+- [x] Sprint B1 — poultry chair
+- [x] Sprint B2 — poultry ponte
 - [ ] Sprint B3 — health
 - [ ] Sprint B4 — inventory
 - [ ] Sprint B5 — commercial
