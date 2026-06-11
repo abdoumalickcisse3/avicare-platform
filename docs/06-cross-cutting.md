@@ -333,6 +333,23 @@ INSERT INTO farm_settings (farm_id, key, value) VALUES
 (123, 'features.module.qr_codes.mode', '"OFF"');
 ```
 
+### Plans d'abonnement (Plan → Modules) — Sprint B2-5, ADR-005
+
+Le mapping **Plan → Modules** est la **source de vérité du backend** (Décision 16),
+pas une constante frontend. Les plans sont des `catalog_items` de catégorie
+`bundles` (Décision 15 — pas de table dédiée), chacun portant
+`value {label, price_xof, wave, recommended?, custom?, modules[], quotas}`.
+
+- **`GET /api/v1/subscription/plans`** (public) : liste les plans V1 (filtre `wave`)
+  avec leurs `modules[]`. Lu via `ParametersFacade.listPlatform("bundles")`.
+- **`POST /api/v1/farms/{farmId}/subscription/plan`** (`OWNER`) : résout les modules
+  du plan côté serveur, **réconcilie** l'abonnement à exactement cet ensemble
+  (active manquants / désactive surnuméraires) et fixe `plan_key`. Idempotent ;
+  plan `custom` (sur mesure) → `422 PLAN_REQUIRES_QUOTE` ; inconnu/hors V1 → `404`.
+
+Politique V1 : **plans = pré-bundles only** (pas d'à-la-carte) ; les **quotas sont
+indicatifs (marketing), non enforced** backend. Détails : `docs/decisions/005-…`.
+
 ### Seed data minimal (Sprint A4)
 
 Liste à insérer en seed pour V1 :
