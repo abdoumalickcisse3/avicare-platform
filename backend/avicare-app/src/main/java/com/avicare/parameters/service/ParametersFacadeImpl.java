@@ -41,4 +41,9 @@ public class ParametersFacadeImpl implements ParametersFacade {
         .map(e -> new CatalogEntryInfo(e.category(), e.key(), e.value(), e.custom()))
         .toList();
   }
+
+  @Override
+  public void setFarmSetting(Long farmId, String key, Map<String, Object> value) {
+    farmSettingService.setFarmSetting(farmId, key, value);
+  }
 }

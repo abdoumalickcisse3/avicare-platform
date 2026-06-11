@@ -24,4 +24,7 @@ public interface ParametersFacade {
 
   /** The platform-level catalog of a category (no farm context, e.g. subscription plans). */
   List<CatalogEntryInfo> listPlatform(String category);
+
+  /** Upsert a farm-level setting (layer 2). Value is a JSON object (wrap scalars/arrays). */
+  void setFarmSetting(Long farmId, String key, Map<String, Object> value);
 }
