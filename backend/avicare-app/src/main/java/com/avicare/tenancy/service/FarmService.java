@@ -1,7 +1,9 @@
 package com.avicare.tenancy.service;
 
+import com.avicare.common.api.exception.BusinessRuleException;
 import com.avicare.common.api.exception.NotFoundException;
 import com.avicare.common.security.principal.FarmRole;
+import com.avicare.parameters.api.ParametersFacade;
 import com.avicare.tenancy.domain.Farm;
 import com.avicare.tenancy.domain.UserFarm;
 import com.avicare.tenancy.dto.request.CreateFarmRequest;
@@ -11,6 +13,9 @@ import com.avicare.tenancy.mapper.TenancyMapper;
 import com.avicare.tenancy.repository.FarmRepository;
 import com.avicare.tenancy.repository.UserFarmRepository;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,9 +31,16 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class FarmService {
 
+  /** farm_settings key + allowed métier focus tokens (V1), Décision 17. */
+  static final String FOCUS_CATEGORY = "farm";
+
+  static final String FOCUS_KEY = "production_focus";
+  static final Set<String> ALLOWED_FOCUS = Set.of("broiler", "layer");
+
   private final FarmRepository farmRepository;
   private final UserFarmRepository userFarmRepository;
   private final TenancyMapper tenancyMapper;
+  private final ParametersFacade parametersFacade;
 
   @Transactional
   public FarmResponse create(Long creatorUserId, CreateFarmRequest request) {
@@ -55,7 +67,10 @@ public class FarmService {
     owner.setPermissions(FarmRole.OWNER.defaultPermissions());
     userFarmRepository.save(owner);
 
-    return tenancyMapper.toResponse(saved);
+    if (request.productionFocus() != null) {
+      writeFocus(saved.getId(), request.productionFocus());
+    }
+    return respond(saved);
   }
 
   @Transactional(readOnly = true)
@@ -70,12 +85,12 @@ public class FarmService {
               .toList();
       farms = farmRepository.findAllById(farmIds);
     }
-    return farms.stream().map(tenancyMapper::toResponse).toList();
+    return farms.stream().map(this::respond).toList();
   }
 
   @Transactional(readOnly = true)
   public FarmResponse get(Long farmId) {
-    return tenancyMapper.toResponse(load(farmId));
+    return respond(load(farmId));
   }
 
   @Transactional
@@ -93,7 +108,10 @@ public class FarmService {
     if (request.currency() != null && !request.currency().isBlank()) {
       farm.setCurrency(request.currency());
     }
-    return tenancyMapper.toResponse(farm);
+    if (request.productionFocus() != null) {
+      writeFocus(farmId, request.productionFocus());
+    }
+    return respond(farm);
   }
 
   /** Soft delete: {@code @SQLDelete} on {@link Farm} turns this into {@code SET deleted_at}. */
@@ -104,5 +122,44 @@ public class FarmService {
 
   private Farm load(Long farmId) {
     return farmRepository.findById(farmId).orElseThrow(() -> NotFoundException.of("Farm", farmId));
+  }
+
+  /** Map a farm to its response, enriched with its production focus (Décision 17). */
+  private FarmResponse respond(Farm farm) {
+    FarmResponse b = tenancyMapper.toResponse(farm);
+    return new FarmResponse(
+        b.id(),
+        b.name(),
+        b.description(),
+        b.location(),
+        b.gpsLatitude(),
+        b.gpsLongitude(),
+        b.capacity(),
+        b.timezone(),
+        b.currency(),
+        b.createdBy(),
+        b.active(),
+        b.createdAt(),
+        readFocus(farm.getId()));
+  }
+
+  @SuppressWarnings("unchecked")
+  private List<String> readFocus(Long farmId) {
+    return parametersFacade
+        .resolve(null, farmId, FOCUS_CATEGORY, FOCUS_KEY)
+        .map(v -> (List<String>) v.get("value"))
+        .filter(Objects::nonNull)
+        .orElseGet(List::of);
+  }
+
+  /** Validate the focus tokens (⊆ broiler/layer) and upsert them on the farm (layer 2). */
+  private void writeFocus(Long farmId, List<String> focus) {
+    for (String token : focus) {
+      if (!ALLOWED_FOCUS.contains(token)) {
+        throw new BusinessRuleException(
+            "INVALID_PRODUCTION_FOCUS", "Unknown production focus '" + token + "'");
+      }
+    }
+    parametersFacade.setFarmSetting(farmId, FOCUS_KEY, Map.of("value", List.copyOf(focus)));
   }
 }
