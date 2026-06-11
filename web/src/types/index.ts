@@ -43,6 +43,8 @@ export interface Farm {
   createdBy: number;
   active: boolean;
   createdAt: string;
+  /** Métier focus tokens (broiler/layer), Décision 17. */
+  productionFocus: string[];
 }
 
 /** Payload for farm create/update (subset of backend fields exposed in V1 UI). */
@@ -51,6 +53,7 @@ export interface FarmInput {
   description?: string;
   location?: string;
   capacity?: number;
+  productionFocus?: string[];
 }
 
 /** Tenant-level role inside a farm (mirrors backend FarmRole enum). */
