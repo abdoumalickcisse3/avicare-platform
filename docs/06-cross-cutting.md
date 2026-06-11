@@ -350,6 +350,21 @@ pas une constante frontend. Les plans sont des `catalog_items` de catégorie
 Politique V1 : **plans = pré-bundles only** (pas d'à-la-carte) ; les **quotas sont
 indicatifs (marketing), non enforced** backend. Détails : `docs/decisions/005-…`.
 
+### Focus de production par ferme — Sprint B2-5, ADR-006
+
+Distinct des modules d'abonnement (commercial), chaque **ferme** porte un **focus
+métier** (Décision 17) : `broiler` / `layer`. Pas de `farm.type` (cohérent
+Décision 5) — stocké en `farm_settings` (`key=production_focus`,
+`value={"value":["broiler","layer"]}`), donc **aucune migration**.
+
+- Porté par `POST`/`PUT /api/v1/farms` (`productionFocus[]`), renvoyé par `GET`.
+  Écrit/lu via `FarmSettingService` à travers `ParametersFacade.setFarmSetting`.
+- Tokens validés ⊆ `{broiler, layer}` → `422 INVALID_PRODUCTION_FOCUS` ; focus
+  vide = **« pas de filtre »** (rétro-compatible).
+- **Sidebar = (modules abonnés actifs) ∩ (focus de la ferme courante)** : une
+  ferme chair-only d'un compte Pro n'affiche pas « Œufs ». Détails :
+  `docs/decisions/006-…`.
+
 ### Seed data minimal (Sprint A4)
 
 Liste à insérer en seed pour V1 :
