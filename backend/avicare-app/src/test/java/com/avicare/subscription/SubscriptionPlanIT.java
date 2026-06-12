@@ -73,19 +73,19 @@ class SubscriptionPlanIT {
 
     String base = "/api/v1/farms/" + farmId + "/subscription";
 
-    // Apply Pro → 5 modules + plan_key set.
+    // Apply Pro → 6 modules + plan_key set (health.basic added in V12).
     mockMvc
         .perform(applyPlan(base, owner, "pro_volaille"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.planKey").value("pro_volaille"))
-        .andExpect(jsonPath("$.data.modules.length()").value(5));
+        .andExpect(jsonPath("$.data.modules.length()").value(6));
 
     // Re-apply Pro → no-op, still Pro.
     mockMvc
         .perform(applyPlan(base, owner, "pro_volaille"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.planKey").value("pro_volaille"))
-        .andExpect(jsonPath("$.data.modules.length()").value(5));
+        .andExpect(jsonPath("$.data.modules.length()").value(6));
 
     // Downgrade to Starter → reconciled to exactly 3 modules.
     mockMvc
