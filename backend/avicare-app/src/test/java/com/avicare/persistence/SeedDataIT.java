@@ -41,9 +41,9 @@ class SeedDataIT {
   @Test
   void catalogCategoriesAreSeededWithExpectedCounts() {
     assertThat(catalogItemRepository.findByCategory("modules")).hasSize(16);
-    assertThat(catalogItemRepository.findByCategory("bundles")).hasSize(4);
+    assertThat(catalogItemRepository.findByCategory("bundles")).hasSize(5);
     assertThat(catalogItemRepository.findByCategory("breeds")).hasSize(5);
-    assertThat(catalogItemRepository.findByCategory("vaccines")).hasSize(4);
+    assertThat(catalogItemRepository.findByCategory("vaccines")).hasSize(10);
     assertThat(catalogItemRepository.findByCategory("expense_categories")).hasSize(7);
   }
 
