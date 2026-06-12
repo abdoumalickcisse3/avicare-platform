@@ -14,7 +14,6 @@ import {
   Typography,
 } from "@mui/material";
 import {
-  Bird,
   CreditCard,
   Drumstick,
   Egg,
@@ -65,9 +64,9 @@ const NAV_SECTIONS: NavSection[] = [
     moduleGated: true,
     items: [
       {
-        label: "Lots",
+        label: "Poulets de chair",
         href: "/elevage/lots",
-        icon: Bird,
+        icon: Drumstick,
         enabled: true,
         requiredModule: "module.poultry.broiler",
         focusToken: "broiler",
@@ -79,14 +78,6 @@ const NAV_SECTIONS: NavSection[] = [
         enabled: true,
         requiredModule: "module.poultry.layer",
         focusToken: "layer",
-      },
-      {
-        label: "Poulets de chair",
-        href: "/elevage/chair",
-        icon: Drumstick,
-        enabled: false,
-        requiredModule: "module.poultry.broiler",
-        focusToken: "broiler",
       },
     ],
   },
