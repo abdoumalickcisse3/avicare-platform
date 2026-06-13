@@ -13,7 +13,7 @@ import {
   Tabs,
   Typography,
 } from "@mui/material";
-import { Bird, ChevronRight, Heart, Lock, Plus } from "lucide-react";
+import { Bird, ChevronRight, Lock, Plus } from "lucide-react";
 import {
   useGetCollectionsQuery,
   useGetGradesQuery,
@@ -28,6 +28,7 @@ import { isoDaysAgo, isoToday } from "@/lib/layer";
 import { formatNumber } from "@/lib/format";
 import { colors } from "@/theme/tokens";
 import { BatchStatusChip } from "@/components/poultry/BatchStatusChip";
+import { HealthTab } from "@/components/health/HealthTab";
 import { LayerOverviewTab } from "./LayerOverviewTab";
 import { LayerCollectionsTab } from "./LayerCollectionsTab";
 import { LayerPlaceholderTab } from "./LayerPlaceholderTab";
@@ -213,10 +214,13 @@ export function LayerUnitDetailView({ unitId }: { unitId: number }) {
         />
       )}
       {tab === "health" && (
-        <LayerPlaceholderTab
-          icon={Heart}
-          title="Module sanitaire — bientôt disponible"
-          description="Programmes de vaccination, traitements et alertes sanitaires arrivent dans une prochaine version."
+        <HealthTab
+          farmId={farmId as number}
+          unitId={unit.id}
+          unitName={title}
+          breedId={unit.breedId}
+          startDate={unit.startDate}
+          currentCount={unit.currentCount}
         />
       )}
 

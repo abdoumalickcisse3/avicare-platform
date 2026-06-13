@@ -28,7 +28,7 @@ import { BatchStatusChip } from "./BatchStatusChip";
 import { BatchOverviewTab } from "./BatchOverviewTab";
 import { DailyRecordsTab } from "./DailyRecordsTab";
 import { WeighingsTab } from "./WeighingsTab";
-import { HealthTab } from "./HealthTab";
+import { HealthTab } from "@/components/health/HealthTab";
 import { DailyRecordDialog } from "./DailyRecordDialog";
 
 type TabKey = "overview" | "records" | "weighings" | "health";
@@ -179,7 +179,16 @@ export function PoultryBatchDetailView({ batchId }: { batchId: number }) {
       {tab === "overview" && <BatchOverviewTab farmId={farmId as number} batch={batch} />}
       {tab === "records" && <DailyRecordsTab farmId={farmId as number} batch={batch} />}
       {tab === "weighings" && <WeighingsTab farmId={farmId as number} batch={batch} />}
-      {tab === "health" && <HealthTab farmId={farmId as number} />}
+      {tab === "health" && (
+        <HealthTab
+          farmId={farmId as number}
+          unitId={batch.id}
+          unitName={title}
+          breedId={batch.breedId}
+          startDate={batch.startDate}
+          currentCount={batch.currentCount}
+        />
+      )}
 
       {/* Quick mortality entry — the FARMER's most-used action, reachable everywhere. */}
       <DailyRecordDialog

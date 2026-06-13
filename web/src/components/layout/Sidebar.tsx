@@ -17,6 +17,7 @@ import {
   CreditCard,
   Drumstick,
   Egg,
+  HeartPulse,
   LayoutDashboard,
   Lock,
   Settings,
@@ -35,6 +36,8 @@ interface NavItem {
   enabled: boolean;
   /** When set, the item only shows if this subscription module is active. */
   requiredModule?: string;
+  /** When set, the item shows if ANY of these modules is active (OR semantics). */
+  requiredModuleAny?: string[];
   /** When set, also requires the current farm's production focus (Décision 17). */
   focusToken?: "broiler" | "layer";
 }
@@ -78,6 +81,15 @@ const NAV_SECTIONS: NavSection[] = [
         enabled: true,
         requiredModule: "module.poultry.layer",
         focusToken: "layer",
+      },
+      {
+        label: "Sanitaire",
+        href: "/elevage/sanitaire",
+        icon: HeartPulse,
+        enabled: true,
+        // Health applies across production types — visible with either tier,
+        // and not tied to a single production focus.
+        requiredModuleAny: ["module.health.basic", "module.health.advanced"],
       },
     ],
   },
@@ -170,7 +182,9 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
     const visible = section.items.filter(
       (it) =>
-        (!it.requiredModule || isModuleActive(it.requiredModule)) && inFarmFocus(it),
+        (!it.requiredModule || isModuleActive(it.requiredModule)) &&
+        (!it.requiredModuleAny || it.requiredModuleAny.some(isModuleActive)) &&
+        inFarmFocus(it),
     );
 
     if (visible.length === 0) {
