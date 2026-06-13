@@ -7,11 +7,60 @@ et ce projet adhère au [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0
 
 ## [Unreleased]
 
-_Rien en attente. Prochain : Sprint B3 (santé)._
+_Rien en attente. Prochain : Sprint B4 (inventory — stocks aliments/médicaments,
+fournisseurs, achats, formules)._
 
 > Note : le changelog n'a pas été tenu entre 0.1.0 et 0.7.0 ; l'historique
 > intermédiaire (A2 → B1) est tracé par les tags Git et les PRs. Reprise du
 > journal à 0.7.0.
+
+## [0.8.0-health] — 2026-06-13
+
+Sprint B3 complet — module **Santé** (jalon B.M3). Un éleveur peut assigner des
+programmes vaccinaux, saisir vaccinations / observations / traitements (avec
+délais d'attente exposés), gérer son annuaire de vétérinaires et leurs visites,
+et consulter des alertes consolidées. Gating `module.health.basic` /
+`module.health.advanced`.
+
+### Added — Santé (backend, B3-1 → B3-4)
+
+- Migration `V12` : catalogue plateforme (10 vaccins, 6 traitements, 4 programmes
+  vaccinaux par souche) via `catalog_items` (D15) + `ParametersFacade` (D16).
+- Migration `V13` : `vaccinations` (UNIQUE unit/vaccin/date), `vaccination_programs_lot`
+  (1 programme/lot, `schedule_overrides` JSONB), `health_observations` (severity
+  NORMAL/WARNING/CRITICAL). `computeScheduleStatus` → DONE/UPCOMING/LATE.
+- Migration `V14` : `treatments_executed` (snapshot figé des délais d'attente),
+  `veterinarians` (annuaire par ferme, `farm_id` par id), `vet_visits` (suivi
+  follow-up).
+- API REST `/api/v1/farms/{farmId}/health/*` (8 controllers) ; `HealthAccess`
+  (6 constantes SpEL) split **basic** (vaccinations, observations, programmes) vs
+  **advanced** (traitements, vétérinaires, visites) + RBAC granulaire + garde
+  cross-farm (404) ; `AlertService` compute-on-read (vaccins en retard, délais
+  actifs, suivis à venir, observations critiques).
+- Tests : `HealthFlowIT` (Testcontainers, split gating + cross-farm) ; unitaires
+  services (couverture CI réelle).
+
+### Added — Santé (frontend, B3-5)
+
+- Page `/elevage/sanitaire` : 4 KPI d'alertes, timeline d'événements, programmes
+  + raccourci bibliothèque.
+- Composant partagé `HealthTab` (chair + ponte) : `VaccinationCalendar` (planning
+  visuel DONE/UPCOMING/LATE, marqueur « Aujourd'hui Jn »), `ActiveTreatmentsList`
+  (countdown délai d'attente), `ObservationsList`, `VetVisitsTimeline`.
+- Page `/reglages/sanitaire` : 4 onglets (vaccins / traitements / programmes en
+  lecture seule, vétérinaires en CRUD).
+- 5 dialogs : `VaccinationDialog`, `TreatmentDialog` (encadré orange withdrawal,
+  dates min de vente auto), `ObservationDialog`, `VetVisitDialog`, `VeterinarianDialog`.
+- Slice RTK Query `healthApi` ; gating frontend miroir du backend (sections
+  advanced masquées si inactives, le 403 backend restant la garantie).
+
+### Decisions
+
+- **ADR-007** : délais d'attente médicamenteux **calculés + exposés (warning),
+  jamais bloquants** en V1 (responsabilité de l'éleveur).
+- Bibliothèque pré-seedée plateforme (custom différé V2) ; programmes par souche
+  clonables par lot via overrides JSONB ; vétérinaires par ferme (partage V2) ;
+  alertes in-app V1 (email/SMS différés).
 
 ## [0.7.0-poultry-layer] — 2026-06-11
 
