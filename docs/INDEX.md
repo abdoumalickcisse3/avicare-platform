@@ -88,7 +88,7 @@ Pour toute décision d'architecture non documentée, ME DEMANDER avant d'agir.
 - [x] Sprint A5 — livestock socle
 - [x] Sprint B1 — poultry chair
 - [x] Sprint B2 — poultry ponte
-- [ ] Sprint B3 — health
+- [x] Sprint B3 — health
 - [ ] Sprint B4 — inventory
 - [ ] Sprint B5 — commercial
 - [ ] Sprint B6 — finance
