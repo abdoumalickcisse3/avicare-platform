@@ -17,6 +17,8 @@ import com.avicare.livestock.repository.HealthObservationRepository;
 import com.avicare.livestock.repository.LifecycleEventRepository;
 import com.avicare.livestock.repository.PoultryBatchRepository;
 import com.avicare.livestock.repository.ProductionUnitRepository;
+import com.avicare.livestock.repository.StockItemRepository;
+import com.avicare.livestock.repository.SupplierRepository;
 import com.avicare.livestock.repository.TreatmentExecutedRepository;
 import com.avicare.livestock.repository.VaccinationProgramLotRepository;
 import com.avicare.livestock.repository.VaccinationRepository;
@@ -90,6 +92,8 @@ class SecurityIntegrationTest {
   @MockitoBean private VeterinarianRepository veterinarianRepository;
   @MockitoBean private TreatmentExecutedRepository treatmentExecutedRepository;
   @MockitoBean private VetVisitRepository vetVisitRepository;
+  @MockitoBean private StockItemRepository stockItemRepository;
+  @MockitoBean private SupplierRepository supplierRepository;
 
   @Test
   void healthEndpoint_isPublic() throws Exception {
