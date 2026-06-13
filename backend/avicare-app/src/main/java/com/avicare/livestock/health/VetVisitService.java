@@ -1,5 +1,6 @@
 package com.avicare.livestock.health;
 
+import com.avicare.common.api.exception.NotFoundException;
 import com.avicare.common.api.exception.ValidationException;
 import com.avicare.livestock.domain.LifecycleEvent;
 import com.avicare.livestock.domain.ProductionUnit;
@@ -81,6 +82,16 @@ public class VetVisitService {
   public List<VetVisit> listUpcomingFollowUps(Long farmId, int daysAhead) {
     LocalDate today = LocalDate.now();
     return vetVisitRepository.findUpcomingFollowUps(farmId, today, today.plusDays(daysAhead));
+  }
+
+  @Transactional(readOnly = true)
+  public VetVisit get(Long id) {
+    return vetVisitRepository.findById(id).orElseThrow(() -> NotFoundException.of("VetVisit", id));
+  }
+
+  @Transactional
+  public void delete(Long id) {
+    vetVisitRepository.delete(get(id));
   }
 
   private Veterinarian resolveVet(Long vetId, Long unitFarmId) {

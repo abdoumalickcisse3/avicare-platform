@@ -1,5 +1,6 @@
 package com.avicare.livestock.health;
 
+import com.avicare.common.api.exception.NotFoundException;
 import com.avicare.common.api.exception.ValidationException;
 import com.avicare.livestock.domain.LifecycleEvent;
 import com.avicare.livestock.domain.ProductionUnit;
@@ -114,6 +115,18 @@ public class TreatmentExecutedService {
   @Transactional(readOnly = true)
   public List<TreatmentExecuted> getActiveWithdrawals(Long unitId, LocalDate today) {
     return treatmentRepository.findActiveWithdrawals(unitId, today);
+  }
+
+  @Transactional(readOnly = true)
+  public TreatmentExecuted get(Long id) {
+    return treatmentRepository
+        .findById(id)
+        .orElseThrow(() -> NotFoundException.of("TreatmentExecuted", id));
+  }
+
+  @Transactional
+  public void delete(Long id) {
+    treatmentRepository.delete(get(id));
   }
 
   private Veterinarian resolveVet(Long vetId, Long unitFarmId) {
