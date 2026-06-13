@@ -49,6 +49,11 @@ public class VeterinarianService {
     return veterinarianRepository.findByFarmIdAndActiveTrueOrderByFullName(farmId);
   }
 
+  @Transactional(readOnly = true)
+  public Veterinarian get(Long farmId, Long vetId) {
+    return load(farmId, vetId);
+  }
+
   private Veterinarian load(Long farmId, Long vetId) {
     return veterinarianRepository
         .findByFarmIdAndId(farmId, vetId)

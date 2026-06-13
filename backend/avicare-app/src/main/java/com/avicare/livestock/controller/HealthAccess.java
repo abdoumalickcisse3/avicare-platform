@@ -1,0 +1,41 @@
+package com.avicare.livestock.controller;
+
+/**
+ * Shared {@code @PreAuthorize} SpEL expressions for the health module endpoints (Sprint B3-4). Two
+ * feature tiers: {@code module.health.basic} (vaccinations + observations + their library) and
+ * {@code module.health.advanced} (treatments + withdrawal + vets + visits). Reads need farm access;
+ * writes need an operational role; sensitive writes need a supervisory role.
+ */
+final class HealthAccess {
+
+  private HealthAccess() {}
+
+  private static final String BASIC = "@features.isEnabled(#farmId, 'module.health.basic')";
+  private static final String ADVANCED = "@features.isEnabled(#farmId, 'module.health.advanced')";
+
+  private static final String OWNER = "T(com.avicare.common.security.principal.FarmRole).OWNER";
+  private static final String MANAGER = "T(com.avicare.common.security.principal.FarmRole).MANAGER";
+  private static final String FARMER = "T(com.avicare.common.security.principal.FarmRole).FARMER";
+
+  // --- basic tier -----------------------------------------------------
+  static final String READ_BASIC = "@farmAccess.hasAccess(#farmId) and " + BASIC;
+
+  /** OWNER / MANAGER / FARMER — field entry (record vaccination, observation). */
+  static final String WRITE_BASIC_FARMER =
+      "@farmAccess.hasRole(#farmId, " + OWNER + ", " + MANAGER + ", " + FARMER + ") and " + BASIC;
+
+  /** OWNER / MANAGER — supervisory (delete, program assign/remove). */
+  static final String WRITE_BASIC_MANAGER =
+      "@farmAccess.hasRole(#farmId, " + OWNER + ", " + MANAGER + ") and " + BASIC;
+
+  // --- advanced tier --------------------------------------------------
+  static final String READ_ADVANCED = "@farmAccess.hasAccess(#farmId) and " + ADVANCED;
+
+  /** OWNER / MANAGER — treatments, vet directory, vet visits. */
+  static final String WRITE_ADVANCED_MANAGER =
+      "@farmAccess.hasRole(#farmId, " + OWNER + ", " + MANAGER + ") and " + ADVANCED;
+
+  /** OWNER — deleting a treatment record (traceability-sensitive). */
+  static final String ADMIN_ADVANCED_OWNER =
+      "@farmAccess.hasRole(#farmId, " + OWNER + ") and " + ADVANCED;
+}

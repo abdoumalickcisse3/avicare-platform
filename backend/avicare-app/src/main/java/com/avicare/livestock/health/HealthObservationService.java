@@ -1,5 +1,6 @@
 package com.avicare.livestock.health;
 
+import com.avicare.common.api.exception.NotFoundException;
 import com.avicare.livestock.domain.HealthObservation;
 import com.avicare.livestock.domain.LifecycleEvent;
 import com.avicare.livestock.domain.ProductionUnit;
@@ -71,5 +72,17 @@ public class HealthObservationService {
   public List<HealthObservation> listCriticalObservations(Long unitId) {
     return observationRepository.findByProductionUnitIdAndSeverityInOrderByObservationDateDesc(
         unitId, CRITICAL_LEVELS);
+  }
+
+  @Transactional(readOnly = true)
+  public HealthObservation get(Long id) {
+    return observationRepository
+        .findById(id)
+        .orElseThrow(() -> NotFoundException.of("HealthObservation", id));
+  }
+
+  @Transactional
+  public void delete(Long id) {
+    observationRepository.delete(get(id));
   }
 }

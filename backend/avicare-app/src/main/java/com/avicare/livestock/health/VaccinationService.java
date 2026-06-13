@@ -1,6 +1,7 @@
 package com.avicare.livestock.health;
 
 import com.avicare.common.api.exception.BusinessRuleException;
+import com.avicare.common.api.exception.NotFoundException;
 import com.avicare.common.api.exception.ValidationException;
 import com.avicare.livestock.domain.LifecycleEvent;
 import com.avicare.livestock.domain.ProductionUnit;
@@ -109,5 +110,17 @@ public class VaccinationService {
   @Transactional(readOnly = true)
   public List<Vaccination> getByVaccineKey(Long unitId, String vaccineKey) {
     return vaccinationRepository.findByProductionUnitIdAndVaccineKey(unitId, vaccineKey);
+  }
+
+  @Transactional(readOnly = true)
+  public Vaccination get(Long id) {
+    return vaccinationRepository
+        .findById(id)
+        .orElseThrow(() -> NotFoundException.of("Vaccination", id));
+  }
+
+  @Transactional
+  public void delete(Long id) {
+    vaccinationRepository.delete(get(id));
   }
 }
