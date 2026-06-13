@@ -2,6 +2,7 @@ package com.avicare.livestock.repository;
 
 import com.avicare.livestock.domain.ArticleSource;
 import com.avicare.livestock.domain.StockItem;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -16,6 +17,10 @@ public interface StockItemRepository extends JpaRepository<StockItem, Long> {
       Long farmId, ArticleSource articleSource, String articleKey);
 
   Optional<StockItem> findByFarmIdAndId(Long farmId, Long id);
+
+  /** Active stocks of a farm whose quantity has gone negative (Décision 19 fallout). */
+  List<StockItem> findByFarmIdAndActiveTrueAndCurrentQuantityLessThanOrderByArticleKey(
+      Long farmId, BigDecimal threshold);
 
   /**
    * Active stocks of a farm at or below their alert threshold. Derived queries can't express a

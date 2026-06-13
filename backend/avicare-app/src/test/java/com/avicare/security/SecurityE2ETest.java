@@ -23,6 +23,7 @@ import com.avicare.livestock.repository.LifecycleEventRepository;
 import com.avicare.livestock.repository.PoultryBatchRepository;
 import com.avicare.livestock.repository.ProductionUnitRepository;
 import com.avicare.livestock.repository.StockItemRepository;
+import com.avicare.livestock.repository.StockMovementRepository;
 import com.avicare.livestock.repository.SupplierRepository;
 import com.avicare.livestock.repository.TreatmentExecutedRepository;
 import com.avicare.livestock.repository.VaccinationProgramLotRepository;
@@ -117,6 +118,7 @@ class SecurityE2ETest {
   @MockitoBean private TreatmentExecutedRepository treatmentExecutedRepository;
   @MockitoBean private VetVisitRepository vetVisitRepository;
   @MockitoBean private StockItemRepository stockItemRepository;
+  @MockitoBean private StockMovementRepository stockMovementRepository;
   @MockitoBean private SupplierRepository supplierRepository;
 
   @DynamicPropertySource
