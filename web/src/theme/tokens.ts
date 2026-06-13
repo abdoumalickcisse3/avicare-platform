@@ -33,6 +33,10 @@ export const colors = {
   warning: { main: "#D97706", light: "#FEF3C7", dark: "#78350F" },
   error: { main: "#DC2626", light: "#FEE2E2", dark: "#7F1D1D" },
   info: { main: "#2563EB", light: "#DBEAFE", dark: "#1E3A8A" },
+  // Violet — réservé aux visites vétérinaires (module santé, Sprint B3-5).
+  // Les autres couleurs santé réutilisent les sémantiques : success=effectué/sain,
+  // info=traitement actif, warning=délai d'attente, error=retard/alerte.
+  vet: { main: "#7C3AED", light: "#EDE9FE", dark: "#5B21B6" },
   neutral: {
     0: "#FFFFFF",
     50: "#FAFAF9", // app background (warm)

@@ -342,3 +342,262 @@ export interface GrowthPerformance {
   forecastedTargetDate: string | null;
   performanceScore: PerformanceScore | null;
 }
+
+/* ------------------------------------------------------------------ */
+/* Health module (santé, Sprint B3) — mirrors /health/* endpoints.     */
+/* Gated by module.health.basic (vaccinations, observations, programs) */
+/* and module.health.advanced (treatments, vets, vet-visits).          */
+/* ------------------------------------------------------------------ */
+
+export type ObservationSeverity = "NORMAL" | "WARNING" | "CRITICAL";
+export type ScheduleStatus = "DONE" | "LATE" | "UPCOMING";
+
+/** Platform vaccine catalog entry (mirrors backend VaccineDto). */
+export interface Vaccine {
+  key: string;
+  label: string;
+  disease: string;
+  route: string;
+  activeStrain: boolean;
+  usage: string;
+  wave: string;
+}
+
+/** Platform treatment catalog entry (mirrors backend TreatmentDto). */
+export interface Treatment {
+  key: string;
+  label: string;
+  molecule: string;
+  drugClass: string;
+  withdrawalDaysMeat: number | null;
+  withdrawalDaysEggs: number | null;
+  routes: string[];
+  wave: string;
+}
+
+/** Platform vaccination program (mirrors backend VaccinationProgramDto). */
+export interface VaccinationProgram {
+  key: string;
+  label: string;
+  species: string;
+  breedKeys: string[];
+  schedule: VaccinationScheduleEntry[];
+}
+
+export interface VaccinationScheduleEntry {
+  ageValue: number;
+  ageUnit: string;
+  vaccineKey: string;
+  route: string;
+  mandatory: boolean;
+}
+
+/** A recorded vaccination (mirrors backend VaccinationResponse). */
+export interface Vaccination {
+  id: number;
+  unitId: number;
+  vaccineKey: string;
+  administeredDate: string;
+  route: string | null;
+  dosePerSubject: number | null;
+  doseUnit: string | null;
+  subjectsCount: number;
+  vaccineBatchNumber: string | null;
+  vaccineExpiryDate: string | null;
+  administeredByUserId: number | null;
+  notes: string | null;
+  createdBy: number | null;
+  createdAt: string;
+}
+
+export interface VaccinationInput {
+  unitId: number;
+  vaccineKey: string;
+  administeredDate: string;
+  route?: string;
+  dosePerSubject?: number;
+  doseUnit?: string;
+  subjectsCount: number;
+  vaccineBatchNumber?: string;
+  vaccineExpiryDate?: string;
+  administeredByUserId?: number;
+  notes?: string;
+}
+
+/** A computed schedule entry status (mirrors backend ScheduleStatusDto). */
+export interface VaccinationScheduleStatus {
+  vaccineKey: string;
+  ageValue: number;
+  ageUnit: string;
+  dueDate: string;
+  status: ScheduleStatus;
+  mandatory: boolean;
+}
+
+/** Program assignment for a lot (mirrors backend ProgramAssignmentResponse). */
+export interface ProgramAssignment {
+  unitId: number;
+  programKey: string;
+  assignedBy: number | null;
+  assignedAt: string;
+}
+
+/** A health observation (mirrors backend ObservationResponse). */
+export interface HealthObservation {
+  id: number;
+  unitId: number;
+  observationDate: string;
+  severity: ObservationSeverity;
+  title: string;
+  description: string | null;
+  suspectedDisease: string | null;
+  observedByUserId: number | null;
+  createdBy: number | null;
+  createdAt: string;
+}
+
+export interface ObservationInput {
+  unitId: number;
+  observationDate: string;
+  severity?: ObservationSeverity;
+  title: string;
+  description?: string;
+  suspectedDisease?: string;
+  observedByUserId?: number;
+}
+
+/** An executed treatment with computed withdrawal end dates (mirrors backend TreatmentResponse). */
+export interface ExecutedTreatment {
+  id: number;
+  unitId: number;
+  treatmentKey: string;
+  startDate: string;
+  durationDays: number;
+  endDate: string;
+  doseAmount: number;
+  doseUnit: string;
+  route: string;
+  subjectsCount: number;
+  reason: string | null;
+  prescribedBy: string | null;
+  veterinarianId: number | null;
+  withdrawalDaysMeat: number | null;
+  withdrawalDaysEggs: number | null;
+  withdrawalEndDateMeat: string | null;
+  withdrawalEndDateEggs: string | null;
+  notes: string | null;
+  createdBy: number | null;
+  createdAt: string;
+}
+
+export interface TreatmentInput {
+  unitId: number;
+  treatmentKey: string;
+  startDate: string;
+  durationDays: number;
+  doseAmount: number;
+  doseUnit: string;
+  route: string;
+  subjectsCount: number;
+  reason?: string;
+  prescribedBy?: string;
+  veterinarianId?: number;
+  notes?: string;
+  administeredByUserId?: number;
+}
+
+/** A per-farm veterinarian directory entry (mirrors backend VeterinarianResponse). */
+export interface Veterinarian {
+  id: number;
+  farmId: number;
+  fullName: string;
+  phone: string | null;
+  email: string | null;
+  speciality: string | null;
+  licenseNumber: string | null;
+  location: string | null;
+  notes: string | null;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface VeterinarianInput {
+  fullName: string;
+  phone?: string;
+  email?: string;
+  speciality?: string;
+  licenseNumber?: string;
+  location?: string;
+  notes?: string;
+}
+
+/** A vet visit (mirrors backend VetVisitResponse). */
+export interface VetVisit {
+  id: number;
+  unitId: number;
+  veterinarianId: number | null;
+  visitDate: string;
+  reason: string;
+  diagnosis: string | null;
+  recommendations: string | null;
+  costXof: number | null;
+  followUpNeeded: boolean;
+  followUpDate: string | null;
+  notes: string | null;
+  createdBy: number | null;
+  createdAt: string;
+}
+
+export interface VetVisitInput {
+  unitId: number;
+  veterinarianId?: number;
+  visitDate: string;
+  reason: string;
+  diagnosis?: string;
+  recommendations?: string;
+  costXof?: number;
+  followUpNeeded: boolean;
+  followUpDate?: string;
+  notes?: string;
+}
+
+/** Consolidated farm health alerts (mirrors backend AlertsResponse). */
+export interface HealthAlerts {
+  vaccinationsLate: VaccinationLateItem[];
+  activeWithdrawals: ActiveWithdrawalItem[];
+  upcomingFollowUps: FollowUpItem[];
+  criticalObservations: CriticalObservationItem[];
+}
+
+export interface VaccinationLateItem {
+  unitId: number;
+  unitName: string | null;
+  vaccineKey: string;
+  dueDate: string;
+  daysLate: number;
+}
+
+export interface ActiveWithdrawalItem {
+  unitId: number;
+  treatmentId: number;
+  treatmentKey: string;
+  withdrawalEndDateMeat: string | null;
+  withdrawalEndDateEggs: string | null;
+  daysRemainingMeat: number | null;
+  daysRemainingEggs: number | null;
+}
+
+export interface FollowUpItem {
+  unitId: number;
+  vetVisitId: number;
+  followUpDate: string;
+  daysUntil: number;
+}
+
+export interface CriticalObservationItem {
+  unitId: number;
+  observationId: number;
+  severity: ObservationSeverity;
+  title: string;
+  observationDate: string;
+}
