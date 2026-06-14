@@ -24,8 +24,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Stock items endpoints (Sprint B4-6). Stock rows are created implicitly (movement / PO reception),
- * so there is no direct POST; this controller exposes reads, the low-stock view, the farm valuation,
- * threshold/notes management and soft-delete.
+ * so there is no direct POST; this controller exposes reads, the low-stock view, the farm
+ * valuation, threshold/notes management and soft-delete.
  */
 @RestController
 @RequestMapping("/api/v1/farms/{farmId}/inventory/stock-items")

@@ -85,7 +85,10 @@ class InventoryApiIT {
     assertThat(articles.size()).isPositive();
     JsonNode article = articles.get(0);
     String articleKey = article.get("articleKey").asText();
-    int unitPrice = article.path("typicalUnitPriceXof").isNumber() ? article.get("typicalUnitPriceXof").asInt() : 500;
+    int unitPrice =
+        article.path("typicalUnitPriceXof").isNumber()
+            ? article.get("typicalUnitPriceXof").asInt()
+            : 500;
 
     // Supplier.
     JsonNode supplier =
@@ -116,7 +119,10 @@ class InventoryApiIT {
     long itemId = po.get("items").get(0).get("id").asLong();
 
     // submit -> SENT, receive -> RECEIVED (cascades stock IN).
-    assertThat(data(postOk(inv + "/purchase-orders/" + poId + "/submit", owner, null)).get("status").asText())
+    assertThat(
+            data(postOk(inv + "/purchase-orders/" + poId + "/submit", owner, null))
+                .get("status")
+                .asText())
         .isEqualTo("SENT");
     JsonNode received =
         data(
@@ -129,32 +135,44 @@ class InventoryApiIT {
     // Stock item now exists with the received quantity.
     JsonNode stockItems = data(getOk(inv + "/stock-items", owner));
     JsonNode stock =
-        stream(stockItems).filter(s -> s.get("articleKey").asText().equals(articleKey)).findFirst().orElseThrow();
+        stream(stockItems)
+            .filter(s -> s.get("articleKey").asText().equals(articleKey))
+            .findFirst()
+            .orElseThrow();
     long stockItemId = stock.get("id").asLong();
     assertThat(stock.get("currentQuantity").asDouble()).isEqualTo(100.0);
 
     // The reception movement carries the PO backref.
     JsonNode movements = data(getOk(inv + "/movements?stockItemId=" + stockItemId, owner));
     assertThat(stream(movements))
-        .anyMatch(m -> m.path("purchaseOrderId").asLong() == poId && m.get("movementType").asText().equals("IN"));
+        .anyMatch(
+            m ->
+                m.path("purchaseOrderId").asLong() == poId
+                    && m.get("movementType").asText().equals("IN"));
 
     // Manual OUT large enough to drive the stock negative (D19 non-blocking).
     postOk(
         inv + "/movements",
         owner,
         String.format(
-            "{\"stockItemId\":%d,\"movementType\":\"OUT\",\"quantity\":150,\"reason\":\"LOSS\"}", stockItemId));
-    assertThat(data(getOk(inv + "/stock-items/" + stockItemId, owner)).get("currentQuantity").asDouble())
+            "{\"stockItemId\":%d,\"movementType\":\"OUT\",\"quantity\":150,\"reason\":\"LOSS\"}",
+            stockItemId));
+    assertThat(
+            data(getOk(inv + "/stock-items/" + stockItemId, owner))
+                .get("currentQuantity")
+                .asDouble())
         .isEqualTo(-50.0);
 
     // Feed formula: clone a platform template then update it.
-    String platformKey = data(getOk(inv + "/catalog/feed-formulas", owner)).get(0).get("key").asText();
+    String platformKey =
+        data(getOk(inv + "/catalog/feed-formulas", owner)).get(0).get("key").asText();
     JsonNode cloned =
         data(
             postOk(
                 inv + "/feed-formulas/clone",
                 owner,
-                String.format("{\"sourceFormulaKey\":\"%s\",\"newName\":\"Ma formule\"}", platformKey)));
+                String.format(
+                    "{\"sourceFormulaKey\":\"%s\",\"newName\":\"Ma formule\"}", platformKey)));
     long formulaId = cloned.get("id").asLong();
     JsonNode updated =
         data(
@@ -206,7 +224,9 @@ class InventoryApiIT {
     owner = relogin("inv-gate");
     // module.inventory NOT enabled.
     mockMvc
-        .perform(get("/api/v1/farms/" + farmId + "/inventory/stock-items").header("Authorization", "Bearer " + owner))
+        .perform(
+            get("/api/v1/farms/" + farmId + "/inventory/stock-items")
+                .header("Authorization", "Bearer " + owner))
         .andExpect(status().isForbidden());
   }
 
@@ -252,16 +272,17 @@ class InventoryApiIT {
     // Create a stock item in farm A via a movement-less path: a received PO. Simpler: a manual IN
     // needs an existing stock item, which is created by the coupling/PO only. Use a supplier+PO.
     String invA = "/api/v1/farms/" + farmA + "/inventory";
-    long supplierId = data(postOk(invA + "/suppliers", a, "{\"commercialName\":\"S\"}")).get("id").asLong();
-    String articleKey = data(getOk(invA + "/catalog/articles", a)).get(0).get("articleKey").asText();
+    long supplierId =
+        data(postOk(invA + "/suppliers", a, "{\"commercialName\":\"S\"}")).get("id").asLong();
+    String articleKey =
+        data(getOk(invA + "/catalog/articles", a)).get(0).get("articleKey").asText();
     long poId =
-        data(
-                postOk(
-                    invA + "/purchase-orders",
-                    a,
-                    String.format(
-                        "{\"supplierId\":%d,\"lines\":[{\"articleKey\":\"%s\",\"articleSource\":\"INVENTORY\",\"orderedQuantity\":10,\"unitPriceXof\":100}]}",
-                        supplierId, articleKey)))
+        data(postOk(
+                invA + "/purchase-orders",
+                a,
+                String.format(
+                    "{\"supplierId\":%d,\"lines\":[{\"articleKey\":\"%s\",\"articleSource\":\"INVENTORY\",\"orderedQuantity\":10,\"unitPriceXof\":100}]}",
+                    supplierId, articleKey)))
             .get("id")
             .asLong();
     long itemId =
@@ -313,7 +334,10 @@ class InventoryApiIT {
 
   private long seedUnit(long farmId) {
     long breedId =
-        breedRepository.findBySpeciesAndCodeAndFarmId(Species.POULTRY, "cobb_500", null).orElseThrow().getId();
+        breedRepository
+            .findBySpeciesAndCodeAndFarmId(Species.POULTRY, "cobb_500", null)
+            .orElseThrow()
+            .getId();
     ProductionUnit unit = new ProductionUnit();
     unit.setFarmId(farmId);
     unit.setSpecies(Species.POULTRY);
@@ -360,7 +384,8 @@ class InventoryApiIT {
             .andExpect(status().isOk()));
   }
 
-  private JsonNode read(org.springframework.test.web.servlet.ResultActions actions) throws Exception {
+  private JsonNode read(org.springframework.test.web.servlet.ResultActions actions)
+      throws Exception {
     return objectMapper.readTree(actions.andReturn().getResponse().getContentAsString());
   }
 
@@ -371,7 +396,9 @@ class InventoryApiIT {
             post("/api/v1/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
-                    "{\"email\":\"" + email + "\",\"password\":\"password123\",\"fullName\":\"Owner\"}"))
+                    "{\"email\":\""
+                        + email
+                        + "\",\"password\":\"password123\",\"fullName\":\"Owner\"}"))
         .andExpect(status().isCreated());
     return relogin(slug);
   }
