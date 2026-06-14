@@ -1,7 +1,10 @@
 package com.avicare.livestock.inventory;
 
+import com.avicare.livestock.domain.PurchaseOrder;
+import com.avicare.livestock.domain.PurchaseOrderStatus;
 import com.avicare.livestock.domain.StockItem;
 import com.avicare.livestock.domain.StockMovement;
+import com.avicare.livestock.inventory.InventoryAlertsResponse.PendingPurchaseOrderItem;
 import com.avicare.livestock.inventory.StockAlertsResponse.LowStockItem;
 import com.avicare.livestock.inventory.StockAlertsResponse.NegativeStockItem;
 import com.avicare.livestock.inventory.StockAlertsResponse.RecentMovementItem;
@@ -9,6 +12,8 @@ import com.avicare.livestock.repository.StockItemRepository;
 import com.avicare.livestock.repository.StockMovementRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -31,6 +36,25 @@ public class InventoryAlertService {
   private final StockItemRepository stockItemRepository;
   private final StockMovementRepository stockMovementRepository;
   private final InventoryCatalogService inventoryCatalogService;
+  private final PurchaseOrderService purchaseOrderService;
+
+  /**
+   * The full inventory alert set (Sprint B4-6): the stock alerts plus purchase orders that are
+   * {@code SENT} but past their expected delivery date.
+   */
+  @Transactional(readOnly = true)
+  public InventoryAlertsResponse computeInventoryAlerts(Long farmId) {
+    StockAlertsResponse stock = computeStockAlertsForFarm(farmId);
+    LocalDate today = LocalDate.now();
+    List<PendingPurchaseOrderItem> pending =
+        purchaseOrderService.listForFarm(farmId, PurchaseOrderStatus.SENT).stream()
+            .filter(po -> po.getExpectedDeliveryDate() != null)
+            .filter(po -> po.getExpectedDeliveryDate().isBefore(today))
+            .map(po -> toPending(po, today))
+            .toList();
+    return new InventoryAlertsResponse(
+        stock.lowStockItems(), stock.negativeStockItems(), pending, stock.recentMovements());
+  }
 
   @Transactional(readOnly = true)
   public StockAlertsResponse computeStockAlertsForFarm(Long farmId) {
@@ -69,6 +93,17 @@ public class InventoryAlertService {
             .toList();
 
     return new StockAlertsResponse(low, negative, recent);
+  }
+
+  private static PendingPurchaseOrderItem toPending(PurchaseOrder po, LocalDate today) {
+    return new PendingPurchaseOrderItem(
+        po.getId(),
+        po.getOrderNumber(),
+        po.getSupplier().getId(),
+        po.getSupplier().getCommercialName(),
+        po.getExpectedDeliveryDate(),
+        ChronoUnit.DAYS.between(po.getExpectedDeliveryDate(), today),
+        po.getTotalXof());
   }
 
   private static LowStockItem toLow(StockItem s, Map<String, String> labels) {

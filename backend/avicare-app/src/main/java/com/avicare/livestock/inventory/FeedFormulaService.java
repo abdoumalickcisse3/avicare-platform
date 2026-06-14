@@ -54,6 +54,15 @@ public class FeedFormulaService {
         .toList();
   }
 
+  /** A single platform template by key (404 if unknown) — backs the catalog detail endpoint. */
+  @Transactional(readOnly = true)
+  public PlatformFormulaDto getPlatformFormula(String key) {
+    return listPlatformFormulas().stream()
+        .filter(p -> p.key().equals(key))
+        .findFirst()
+        .orElseThrow(() -> NotFoundException.of("PlatformFeedFormula", key));
+  }
+
   @Transactional(readOnly = true)
   public List<FeedFormula> listFarmFormulas(Long farmId) {
     return feedFormulaRepository.findByFarmIdAndActiveTrueOrderByName(farmId);

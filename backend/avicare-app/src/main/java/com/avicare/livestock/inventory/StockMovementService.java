@@ -116,6 +116,19 @@ public class StockMovementService {
     return stockMovementRepository.findByStockItemIdOrderByMovementDateDescIdDesc(stockItemId);
   }
 
+  /** A single movement, scoped to the farm via its stock item (404 cross-farm). */
+  @Transactional(readOnly = true)
+  public StockMovement get(Long farmId, Long movementId) {
+    StockMovement movement =
+        stockMovementRepository
+            .findById(movementId)
+            .orElseThrow(() -> NotFoundException.of("StockMovement", movementId));
+    if (!movement.getStockItem().getFarmId().equals(farmId)) {
+      throw NotFoundException.of("StockMovement", movementId);
+    }
+    return movement;
+  }
+
   @Transactional(readOnly = true)
   public List<StockMovement> listForProductionUnit(Long productionUnitId) {
     return stockMovementRepository.findByProductionUnitIdOrderByMovementDateDesc(productionUnitId);

@@ -56,7 +56,7 @@ public class TreatmentController {
                 request.veterinarianId(),
                 request.notes(),
                 request.administeredByUserId(),
-                null),
+                request.stockConsumption() == null ? null : request.stockConsumption().toModel()),
             TenancyContext.currentUserId());
     return ApiResponse.of(TreatmentResponse.from(saved));
   }

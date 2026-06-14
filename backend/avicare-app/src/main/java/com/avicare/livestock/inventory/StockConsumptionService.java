@@ -5,6 +5,7 @@ import com.avicare.livestock.domain.MovementReason;
 import com.avicare.livestock.domain.MovementType;
 import com.avicare.livestock.domain.StockItem;
 import com.avicare.livestock.domain.StockMovement;
+import com.avicare.subscription.api.SubscriptionFacade;
 import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,8 +22,11 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class StockConsumptionService {
 
+  static final String MODULE_INVENTORY = "module.inventory";
+
   private final StockItemService stockItemService;
   private final StockMovementService stockMovementService;
+  private final SubscriptionFacade subscriptionFacade;
 
   /**
    * Apply a consumption as an {@code OUT} movement, inferring the reason and backref from {@code
@@ -33,6 +37,13 @@ public class StockConsumptionService {
       Long farmId, StockConsumption consumption, ConsumptionSource source, Long userId) {
     if (consumption == null) {
       return null;
+    }
+    // Option α (B4-6): a coupling payload is only honoured when the farm has the inventory module.
+    // Runs inside the caller's transaction, so the whole source action rolls back on refusal.
+    if (!subscriptionFacade.isModuleEnabled(farmId, MODULE_INVENTORY)) {
+      throw new ValidationException(
+          "MODULE_INVENTORY_REQUIRED",
+          "module.inventory non activé pour cette ferme — couplage stock impossible");
     }
     if (consumption.quantity() == null || consumption.quantity().signum() <= 0) {
       throw new ValidationException(

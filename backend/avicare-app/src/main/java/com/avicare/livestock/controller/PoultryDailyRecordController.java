@@ -57,7 +57,7 @@ public class PoultryDailyRecordController {
                 request.feedKg(),
                 request.waterL(),
                 request.observations(),
-                null),
+                request.feedConsumption() == null ? null : request.feedConsumption().toModel()),
             TenancyContext.currentUserId());
     return ApiResponse.of(toResponse(saved));
   }
