@@ -118,7 +118,8 @@ class CrossContextCouplingIT {
   @Test
   void dailyRecord_withConsumption_butModuleDisabled_rejectsAndRollsBack() throws Exception {
     long farmId = createFarm();
-    subscriptionService.disableModule(farmId, "module.inventory"); // Option α: no module → no coupling
+    subscriptionService.disableModule(
+        farmId, "module.inventory"); // Option α: no module → no coupling
     long unitId = seedUnit(farmId);
 
     assertThatThrownBy(

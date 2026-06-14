@@ -7,9 +7,9 @@ package com.avicare.livestock.controller;
  * writes (suppliers, purchase orders, formulas, thresholds, soft-deletes) need a managerial role.
  *
  * <p>Mirrors {@link HealthAccess} / {@link LayerAccess}: package-private compile-time string
- * constants so they can be used as {@code @PreAuthorize} values, built on the real
- * {@code FarmAccessChecker} API ({@code hasAccess} / {@code hasRole(FarmRole...)} — there is no
- * {@code hasRoleAtLeast}).
+ * constants so they can be used as {@code @PreAuthorize} values, built on the real {@code
+ * FarmAccessChecker} API ({@code hasAccess} / {@code hasRole(FarmRole...)} — there is no {@code
+ * hasRoleAtLeast}).
  */
 final class InventoryAccess {
 
