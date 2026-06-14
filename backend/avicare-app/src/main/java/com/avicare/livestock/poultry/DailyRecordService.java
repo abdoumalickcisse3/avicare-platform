@@ -3,6 +3,8 @@ package com.avicare.livestock.poultry;
 import com.avicare.livestock.domain.DailyRecord;
 import com.avicare.livestock.domain.LifecycleEvent;
 import com.avicare.livestock.domain.ProductionUnit;
+import com.avicare.livestock.inventory.ConsumptionSource;
+import com.avicare.livestock.inventory.StockConsumptionService;
 import com.avicare.livestock.repository.DailyRecordRepository;
 import com.avicare.livestock.repository.LifecycleEventRepository;
 import com.avicare.livestock.service.LivestockService;
@@ -36,6 +38,7 @@ public class DailyRecordService {
   private final DailyRecordRepository dailyRecordRepository;
   private final LifecycleEventRepository lifecycleEventRepository;
   private final LivestockService livestockService;
+  private final StockConsumptionService stockConsumptionService;
 
   @Transactional
   public DailyRecord record(Long unitId, DailyRecordCommand cmd, Long userId) {
@@ -87,6 +90,15 @@ public class DailyRecordService {
             "water_l", saved.getWaterL()));
     snapshot.setCreatedBy(userId);
     lifecycleEventRepository.save(snapshot);
+
+    // D18 optional coupling: draw the feed from stock (same transaction).
+    if (cmd.feedConsumption() != null) {
+      stockConsumptionService.applyConsumption(
+          unit.getFarmId(),
+          cmd.feedConsumption(),
+          ConsumptionSource.dailyRecord(unitId, saved.getId()),
+          userId);
+    }
 
     return saved;
   }

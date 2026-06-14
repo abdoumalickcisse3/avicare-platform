@@ -6,6 +6,8 @@ import com.avicare.livestock.domain.LifecycleEvent;
 import com.avicare.livestock.domain.ProductionUnit;
 import com.avicare.livestock.domain.TreatmentExecuted;
 import com.avicare.livestock.domain.Veterinarian;
+import com.avicare.livestock.inventory.ConsumptionSource;
+import com.avicare.livestock.inventory.StockConsumptionService;
 import com.avicare.livestock.repository.LifecycleEventRepository;
 import com.avicare.livestock.repository.TreatmentExecutedRepository;
 import com.avicare.livestock.repository.VeterinarianRepository;
@@ -37,6 +39,7 @@ public class TreatmentExecutedService {
   private final LivestockService livestockService;
   private final HealthCatalogService healthCatalogService;
   private final VeterinarianRepository veterinarianRepository;
+  private final StockConsumptionService stockConsumptionService;
 
   @Transactional
   public TreatmentExecuted record(Long unitId, TreatmentCommand cmd, Long userId) {
@@ -99,6 +102,15 @@ public class TreatmentExecutedService {
     event.setDetails(details);
     event.setCreatedBy(userId);
     lifecycleEventRepository.save(event);
+
+    // D18 optional coupling: draw the medication from stock (same transaction).
+    if (cmd.stockConsumption() != null) {
+      stockConsumptionService.applyConsumption(
+          unit.getFarmId(),
+          cmd.stockConsumption(),
+          ConsumptionSource.treatment(unitId, saved.getId()),
+          userId);
+    }
 
     return saved;
   }

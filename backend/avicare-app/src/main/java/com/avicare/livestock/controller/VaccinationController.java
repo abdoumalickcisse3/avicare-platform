@@ -52,7 +52,8 @@ public class VaccinationController {
                 request.vaccineBatchNumber(),
                 request.vaccineExpiryDate(),
                 request.administeredByUserId(),
-                request.notes()),
+                request.notes(),
+                null),
             TenancyContext.currentUserId());
     return ApiResponse.of(VaccinationResponse.from(saved));
   }

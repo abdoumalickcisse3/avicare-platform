@@ -9,6 +9,7 @@ import com.avicare.common.api.exception.ValidationException;
 import com.avicare.livestock.domain.ProductionUnit;
 import com.avicare.livestock.domain.TreatmentExecuted;
 import com.avicare.livestock.domain.Veterinarian;
+import com.avicare.livestock.inventory.StockConsumptionService;
 import com.avicare.livestock.repository.LifecycleEventRepository;
 import com.avicare.livestock.repository.TreatmentExecutedRepository;
 import com.avicare.livestock.repository.VeterinarianRepository;
@@ -45,7 +46,8 @@ class TreatmentExecutedServiceTest {
             Mockito.mock(LifecycleEventRepository.class),
             livestockService,
             healthCatalogService,
-            veterinarianRepository);
+            veterinarianRepository,
+            Mockito.mock(StockConsumptionService.class));
     when(treatmentRepository.save(any(TreatmentExecuted.class))).thenAnswer(i -> i.getArgument(0));
   }
 
@@ -83,6 +85,7 @@ class TreatmentExecutedServiceTest {
         "Forte mortalité",
         "FARMER",
         vetId,
+        null,
         null,
         null);
   }

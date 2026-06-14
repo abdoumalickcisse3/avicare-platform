@@ -99,6 +99,7 @@ class HealthTreatmentsVetIT {
                         "VETERINARIAN",
                         vet.getId(),
                         null,
+                        null,
                         null),
                     null))
         .isInstanceOf(ValidationException.class);
@@ -126,6 +127,7 @@ class HealthTreatmentsVetIT {
                 "FARMER",
                 null,
                 null,
+                null,
                 null),
             null);
 
@@ -146,6 +148,7 @@ class HealthTreatmentsVetIT {
                         "mg/L",
                         "WATER",
                         10,
+                        null,
                         null,
                         null,
                         null,

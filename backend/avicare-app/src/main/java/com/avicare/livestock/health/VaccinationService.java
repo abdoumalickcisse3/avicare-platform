@@ -6,6 +6,8 @@ import com.avicare.common.api.exception.ValidationException;
 import com.avicare.livestock.domain.LifecycleEvent;
 import com.avicare.livestock.domain.ProductionUnit;
 import com.avicare.livestock.domain.Vaccination;
+import com.avicare.livestock.inventory.ConsumptionSource;
+import com.avicare.livestock.inventory.StockConsumptionService;
 import com.avicare.livestock.repository.LifecycleEventRepository;
 import com.avicare.livestock.repository.VaccinationRepository;
 import com.avicare.livestock.service.LivestockService;
@@ -35,6 +37,7 @@ public class VaccinationService {
   private final LifecycleEventRepository lifecycleEventRepository;
   private final LivestockService livestockService;
   private final HealthCatalogService healthCatalogService;
+  private final StockConsumptionService stockConsumptionService;
 
   @Transactional
   public Vaccination record(Long unitId, VaccinationCommand cmd, Long userId) {
@@ -98,6 +101,15 @@ public class VaccinationService {
             "subjects_count", cmd.subjectsCount()));
     event.setCreatedBy(userId);
     lifecycleEventRepository.save(event);
+
+    // D18 optional coupling: draw the vaccine doses from stock (same transaction).
+    if (cmd.stockConsumption() != null) {
+      stockConsumptionService.applyConsumption(
+          unit.getFarmId(),
+          cmd.stockConsumption(),
+          ConsumptionSource.vaccination(unitId, saved.getId()),
+          userId);
+    }
 
     return saved;
   }

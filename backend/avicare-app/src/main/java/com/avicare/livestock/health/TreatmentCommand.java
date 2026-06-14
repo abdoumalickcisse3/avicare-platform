@@ -1,9 +1,13 @@
 package com.avicare.livestock.health;
 
+import com.avicare.livestock.inventory.StockConsumption;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-/** Input to record an executed treatment (Sprint B3-3). */
+/**
+ * Input to record an executed treatment (Sprint B3-3). {@code stockConsumption} is optional
+ * (Décision D18): when set, the medication is drawn from stock as an automatic OUT movement.
+ */
 public record TreatmentCommand(
     String treatmentKey,
     LocalDate startDate,
@@ -16,4 +20,5 @@ public record TreatmentCommand(
     String prescribedBy,
     Long veterinarianId,
     String notes,
-    Long administeredByUserId) {}
+    Long administeredByUserId,
+    StockConsumption stockConsumption) {}
