@@ -135,7 +135,7 @@ class HealthExecutionsIT {
 
   private static VaccinationCommand cmd(String vaccineKey, LocalDate date, int subjects) {
     return new VaccinationCommand(
-        vaccineKey, date, "WATER", null, null, subjects, null, null, null, null);
+        vaccineKey, date, "WATER", null, null, subjects, null, null, null, null, null);
   }
 
   private static HealthObservationCommand obs(Severity severity, String title) {

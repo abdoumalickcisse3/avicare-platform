@@ -56,7 +56,8 @@ public class PoultryDailyRecordController {
                 request.mortalityCount(),
                 request.feedKg(),
                 request.waterL(),
-                request.observations()),
+                request.observations(),
+                null),
             TenancyContext.currentUserId());
     return ApiResponse.of(toResponse(saved));
   }

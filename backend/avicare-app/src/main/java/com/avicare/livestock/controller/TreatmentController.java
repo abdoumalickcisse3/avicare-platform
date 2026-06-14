@@ -55,7 +55,8 @@ public class TreatmentController {
                 request.prescribedBy(),
                 request.veterinarianId(),
                 request.notes(),
-                request.administeredByUserId()),
+                request.administeredByUserId(),
+                null),
             TenancyContext.currentUserId());
     return ApiResponse.of(TreatmentResponse.from(saved));
   }

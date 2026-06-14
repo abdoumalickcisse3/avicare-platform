@@ -1,9 +1,13 @@
 package com.avicare.livestock.health;
 
+import com.avicare.livestock.inventory.StockConsumption;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-/** Input to record a vaccination administration (Sprint B3-2). */
+/**
+ * Input to record a vaccination administration (Sprint B3-2). {@code stockConsumption} is optional
+ * (Décision D18): when set, the vaccine doses are drawn from stock as an automatic OUT movement.
+ */
 public record VaccinationCommand(
     String vaccineKey,
     LocalDate administeredDate,
@@ -14,4 +18,5 @@ public record VaccinationCommand(
     String vaccineBatchNumber,
     LocalDate vaccineExpiryDate,
     Long administeredByUserId,
-    String notes) {}
+    String notes,
+    StockConsumption stockConsumption) {}
