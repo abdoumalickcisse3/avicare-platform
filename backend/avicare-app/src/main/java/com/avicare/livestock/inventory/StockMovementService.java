@@ -99,6 +99,7 @@ public class StockMovementService {
     movement.setDailyRecordId(cmd.dailyRecordId());
     movement.setVaccinationId(cmd.vaccinationId());
     movement.setTreatmentExecutedId(cmd.treatmentExecutedId());
+    movement.setPurchaseOrderId(cmd.purchaseOrderId());
     movement.setUnitPriceXof(cmd.unitPriceXof());
     movement.setTotalValueXof(totalValue(magnitude, cmd.unitPriceXof()));
     movement.setNotes(cmd.notes());

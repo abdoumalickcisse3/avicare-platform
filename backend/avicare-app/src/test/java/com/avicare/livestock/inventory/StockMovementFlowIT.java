@@ -174,7 +174,8 @@ class StockMovementFlowIT {
                 null,
                 null,
                 null,
-                "fed batch"),
+                "fed batch",
+                null),
             1L);
 
     assertThat(consumption.getProductionUnitId()).isEqualTo(unitId);
@@ -239,6 +240,7 @@ class StockMovementFlowIT {
         null,
         null,
         unitPrice,
+        null,
         null);
   }
 

@@ -22,4 +22,5 @@ public record StockMovementCommand(
     Long vaccinationId,
     Long treatmentExecutedId,
     Integer unitPriceXof,
-    String notes) {}
+    String notes,
+    Long purchaseOrderId) {}
