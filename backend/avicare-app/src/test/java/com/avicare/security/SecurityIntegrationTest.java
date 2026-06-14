@@ -12,6 +12,7 @@ import com.avicare.livestock.repository.DailyEggProductionRepository;
 import com.avicare.livestock.repository.DailyRecordRepository;
 import com.avicare.livestock.repository.EggCollectionRepository;
 import com.avicare.livestock.repository.EggTrayStockRepository;
+import com.avicare.livestock.repository.FeedFormulaRepository;
 import com.avicare.livestock.repository.GrowthPerformanceRepository;
 import com.avicare.livestock.repository.HealthObservationRepository;
 import com.avicare.livestock.repository.LifecycleEventRepository;
@@ -99,6 +100,7 @@ class SecurityIntegrationTest {
   @MockitoBean private StockMovementRepository stockMovementRepository;
   @MockitoBean private PurchaseOrderRepository purchaseOrderRepository;
   @MockitoBean private PurchaseOrderItemRepository purchaseOrderItemRepository;
+  @MockitoBean private FeedFormulaRepository feedFormulaRepository;
   @MockitoBean private SupplierRepository supplierRepository;
 
   @Test
