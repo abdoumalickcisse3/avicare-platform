@@ -53,7 +53,7 @@ public class VaccinationController {
                 request.vaccineExpiryDate(),
                 request.administeredByUserId(),
                 request.notes(),
-                null),
+                request.stockConsumption() == null ? null : request.stockConsumption().toModel()),
             TenancyContext.currentUserId());
     return ApiResponse.of(VaccinationResponse.from(saved));
   }

@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.avicare.common.api.exception.NotFoundException;
+import com.avicare.common.api.exception.ValidationException;
 import com.avicare.livestock.domain.ArticleSource;
 import com.avicare.livestock.domain.MovementReason;
 import com.avicare.livestock.domain.MovementType;
@@ -22,6 +23,8 @@ import com.avicare.livestock.poultry.DailyRecordCommand;
 import com.avicare.livestock.poultry.DailyRecordService;
 import com.avicare.livestock.repository.BreedRepository;
 import com.avicare.livestock.repository.ProductionUnitRepository;
+import com.avicare.subscription.domain.FeatureMode;
+import com.avicare.subscription.service.SubscriptionService;
 import com.avicare.support.RsaKeys;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
@@ -77,6 +80,7 @@ class CrossContextCouplingIT {
   @Autowired private StockMovementService stockMovementService;
   @Autowired private BreedRepository breedRepository;
   @Autowired private ProductionUnitRepository productionUnitRepository;
+  @Autowired private SubscriptionService subscriptionService;
 
   @Test
   void dailyRecord_withFeedConsumption_createsMovementWithBackref_decrementsStock()
@@ -109,6 +113,35 @@ class CrossContextCouplingIT {
     assertThat(movements.get(0).getMovementType()).isEqualTo(MovementType.OUT);
     assertThat(movements.get(0).getReason()).isEqualTo(MovementReason.CONSUMPTION_LOT);
     assertThat(movements.get(0).getDailyRecordId()).isEqualTo(rec.getId());
+  }
+
+  @Test
+  void dailyRecord_withConsumption_butModuleDisabled_rejectsAndRollsBack() throws Exception {
+    long farmId = createFarm();
+    subscriptionService.disableModule(farmId, "module.inventory"); // Option α: no module → no coupling
+    long unitId = seedUnit(farmId);
+
+    assertThatThrownBy(
+            () ->
+                dailyRecordService.record(
+                    unitId,
+                    new DailyRecordCommand(
+                        LocalDate.now(),
+                        0,
+                        new BigDecimal("50"),
+                        BigDecimal.ZERO,
+                        null,
+                        new StockConsumption(
+                            "feed_starter_broiler",
+                            ArticleSource.INVENTORY,
+                            new BigDecimal("50"),
+                            null)),
+                    1L))
+        .isInstanceOf(ValidationException.class);
+
+    // full rollback: neither the daily record nor a stock movement persisted
+    assertThat(dailyRecordService.listForUnit(unitId)).isEmpty();
+    assertThat(stockMovementService.listForProductionUnit(unitId)).isEmpty();
   }
 
   @Test
@@ -319,6 +352,9 @@ class CrossContextCouplingIT {
             .andReturn()
             .getResponse()
             .getContentAsString();
-    return objectMapper.readTree(json).get("data").get("id").asLong();
+    long farmId = objectMapper.readTree(json).get("data").get("id").asLong();
+    // D18 coupling now requires the inventory module on the farm (Option α, B4-6).
+    subscriptionService.enableModule(farmId, "module.inventory", FeatureMode.HARD, null);
+    return farmId;
   }
 }
