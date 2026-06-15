@@ -1,5 +1,6 @@
 package com.avicare.livestock.inventory;
 
+import com.avicare.common.api.exception.BusinessRuleException;
 import com.avicare.common.api.exception.ValidationException;
 import com.avicare.livestock.domain.MovementReason;
 import com.avicare.livestock.domain.MovementType;
@@ -39,9 +40,10 @@ public class StockConsumptionService {
       return null;
     }
     // Option α (B4-6): a coupling payload is only honoured when the farm has the inventory module.
+    // Well-formed request, unmet business precondition → 422 (BusinessRuleException), not 400.
     // Runs inside the caller's transaction, so the whole source action rolls back on refusal.
     if (!subscriptionFacade.isModuleEnabled(farmId, MODULE_INVENTORY)) {
-      throw new ValidationException(
+      throw new BusinessRuleException(
           "MODULE_INVENTORY_REQUIRED",
           "module.inventory non activé pour cette ferme — couplage stock impossible");
     }
