@@ -221,6 +221,9 @@ Les bundles sont des **collections d'entitlements** côté DB — le code de ges
 | 15 | Bundles | Pas de table dédiée : collections d'entitlements via `catalog_items` (catégorie `bundles`) (cf. doc 04 / A4) |
 | 16 | Plans → Modules | Mapping porté **côté backend = source de vérité unique**, exposé via API (`GET /subscription/plans`) ; V1 : plans = pré-bundles **only** (pas d'à-la-carte — affine D7) ; quotas **indicatifs, non enforced** (marketing soft). Cf. ADR-005 |
 | 17 | Type d'élevage par ferme | Pas de `farm.type` (cohérent D5) ; `production_focus` métier stocké en `farm_settings` (`farm`/`production_focus`, JSONB `broiler`/`layer`) ; sidebar = (modules abonnés actifs) ∩ (focus ferme courante) |
+| 18 | Couplage stock ↔ saisies métier | **Option hybride** : champ optionnel (`feedConsumption` / `stockConsumption`) sur DailyRecord / Vaccination / TreatmentExecuted, déclenchant un `StockMovement` OUT automatique via `StockConsumptionService` (orchestrateur intra-livestock réutilisable). Atomique (`@Transactional` : rollback de toute l'action si le couplage échoue). Rétrocompat : si `null`, aucun impact stock. **Option α** : si le champ est envoyé mais `module.inventory` est inactif → **422** (`BusinessRuleException`). Cf. ADR-008 (intra-livestock) |
+| 19 | Stock insuffisant | **Warning non bloquant** (cohérent ADR-007 délais d'attente) : le backend accepte un solde **négatif**, l'UI affiche un avertissement orange. L'éleveur reste maître de son inventaire — pas de garde dure |
+| 20 | Décomposition formule d'aliment | **V1 = référence simple** : `DailyRecord.feedConsumption` cible **un seul article** (la formule est une aide UX/coût, **pas** une décomposition automatique). **V2 = décomposition** : le backend éclatera `formula.ingredients` en N mouvements de stock |
 
 ---
 
