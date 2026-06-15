@@ -89,7 +89,7 @@ Pour toute décision d'architecture non documentée, ME DEMANDER avant d'agir.
 - [x] Sprint B1 — poultry chair
 - [x] Sprint B2 — poultry ponte
 - [x] Sprint B3 — health
-- [ ] Sprint B4 — inventory
+- [x] Sprint B4 — inventory
 - [ ] Sprint B5 — commercial
 - [ ] Sprint B6 — finance
 - [ ] Sprint B7 — mobile MVP
