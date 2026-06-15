@@ -14,6 +14,7 @@ import {
   Typography,
 } from "@mui/material";
 import {
+  Boxes,
   CreditCard,
   Drumstick,
   Egg,
@@ -96,6 +97,13 @@ const NAV_SECTIONS: NavSection[] = [
   {
     heading: "Gestion",
     items: [
+      {
+        label: "Stocks",
+        href: "/stocks",
+        icon: Boxes,
+        enabled: true,
+        requiredModule: "module.inventory",
+      },
       { label: "Abonnement", href: "/abonnement", icon: CreditCard, enabled: false },
       { label: "Réglages", href: "/reglages", icon: Settings, enabled: true },
     ],
@@ -249,7 +257,15 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             {section.moduleGated ? (
               renderModuleGated(section)
             ) : (
-              <List disablePadding>{section.items.map(renderItem)}</List>
+              <List disablePadding>
+                {section.items
+                  .filter(
+                    (it) =>
+                      (!it.requiredModule || isModuleActive(it.requiredModule)) &&
+                      (!it.requiredModuleAny || it.requiredModuleAny.some(isModuleActive)),
+                  )
+                  .map(renderItem)}
+              </List>
             )}
           </Box>
         ))}

@@ -28,11 +28,13 @@ import {
   useRecordVaccinationMutation,
 } from "@/store/api/healthApi";
 import { useToast } from "@/components/feedback/ToastProvider";
+import { useInventoryGating } from "@/hooks/useInventoryGating";
+import { StockConsumptionSection } from "@/components/inventory/StockConsumptionSection";
 import { apiErrorMessage } from "@/lib/apiError";
 import { humanizeKey } from "@/lib/health";
 import { colors } from "@/theme/tokens";
 import { SectionLabel, today } from "./HealthDialogParts";
-import type { Vaccine } from "@/types";
+import type { StockConsumption, Vaccine } from "@/types";
 
 const schema = z.object({
   vaccineKey: z.string().min(1, "Vaccin requis"),
@@ -78,8 +80,10 @@ export function VaccinationDialog({
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const { showToast } = useToast();
   const { data: vaccines = [] } = useGetVaccinesQuery({ farmId }, { skip: !open });
+  const { hasInventory } = useInventoryGating();
   const [recordVaccination, { isLoading }] = useRecordVaccinationMutation();
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [consumption, setConsumption] = useState<StockConsumption | null>(null);
 
   const defaults = useMemo<VaccinationForm>(
     () => ({
@@ -132,6 +136,7 @@ export function VaccinationDialog({
           vaccineExpiryDate: values.vaccineExpiryDate || undefined,
           administeredByUserId: currentUserId,
           notes: values.notes || undefined,
+          stockConsumption: consumption ?? undefined,
         },
       }).unwrap();
       showToast("Vaccination enregistrée.", "success");
@@ -319,6 +324,15 @@ export function VaccinationDialog({
                 />
               </Stack>
             </Collapse>
+
+            {hasInventory && (
+              <StockConsumptionSection
+                farmId={farmId}
+                open={open}
+                onChange={setConsumption}
+                label="Décrémenter le vaccin du stock"
+              />
+            )}
           </Stack>
         </DialogContent>
 
