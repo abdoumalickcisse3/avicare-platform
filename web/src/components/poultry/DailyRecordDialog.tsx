@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -22,9 +22,12 @@ import {
 import { Skull, X } from "lucide-react";
 import { useCreateDailyRecordMutation } from "@/store/api/poultryBatchesApi";
 import { useToast } from "@/components/feedback/ToastProvider";
+import { useInventoryGating } from "@/hooks/useInventoryGating";
+import { StockConsumptionSection } from "@/components/inventory/StockConsumptionSection";
 import { apiErrorMessage } from "@/lib/apiError";
 import { formatNumber } from "@/lib/format";
 import { colors } from "@/theme/tokens";
+import type { StockConsumption } from "@/types";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -75,7 +78,9 @@ export function DailyRecordDialog({
   existingDates: string[];
 }) {
   const { showToast } = useToast();
+  const { hasInventory } = useInventoryGating();
   const [createRecord, { isLoading }] = useCreateDailyRecordMutation();
+  const [consumption, setConsumption] = useState<StockConsumption | null>(null);
 
   const { control, handleSubmit, reset } = useForm<RecordForm>({
     resolver: zodResolver(schema),
@@ -101,6 +106,7 @@ export function DailyRecordDialog({
           feedKg: numField(values.feedKg),
           waterL: numField(values.waterL),
           observations: values.observations || undefined,
+          feedConsumption: consumption ?? undefined,
         },
       }).unwrap();
       showToast(
@@ -247,6 +253,16 @@ export function DailyRecordDialog({
                 />
               )}
             />
+
+            {hasInventory && (
+              <StockConsumptionSection
+                farmId={farmId}
+                open={open}
+                onChange={setConsumption}
+                sourceFilter="INVENTORY"
+                label="Décrémenter l'aliment du stock"
+              />
+            )}
           </Stack>
         </DialogContent>
 

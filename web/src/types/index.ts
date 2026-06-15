@@ -195,6 +195,8 @@ export interface DailyRecordInput {
   feedKg?: number;
   waterL?: number;
   observations?: string;
+  /** Optional D18 stock coupling — draws feed from stock as an OUT movement. */
+  feedConsumption?: StockConsumption;
 }
 
 /** A weighing sample (mirrors backend WeighingSampleResponse). */
@@ -422,6 +424,8 @@ export interface VaccinationInput {
   vaccineExpiryDate?: string;
   administeredByUserId?: number;
   notes?: string;
+  /** Optional D18 stock coupling — draws the vaccine from stock as an OUT movement. */
+  stockConsumption?: StockConsumption;
 }
 
 /** A computed schedule entry status (mirrors backend ScheduleStatusDto). */
@@ -504,6 +508,8 @@ export interface TreatmentInput {
   veterinarianId?: number;
   notes?: string;
   administeredByUserId?: number;
+  /** Optional D18 stock coupling — draws the medication from stock as an OUT movement. */
+  stockConsumption?: StockConsumption;
 }
 
 /** A per-farm veterinarian directory entry (mirrors backend VeterinarianResponse). */
@@ -600,4 +606,268 @@ export interface CriticalObservationItem {
   severity: ObservationSeverity;
   title: string;
   observationDate: string;
+}
+
+/* ===================== Inventory (Sprint B4) ===================== */
+
+export type MovementType = "IN" | "OUT" | "ADJUSTMENT";
+export type ArticleSource = "INVENTORY" | "TREATMENT";
+export type PurchaseOrderStatus = "DRAFT" | "SENT" | "RECEIVED" | "CANCELLED";
+export type FeedPhase =
+  | "STARTER"
+  | "GROWER"
+  | "FINISHER"
+  | "PRE_LAYER"
+  | "LAYER"
+  | "BREEDER"
+  | "OTHER";
+export type MovementReason =
+  | "RECEPTION_PURCHASE"
+  | "GIFT"
+  | "RETURN_SUPPLIER"
+  | "CONSUMPTION_LOT"
+  | "CONSUMPTION_VACCINATION"
+  | "CONSUMPTION_TREATMENT"
+  | "LOSS"
+  | "SALE"
+  | "THEFT"
+  | "INVENTORY_PHYSICAL"
+  | "ERROR_CORRECTION";
+
+export interface StockItem {
+  id: number;
+  farmId: number;
+  articleKey: string;
+  articleSource: ArticleSource;
+  currentQuantity: number;
+  unit: string | null;
+  alertThreshold: number | null;
+  typicalUnitPriceXof: number | null;
+  lastMovementAt: string | null;
+  active: boolean;
+  notes: string | null;
+}
+
+export interface StockMovement {
+  id: number;
+  stockItemId: number;
+  articleKey: string;
+  movementType: MovementType;
+  movementDate: string;
+  quantity: number;
+  quantityBefore: number;
+  quantityAfter: number;
+  reason: MovementReason;
+  productionUnitId: number | null;
+  purchaseOrderId: number | null;
+  dailyRecordId: number | null;
+  vaccinationId: number | null;
+  treatmentExecutedId: number | null;
+  unitPriceXof: number | null;
+  totalValueXof: number | null;
+  notes: string | null;
+}
+
+export interface StockMovementInput {
+  stockItemId: number;
+  movementType: MovementType;
+  quantity: number;
+  reason: MovementReason;
+  movementDate?: string;
+  productionUnitId?: number | null;
+  unitPriceXof?: number | null;
+  notes?: string;
+}
+
+export interface InventoryCatalogItem {
+  articleKey: string;
+  articleSource: ArticleSource;
+  label: string;
+  subcategory: string | null;
+  unit: string | null;
+  typicalUnitPriceXof: number | null;
+}
+
+export interface StockValuationItem {
+  stockItemId: number;
+  articleKey: string;
+  articleSource: ArticleSource;
+  currentQuantity: number;
+  unitPriceXof: number | null;
+  valueXof: number;
+}
+export interface StockValuation {
+  items: StockValuationItem[];
+  totalValueXof: number;
+}
+
+export interface Supplier {
+  id: number;
+  farmId: number;
+  commercialName: string;
+  contactPerson: string | null;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  city: string | null;
+  types: string[];
+  paymentTerms: string | null;
+  notes: string | null;
+  active: boolean;
+}
+export interface SupplierInput {
+  commercialName: string;
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  city?: string;
+  types?: string[];
+  paymentTerms?: string;
+  notes?: string;
+}
+
+export interface PurchaseOrderLine {
+  id: number;
+  articleKey: string;
+  articleSource: ArticleSource;
+  articleLabelSnapshot: string | null;
+  unit: string | null;
+  orderedQuantity: number;
+  receivedQuantity: number;
+  unitPriceXof: number;
+  lineTotalXof: number;
+  notes: string | null;
+}
+export interface PurchaseOrder {
+  id: number;
+  farmId: number;
+  orderNumber: string;
+  supplierId: number;
+  supplierName: string;
+  status: PurchaseOrderStatus;
+  orderDate: string;
+  expectedDeliveryDate: string | null;
+  actualDeliveryDate: string | null;
+  totalXof: number | null;
+  notes: string | null;
+  items: PurchaseOrderLine[];
+}
+export interface PurchaseOrderDraftLineInput {
+  articleKey: string;
+  articleSource: ArticleSource;
+  orderedQuantity: number;
+  unitPriceXof: number;
+  notes?: string;
+}
+export interface PurchaseOrderDraftInput {
+  supplierId: number;
+  orderDate?: string;
+  expectedDeliveryDate?: string;
+  notes?: string;
+  lines: PurchaseOrderDraftLineInput[];
+}
+export interface PurchaseOrderReceiveInput {
+  actualDeliveryDate?: string;
+  lines: { itemId: number; receivedQuantity: number }[];
+}
+
+export interface FormulaIngredient {
+  articleKey: string;
+  articleSource: ArticleSource;
+  percentage: number;
+}
+export interface FeedFormula {
+  id: number;
+  farmId: number;
+  name: string;
+  description: string | null;
+  sourceFormulaKey: string | null;
+  targetBreedKeys: string[];
+  targetPhase: FeedPhase;
+  targetAgeDaysMin: number | null;
+  targetAgeDaysMax: number | null;
+  ingredients: FormulaIngredient[];
+  totalPercentage: number | null;
+  estimatedCostPer100kgXof: number | null;
+  estimatedCostCalculatedAt: string | null;
+  active: boolean;
+  notes: string | null;
+}
+export interface PlatformFormula {
+  key: string;
+  label: string;
+  targetBreedKeys: string[];
+  targetPhase: string;
+  targetAgeDaysMin: number | null;
+  targetAgeDaysMax: number | null;
+  ingredients: FormulaIngredient[];
+  estimatedCostPer100kgXof: number | null;
+}
+export interface AvailableFeedFormulas {
+  platformFormulas: PlatformFormula[];
+  farmFormulas: FeedFormula[];
+}
+export interface FeedFormulaInput {
+  name: string;
+  description?: string;
+  targetBreedKeys?: string[];
+  targetPhase: FeedPhase;
+  targetAgeDaysMin?: number | null;
+  targetAgeDaysMax?: number | null;
+  ingredients: FormulaIngredient[];
+  notes?: string;
+}
+export interface CloneFormulaInput {
+  sourceFormulaKey: string;
+  newName?: string;
+}
+
+/** Optional D18 stock coupling attached to a daily-record/vaccination/treatment. */
+export interface StockConsumption {
+  articleKey: string;
+  articleSource: ArticleSource;
+  quantity: number;
+  notes?: string;
+}
+
+export interface LowStockAlertItem {
+  stockItemId: number;
+  articleKey: string;
+  label: string | null;
+  currentQuantity: number;
+  alertThreshold: number | null;
+  unit: string | null;
+  percentBelowThreshold: number | null;
+}
+export interface NegativeStockAlertItem {
+  stockItemId: number;
+  articleKey: string;
+  label: string | null;
+  currentQuantity: number;
+  unit: string | null;
+}
+export interface PendingPurchaseOrderAlertItem {
+  purchaseOrderId: number;
+  orderNumber: string;
+  supplierId: number;
+  supplierName: string;
+  expectedDeliveryDate: string;
+  daysOverdue: number;
+  totalXof: number | null;
+}
+export interface RecentMovementAlertItem {
+  movementId: number;
+  stockItemId: number;
+  articleKey: string;
+  movementType: MovementType;
+  quantity: number;
+  quantityAfter: number;
+  movementDate: string;
+}
+export interface InventoryAlerts {
+  lowStockItems: LowStockAlertItem[];
+  negativeStockItems: NegativeStockAlertItem[];
+  pendingPurchaseOrders: PendingPurchaseOrderAlertItem[];
+  recentMovements: RecentMovementAlertItem[];
 }

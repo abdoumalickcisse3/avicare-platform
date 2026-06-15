@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -28,12 +28,14 @@ import {
   useRecordTreatmentMutation,
 } from "@/store/api/healthApi";
 import { useToast } from "@/components/feedback/ToastProvider";
+import { useInventoryGating } from "@/hooks/useInventoryGating";
+import { StockConsumptionSection } from "@/components/inventory/StockConsumptionSection";
 import { apiErrorMessage } from "@/lib/apiError";
 import { humanizeKey, projectWithdrawal } from "@/lib/health";
 import { colors } from "@/theme/tokens";
 import { SectionLabel, today } from "./HealthDialogParts";
 import { WithdrawalNotice } from "./WithdrawalNotice";
-import type { Treatment } from "@/types";
+import type { StockConsumption, Treatment } from "@/types";
 
 const PRESCRIBED_BY = [
   { value: "VETERINARIAN", label: "Vétérinaire" },
@@ -79,7 +81,9 @@ export function TreatmentDialog({
   const { showToast } = useToast();
   const { data: catalog = [] } = useGetTreatmentCatalogQuery({ farmId }, { skip: !open });
   const { data: vets = [] } = useGetVeterinariansQuery({ farmId }, { skip: !open });
+  const { hasInventory } = useInventoryGating();
   const [recordTreatment, { isLoading }] = useRecordTreatmentMutation();
+  const [consumption, setConsumption] = useState<StockConsumption | null>(null);
 
   const defaults = useMemo<TreatmentForm>(
     () => ({
@@ -148,6 +152,7 @@ export function TreatmentDialog({
               : undefined,
           notes: values.notes || undefined,
           administeredByUserId: currentUserId,
+          stockConsumption: consumption ?? undefined,
         },
       }).unwrap();
       showToast("Traitement enregistré.", "success");
@@ -377,6 +382,16 @@ export function TreatmentDialog({
                 />
               )}
             />
+
+            {hasInventory && (
+              <StockConsumptionSection
+                farmId={farmId}
+                open={open}
+                onChange={setConsumption}
+                sourceFilter="TREATMENT"
+                label="Décrémenter le médicament du stock"
+              />
+            )}
           </Stack>
         </DialogContent>
 
