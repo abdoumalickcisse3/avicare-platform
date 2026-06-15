@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Box,
   Button,
+  Collapse,
   List,
   ListItemButton,
   ListItemIcon,
@@ -14,137 +16,178 @@ import {
   Typography,
 } from "@mui/material";
 import {
+  BookOpen,
   Boxes,
+  ChevronDown,
+  ChevronRight,
+  ClipboardList,
   CreditCard,
   Drumstick,
   Egg,
   HeartPulse,
   LayoutDashboard,
+  LayoutGrid,
   Lock,
   Settings,
+  Truck,
   Warehouse,
+  Wheat,
 } from "lucide-react";
 import { useActiveModules } from "@/hooks/useActiveModules";
 import { useCurrentFarmFocus } from "@/hooks/useCurrentFarmFocus";
 import { colors } from "@/theme/tokens";
 
-export const SIDEBAR_WIDTH = 260;
+export const SIDEBAR_WIDTH = 264;
 
-interface NavItem {
+type IconType = typeof LayoutDashboard;
+
+interface Leaf {
   label: string;
   href: string;
-  icon: typeof LayoutDashboard;
-  enabled: boolean;
-  /** When set, the item only shows if this subscription module is active. */
+  icon: IconType;
+  enabled?: boolean; // default true
   requiredModule?: string;
-  /** When set, the item shows if ANY of these modules is active (OR semantics). */
   requiredModuleAny?: string[];
-  /** When set, also requires the current farm's production focus (Décision 17). */
   focusToken?: "broiler" | "layer";
 }
-
-interface NavSection {
+interface Group {
+  key: string;
+  label: string;
+  icon: IconType;
+  /** Group hidden unless this module is active (children share the gate). */
+  requiredModule?: string;
+  /** Show the "activate a module" CTA when no child is visible (Élevage). */
+  emptyStateCta?: boolean;
+  children: Leaf[];
+}
+type Entry = ({ kind: "leaf" } & Leaf) | ({ kind: "group" } & Group);
+interface Section {
   heading?: string;
-  items: NavItem[];
-  /** Élevage section is gated by active modules and shows an empty-state CTA. */
-  moduleGated?: boolean;
+  entries: Entry[];
 }
 
 /**
- * Navigation. The "Élevage" items are filtered by the active subscription
- * modules of the selected farm (Décision 5: no farm.type — a farm's nature is
- * its active modules). Fermes, Tableau de bord, Abonnement and Réglages are
- * always visible.
+ * Navigation (Sprint B4-8 redesign). Two collapsible groups — Élevage and
+ * Stocks — gated by the selected farm's active modules (Décision 5) and, for
+ * Élevage, by its production focus (Décision 17). Groups are multi-open; the
+ * group owning the current route stays open. Leaves (Tableau de bord, Fermes,
+ * Abonnement, Réglages) are always rendered.
  */
-const NAV_SECTIONS: NavSection[] = [
+const NAV: Section[] = [
   {
-    items: [
-      { label: "Tableau de bord", href: "/dashboard", icon: LayoutDashboard, enabled: true },
-      { label: "Fermes", href: "/fermes", icon: Warehouse, enabled: true },
-    ],
-  },
-  {
-    heading: "Élevage",
-    moduleGated: true,
-    items: [
-      {
-        label: "Poulets de chair",
-        href: "/elevage/lots",
-        icon: Drumstick,
-        enabled: true,
-        requiredModule: "module.poultry.broiler",
-        focusToken: "broiler",
-      },
-      {
-        label: "Œufs",
-        href: "/elevage/oeufs",
-        icon: Egg,
-        enabled: true,
-        requiredModule: "module.poultry.layer",
-        focusToken: "layer",
-      },
-      {
-        label: "Sanitaire",
-        href: "/elevage/sanitaire",
-        icon: HeartPulse,
-        enabled: true,
-        // Health applies across production types — visible with either tier,
-        // and not tied to a single production focus.
-        requiredModuleAny: ["module.health.basic", "module.health.advanced"],
-      },
+    entries: [
+      { kind: "leaf", label: "Tableau de bord", href: "/dashboard", icon: LayoutDashboard },
+      { kind: "leaf", label: "Fermes", href: "/fermes", icon: Warehouse },
     ],
   },
   {
     heading: "Gestion",
-    items: [
+    entries: [
       {
-        label: "Stocks",
-        href: "/stocks",
-        icon: Boxes,
-        enabled: true,
-        requiredModule: "module.inventory",
+        kind: "group",
+        key: "elevage",
+        label: "Élevage",
+        icon: Drumstick,
+        emptyStateCta: true,
+        children: [
+          {
+            label: "Poulets de chair",
+            href: "/elevage/lots",
+            icon: Drumstick,
+            requiredModule: "module.poultry.broiler",
+            focusToken: "broiler",
+          },
+          {
+            label: "Œufs",
+            href: "/elevage/oeufs",
+            icon: Egg,
+            requiredModule: "module.poultry.layer",
+            focusToken: "layer",
+          },
+          {
+            label: "Sanitaire",
+            href: "/elevage/sanitaire",
+            icon: HeartPulse,
+            requiredModuleAny: ["module.health.basic", "module.health.advanced"],
+          },
+        ],
       },
-      { label: "Abonnement", href: "/abonnement", icon: CreditCard, enabled: false },
-      { label: "Réglages", href: "/reglages", icon: Settings, enabled: true },
+      {
+        kind: "group",
+        key: "stocks",
+        label: "Stocks",
+        icon: Boxes,
+        requiredModule: "module.inventory",
+        children: [
+          { label: "Vue d'ensemble", href: "/stocks", icon: LayoutGrid },
+          { label: "Bibliothèque", href: "/stocks/articles", icon: BookOpen },
+          { label: "Fournisseurs", href: "/stocks/fournisseurs", icon: Truck },
+          { label: "Bons d'achat", href: "/stocks/achats", icon: ClipboardList },
+          { label: "Formules", href: "/stocks/formules", icon: Wheat },
+        ],
+      },
+      { kind: "leaf", label: "Abonnement", href: "/abonnement", icon: CreditCard, enabled: false },
+      { kind: "leaf", label: "Réglages", href: "/reglages", icon: Settings },
     ],
   },
 ];
 
+const ALL_HREFS = NAV.flatMap((s) =>
+  s.entries.flatMap((e) => (e.kind === "group" ? e.children.map((c) => c.href) : [e.href])),
+);
+
 const HEADING_SX = {
   display: "block",
   px: 1.5,
-  pt: 1.5,
+  pt: 2,
   pb: 0.5,
-  fontWeight: 600,
+  fontSize: "0.7rem",
+  fontWeight: 700,
   textTransform: "uppercase",
-  letterSpacing: "0.05em",
-  color: colors.neutral[500],
+  letterSpacing: "0.06em",
+  color: colors.neutral[400],
 } as const;
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const { isModuleActive, isLoading, farmId, hasFarm } = useActiveModules();
   const { focus } = useCurrentFarmFocus();
+  // Groups are open by default (discoverability); track the ones the user closes.
+  const [collapsedKeys, setCollapsedKeys] = useState<Set<string>>(new Set());
 
-  // An item passes the métier filter if the current farm's focus includes its
-  // token — or if the farm has no explicit focus (empty = don't filter).
-  const inFarmFocus = (item: NavItem) =>
-    !item.focusToken || focus.length === 0 || focus.includes(item.focusToken);
+  // The single deepest nav href that prefixes the current route — avoids both
+  // "/stocks" and "/stocks/articles" lighting up at once.
+  const bestMatch = ALL_HREFS.filter(
+    (h) => pathname === h || pathname.startsWith(`${h}/`),
+  ).sort((a, b) => b.length - a.length)[0];
 
-  const isActive = (href: string) =>
-    pathname === href || pathname.startsWith(`${href}/`);
+  const childVisible = (c: Leaf) =>
+    (!c.requiredModule || isModuleActive(c.requiredModule)) &&
+    (!c.requiredModuleAny || c.requiredModuleAny.some(isModuleActive)) &&
+    (!c.focusToken || focus.length === 0 || focus.includes(c.focusToken));
 
-  const renderItem = (item: NavItem) => {
-    const active = item.enabled && isActive(item.href);
+  const toggleCollapsed = (key: string) =>
+    setCollapsedKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+
+  const leafButton = (item: Leaf, nested: boolean) => {
+    const enabled = item.enabled !== false;
+    const active = enabled && item.href === bestMatch;
     const Icon = item.icon;
     const button = (
       <ListItemButton
         selected={active}
-        disabled={!item.enabled}
+        disabled={!enabled}
         onClick={onNavigate}
         sx={{
           borderRadius: 2,
-          mb: 0.5,
+          mb: 0.25,
+          py: 0.75,
+          pl: nested ? 2.75 : 1.5,
           "&.Mui-selected": {
             bgcolor: colors.primary[100],
             color: colors.primary[700],
@@ -153,17 +196,30 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           },
         }}
       >
-        <ListItemIcon sx={{ minWidth: 36 }}>
-          <Icon size={20} />
+        <ListItemIcon sx={{ minWidth: nested ? 30 : 34 }}>
+          <Icon size={nested ? 18 : 20} />
         </ListItemIcon>
         <ListItemText
           primary={item.label}
-          slotProps={{ primary: { sx: { fontSize: "0.9rem", fontWeight: 500 } } }}
+          slotProps={{
+            primary: {
+              sx: {
+                fontSize: "0.9rem",
+                // Hierarchy: group header (600) > top-level leaf (500) >
+                // inactive sub-item (regular 400); active sub-item is bold.
+                fontWeight: active ? 600 : nested ? 400 : 500,
+              },
+            },
+          }}
         />
+        {!enabled && (
+          <Typography variant="caption" sx={{ color: colors.neutral[400] }}>
+            bientôt
+          </Typography>
+        )}
       </ListItemButton>
     );
-
-    return item.enabled ? (
+    return enabled ? (
       <Link key={item.href} href={item.href} style={{ display: "block", color: "inherit" }}>
         {button}
       </Link>
@@ -172,34 +228,18 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     );
   };
 
-  const renderModuleGated = (section: NavSection) => {
-    if (isLoading) {
-      return (
-        <Box sx={{ px: 1, py: 0.5 }}>
-          {section.items.map((_, i) => (
-            <Skeleton
-              key={i}
-              variant="rounded"
-              height={40}
-              sx={{ mb: 0.5, borderRadius: 2 }}
-            />
-          ))}
-        </Box>
-      );
-    }
+  const renderGroup = (group: Group) => {
+    if (group.requiredModule && !isModuleActive(group.requiredModule)) return null;
 
-    const visible = section.items.filter(
-      (it) =>
-        (!it.requiredModule || isModuleActive(it.requiredModule)) &&
-        (!it.requiredModuleAny || it.requiredModuleAny.some(isModuleActive)) &&
-        inFarmFocus(it),
-    );
-
+    const visible = group.children.filter(childVisible);
     if (visible.length === 0) {
+      if (!group.emptyStateCta) return null;
       return (
         <Box
+          key={group.key}
           sx={{
             mx: 1,
+            mb: 1,
             p: 2,
             textAlign: "center",
             border: `1px dashed ${colors.neutral[300]}`,
@@ -210,7 +250,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             <Lock size={20} />
           </Box>
           <Typography variant="caption" sx={{ display: "block", color: colors.neutral[600], mb: 1 }}>
-            Activez un module pour commencer.
+            Activez un module d&apos;élevage pour commencer.
           </Typography>
           <Button
             component={Link}
@@ -227,7 +267,40 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       );
     }
 
-    return <List disablePadding>{visible.map(renderItem)}</List>;
+    const hasActiveChild = visible.some((c) => c.href === bestMatch);
+    // Open by default; the active group is always open; otherwise respect the
+    // user's explicit collapse.
+    const open = hasActiveChild || !collapsedKeys.has(group.key);
+    const Icon = group.icon;
+
+    return (
+      <Box key={group.key}>
+        <ListItemButton
+          onClick={() => toggleCollapsed(group.key)}
+          sx={{
+            borderRadius: 2,
+            mb: 0.25,
+            py: 0.85,
+            color: hasActiveChild ? colors.primary[700] : colors.neutral[800],
+            "& .MuiListItemIcon-root": {
+              color: hasActiveChild ? colors.primary[600] : colors.neutral[600],
+            },
+          }}
+        >
+          <ListItemIcon sx={{ minWidth: 34 }}>
+            <Icon size={20} />
+          </ListItemIcon>
+          <ListItemText
+            primary={group.label}
+            slotProps={{ primary: { sx: { fontSize: "0.9rem", fontWeight: 600 } } }}
+          />
+          {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+        </ListItemButton>
+        <Collapse in={open} unmountOnExit>
+          <List disablePadding>{visible.map((c) => leafButton(c, true))}</List>
+        </Collapse>
+      </Box>
+    );
   };
 
   return (
@@ -240,38 +313,52 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         borderRight: `1px solid ${colors.neutral[200]}`,
       }}
     >
-      <Box sx={{ px: 3, py: 2.5 }}>
+      <Box sx={{ px: 3, py: 2.5, display: "flex", alignItems: "center", gap: 1 }}>
+        <Box
+          sx={{
+            width: 30,
+            height: 30,
+            borderRadius: 2,
+            bgcolor: colors.primary[500],
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: colors.neutral[0],
+          }}
+        >
+          <Drumstick size={18} />
+        </Box>
         <Typography variant="h5" sx={{ fontWeight: 700, color: colors.primary[600] }}>
           AviCare
         </Typography>
       </Box>
 
       <Box sx={{ px: 1.5, flex: 1, overflowY: "auto" }}>
-        {NAV_SECTIONS.map((section, i) => (
-          <Box key={section.heading ?? `section-${i}`} sx={{ mb: 1 }}>
+        {NAV.map((section, i) => (
+          <Box key={section.heading ?? `section-${i}`} sx={{ mb: 0.5 }}>
             {section.heading && (
               <Typography variant="caption" sx={HEADING_SX}>
                 {section.heading}
               </Typography>
             )}
-            {section.moduleGated ? (
-              renderModuleGated(section)
+            {isLoading && section.entries.some((e) => e.kind === "group") ? (
+              <Box sx={{ px: 0.5, py: 0.5 }}>
+                {Array.from({ length: 2 }).map((_, k) => (
+                  <Skeleton key={k} variant="rounded" height={40} sx={{ mb: 0.5, borderRadius: 2 }} />
+                ))}
+              </Box>
             ) : (
               <List disablePadding>
-                {section.items
-                  .filter(
-                    (it) =>
-                      (!it.requiredModule || isModuleActive(it.requiredModule)) &&
-                      (!it.requiredModuleAny || it.requiredModuleAny.some(isModuleActive)),
-                  )
-                  .map(renderItem)}
+                {section.entries.map((entry) =>
+                  entry.kind === "group" ? renderGroup(entry) : leafButton(entry, false),
+                )}
               </List>
             )}
           </Box>
         ))}
       </Box>
 
-      <Stack sx={{ px: 3, py: 2 }}>
+      <Stack sx={{ px: 3, py: 2, borderTop: `1px solid ${colors.neutral[100]}` }}>
         <Typography variant="caption" color="text.secondary">
           AviCare V1 · Volaille
         </Typography>
