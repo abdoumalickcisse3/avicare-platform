@@ -64,6 +64,18 @@ public class BatchService {
 
 ## 3. Structure standardisée d'un bounded context
 
+> **Nuance super-context (ADR-008).** L'app a **5 contextes racine** : `identity`,
+> `tenancy`, `subscription`, `parameters`, `livestock`. `livestock` est un
+> **super-context** qui contient les **sous-domaines** du métier élevage —
+> `poultry`, `layer`, `health`, `inventory`, puis `commercial` (B5) et `finance`
+> (B6) — imposé par le pivot `ProductionUnit` en héritage JPA `JOINED` (Décision
+> D5), qui exige un **contexte de persistance unique**. Les sous-domaines
+> partagent `livestock/{domain,repository,controller,service}` et communiquent
+> entre eux par **appels de services directs**. La structure ci-dessous
+> s'applique telle quelle à un **contexte racine** ; au sein de `livestock` elle
+> est appliquée **par sous-domaine** (package `livestock.<sousdomaine>` + bins
+> `domain`/`repository`/`controller` partagés). Cf. ADR-008.
+
 **Tout** bounded context dans `avicare-app` suit cette structure :
 
 ```
@@ -131,7 +143,16 @@ C'est subtil mais important :
 
 ---
 
-## 4. Détail des 14 bounded contexts de la V1
+## 4. Détail des bounded contexts de la V1
+
+> **Reclassement (ADR-008).** §4.6 `poultry`, §4.7 `health`, §4.8 `inventory`
+> (ainsi que `layer`, et `commercial`/`finance` à venir) ne sont **pas des
+> contextes racine** : ce sont des **sous-domaines de `livestock`**. Dans leurs
+> « dépendances » ci-dessous, distinguer : vers un **contexte racine**
+> (`subscription`, `parameters`, `tenancy`) = **via façade** ; vers un **autre
+> sous-domaine `livestock`** = **appel de service direct autorisé** (ex.
+> `StockConsumptionService` orchestre le couplage D18 entre poultry/health et
+> inventory).
 
 Pour chaque contexte : **responsabilité**, **entités principales**, **facade publique exposée**, **dépendances**.
 
@@ -320,6 +341,10 @@ public interface LivestockFacade {
 
 ### 4.6 — `poultry` (Phase B, Sprints B1-B2)
 
+> **Sous-domaine de `livestock`** (ADR-008). `PoultryBatch extends ProductionUnit`
+> (JPA JOINED, D5) ⇒ vit sous `com.avicare.livestock.poultry` (+ `layer` pour la
+> ponte), pas en contexte racine.
+
 **Responsabilité** : tout ce qui est spécifique aux volailles (lots, saisies quotidiennes, pesées, GMQ, œufs, abattages).
 
 **Sous-packages** :
@@ -362,6 +387,10 @@ public interface PoultryFacade {
 
 ### 4.7 — `health` (Phase B, Sprint B3)
 
+> **Sous-domaine de `livestock`** (ADR-008) : `com.avicare.livestock.health`.
+> Manipule `ProductionUnit` (générique, jamais `PoultryBatch`) ; reçoit un
+> couplage stock optionnel (D18) via `StockConsumptionService` (intra-livestock).
+
 **Responsabilité** : tout le suivi sanitaire, **toutes espèces confondues** (notable : `health` ne sait pas ce qu'est un poulet).
 
 **Entités** :
@@ -397,6 +426,14 @@ public interface HealthFacade {
 ---
 
 ### 4.8 — `inventory` (Phase B, Sprint B4)
+
+> **Sous-domaine de `livestock`** (ADR-008) : `com.avicare.livestock.inventory`.
+> `StockConsumptionService` y est l'**orchestrateur intra-livestock** du couplage
+> D18 (appelé directement par poultry/health). Dépendances racine via façades :
+> `subscription` (gating `module.inventory` + Option α), `parameters` (catalog).
+> **Livré tel quel** : entités dans `livestock/domain`, controllers dans
+> `livestock/controller`, DTOs dans `livestock/inventory/dto` — pas de façade
+> `InventoryFacade` en V1 (le couplage est *consommé* par inventory, pas exposé).
 
 **Responsabilité** : stocks, mouvements, fournisseurs, achats, formules d'aliment.
 
@@ -592,18 +629,30 @@ public interface ReportingFacade {
 
 ## 5. Règles de communication inter-contextes — STRICT
 
-### Règle absolue : on importe la facade, pas l'entité
+### Règle : façade entre contextes racine ; service direct intra-`livestock` (ADR-008)
+
+La règle d'import dépend de la frontière franchie :
 
 ```java
-// ✅ AUTORISÉ
-import com.avicare.livestock.api.LivestockFacade;
-import com.avicare.livestock.api.dto.ProductionUnitInfo;
+// ❌ INTERDIT — entre contextes RACINE : importer l'@Entity/Repository d'un autre
+//    contexte racine. On passe par sa façade publique.
+import com.avicare.subscription.domain.Subscription;        // ❌ depuis livestock
+import com.avicare.subscription.api.SubscriptionFacade;     // ✅ la façade, oui
 
-// ❌ INTERDIT
-import com.avicare.livestock.domain.ProductionUnit;
-import com.avicare.poultry.domain.PoultryBatch;
-import com.avicare.poultry.repository.PoultryBatchRepository;
+// ✅ AUTORISÉ — INTRA-`livestock` (super-context) : un sous-domaine importe les
+//    entités partagées et appelle les services des autres sous-domaines.
+import com.avicare.livestock.domain.ProductionUnit;         // ✅ pivot partagé (D5)
+import com.avicare.livestock.domain.PoultryBatch;           // ✅ PoultryBatch extends ProductionUnit (JOINED)
+import com.avicare.livestock.inventory.StockConsumptionService; // ✅ orchestrateur D18
 ```
+
+- **Entre contextes racine** (`identity`, `tenancy`, `subscription`, `parameters`,
+  `livestock`) : import d'`@Entity`/`Repository` d'un autre contexte **INTERDIT**
+  → façade publique uniquement (règle inchangée).
+- **Intra-`livestock`** : les sous-domaines (`poultry`, `health`, `inventory`,
+  `layer`…) **partagent** `livestock/domain` + `livestock/repository` et
+  s'appellent par **services directs**. C'est imposé par D5 (héritage JPA JOINED
+  ⇒ contexte de persistance unique) et formalisé par **ADR-008**.
 
 ### Mécanismes autorisés de communication
 
