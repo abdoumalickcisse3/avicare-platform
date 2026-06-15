@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "@/test/render";
 import { Sidebar } from "./Sidebar";
 
@@ -90,5 +91,31 @@ describe("Sidebar module filtering", () => {
     const { container } = renderWithProviders(<Sidebar />);
     expect(container.querySelector(".MuiSkeleton-root")).toBeInTheDocument();
     expect(screen.queryByText("Poulets de chair")).not.toBeInTheDocument();
+  });
+
+  it("collapses a group's children when its header is clicked", async () => {
+    const user = userEvent.setup();
+    mockModules(["module.poultry.broiler"]);
+    renderWithProviders(<Sidebar />);
+    expect(screen.getByText("Poulets de chair")).toBeInTheDocument(); // open by default
+    await user.click(screen.getByText("Élevage"));
+    // Collapse unmounts children after its exit transition (async in jsdom).
+    await waitFor(() =>
+      expect(screen.queryByText("Poulets de chair")).not.toBeInTheDocument(),
+    );
+  });
+
+  it("renders the Stocks group with its children when inventory is active", () => {
+    mockModules(["module.inventory"]);
+    renderWithProviders(<Sidebar />);
+    expect(screen.getByText("Stocks")).toBeInTheDocument();
+    expect(screen.getByText("Bons d'achat")).toBeInTheDocument();
+    expect(screen.getByText("Formules")).toBeInTheDocument();
+  });
+
+  it("hides the Stocks group when inventory is inactive", () => {
+    mockModules(["module.poultry.broiler"]);
+    renderWithProviders(<Sidebar />);
+    expect(screen.queryByText("Stocks")).not.toBeInTheDocument();
   });
 });
