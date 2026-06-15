@@ -5,8 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.avicare.common.api.exception.BusinessRuleException;
 import com.avicare.common.api.exception.NotFoundException;
-import com.avicare.common.api.exception.ValidationException;
 import com.avicare.livestock.domain.ArticleSource;
 import com.avicare.livestock.domain.MovementReason;
 import com.avicare.livestock.domain.MovementType;
@@ -138,7 +138,7 @@ class CrossContextCouplingIT {
                             new BigDecimal("50"),
                             null)),
                     1L))
-        .isInstanceOf(ValidationException.class);
+        .isInstanceOf(BusinessRuleException.class);
 
     // full rollback: neither the daily record nor a stock movement persisted
     assertThat(dailyRecordService.listForUnit(unitId)).isEmpty();
