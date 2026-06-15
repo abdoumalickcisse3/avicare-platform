@@ -7,12 +7,65 @@ et ce projet adhère au [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0
 
 ## [Unreleased]
 
-_Rien en attente. Prochain : Sprint B4 (inventory — stocks aliments/médicaments,
-fournisseurs, achats, formules)._
+_Rien en attente. Prochain : Sprint B5 (commercial — clients, commandes, ventes,
+livraisons, factures, paiements)._
 
 > Note : le changelog n'a pas été tenu entre 0.1.0 et 0.7.0 ; l'historique
 > intermédiaire (A2 → B1) est tracé par les tags Git et les PRs. Reprise du
 > journal à 0.7.0.
+
+## [0.9.0-inventory] — 2026-06-15
+
+Sprint B4 complet — module **Inventaire** (jalon B.M4). Un éleveur peut gérer son
+catalogue d'articles, ses stocks et mouvements, ses fournisseurs et bons d'achat
+(workflow DRAFT→SENT→RECEIVED), ses formules d'aliment (clonées depuis la
+plateforme), et bénéficier d'un **couplage cross-sous-domaine optionnel** (D18)
+décrémentant le stock depuis les saisies métier. Gating `module.inventory`.
+
+### Added — Inventaire (backend, B4-1 → B4-6)
+
+- Migration `V15` : catalogue plateforme `inventory_items` (17 articles V1) via
+  `catalog_items` (D15) + `stock_items` (per-farm, solde négatif autorisé D19) +
+  `suppliers` (annuaire ferme).
+- Migration `V16` : `stock_movements` (journal append-only IN/OUT/ADJUSTMENT,
+  snapshot before/after, backrefs cross-sous-domaine) + alertes compute-on-read.
+- Migration `V17` : `purchase_orders` + `purchase_order_items` (workflow
+  DRAFT→SENT→RECEIVED + cancel) ; réception atomique → cascade mouvements IN.
+- Migration `V18` : `feed_formulas` (6 templates plateforme + clonage farm +
+  coût snapshot, `ingredients` JSONB — D20 formule simple V1).
+- Migration `V19` : extension du CHECK `stock_movements.reason`
+  (`CONSUMPTION_VACCINATION`, `CONSUMPTION_TREATMENT`).
+- **Couplage D18** : `StockConsumptionService` (orchestrateur intra-`livestock`
+  réutilisable, `@Transactional`) ; champ optionnel `feedConsumption` /
+  `stockConsumption` sur DailyRecord / Vaccination / Treatment ; **Option α** :
+  payload couplé sans `module.inventory` actif → **422** (`BusinessRuleException`).
+- **REST API** (~25 endpoints, 7 controllers) sous `/api/v1/farms/{id}/inventory/*`
+  + `InventoryAccess` SpEL constants ; extension des 3 controllers existants.
+
+### Added — Inventaire (frontend, B4-7)
+
+- Pages `/stocks` (overview KPIs + table + actions rapides), `/stocks/articles/[id]`
+  (détail + courbe 90j + 3 tabs), `/stocks/articles` (bibliothèque),
+  `/stocks/fournisseurs`, `/stocks/achats` + `/stocks/achats/[id]` (workflow),
+  `/stocks/formules` (plateforme + clonage).
+- Composants : `StockMovementDialog`, `PurchaseOrderDialog` +
+  `PurchaseOrderWorkflowActions`, `FeedFormulaDialog`, `SupplierDialog`,
+  `StockConsumptionSection` (partagé D18, injecté dans les 3 dialogs existants),
+  `InventoryAlertsKpis`, `StockHistoryChart`. 5 slices RTK Query, gating
+  `useInventoryGating`, item sidebar « Stocks ».
+
+### Fixed
+
+- Option α renvoyait `400` (`ValidationException`) au lieu de `422` ; corrigé en
+  `BusinessRuleException` (B4-8, trouvé par l'E2E `scripts/e2e-inventory.sh`).
+
+### Docs
+
+- Décisions D18 (couplage hybride), D19 (stock négatif non bloquant), D20
+  (formule simple V1) — doc 00 §11.
+- **ADR-008** : `livestock` super-context pour le pivot JPA JOINED (réconcilie
+  doc 00 §5 / doc 03 §5). Doc 03 §3/§4/§5 nuancée. Doc 04 §3 réaligné V1→V19.
+- E2E full-stack `scripts/e2e-inventory.sh` (34/34, jalon B.M4).
 
 ## [0.8.0-health] — 2026-06-13
 
