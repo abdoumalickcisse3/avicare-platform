@@ -130,6 +130,21 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
+            <!-- Failsafe runs the @Testcontainers integration tests (*IT) on `verify`.
+                 Without this binding nothing executes them — they only ran for the
+                 first time once CI switched from `mvn test` to `mvn verify` (B4-8). -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>

@@ -42,11 +42,7 @@ jobs:
         working-directory: ./backend
         run: ./mvnw -B spotless:check
 
-      - name: Build with Maven
-        working-directory: ./backend
-        run: ./mvnw -B clean package
-
-      - name: Run tests
+      - name: Build, unit tests & integration tests (Testcontainers)
         working-directory: ./backend
         env:
           DB_HOST: localhost
@@ -54,11 +50,16 @@ jobs:
           DB_NAME: avicare_test
           DB_USER: avicare
           DB_PASSWORD: test_pwd
-        run: ./mvnw -B test
+        # `verify` runs surefire (*Test) AND failsafe (*IT, via Testcontainers —
+        # Docker is available on ubuntu-latest). Before B4-8 CI ran only `test`,
+        # so the *IT never executed.
+        run: ./mvnw -B clean verify
 
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: surefire-reports
-          path: backend/**/target/surefire-reports/
+          name: test-reports
+          path: |
+            backend/**/target/surefire-reports/
+            backend/**/target/failsafe-reports/
