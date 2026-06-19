@@ -97,6 +97,21 @@ public class OrderService {
     return order;
   }
 
+  /**
+   * DELIVERED → IN_PROGRESS. Used when a delivery is cancelled (B5-2): the order reopens so it can
+   * be delivered again. Not a public workflow step.
+   */
+  @Transactional
+  public Order reopenForRedelivery(Long farmId, Long orderId, Long userId) {
+    Order order = load(farmId, orderId);
+    requireStatus(order, OrderStatus.DELIVERED, "reopen");
+    order.setStatus(OrderStatus.IN_PROGRESS);
+    order.setDeliveredBy(null);
+    order.setDeliveredAt(null);
+    order.setActualDeliveryDate(null);
+    return order;
+  }
+
   /** PENDING / CONFIRMED / IN_PROGRESS → CANCELLED (never from DELIVERED or CANCELLED). */
   @Transactional
   public Order cancel(Long farmId, Long orderId, String reason, Long userId) {

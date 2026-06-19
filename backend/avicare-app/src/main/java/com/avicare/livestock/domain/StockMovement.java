@@ -70,6 +70,12 @@ public class StockMovement {
   @Column(name = "purchase_order_id")
   private Long purchaseOrderId;
 
+  @Column(name = "sale_id")
+  private Long saleId;
+
+  @Column(name = "delivery_id")
+  private Long deliveryId;
+
   @Column(name = "daily_record_id")
   private Long dailyRecordId;
 
