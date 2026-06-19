@@ -13,6 +13,7 @@ import com.avicare.common.tenancy.context.TenancyContext;
 import com.avicare.identity.repository.RefreshTokenRepository;
 import com.avicare.identity.repository.UserRepository;
 import com.avicare.livestock.repository.BreedRepository;
+import com.avicare.livestock.repository.ClientRepository;
 import com.avicare.livestock.repository.DailyEggProductionRepository;
 import com.avicare.livestock.repository.DailyRecordRepository;
 import com.avicare.livestock.repository.EggCollectionRepository;
@@ -21,6 +22,7 @@ import com.avicare.livestock.repository.FeedFormulaRepository;
 import com.avicare.livestock.repository.GrowthPerformanceRepository;
 import com.avicare.livestock.repository.HealthObservationRepository;
 import com.avicare.livestock.repository.LifecycleEventRepository;
+import com.avicare.livestock.repository.OrderRepository;
 import com.avicare.livestock.repository.PoultryBatchRepository;
 import com.avicare.livestock.repository.ProductionUnitRepository;
 import com.avicare.livestock.repository.PurchaseOrderItemRepository;
@@ -126,6 +128,8 @@ class SecurityE2ETest {
   @MockitoBean private PurchaseOrderItemRepository purchaseOrderItemRepository;
   @MockitoBean private FeedFormulaRepository feedFormulaRepository;
   @MockitoBean private SupplierRepository supplierRepository;
+  @MockitoBean private ClientRepository clientRepository;
+  @MockitoBean private OrderRepository orderRepository;
 
   @DynamicPropertySource
   static void jwtKeys(DynamicPropertyRegistry registry) {
