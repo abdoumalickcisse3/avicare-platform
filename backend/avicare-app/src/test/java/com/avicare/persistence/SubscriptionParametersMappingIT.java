@@ -154,7 +154,7 @@ class SubscriptionParametersMappingIT {
   void parametersStack_roundTripsWithJsonb() {
     CatalogItem catalog = new CatalogItem();
     catalog.setCategory("breeds");
-    catalog.setKey("cobb_500");
+    catalog.setKey("test_strain"); // not a V4-seeded breed, avoids the unique (category,key) clash
     catalog.setValue(Map.of("label", "Cobb 500", "species", "poultry"));
     catalogItemRepository.saveAndFlush(catalog);
 
@@ -188,7 +188,7 @@ class SubscriptionParametersMappingIT {
 
     assertThat(
             catalogItemRepository
-                .findByCategoryAndKeyAndLocale("breeds", "cobb_500", null)
+                .findByCategoryAndKeyAndLocale("breeds", "test_strain", null)
                 .orElseThrow()
                 .getValue())
         .containsEntry("label", "Cobb 500");

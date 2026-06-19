@@ -7,6 +7,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.avicare.common.security.jwt.JwtService;
 import com.avicare.common.security.principal.AvicarePrincipal;
 import com.avicare.common.security.principal.UserRole;
+import com.avicare.identity.domain.User;
+import com.avicare.identity.repository.UserRepository;
 import com.avicare.subscription.service.SubscriptionService;
 import com.avicare.support.RsaKeys;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -55,6 +57,7 @@ class ChangeRequestFlowIT {
   @Autowired private ObjectMapper objectMapper;
   @Autowired private JwtService jwtService;
   @Autowired private SubscriptionService subscriptionService;
+  @Autowired private UserRepository userRepository;
 
   @Test
   void ownerSubmits_adminApproves_moduleEnabled() throws Exception {
@@ -136,10 +139,19 @@ class ChangeRequestFlowIT {
         .isTrue();
   }
 
-  /** A token for a platform ADMIN (no DB user needed; @PreAuthorize only checks ROLE_ADMIN). */
+  /**
+   * A token for a platform ADMIN. The user must really exist because approving a change request
+   * stamps {@code reviewer_id} (FK to users), so we persist an ADMIN and mint the token for its id.
+   */
   private String adminToken() {
+    User admin = new User();
+    admin.setEmail("admin" + System.nanoTime() + "@avicare.io");
+    admin.setPasswordHash("$2a$12$abcdefghijklmnopqrstuv");
+    admin.setFullName("Platform Admin");
+    admin.setRole(UserRole.ADMIN);
+    admin = userRepository.save(admin);
     return jwtService.generateAccessToken(
-        new AvicarePrincipal(999L, "admin@avicare.io", UserRole.ADMIN, List.of()));
+        new AvicarePrincipal(admin.getId(), admin.getEmail(), UserRole.ADMIN, List.of()));
   }
 
   private String signupAndAccess(String email, String password, String name) throws Exception {

@@ -93,7 +93,7 @@ class SubscriptionPlanIT {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.planKey").value("starter_volaille"))
         .andExpect(jsonPath("$.data.modules.length()").value(3))
-        .andExpect(jsonPath("$.data.modules[*]").value(hasItem("module.health.basic")));
+        .andExpect(jsonPath("$.data.modules[*].moduleKey").value(hasItem("module.health.basic")));
 
     mockMvc
         .perform(get(base + "/modules").header("Authorization", "Bearer " + owner))

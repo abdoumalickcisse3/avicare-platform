@@ -58,6 +58,8 @@ class EggCollectionServiceIT {
   @Autowired private CatalogService catalogService;
   @Autowired private EntityManager em;
 
+  private long userId;
+
   private Farm createFarm() {
     User u = new User();
     u.setEmail("ec" + System.nanoTime() + "@example.com");
@@ -65,6 +67,7 @@ class EggCollectionServiceIT {
     u.setFullName("EC");
     u.setRole(UserRole.USER);
     em.persist(u);
+    userId = u.getId();
     Farm f = new Farm();
     f.setName("Ferme EC");
     f.setCreatedBy(u.getId());
@@ -81,7 +84,8 @@ class EggCollectionServiceIT {
             .getId();
     long id =
         poultryBatchService
-            .create(new PoultryBatchCreate(farmId, breedId, "Pondeuses", DAY, null, null, 1000), 1L)
+            .create(
+                new PoultryBatchCreate(farmId, breedId, "Pondeuses", DAY, null, null, 1000), userId)
             .getId();
     em.flush();
     return id;
@@ -97,7 +101,7 @@ class EggCollectionServiceIT {
 
     EggCollection saved =
         eggCollectionService.record(
-            unitId, cmd("morning", 800, 12, Map.of("M", 500, "L", 300)), 1L);
+            unitId, cmd("morning", 800, 12, Map.of("M", 500, "L", 300)), userId);
 
     assertThat(saved.getId()).isNotNull();
     assertThat(saved.getTotalEggs()).isEqualTo(800);
@@ -109,8 +113,8 @@ class EggCollectionServiceIT {
   void record_upsertsOnSameUnitDateTimeslot() {
     long unitId = createLayerUnit(createFarm().getId());
 
-    eggCollectionService.record(unitId, cmd("morning", 800, 10, Map.of("M", 800)), 1L);
-    eggCollectionService.record(unitId, cmd("morning", 850, 5, Map.of("M", 850)), 1L);
+    eggCollectionService.record(unitId, cmd("morning", 800, 10, Map.of("M", 800)), userId);
+    eggCollectionService.record(unitId, cmd("morning", 850, 5, Map.of("M", 850)), userId);
 
     assertThat(
             eggCollectionRepository.findByProductionUnitIdOrderByCollectionDateDescTimeslotKeyAsc(
@@ -129,7 +133,7 @@ class EggCollectionServiceIT {
     long unitId = createLayerUnit(createFarm().getId());
 
     assertThatThrownBy(
-            () -> eggCollectionService.record(unitId, cmd("midnight", 100, 0, Map.of()), 1L))
+            () -> eggCollectionService.record(unitId, cmd("midnight", 100, 0, Map.of()), userId))
         .isInstanceOf(ValidationException.class)
         .hasMessageContaining("midnight");
   }
@@ -140,7 +144,8 @@ class EggCollectionServiceIT {
 
     assertThatThrownBy(
             () ->
-                eggCollectionService.record(unitId, cmd("morning", 100, 0, Map.of("XXL", 50)), 1L))
+                eggCollectionService.record(
+                    unitId, cmd("morning", 100, 0, Map.of("XXL", 50)), userId))
         .isInstanceOf(ValidationException.class)
         .hasMessageContaining("XXL");
   }
@@ -152,7 +157,7 @@ class EggCollectionServiceIT {
     long unitId = createLayerUnit(createFarm().getId());
 
     EggCollection saved =
-        eggCollectionService.record(unitId, cmd("evening", 200, 0, Map.of("S", 200)), 1L);
+        eggCollectionService.record(unitId, cmd("evening", 200, 0, Map.of("S", 200)), userId);
 
     assertThat(saved.getTimeslotKey()).isEqualTo("evening");
   }
@@ -163,7 +168,7 @@ class EggCollectionServiceIT {
 
     // No ordering constraint between broken and total; grades may sum below total.
     EggCollection saved =
-        eggCollectionService.record(unitId, cmd("noon", 100, 150, Map.of("M", 40)), 1L);
+        eggCollectionService.record(unitId, cmd("noon", 100, 150, Map.of("M", 40)), userId);
 
     assertThat(saved.getTotalEggs()).isEqualTo(100);
     assertThat(saved.getBrokenEggs()).isEqualTo(150);
@@ -174,12 +179,12 @@ class EggCollectionServiceIT {
   void sumTotalEggsBetween_aggregatesOverPeriod() {
     long unitId = createLayerUnit(createFarm().getId());
 
-    eggCollectionService.record(unitId, cmd("morning", 800, 0, Map.of()), 1L);
-    eggCollectionService.record(unitId, cmd("evening", 200, 0, Map.of()), 1L);
+    eggCollectionService.record(unitId, cmd("morning", 800, 0, Map.of()), userId);
+    eggCollectionService.record(unitId, cmd("evening", 200, 0, Map.of()), userId);
     eggCollectionService.record(
         unitId,
         new EggCollectionCommand(DAY.plusDays(1), "morning", 500, 0, Map.of(), null, null),
-        1L);
+        userId);
 
     assertThat(eggCollectionRepository.sumTotalEggsBetween(unitId, DAY, DAY.plusDays(1)))
         .isEqualTo(1500L);
@@ -201,16 +206,18 @@ class EggCollectionServiceIT {
     // Farm A still accepts the default "morning".
     assertThat(
             eggCollectionService
-                .record(unitA, cmd("morning", 100, 0, Map.of()), 1L)
+                .record(unitA, cmd("morning", 100, 0, Map.of()), userId)
                 .getTimeslotKey())
         .isEqualTo("morning");
 
     // Farm B accepts its custom "dawn" but rejects the hidden "morning".
     assertThat(
-            eggCollectionService.record(unitB, cmd("dawn", 100, 0, Map.of()), 1L).getTimeslotKey())
+            eggCollectionService
+                .record(unitB, cmd("dawn", 100, 0, Map.of()), userId)
+                .getTimeslotKey())
         .isEqualTo("dawn");
     assertThatThrownBy(
-            () -> eggCollectionService.record(unitB, cmd("morning", 100, 0, Map.of()), 1L))
+            () -> eggCollectionService.record(unitB, cmd("morning", 100, 0, Map.of()), userId))
         .isInstanceOf(ValidationException.class);
   }
 }

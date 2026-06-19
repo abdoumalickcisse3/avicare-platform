@@ -2,11 +2,14 @@ package com.avicare.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.avicare.common.security.principal.UserRole;
+import com.avicare.identity.domain.User;
 import com.avicare.livestock.domain.Breed;
 import com.avicare.livestock.domain.LifecycleEvent;
 import com.avicare.livestock.domain.Species;
 import com.avicare.livestock.repository.BreedRepository;
 import com.avicare.livestock.repository.LifecycleEventRepository;
+import com.avicare.tenancy.domain.Farm;
 import jakarta.persistence.EntityManager;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -76,7 +79,7 @@ class LivestockMappingIT {
   @Test
   void lifecycleEvent_roundTripsWithJsonbDetails() {
     LifecycleEvent event = new LifecycleEvent();
-    event.setProductionUnitId(1L); // no FK row needed for mapping check at this layer
+    event.setProductionUnitId(seedProductionUnit()); // satisfy the NOT NULL FK to production_units
     event.setEventType("MORTALITY");
     event.setQuantityDelta(-3);
     event.setReason("heat");
@@ -88,6 +91,29 @@ class LivestockMappingIT {
     assertThat(reloaded.getQuantityDelta()).isEqualTo(-3);
     assertThat(reloaded.getDetails()).containsEntry("cause", "heat_stress");
     assertThat(reloaded.getOccurredAt()).isNotNull();
+  }
+
+  /** Insert the minimal user → farm → production_unit chain and return the unit id. */
+  private long seedProductionUnit() {
+    User u = new User();
+    u.setEmail("map" + System.nanoTime() + "@example.com");
+    u.setPasswordHash("$2a$12$abcdefghijklmnopqrstuv");
+    u.setFullName("MAP");
+    u.setRole(UserRole.USER);
+    em.persist(u);
+    Farm f = new Farm();
+    f.setName("Ferme MAP");
+    f.setCreatedBy(u.getId());
+    em.persist(f);
+    em.flush();
+    Number unitId =
+        (Number)
+            em.createNativeQuery(
+                    "INSERT INTO production_units (farm_id, species, unit_kind, start_date) "
+                        + "VALUES (?, 'POULTRY', 'BATCH', CURRENT_DATE) RETURNING id")
+                .setParameter(1, f.getId())
+                .getSingleResult();
+    return unitId.longValue();
   }
 
   @Test

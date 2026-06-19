@@ -103,18 +103,20 @@ class ParametersFlowIT {
     long userId = seedUser();
     long farmId = seedFarm(userId);
 
+    // Synthetic category with no V4 platform seed, so the merge below contains only this
+    // test's own data (one override + one custom) — keeps the size assertion deterministic.
     CatalogItem cobb = new CatalogItem();
-    cobb.setCategory("breeds");
+    cobb.setCategory("breeds_test");
     cobb.setKey("cobb_500");
     cobb.setValue(Map.of("label", "Cobb 500"));
     catalogItemRepository.save(cobb);
     em.flush();
 
-    catalogService.override(farmId, "breeds", "cobb_500", Map.of("label", "Mes Cobb 500"));
-    catalogService.override(farmId, "breeds", "local", Map.of("label", "Ma souche locale"));
+    catalogService.override(farmId, "breeds_test", "cobb_500", Map.of("label", "Mes Cobb 500"));
+    catalogService.override(farmId, "breeds_test", "local", Map.of("label", "Ma souche locale"));
     em.flush();
 
-    List<CatalogEntry> entries = catalogService.listForFarm(farmId, "breeds");
+    List<CatalogEntry> entries = catalogService.listForFarm(farmId, "breeds_test");
     assertThat(entries).hasSize(2);
     assertThat(entries)
         .anySatisfy(e -> assertThat(e.value()).containsEntry("label", "Mes Cobb 500"))
