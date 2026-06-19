@@ -213,6 +213,23 @@ class OrderServiceTest {
   }
 
   @Test
+  void reopenForRedelivery_deliveredBecomesInProgress() {
+    stored(11L, OrderStatus.DELIVERED);
+
+    Order result = service.reopenForRedelivery(7L, 11L, 42L);
+
+    assertThat(result.getStatus()).isEqualTo(OrderStatus.IN_PROGRESS);
+  }
+
+  @Test
+  void reopenForRedelivery_nonDeliveredThrowsBusinessRule() {
+    stored(11L, OrderStatus.IN_PROGRESS);
+
+    assertThatExceptionOfType(BusinessRuleException.class)
+        .isThrownBy(() -> service.reopenForRedelivery(7L, 11L, 42L));
+  }
+
+  @Test
   void cancel_fromPendingConfirmedOrInProgressBecomesCancelled() {
     for (OrderStatus from :
         List.of(OrderStatus.PENDING, OrderStatus.CONFIRMED, OrderStatus.IN_PROGRESS)) {
