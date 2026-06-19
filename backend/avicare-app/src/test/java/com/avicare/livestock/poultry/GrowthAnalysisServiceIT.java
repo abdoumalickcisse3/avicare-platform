@@ -53,6 +53,8 @@ class GrowthAnalysisServiceIT {
   @Autowired private BreedRepository breedRepository;
   @Autowired private EntityManager em;
 
+  private long userId;
+
   private long createBatch(int initialCount, Integer targetWeightG, Integer targetAgeDays) {
     User u = new User();
     u.setEmail("ga" + System.nanoTime() + "@example.com");
@@ -60,6 +62,7 @@ class GrowthAnalysisServiceIT {
     u.setFullName("GA");
     u.setRole(UserRole.USER);
     em.persist(u);
+    userId = u.getId();
     Farm f = new Farm();
     f.setName("Ferme GA");
     f.setCreatedBy(u.getId());
@@ -88,7 +91,7 @@ class GrowthAnalysisServiceIT {
 
     WeighingSample sample =
         growthAnalysisService.recordWeighing(
-            batchId, new WeighingCommand(DAY, List.of(1800, 1900, 2000, 2100, 2200), null), 1L);
+            batchId, new WeighingCommand(DAY, List.of(1800, 1900, 2000, 2100, 2200), null), userId);
 
     assertThat(sample.getSampleSize()).isEqualTo(5);
     assertThat(sample.getAgeDays()).isEqualTo(35);
@@ -116,10 +119,10 @@ class GrowthAnalysisServiceIT {
     dailyRecordService.record(
         batchId,
         new DailyRecordCommand(DAY, 0, new BigDecimal("3000"), BigDecimal.ZERO, null, null),
-        1L);
+        userId);
 
     growthAnalysisService.recordWeighing(
-        batchId, new WeighingCommand(DAY, List.of(2000, 2000, 2000), null), 1L);
+        batchId, new WeighingCommand(DAY, List.of(2000, 2000, 2000), null), userId);
 
     GrowthPerformance perf = growthAnalysisService.getLatestPerformance(batchId);
     assertThat(perf.getCumulativeFeedKg()).isEqualByComparingTo("3000.000");
@@ -131,7 +134,7 @@ class GrowthAnalysisServiceIT {
     long batchId = createBatch(1000, 2200, 42);
 
     growthAnalysisService.recordWeighing(
-        batchId, new WeighingCommand(DAY, List.of(1400, 1500, 1600), null), 1L);
+        batchId, new WeighingCommand(DAY, List.of(1400, 1500, 1600), null), userId);
 
     GrowthPerformance perf = growthAnalysisService.getLatestPerformance(batchId);
     // avg 1500 vs target ≈ 1840 at age 35 → ratio 0.82 → BEHIND
@@ -142,9 +145,9 @@ class GrowthAnalysisServiceIT {
   void listWeighings_returnsSamplesNewestFirst() {
     long batchId = createBatch(1000, 2200, 42);
     growthAnalysisService.recordWeighing(
-        batchId, new WeighingCommand(START.plusDays(21), List.of(1000, 1100), null), 1L);
+        batchId, new WeighingCommand(START.plusDays(21), List.of(1000, 1100), null), userId);
     growthAnalysisService.recordWeighing(
-        batchId, new WeighingCommand(DAY, List.of(2000, 2100), null), 1L);
+        batchId, new WeighingCommand(DAY, List.of(2000, 2100), null), userId);
 
     List<WeighingSample> samples = growthAnalysisService.listWeighings(batchId);
     assertThat(samples).hasSize(2);

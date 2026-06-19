@@ -52,6 +52,8 @@ class DailyRecordServiceIT {
   @Autowired private BreedRepository breedRepository;
   @Autowired private EntityManager em;
 
+  private long userId;
+
   private long createBatch(int count) {
     User u = new User();
     u.setEmail("dr" + System.nanoTime() + "@example.com");
@@ -59,6 +61,7 @@ class DailyRecordServiceIT {
     u.setFullName("DR");
     u.setRole(UserRole.USER);
     em.persist(u);
+    userId = u.getId();
     Farm f = new Farm();
     f.setName("Ferme DR");
     f.setCreatedBy(u.getId());
@@ -94,7 +97,7 @@ class DailyRecordServiceIT {
   void normalMortality_decrementsCount() {
     long unitId = createBatch(500);
 
-    dailyRecordService.record(unitId, mortality(10), 1L);
+    dailyRecordService.record(unitId, mortality(10), userId);
 
     assertThat(currentCount(unitId)).isEqualTo(490);
     assertThat(
@@ -109,7 +112,7 @@ class DailyRecordServiceIT {
   void catastrophe_clampsCountToZero_butStoresRawMortality() {
     long unitId = createBatch(5);
 
-    dailyRecordService.record(unitId, mortality(8), 1L);
+    dailyRecordService.record(unitId, mortality(8), userId);
 
     assertThat(currentCount(unitId)).isZero();
     assertThat(
@@ -124,8 +127,8 @@ class DailyRecordServiceIT {
   void upsertSameDay_increasingMortality_appliesOnlyTheDelta() {
     long unitId = createBatch(500);
 
-    dailyRecordService.record(unitId, mortality(5), 1L); // 500 -> 495
-    dailyRecordService.record(unitId, mortality(8), 1L); // delta +3 -> 492
+    dailyRecordService.record(unitId, mortality(5), userId); // 500 -> 495
+    dailyRecordService.record(unitId, mortality(8), userId); // delta +3 -> 492
 
     assertThat(currentCount(unitId)).isEqualTo(492);
     assertThat(dailyRecordRepository.findByProductionUnitIdOrderByRecordDateDesc(unitId))
@@ -142,8 +145,8 @@ class DailyRecordServiceIT {
   void upsertSameDay_decreasingMortality_addsCountBack() {
     long unitId = createBatch(500);
 
-    dailyRecordService.record(unitId, mortality(8), 1L); // 500 -> 492
-    dailyRecordService.record(unitId, mortality(5), 1L); // delta -3 -> 495 (COUNT_ADJUSTMENT)
+    dailyRecordService.record(unitId, mortality(8), userId); // 500 -> 492
+    dailyRecordService.record(unitId, mortality(5), userId); // delta -3 -> 495 (COUNT_ADJUSTMENT)
 
     assertThat(currentCount(unitId)).isEqualTo(495);
     assertThat(
@@ -158,10 +161,10 @@ class DailyRecordServiceIT {
   void downwardCorrection_onZeroCount_appliesAdjustment() {
     long unitId = createBatch(5);
 
-    dailyRecordService.record(unitId, mortality(8), 1L); // clamps 5 -> count 0
+    dailyRecordService.record(unitId, mortality(8), userId); // clamps 5 -> count 0
     assertThat(currentCount(unitId)).isZero();
 
-    dailyRecordService.record(unitId, mortality(5), 1L); // delta -3 -> count 3
+    dailyRecordService.record(unitId, mortality(5), userId); // delta -3 -> count 3
 
     assertThat(currentCount(unitId)).isEqualTo(3);
   }

@@ -8,8 +8,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.avicare.common.api.exception.BusinessRuleException;
 import com.avicare.livestock.domain.ArticleSource;
 import com.avicare.livestock.domain.PurchaseOrder;
+import com.avicare.livestock.domain.PurchaseOrderItem;
 import com.avicare.livestock.domain.PurchaseOrderStatus;
 import com.avicare.livestock.domain.StockItem;
+import com.avicare.livestock.repository.PurchaseOrderItemRepository;
 import com.avicare.support.RsaKeys;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
@@ -59,6 +61,7 @@ class PurchaseOrderFlowIT {
   @Autowired private PurchaseOrderService purchaseOrderService;
   @Autowired private StockItemService stockItemService;
   @Autowired private SupplierService supplierService;
+  @Autowired private PurchaseOrderItemRepository purchaseOrderItemRepository;
 
   @Test
   void fullWorkflow_draftNumbering_submit_receive_cascadesStock() throws Exception {
@@ -109,7 +112,11 @@ class PurchaseOrderFlowIT {
             List.of(line("feed_layer", new BigDecimal("60"), 440))),
         1L);
     PurchaseOrder reloaded = purchaseOrderService.getById(farmId, po.getId());
-    assertThat(reloaded.getItems()).hasSize(1);
+    // items is LAZY and the service returns a detached entity (no open session / OSIV here),
+    // so assert the lines through their repository rather than the lazy collection.
+    List<PurchaseOrderItem> reloadedItems =
+        purchaseOrderItemRepository.findByPurchaseOrderId(po.getId());
+    assertThat(reloadedItems).hasSize(1);
     assertThat(reloaded.getTotalXof()).isEqualTo(26400L);
 
     // submit → SENT
@@ -119,7 +126,7 @@ class PurchaseOrderFlowIT {
     assertThat(purchaseOrderService.getById(farmId, po.getId()).getSentAt()).isNotNull();
 
     // receive full → RECEIVED + stock cascade
-    Long itemId = reloaded.getItems().get(0).getId();
+    Long itemId = reloadedItems.get(0).getId();
     PurchaseOrder received =
         purchaseOrderService.receive(
             farmId,

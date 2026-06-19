@@ -58,6 +58,8 @@ class EggProductionServiceIT {
   @Autowired private BreedRepository breedRepository;
   @Autowired private EntityManager em;
 
+  private long userId;
+
   private long createLayerUnit(int count) {
     User u = new User();
     u.setEmail("ep" + System.nanoTime() + "@example.com");
@@ -65,6 +67,7 @@ class EggProductionServiceIT {
     u.setFullName("EP");
     u.setRole(UserRole.USER);
     em.persist(u);
+    userId = u.getId();
     Farm f = new Farm();
     f.setName("Ferme EP");
     f.setCreatedBy(u.getId());
@@ -79,7 +82,8 @@ class EggProductionServiceIT {
     long id =
         poultryBatchService
             .create(
-                new PoultryBatchCreate(f.getId(), breedId, "Pondeuses", DAY, null, null, count), 1L)
+                new PoultryBatchCreate(f.getId(), breedId, "Pondeuses", DAY, null, null, count),
+                userId)
             .getId();
     em.flush();
     return id;
@@ -87,14 +91,14 @@ class EggProductionServiceIT {
 
   private void collect(long unitId, String slot, int total, int broken, Map<String, Integer> g) {
     eggCollectionService.record(
-        unitId, new EggCollectionCommand(DAY, slot, total, broken, g, null, null), 1L);
+        unitId, new EggCollectionCommand(DAY, slot, total, broken, g, null, null), userId);
   }
 
   @Test
   void closeDay_rejectsWhenNoCollections() {
     long unitId = createLayerUnit(1000);
 
-    assertThatThrownBy(() -> eggProductionService.closeDay(unitId, DAY, 1L))
+    assertThatThrownBy(() -> eggProductionService.closeDay(unitId, DAY, userId))
         .isInstanceOf(BusinessRuleException.class)
         .hasMessageContaining(DAY.toString());
   }
@@ -106,7 +110,7 @@ class EggProductionServiceIT {
     collect(unitId, "noon", 250, 3, Map.of("M", 250));
     collect(unitId, "evening", 150, 2, Map.of("M", 150));
 
-    DailyEggProduction p = eggProductionService.closeDay(unitId, DAY, 1L);
+    DailyEggProduction p = eggProductionService.closeDay(unitId, DAY, userId);
 
     assertThat(p.getTotalEggsCollected()).isEqualTo(800);
     assertThat(p.getTotalBrokenEggs()).isEqualTo(10);
@@ -119,7 +123,7 @@ class EggProductionServiceIT {
     collect(unitId, "morning", 150, 0, Map.of("S", 50, "M", 100));
     collect(unitId, "noon", 110, 0, Map.of("S", 30, "L", 80));
 
-    DailyEggProduction p = eggProductionService.closeDay(unitId, DAY, 1L);
+    DailyEggProduction p = eggProductionService.closeDay(unitId, DAY, userId);
 
     assertThat(p.getGradesAggregate())
         .containsEntry("S", 80)
@@ -132,7 +136,7 @@ class EggProductionServiceIT {
     long unitId = createLayerUnit(1000);
     collect(unitId, "morning", 800, 0, Map.of());
 
-    DailyEggProduction p = eggProductionService.closeDay(unitId, DAY, 1L);
+    DailyEggProduction p = eggProductionService.closeDay(unitId, DAY, userId);
 
     // 800 / 1000 * 100 = 80.00
     assertThat(p.getLayingRatePct()).isEqualByComparingTo("80.00");
@@ -143,13 +147,13 @@ class EggProductionServiceIT {
     long unitId = createLayerUnit(1000);
     collect(unitId, "morning", 800, 200, Map.of());
 
-    DailyEggProduction p = eggProductionService.closeDay(unitId, DAY, 1L);
+    DailyEggProduction p = eggProductionService.closeDay(unitId, DAY, userId);
     // 200 / (800 + 200) * 100 = 20.00
     assertThat(p.getBreakRatePct()).isEqualByComparingTo("20.00");
 
     long emptyUnit = createLayerUnit(500);
     collect(emptyUnit, "morning", 0, 0, Map.of());
-    DailyEggProduction empty = eggProductionService.closeDay(emptyUnit, DAY, 1L);
+    DailyEggProduction empty = eggProductionService.closeDay(emptyUnit, DAY, userId);
     assertThat(empty.getBreakRatePct()).isEqualByComparingTo("0.00");
   }
 
@@ -158,12 +162,12 @@ class EggProductionServiceIT {
     long unitId = createLayerUnit(1000);
     collect(unitId, "morning", 400, 5, Map.of("M", 400));
 
-    DailyEggProduction first = eggProductionService.closeDay(unitId, DAY, 1L);
+    DailyEggProduction first = eggProductionService.closeDay(unitId, DAY, userId);
     assertThat(first.getTotalEggsCollected()).isEqualTo(400);
 
     // A late collection is added, then the day is re-closed: recompute, still one row.
     collect(unitId, "evening", 300, 2, Map.of("M", 300));
-    DailyEggProduction second = eggProductionService.closeDay(unitId, DAY, 1L);
+    DailyEggProduction second = eggProductionService.closeDay(unitId, DAY, userId);
 
     assertThat(second.getId()).isEqualTo(first.getId());
     assertThat(second.getTotalEggsCollected()).isEqualTo(700);
@@ -176,7 +180,7 @@ class EggProductionServiceIT {
     long unitId = createLayerUnit(1000);
     collect(unitId, "morning", 400, 5, Map.of());
 
-    eggProductionService.closeDay(unitId, DAY, 1L);
+    eggProductionService.closeDay(unitId, DAY, userId);
 
     assertThat(lifecycleEventRepository.findByProductionUnitId(unitId))
         .extracting(LifecycleEvent::getEventType)

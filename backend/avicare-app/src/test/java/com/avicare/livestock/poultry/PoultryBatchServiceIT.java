@@ -53,6 +53,8 @@ class PoultryBatchServiceIT {
   @Autowired private LifecycleEventRepository lifecycleEventRepository;
   @Autowired private EntityManager em;
 
+  private long userId;
+
   private long cobbBreedId() {
     return breedRepository
         .findBySpeciesAndCodeAndFarmId(Species.POULTRY, "cobb_500", null)
@@ -67,6 +69,7 @@ class PoultryBatchServiceIT {
     u.setFullName("PB");
     u.setRole(UserRole.USER);
     em.persist(u);
+    userId = u.getId();
     Farm f = new Farm();
     f.setName("Ferme PB");
     f.setCreatedBy(u.getId());
@@ -82,7 +85,7 @@ class PoultryBatchServiceIT {
     PoultryBatch batch =
         poultryBatchService.create(
             new PoultryBatchCreate(farmId, cobbBreedId(), "Lot A", LocalDate.now(), 2200, 42, 1000),
-            1L);
+            userId);
     Long id = batch.getId();
     em.flush();
     em.clear();
@@ -107,7 +110,7 @@ class PoultryBatchServiceIT {
     long farmId = seedFarm();
     poultryBatchService.create(
         new PoultryBatchCreate(farmId, cobbBreedId(), "Lot B", LocalDate.now(), null, null, 500),
-        1L);
+        userId);
     em.flush();
     em.clear();
 
@@ -133,7 +136,7 @@ class PoultryBatchServiceIT {
             () ->
                 poultryBatchService.create(
                     new PoultryBatchCreate(farmId, ovineId, "Lot", LocalDate.now(), null, null, 10),
-                    1L))
+                    userId))
         .hasMessageContaining("POULTRY");
   }
 }
