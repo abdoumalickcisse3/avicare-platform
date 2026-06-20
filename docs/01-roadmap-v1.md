@@ -300,15 +300,15 @@ V1 est considérée comme terminée quand **TOUS** les critères suivants sont s
 ### Sprint B5 — Bounded context `commercial` (semaines 11-12)
 
 **Livrables backend :**
-- [ ] Migration Flyway V11 : `clients`, `orders`, `order_items`, `sales`, `deliveries`, `delivery_items`, `invoices`, `payments`
-- [ ] CRUD clients avec limite de crédit et encours
-- [ ] Workflow commandes (pending → confirmed → in_progress → delivered → cancelled)
-- [ ] Conversion commande → livraison (décrémente stock)
-- [ ] Génération facture (depuis sale ou delivery)
-- [ ] Paiements ventilés (espèces, mobile money, virement)
-- [ ] Mise à jour encours client automatique
-- [ ] Alerte dépassement limite de crédit
-- [ ] Intégration avec `price_lists` du module `parameters`
+- [x] Migration Flyway `clients`/`orders`/`order_items`/`sales`/`deliveries`/`delivery_items`/`invoices`/`payments` — réelles : **V20** (clients+orders, B5-1), **V21** (sales+deliveries, B5-2), **V22** (invoices, B5-3), **V23** (payments, B5-4)
+- [x] CRUD clients avec limite de crédit et encours (B5-1)
+- [x] Workflow commandes (pending → confirmed → in_progress → delivered → cancelled) (B5-1, D23)
+- [x] Conversion commande → livraison (décrémente stock) (B5-2, D21)
+- [x] Génération facture (depuis sale ou delivery) (B5-3)
+- [x] Paiements ventilés (espèces, mobile money, virement) (B5-4)
+- [x] Mise à jour encours client automatique (B5-3 émission +, B5-4 paiement −, D26)
+- [ ] Alerte dépassement limite de crédit — *calcul prêt* (`CommercialFacade.getClientCredit` / `ClientService.projectCredit`, D26) ; surfaçage en endpoint/UX → B5-5/B5-6
+- [ ] Intégration avec `price_lists` du module `parameters` — différé (prix unitaires saisis au formulaire en V1)
 
 **Livrables web :**
 - [ ] Page Pipeline Kanban (Commande → Vente → Facture → Paiement)
