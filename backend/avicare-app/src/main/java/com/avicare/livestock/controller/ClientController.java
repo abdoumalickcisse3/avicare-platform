@@ -2,7 +2,9 @@ package com.avicare.livestock.controller;
 
 import com.avicare.common.api.response.ApiResponse;
 import com.avicare.common.tenancy.context.TenancyContext;
+import com.avicare.livestock.commercial.ClientCreditInfo;
 import com.avicare.livestock.commercial.ClientService;
+import com.avicare.livestock.commercial.CommercialFacade;
 import com.avicare.livestock.commercial.dto.ClientRequest;
 import com.avicare.livestock.commercial.dto.ClientResponse;
 import jakarta.validation.Valid;
@@ -31,6 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ClientController {
 
   private final ClientService clientService;
+  private final CommercialFacade commercialFacade;
 
   @GetMapping
   @PreAuthorize(CommercialAccess.READ)
@@ -50,6 +53,13 @@ public class ClientController {
   @PreAuthorize(CommercialAccess.READ)
   public ApiResponse<ClientResponse> get(@PathVariable Long farmId, @PathVariable Long id) {
     return ApiResponse.of(ClientResponse.from(clientService.getById(farmId, id)));
+  }
+
+  /** Indicative credit standing for the over-limit alert (D26). */
+  @GetMapping("/{id}/credit")
+  @PreAuthorize(CommercialAccess.READ)
+  public ApiResponse<ClientCreditInfo> credit(@PathVariable Long farmId, @PathVariable Long id) {
+    return ApiResponse.of(commercialFacade.getClientCredit(farmId, id));
   }
 
   @PostMapping
