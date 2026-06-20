@@ -20,6 +20,7 @@ import com.avicare.livestock.repository.HealthObservationRepository;
 import com.avicare.livestock.repository.InvoiceRepository;
 import com.avicare.livestock.repository.LifecycleEventRepository;
 import com.avicare.livestock.repository.OrderRepository;
+import com.avicare.livestock.repository.PaymentRepository;
 import com.avicare.livestock.repository.PoultryBatchRepository;
 import com.avicare.livestock.repository.ProductionUnitRepository;
 import com.avicare.livestock.repository.PurchaseOrderItemRepository;
@@ -112,6 +113,7 @@ class SecurityIntegrationTest {
   @MockitoBean private SaleRepository saleRepository;
   @MockitoBean private DeliveryRepository deliveryRepository;
   @MockitoBean private InvoiceRepository invoiceRepository;
+  @MockitoBean private PaymentRepository paymentRepository;
 
   @Test
   void healthEndpoint_isPublic() throws Exception {

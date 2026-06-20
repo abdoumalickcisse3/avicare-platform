@@ -135,6 +135,50 @@ public class InvoiceService {
     return invoice;
   }
 
+  /**
+   * Apply a payment of {@code amount} to an invoice (B5-4): raises {@code amount_paid} and moves
+   * the status to PAID (fully covered) or PARTIALLY_PAID. Overpayment (amount &gt; outstanding) and
+   * a cancelled invoice are refused. Does NOT touch the client receivable — {@code PaymentService}
+   * owns that (D26).
+   */
+  @Transactional
+  public Invoice registerPayment(Long farmId, Long invoiceId, long amount) {
+    Invoice invoice = load(farmId, invoiceId);
+    if (invoice.getStatus() == InvoiceStatus.CANCELLED) {
+      throw new BusinessRuleException(
+          "INVOICE_CANCELLED", "Cannot pay a cancelled invoice " + invoice.getInvoiceNumber());
+    }
+    if (amount > invoice.outstandingXof()) {
+      throw new BusinessRuleException(
+          "OVERPAYMENT",
+          "Payment exceeds the invoice outstanding (" + invoice.outstandingXof() + ")");
+    }
+    invoice.setAmountPaidXof(invoice.getAmountPaidXof() + amount);
+    invoice.setStatus(
+        invoice.getAmountPaidXof() >= invoice.getTotalXof()
+            ? InvoiceStatus.PAID
+            : InvoiceStatus.PARTIALLY_PAID);
+    return invoice;
+  }
+
+  /**
+   * Reverse a previously-applied payment (B5-4 void): lowers {@code amount_paid} and recomputes the
+   * status (back to PARTIALLY_PAID or ISSUED). Refused on a cancelled invoice.
+   */
+  @Transactional
+  public Invoice reversePayment(Long farmId, Long invoiceId, long amount) {
+    Invoice invoice = load(farmId, invoiceId);
+    if (invoice.getStatus() == InvoiceStatus.CANCELLED) {
+      throw new BusinessRuleException(
+          "INVOICE_CANCELLED",
+          "Cannot reverse a payment on a cancelled invoice " + invoice.getInvoiceNumber());
+    }
+    invoice.setAmountPaidXof(invoice.getAmountPaidXof() - amount);
+    invoice.setStatus(
+        invoice.getAmountPaidXof() <= 0 ? InvoiceStatus.ISSUED : InvoiceStatus.PARTIALLY_PAID);
+    return invoice;
+  }
+
   @Transactional(readOnly = true)
   public Invoice getById(Long farmId, Long invoiceId) {
     return load(farmId, invoiceId);

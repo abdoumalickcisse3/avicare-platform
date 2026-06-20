@@ -200,6 +200,81 @@ class InvoiceServiceTest {
         .isThrownBy(() -> service.cancel(7L, 50L, "encore", 42L));
   }
 
+  // --- registerPayment / reversePayment (used by PaymentService, B5-4) -
+
+  @Test
+  void registerPayment_partialMovesToPartiallyPaid() {
+    stored(50L, InvoiceStatus.ISSUED, client(3L), 42_500L, 0L);
+
+    Invoice invoice = service.registerPayment(7L, 50L, 10_000L);
+
+    assertThat(invoice.getAmountPaidXof()).isEqualTo(10_000L);
+    assertThat(invoice.getStatus()).isEqualTo(InvoiceStatus.PARTIALLY_PAID);
+  }
+
+  @Test
+  void registerPayment_fullMovesToPaid() {
+    stored(50L, InvoiceStatus.ISSUED, client(3L), 42_500L, 0L);
+
+    Invoice invoice = service.registerPayment(7L, 50L, 42_500L);
+
+    assertThat(invoice.getAmountPaidXof()).isEqualTo(42_500L);
+    assertThat(invoice.getStatus()).isEqualTo(InvoiceStatus.PAID);
+  }
+
+  @Test
+  void registerPayment_topUpFromPartialToPaid() {
+    stored(50L, InvoiceStatus.PARTIALLY_PAID, client(3L), 42_500L, 10_000L);
+
+    Invoice invoice = service.registerPayment(7L, 50L, 32_500L);
+
+    assertThat(invoice.getStatus()).isEqualTo(InvoiceStatus.PAID);
+  }
+
+  @Test
+  void registerPayment_overpaymentThrowsBusinessRule() {
+    stored(50L, InvoiceStatus.ISSUED, client(3L), 42_500L, 0L);
+
+    assertThatExceptionOfType(BusinessRuleException.class)
+        .isThrownBy(() -> service.registerPayment(7L, 50L, 50_000L));
+  }
+
+  @Test
+  void registerPayment_cancelledInvoiceThrowsBusinessRule() {
+    stored(50L, InvoiceStatus.CANCELLED, client(3L), 42_500L, 0L);
+
+    assertThatExceptionOfType(BusinessRuleException.class)
+        .isThrownBy(() -> service.registerPayment(7L, 50L, 1_000L));
+  }
+
+  @Test
+  void reversePayment_fromPaidBackToPartiallyPaid() {
+    stored(50L, InvoiceStatus.PAID, client(3L), 42_500L, 42_500L);
+
+    Invoice invoice = service.reversePayment(7L, 50L, 32_500L);
+
+    assertThat(invoice.getAmountPaidXof()).isEqualTo(10_000L);
+    assertThat(invoice.getStatus()).isEqualTo(InvoiceStatus.PARTIALLY_PAID);
+  }
+
+  @Test
+  void reversePayment_fromPartialBackToIssued() {
+    stored(50L, InvoiceStatus.PARTIALLY_PAID, client(3L), 42_500L, 10_000L);
+
+    Invoice invoice = service.reversePayment(7L, 50L, 10_000L);
+
+    assertThat(invoice.getAmountPaidXof()).isZero();
+    assertThat(invoice.getStatus()).isEqualTo(InvoiceStatus.ISSUED);
+  }
+
+  @Test
+  void reversePayment_cancelledInvoiceThrowsBusinessRule() {
+    stored(50L, InvoiceStatus.CANCELLED, client(3L), 42_500L, 10_000L);
+
+    assertThatExceptionOfType(BusinessRuleException.class)
+        .isThrownBy(() -> service.reversePayment(7L, 50L, 10_000L));
+  }
+
   @Test
   void cancel_paidInvoiceThrowsBusinessRule() {
     stored(50L, InvoiceStatus.PAID, client(3L), 6_000L, 6_000L);

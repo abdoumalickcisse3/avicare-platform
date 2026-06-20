@@ -25,6 +25,7 @@ import com.avicare.livestock.repository.HealthObservationRepository;
 import com.avicare.livestock.repository.InvoiceRepository;
 import com.avicare.livestock.repository.LifecycleEventRepository;
 import com.avicare.livestock.repository.OrderRepository;
+import com.avicare.livestock.repository.PaymentRepository;
 import com.avicare.livestock.repository.PoultryBatchRepository;
 import com.avicare.livestock.repository.ProductionUnitRepository;
 import com.avicare.livestock.repository.PurchaseOrderItemRepository;
@@ -136,6 +137,7 @@ class SecurityE2ETest {
   @MockitoBean private SaleRepository saleRepository;
   @MockitoBean private DeliveryRepository deliveryRepository;
   @MockitoBean private InvoiceRepository invoiceRepository;
+  @MockitoBean private PaymentRepository paymentRepository;
 
   @DynamicPropertySource
   static void jwtKeys(DynamicPropertyRegistry registry) {
