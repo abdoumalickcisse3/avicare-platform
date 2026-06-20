@@ -464,34 +464,44 @@ public interface InventoryFacade {
 
 ### 4.9 — `commercial` (Phase B, Sprint B5)
 
+> **Réalignement (B5, le code fait foi).** Le découpage en sous-packages
+> `client/order/sale/...` ci-dessous **n'a pas été retenu** : il contredit
+> l'ADR-008 (entités dans le bin partagé `livestock.domain`) et la convention
+> réellement appliquée aux 4 autres sous-domaines (`inventory`, `health`,
+> `layer`, `poultry`), tous **plats**. `commercial` suit la même convention.
+
 **Responsabilité** : tout le pipeline commercial (clients, commandes, ventes, livraisons, factures, paiements).
 
-**Sous-packages** :
+**Sous-domaine de `livestock`** (ADR-008), package **plat** `com.avicare.livestock.commercial`
+(services + commandes + records publics ensemble, comme `inventory`/`health`) :
 ```
-commercial/
-├── client/         ← Clients + limites de crédit + encours
-├── order/          ← Commandes (réservations)
-├── sale/           ← Ventes
-├── delivery/       ← Livraisons
-├── invoice/        ← Factures
-└── payment/        ← Paiements ventilés
+livestock/commercial/        ← ClientService, OrderService, SaleService,
+                               DeliveryService, InvoiceService, (PaymentService B5-4),
+                               *Command, CreditStatus, CommercialFacade(+Impl),
+                               ClientCreditInfo, InvoiceInfo
+livestock/domain/            ← Client, Order/OrderItem, Sale, Delivery/DeliveryItem,
+                               Invoice/InvoiceItem, (Payment B5-4) + enums  ← bin JPA partagé (ADR-008)
+livestock/repository/        ← Client/Order/Sale/Delivery/Invoice repositories ← partagé
 ```
 
-**Entités** : Client, Order/OrderItem, Sale, Delivery/DeliveryItem, Invoice, Payment.
+**Couplage stock (D21)** : la création d'une `Sale`/`Delivery` déclenche des mouvements
+`OUT` (`reason=SALE`) via **appel direct intra-livestock** à `StockMovementService`
+(ADR-008 : intra-livestock = appels de services directs, pas de façade ;
+cf. D18 `StockConsumptionService`). Stock négatif autorisé (D19).
 
-**Facade publique** : `CommercialFacade`
+**Facade publique** : `CommercialFacade` (lectures farm-scoped, multi-tenant)
 ```java
 public interface CommercialFacade {
-    ClientCreditInfo getClientCredit(Long clientId);  // pour alertes dépassement
-    InvoiceInfo findInvoiceById(Long invoiceId);
+    ClientCreditInfo getClientCredit(Long farmId, Long clientId);  // alertes dépassement (D26)
+    InvoiceInfo findInvoiceById(Long farmId, Long invoiceId);
 }
 ```
 
-**Pattern important** : quand on crée une `Sale` ou une `Delivery`, on déclenche :
-1. Appel `LivestockFacade.recordOutflow(...)` ou `InventoryFacade.recordOutflow(...)`
-2. Event `SaleCreatedEvent` publié → écoutable par `finance`, `notification`, etc.
+> **Events** (`SaleCreatedEvent`, etc.) : différés — pas en V1. La consommation
+> par `finance` (B6) / reporting se fait via `CommercialFacade`.
 
-**Dépendances** : `tenancy`, `livestock`, `inventory`, `parameters`, `subscription`.
+**Dépendances** : sous-domaines `livestock` (dont `inventory` pour le couplage stock) en appels
+directs ; contextes racine `parameters`, `subscription`, `tenancy` **via leurs façades** (ADR-008).
 
 ---
 
