@@ -29,7 +29,9 @@ import {
   LayoutGrid,
   Lock,
   Settings,
+  ShoppingCart,
   Truck,
+  Users,
   Warehouse,
   Wheat,
 } from "lucide-react";
@@ -124,6 +126,16 @@ const NAV: Section[] = [
           { label: "Fournisseurs", href: "/stocks/fournisseurs", icon: Truck },
           { label: "Bons d'achat", href: "/stocks/achats", icon: ClipboardList },
           { label: "Formules", href: "/stocks/formules", icon: Wheat },
+        ],
+      },
+      {
+        kind: "group",
+        key: "commercial",
+        label: "Commercial",
+        icon: ShoppingCart,
+        requiredModule: "module.commercial.basic",
+        children: [
+          { label: "Clients", href: "/commercial/clients", icon: Users },
         ],
       },
       { kind: "leaf", label: "Abonnement", href: "/abonnement", icon: CreditCard, enabled: false },

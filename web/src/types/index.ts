@@ -871,3 +871,50 @@ export interface InventoryAlerts {
   pendingPurchaseOrders: PendingPurchaseOrderAlertItem[];
   recentMovements: RecentMovementAlertItem[];
 }
+
+// ── Commercial — Clients (Sprint B5-6) ──────────────────────────────────────
+
+/** Kind of commercial client (mirrors backend ClientType). */
+export type ClientType = "INDIVIDUAL" | "BUSINESS" | "WHOLESALER";
+
+/** A commercial client in a farm's directory (mirrors backend ClientResponse). */
+export interface Client {
+  id: number;
+  farmId: number;
+  clientType: ClientType;
+  displayName: string;
+  legalName: string | null;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  city: string | null;
+  creditLimitXof: number | null;
+  currentBalanceXof: number;
+  defaultPaymentTerms: string | null;
+  active: boolean;
+  notes: string | null;
+}
+
+/** Create/update payload (mirrors backend ClientRequest). */
+export interface ClientInput {
+  clientType: ClientType;
+  displayName: string;
+  legalName?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  city?: string;
+  creditLimitXof?: number | null;
+  defaultPaymentTerms?: string;
+  notes?: string;
+}
+
+/** Indicative credit standing (mirrors backend ClientCreditInfo, Décision D26). */
+export interface ClientCreditInfo {
+  clientId: number;
+  displayName: string;
+  creditLimitXof: number | null;
+  currentBalanceXof: number;
+  overLimit: boolean;
+  overLimitPercent: number | null;
+}
