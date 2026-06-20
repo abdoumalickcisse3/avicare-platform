@@ -13,6 +13,9 @@
 | 02 | `02-setup-monorepo.md` | Setup repo, infra, conventions | **Sprint A1** (cette semaine) |
 | 03 | `03-architecture-spring-boot.md` | Structure backend, bounded contexts, patterns | **Sprint A2** et tous les sprints backend ensuite |
 | 04 | `04-schema-db-initial.md` | Migrations Flyway, modèle DB universel | **À chaque sprint où on ajoute des tables** |
+| 05 | `05-securite-rbac.md` | Avant Sprint A2 (semaine prochaine) — JWT, @FarmAccess, features |
+| 06 | `06-cross-cutting.md` | Pendant Phase A — RFC 7807, i18n, logs, observabilité |
+| 07 | `07-frontend-nextjs.md` | Avant le frontend Sprint A3 — App Router, RTK Query, MUI |
 
 ---
 
@@ -20,9 +23,6 @@
 
 | # | Document | Quand l'aborder |
 |---|---|---|
-| 05 | `05-securite-rbac.md` | Avant Sprint A2 (semaine prochaine) — JWT, @FarmAccess, features |
-| 06 | `06-cross-cutting.md` | Pendant Phase A — RFC 7807, i18n, logs, observabilité |
-| 07 | `07-frontend-nextjs.md` | Avant le frontend Sprint A3 — App Router, RTK Query, MUI |
 | 08 | `08-mobile-react-native.md` | Avant Sprint B7 — offline-first, sync, multi-rôles |
 | 09 | `09-plan-j1-j30.md` | Avant de coder — résumé opérationnel des 30 premiers jours |
 
