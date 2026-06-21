@@ -29,18 +29,18 @@ Refondre l'expérience transactionnelle du module pour qu'elle soit **simple, gu
 
 ## 3. Architecture de navigation (Approche A — validée)
 
-Le groupe sidebar **Commercial** passe de 7 à **5 entrées** :
+Le groupe sidebar **Commercial** passe de 7 à **4 entrées** :
 
 ```
-Commercial
- ├ Accueil      → /commercial            (worklist « à faire », SANS KPI)
+Commercial   (groupe — déplie ses enfants, pas de page d'atterrissage)
  ├ Clients      → /commercial/clients
  ├ Commandes    → /commercial/commandes  (livraisons incluses)
  ├ Ventes       → /commercial/ventes
  └ Factures     → /commercial/factures   (paiements inclus)
 ```
 
-- **Livraisons** n'est plus une entrée racine : une livraison est l'aboutissement d'une commande. Elle reste visible (a) sur la fiche commande (document lié) et (b) via un **onglet « Livraisons »** dans la page Commandes, et (c) dans la worklist « à livrer ». La route `/commercial/livraisons` est **supprimée** (redirigée vers `/commercial/commandes`).
+- **Pas de page « Accueil »/cockpit.** Une page d'accueil dédiée recrée la sensation « pipeline » qu'on veut éviter ; les signaux « à faire » vivent **dans les pages concernées** (§7). La route `/commercial` est **redirigée** vers `/commercial/commandes`. Les statistiques d'ensemble vivront sur le dashboard principal (Spec B).
+- **Livraisons** n'est plus une entrée racine : une livraison est l'aboutissement d'une commande. Elle reste visible (a) sur la fiche commande (document lié) et (b) via un **onglet « Livraisons »** dans la page Commandes. La route `/commercial/livraisons` est **supprimée** (redirigée vers `/commercial/commandes`).
 - **Paiements** n'est plus une entrée racine : un paiement est une action sur une facture. Il reste visible (a) sur la fiche facture et (b) via un **onglet « Paiements »** dans la page Factures. La route `/commercial/paiements` est **supprimée** (redirigée vers `/commercial/factures`).
 
 Justification : moins d'entrées = moins de dispersion ; les concepts « fulfillment » (livraison) et « encaissement » (paiement) se rattachent à leur document parent plutôt que de flotter en silos.
@@ -85,13 +85,15 @@ La fiche `/commercial/clients/[id]` devient le **hub** du client :
 - En-tête : identité, type, statut, encours + barre de crédit (vert→orange→rouge, D26), actions Éditer/Désactiver/**Nouvelle commande**/**Encaisser**.
 - **Timeline commerciale** agrégée et triée par date : commandes, ventes, factures, paiements du client (données déjà disponibles via les listes filtrées par `clientId`). Chaque entrée est cliquable vers sa fiche.
 
-## 7. Accueil = worklist (sans KPI)
+## 7. Signaux « à faire » — onglets actionnables par défaut (pas de page d'accueil)
 
-`/commercial` n'est plus un cockpit de KPI mais une **liste d'actions** :
-- **À faire** : *Commandes à livrer* (IN_PROGRESS), *Factures à encaisser* (impayées), regroupées avec compteur et lien.
-- **Ils me doivent** : clients à encours > 0, triés décroissant, barre de crédit (liste de relance, pas une statistique).
-- Raccourci **Vente rapide** (FAB conservé).
-- **Aucune carte KPI** (CA / commandes en cours / impayés total / encours total) — ces chiffres iront sur le dashboard principal (Spec B).
+Plutôt qu'une page d'accueil (qui recrée un « pipeline »), chaque liste **s'ouvre sur sa vue actionnable**, avec un compteur sur l'onglet :
+- **Commandes** : onglet par défaut **« À livrer »** (IN_PROGRESS), puis Toutes / par statut (+ onglet Livraisons, §3).
+- **Factures** : onglet par défaut **« À encaisser »** (ISSUED + PARTIALLY_PAID), + **« En retard »** (overdue dérivé), Toutes, Payées (+ onglet Paiements, §3).
+- **Clients** : onglet/tri **« Débiteurs »** (encours > 0, décroissant, barre de crédit — la liste de relance « ils me doivent ») + Tous.
+- **Ventes** : liste des ventes (la prise de vente passe par le FAB **Vente rapide**, conservé).
+
+Compteurs sur les onglets uniquement (ex. « À livrer (3) »). **Aucune carte KPI/statistique** sur ces pages — les chiffres d'ensemble (CA, encours total, impayés total…) iront sur le dashboard principal (Spec B).
 
 ## 8. Épuration des KPI par page
 
@@ -99,7 +101,7 @@ Suppression des bandeaux KPI introduits en B5-6 :
 - `ClientsKpis` (clients actifs / encours total / clients à risque) — supprimé de la page Clients.
 - KPI « Ventes du jour / Transactions » — supprimés de la page Ventes.
 - KPI « impayées / en retard / CA facturé » — supprimés de la page Factures.
-- Cartes KPI du cockpit — supprimées (l'accueil devient la worklist du §7).
+- Cartes KPI de l'ancien cockpit `/commercial` — supprimées avec la page (route redirigée, §3) ; les actions utiles deviennent des onglets par défaut (§7).
 
 Les composants KPI désormais inutilisés (`ClientsKpis`, etc.) sont retirés. Les listes deviennent : barre de titre + recherche/onglets + tableau.
 
@@ -125,7 +127,7 @@ Le skill **frontend-design** guide le visuel à l'implémentation : rendu modern
 ## 12. Découpage en livraisons (PRs)
 
 - **R1 — Nav resserrée & épuration** : sidebar 5 entrées, fusion Livraisons→onglet Commandes & Paiements→onglet Factures, redirections des routes supprimées, retrait de tous les bandeaux KPI, suppression des composants KPI inutilisés.
-- **R2 — Fil conducteur & actions 1-clic** : composant `DocumentFlow` (provenance + liens + étape suivante) sur les 4 fiches, facturation/encaissement 1 clic, refonte de l'**Accueil** en worklist.
+- **R2 — Fil conducteur & actions 1-clic** : composant `DocumentFlow` (provenance + liens + étape suivante) sur les 4 fiches, facturation/encaissement 1 clic. (Les onglets actionnables par défaut sont livrés en R1 avec l'épuration des pages.)
 - **R3 — Fiche client compte courant** : timeline agrégée + actions contextuelles.
 - **R4 — Impression PDF** : facture + bon de livraison.
 
@@ -134,7 +136,7 @@ Chaque PR : `tsc` + lint + suite vitest + `next build` verts, CI verte avant mer
 ## 13. Tests
 
 - Slices RTK Query : tests existants conservés (pas de changement d'endpoints).
-- Nouveaux tests composant (Vitest + Testing Library) : logique « étape suivante » de `DocumentFlow` (mapping état → action), agrégation de la timeline client, worklist d'accueil (regroupements/compteurs).
+- Nouveaux tests composant (Vitest + Testing Library) : logique « étape suivante » de `DocumentFlow` (mapping état → action), agrégation de la timeline client, et les onglets actionnables par défaut (sélection/compteurs : À livrer, À encaisser, Débiteurs).
 - Garde-fou : `next build` (les routes compilent), suite web complète verte.
 
 ## 14. Risques & mitigations
