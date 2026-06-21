@@ -22,7 +22,7 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import { X } from "lucide-react";
+import { Printer, X } from "lucide-react";
 import {
   useCancelOrderMutation,
   useConfirmOrderMutation,
@@ -197,6 +197,19 @@ export function OrderDetailView({ orderId }: { orderId: number }) {
           />
         </Stack>
         <Stack direction="row" spacing={1}>
+          {delivery && (
+            <Button
+              variant="outlined"
+              color="inherit"
+              startIcon={<Printer size={16} />}
+              href={`/commercial/commandes/livraison/${delivery.id}/imprimer`}
+              target="_blank"
+              rel="noopener noreferrer"
+              component="a"
+            >
+              Bon de livraison (PDF)
+            </Button>
+          )}
           {order.status !== "DELIVERED" && order.status !== "CANCELLED" && (
             <Button
               variant="outlined"
