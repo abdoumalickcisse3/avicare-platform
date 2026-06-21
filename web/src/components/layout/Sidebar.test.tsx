@@ -118,4 +118,15 @@ describe("Sidebar module filtering", () => {
     renderWithProviders(<Sidebar />);
     expect(screen.queryByText("Stocks")).not.toBeInTheDocument();
   });
+
+  it("commercial group shows 4 leaves (no Livraisons/Paiements/Vue d'ensemble)", () => {
+    mockModules(["module.commercial.basic"]);
+    renderWithProviders(<Sidebar />);
+    expect(screen.getByText("Clients")).toBeInTheDocument();
+    expect(screen.getByText("Commandes")).toBeInTheDocument();
+    expect(screen.getByText("Ventes")).toBeInTheDocument();
+    expect(screen.getByText("Factures")).toBeInTheDocument();
+    expect(screen.queryByText("Livraisons")).not.toBeInTheDocument();
+    expect(screen.queryByText("Paiements")).not.toBeInTheDocument();
+  });
 });
