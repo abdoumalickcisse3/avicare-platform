@@ -28,6 +28,7 @@ import {
   LayoutDashboard,
   LayoutGrid,
   Lock,
+  Receipt,
   Settings,
   ShoppingCart,
   Truck,
@@ -136,6 +137,7 @@ const NAV: Section[] = [
         requiredModule: "module.commercial.basic",
         children: [
           { label: "Clients", href: "/commercial/clients", icon: Users },
+          { label: "Ventes", href: "/commercial/ventes", icon: Receipt },
         ],
       },
       { kind: "leaf", label: "Abonnement", href: "/abonnement", icon: CreditCard, enabled: false },

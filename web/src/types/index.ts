@@ -918,3 +918,54 @@ export interface ClientCreditInfo {
   overLimit: boolean;
   overLimitPercent: number | null;
 }
+
+// ── Commercial — Sales (Sprint B5-6b) ───────────────────────────────────────
+
+/** Lifecycle of a direct sale (mirrors backend SaleStatus). */
+export type SaleStatus = "COMPLETED" | "CANCELLED";
+
+/** How a payment was tendered (mirrors backend PaymentMethod). */
+export type PaymentMethod = "CASH" | "MOBILE_MONEY" | "BANK_TRANSFER";
+
+export interface SaleItem {
+  id: number;
+  articleKey: string;
+  articleSource: ArticleSource;
+  articleLabelSnapshot: string | null;
+  unit: string;
+  quantity: number;
+  unitPriceXof: number;
+  lineTotalXof: number;
+  notes: string | null;
+}
+
+/** A direct (cash) sale (mirrors backend SaleResponse). */
+export interface Sale {
+  id: number;
+  farmId: number;
+  saleNumber: string;
+  clientId: number | null;
+  status: SaleStatus;
+  saleDate: string;
+  paymentMethod: string | null;
+  totalXof: number;
+  notes: string | null;
+  items: SaleItem[];
+}
+
+export interface SaleLineInput {
+  articleKey: string;
+  articleSource: ArticleSource;
+  quantity: number;
+  unitPriceXof: number;
+  notes?: string;
+}
+
+/** Create payload (mirrors backend SaleRequest). clientId optional (walk-in). */
+export interface SaleInput {
+  clientId?: number | null;
+  saleDate?: string;
+  paymentMethod?: string;
+  notes?: string;
+  lines: SaleLineInput[];
+}
