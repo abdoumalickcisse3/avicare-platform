@@ -33,7 +33,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
         ModalProps={{ keepMounted: true }}
-        data-app-chrome
+        slotProps={{ root: { "data-app-chrome": true } as Record<string, unknown> }}
         sx={{
           display: { xs: "block", md: "none" },
           "& .MuiDrawer-paper": { width: SIDEBAR_WIDTH, boxSizing: "border-box" },
