@@ -20,7 +20,7 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import { Ban } from "lucide-react";
+import { Ban, Printer } from "lucide-react";
 import { useCancelInvoiceMutation, useGetInvoiceQuery } from "@/store/api/invoicesApi";
 import { useGetPaymentsQuery, useVoidPaymentMutation } from "@/store/api/paymentsApi";
 import { useGetClientQuery } from "@/store/api/clientsApi";
@@ -160,6 +160,17 @@ export function InvoiceDetailView({ invoiceId }: { invoiceId: number }) {
           )}
         </Stack>
         <Stack direction="row" spacing={1}>
+          <Button
+            variant="outlined"
+            color="inherit"
+            startIcon={<Printer size={16} />}
+            href={`/commercial/factures/${invoice.id}/imprimer`}
+            target="_blank"
+            rel="noopener noreferrer"
+            component="a"
+          >
+            Imprimer / PDF
+          </Button>
           {canCancel && (
             <Button variant="outlined" color="inherit" startIcon={<Ban size={16} />} disabled={cancelling} onClick={onCancel}>
               Annuler
