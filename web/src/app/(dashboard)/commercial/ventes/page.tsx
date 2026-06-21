@@ -1,17 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   Alert,
   Box,
-  Card,
-  CardContent,
   Chip,
   IconButton,
   Menu,
   MenuItem,
   Skeleton,
-  Stack,
   Table,
   TableBody,
   TableCell,
@@ -20,7 +17,7 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import { Coins, MoreVertical, Receipt } from "lucide-react";
+import { MoreVertical } from "lucide-react";
 import { useCancelSaleMutation, useGetSalesQuery } from "@/store/api/salesApi";
 import { useGetClientsQuery } from "@/store/api/clientsApi";
 import { useCommercialGating } from "@/hooks/useCommercialGating";
@@ -30,19 +27,10 @@ import { SALE_STATUS_META } from "@/lib/commercial";
 import { formatCurrency, formatDate, formatNumber } from "@/lib/format";
 import { colors } from "@/theme/tokens";
 import type { Sale } from "@/types";
+import { useMemo } from "react";
 
 const mono = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" } as const;
 const monoBold = { ...mono, fontWeight: 700 } as const;
-
-function isToday(iso: string): boolean {
-  const d = new Date(iso);
-  const now = new Date();
-  return (
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate()
-  );
-}
 
 function articlesSummary(sale: Sale): string {
   if (sale.items.length === 0) return "—";
@@ -66,15 +54,6 @@ export default function VentesPage() {
     const map = new Map((clients ?? []).map((c) => [c.id, c.displayName]));
     return (id: number | null) => (id == null ? "Comptant" : map.get(id) ?? `Client #${id}`);
   }, [clients]);
-
-  const kpis = useMemo(() => {
-    const completed = (sales ?? []).filter((s) => s.status === "COMPLETED");
-    const today = completed.filter((s) => isToday(s.saleDate));
-    return {
-      todayTotal: today.reduce((sum, s) => sum + s.totalXof, 0),
-      todayCount: today.length,
-    };
-  }, [sales]);
 
   if (hasFarm && !hasCommercial) {
     return <Alert severity="info">Activez le module Commercial pour enregistrer des ventes.</Alert>;
@@ -100,44 +79,6 @@ export default function VentesPage() {
           Vos ventes au comptant. Utilisez le bouton « Vente directe » pour en enregistrer une.
         </Typography>
       </Box>
-
-      {!isLoading && (sales?.length ?? 0) > 0 && (
-        <Box
-          sx={{
-            display: "grid",
-            gap: { xs: 2, md: 3 },
-            gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" },
-            mb: 3,
-          }}
-        >
-          <Card>
-            <CardContent>
-              <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-start" }}>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                  Ventes du jour
-                </Typography>
-                <Coins size={18} color={colors.accent[500]} />
-              </Stack>
-              <Typography variant="h5" sx={{ ...monoBold, mt: 1, color: colors.accent[500] }}>
-                {formatCurrency(kpis.todayTotal)}
-              </Typography>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent>
-              <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-start" }}>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                  Transactions du jour
-                </Typography>
-                <Receipt size={18} color={colors.primary[500]} />
-              </Stack>
-              <Typography variant="h5" sx={{ ...monoBold, mt: 1, color: colors.primary[500] }}>
-                {formatNumber(kpis.todayCount)}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Box>
-      )}
 
       {isLoading && <Skeleton variant="rectangular" height={240} sx={{ borderRadius: 3 }} />}
 

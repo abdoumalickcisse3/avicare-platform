@@ -14,12 +14,14 @@ import {
   MenuItem,
   Skeleton,
   Stack,
+  Tab,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
+  Tabs,
   TextField,
   Typography,
 } from "@mui/material";
@@ -30,7 +32,6 @@ import {
 } from "@/store/api/clientsApi";
 import { useCommercialGating } from "@/hooks/useCommercialGating";
 import { ClientDialog } from "@/components/commercial/ClientDialog";
-import { ClientsKpis } from "@/components/commercial/ClientsKpis";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { apiErrorMessage } from "@/lib/apiError";
 import {
@@ -38,7 +39,6 @@ import {
   creditColor,
   creditRatio,
   initials,
-  isOverLimit,
 } from "@/lib/commercial";
 import { formatCurrency } from "@/lib/format";
 import { colors } from "@/theme/tokens";
@@ -85,31 +85,33 @@ export default function ClientsPage() {
   const [deactivate] = useDeactivateClientMutation();
 
   const [search, setSearch] = useState("");
+  const [tab, setTab] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
   const [menuEl, setMenuEl] = useState<null | HTMLElement>(null);
   const [menuClient, setMenuClient] = useState<Client | null>(null);
 
+  const debtorsCount = useMemo(
+    () => (clients ?? []).filter((c) => c.currentBalanceXof > 0).length,
+    [clients],
+  );
+
   const filtered = useMemo(() => {
-    if (!clients) return [];
+    const base =
+      tab === "debtors"
+        ? [...(clients ?? [])]
+            .filter((c) => c.currentBalanceXof > 0)
+            .sort((a, b) => b.currentBalanceXof - a.currentBalanceXof)
+        : (clients ?? []);
     const q = search.trim().toLowerCase();
     return q
-      ? clients.filter(
+      ? base.filter(
           (c) =>
             c.displayName.toLowerCase().includes(q) ||
             (c.phone ?? "").toLowerCase().includes(q),
         )
-      : clients;
-  }, [clients, search]);
-
-  const kpis = useMemo(() => {
-    const list = clients ?? [];
-    return {
-      activeCount: list.length,
-      totalReceivableXof: list.reduce((sum, c) => sum + c.currentBalanceXof, 0),
-      atRiskCount: list.filter(isOverLimit).length,
-    };
-  }, [clients]);
+      : base;
+  }, [clients, search, tab]);
 
   if (hasFarm && !hasCommercial) {
     return <Alert severity="info">Activez le module Commercial pour gérer vos clients.</Alert>;
@@ -160,13 +162,18 @@ export default function ClientsPage() {
         </Button>
       </Stack>
 
-      {!isLoading && (clients?.length ?? 0) > 0 && (
-        <ClientsKpis
-          activeCount={kpis.activeCount}
-          totalReceivableXof={kpis.totalReceivableXof}
-          atRiskCount={kpis.atRiskCount}
+      <Tabs
+        value={tab}
+        onChange={(_e, v) => setTab(v)}
+        sx={{ mb: 2, borderBottom: `1px solid ${colors.neutral[200]}` }}
+      >
+        <Tab key="all" value="all" label={`Tous${clients?.length ? ` (${clients.length})` : ""}`} />
+        <Tab
+          key="debtors"
+          value="debtors"
+          label={`Débiteurs${debtorsCount ? ` (${debtorsCount})` : ""}`}
         />
-      )}
+      </Tabs>
 
       <TextField
         placeholder="Rechercher un client…"
@@ -196,14 +203,18 @@ export default function ClientsPage() {
           }}
         >
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Aucun client
+            {tab === "debtors" ? "Aucun débiteur" : "Aucun client"}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Ajoutez votre premier client pour suivre ses commandes et son encours.
+            {tab === "debtors"
+              ? "Tous vos clients sont à jour."
+              : "Ajoutez votre premier client pour suivre ses commandes et son encours."}
           </Typography>
-          <Button variant="contained" color="primary" startIcon={<Plus size={18} />} onClick={openCreate}>
-            Nouveau client
-          </Button>
+          {tab === "all" && (
+            <Button variant="contained" color="primary" startIcon={<Plus size={18} />} onClick={openCreate}>
+              Nouveau client
+            </Button>
+          )}
         </Box>
       )}
 
