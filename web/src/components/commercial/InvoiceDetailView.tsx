@@ -20,19 +20,22 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import { Ban, Wallet } from "lucide-react";
+import { Ban } from "lucide-react";
 import { useCancelInvoiceMutation, useGetInvoiceQuery } from "@/store/api/invoicesApi";
 import { useGetPaymentsQuery, useVoidPaymentMutation } from "@/store/api/paymentsApi";
 import { useGetClientQuery } from "@/store/api/clientsApi";
 import { useCommercialGating } from "@/hooks/useCommercialGating";
+import { DocumentFlow } from "./DocumentFlow";
 import { PaymentDialog } from "./PaymentDialog";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { apiErrorMessage } from "@/lib/apiError";
 import {
   INVOICE_STATUS_META,
   PAYMENT_METHOD_LABELS,
+  invoiceNextStep,
   isInvoiceOverdue,
 } from "@/lib/commercial";
+import type { NextStepKind } from "@/lib/commercial";
 import { formatCurrency, formatDate, formatNumber } from "@/lib/format";
 import { colors } from "@/theme/tokens";
 
@@ -42,6 +45,8 @@ export function InvoiceDetailView({ invoiceId }: { invoiceId: number }) {
   const { farmId, hasFarm, hasCommercial } = useCommercialGating();
   const { showToast } = useToast();
   const skip = !hasFarm || !hasCommercial;
+
+  // ── Data fetching — all hooks before early returns ────────────────────────
   const { data: invoice, isLoading } = useGetInvoiceQuery(
     { farmId: farmId as number, id: invoiceId },
     { skip },
@@ -54,21 +59,49 @@ export function InvoiceDetailView({ invoiceId }: { invoiceId: number }) {
     { farmId: farmId as number, id: invoice?.clientId as number },
     { skip: skip || invoice?.clientId == null },
   );
+
+  // ── Mutations ─────────────────────────────────────────────────────────────
   const [cancel, { isLoading: cancelling }] = useCancelInvoiceMutation();
   const [voidPayment] = useVoidPaymentMutation();
   const [payOpen, setPayOpen] = useState(false);
 
+  // ── Early returns (after all hooks) ──────────────────────────────────────
   if (hasFarm && !hasCommercial) {
     return <Alert severity="info">Activez le module Commercial pour consulter cette facture.</Alert>;
   }
   if (isLoading) return <Skeleton variant="rectangular" height={360} sx={{ borderRadius: 3 }} />;
   if (!invoice) return <Alert severity="error">Facture introuvable.</Alert>;
 
+  // ── Derived state ─────────────────────────────────────────────────────────
   const meta = INVOICE_STATUS_META[invoice.status];
   const overdue = isInvoiceOverdue(invoice);
-  const canPay = invoice.status !== "CANCELLED" && invoice.outstandingXof > 0;
   const canCancel = invoice.status !== "CANCELLED" && invoice.status !== "PAID";
+  const nextStep = invoiceNextStep(invoice);
 
+  // ── Document-flow links ───────────────────────────────────────────────────
+  const flowLinks = [
+    ...(invoice.sourceType === "DELIVERY" && invoice.deliveryId
+      ? [
+          {
+            label: `Livraison #${invoice.deliveryId}`,
+            href: `/commercial/livraisons/${invoice.deliveryId}`,
+          },
+        ]
+      : invoice.sourceType === "SALE" && invoice.saleId
+      ? [
+          {
+            label: `Vente #${invoice.saleId}`,
+            href: `/commercial/ventes/${invoice.saleId}`,
+          },
+        ]
+      : []),
+    { label: invoice.invoiceNumber, current: true },
+    ...((payments ?? []).filter((p) => p.status !== "CANCELLED").length > 0
+      ? [{ label: `${(payments ?? []).filter((p) => p.status !== "CANCELLED").length} paiement(s)` }]
+      : []),
+  ];
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
   const onCancel = async () => {
     try {
       await cancel({ farmId: farmId as number, id: invoice.id }).unwrap();
@@ -83,6 +116,12 @@ export function InvoiceDetailView({ invoiceId }: { invoiceId: number }) {
       showToast("Paiement annulé.", "success");
     } catch (err) {
       showToast(apiErrorMessage(err), "error");
+    }
+  };
+
+  const handleAction = (kind: NextStepKind) => {
+    if (kind === "recordPayment") {
+      setPayOpen(true);
     }
   };
 
@@ -121,11 +160,6 @@ export function InvoiceDetailView({ invoiceId }: { invoiceId: number }) {
           )}
         </Stack>
         <Stack direction="row" spacing={1}>
-          {canPay && (
-            <Button variant="contained" startIcon={<Wallet size={16} />} onClick={() => setPayOpen(true)}>
-              Encaisser
-            </Button>
-          )}
           {canCancel && (
             <Button variant="outlined" color="inherit" startIcon={<Ban size={16} />} disabled={cancelling} onClick={onCancel}>
               Annuler
@@ -133,6 +167,14 @@ export function InvoiceDetailView({ invoiceId }: { invoiceId: number }) {
           )}
         </Stack>
       </Stack>
+
+      {/* Document flow banner (source → facture [current] → paiement(s)) */}
+      <DocumentFlow
+        links={flowLinks}
+        nextStep={nextStep}
+        onAction={handleAction}
+        busy={cancelling}
+      />
 
       {/* Amounts */}
       <Card sx={{ mb: 3 }}>
