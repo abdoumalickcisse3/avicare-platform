@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Alert,
@@ -11,42 +11,123 @@ import {
   Card,
   CardContent,
   Chip,
+  Divider,
   LinearProgress,
+  List,
+  ListItem,
   Skeleton,
   Stack,
   Typography,
 } from "@mui/material";
-import { Mail, MapPin, Pencil, Phone, Power } from "lucide-react";
+import {
+  FileText,
+  Mail,
+  MapPin,
+  Pencil,
+  Phone,
+  Power,
+  ShoppingCart,
+  Tag,
+  Wallet,
+} from "lucide-react";
 import {
   useDeactivateClientMutation,
   useGetClientQuery,
 } from "@/store/api/clientsApi";
+import { useGetOrdersQuery } from "@/store/api/ordersApi";
+import { useGetSalesQuery } from "@/store/api/salesApi";
+import { useGetInvoicesQuery } from "@/store/api/invoicesApi";
+import { useGetPaymentsQuery } from "@/store/api/paymentsApi";
 import { useCommercialGating } from "@/hooks/useCommercialGating";
 import { ClientDialog } from "./ClientDialog";
+import { OrderDialog } from "./OrderDialog";
+import { PaymentDialog } from "./PaymentDialog";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { apiErrorMessage } from "@/lib/apiError";
 import {
   CLIENT_TYPE_LABELS,
+  buildClientTimeline,
   creditColor,
   creditRatio,
   initials,
 } from "@/lib/commercial";
-import { formatCurrency } from "@/lib/format";
+import type { TimelineKind } from "@/lib/commercial";
+import { formatCurrency, formatDate } from "@/lib/format";
 import { colors } from "@/theme/tokens";
+import type { Invoice } from "@/types";
 
 const mono = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" } as const;
+
+function TimelineIcon({ kind }: { kind: TimelineKind }) {
+  const size = 15;
+  switch (kind) {
+    case "order":
+      return <ShoppingCart size={size} />;
+    case "sale":
+      return <Tag size={size} />;
+    case "invoice":
+      return <FileText size={size} />;
+    case "payment":
+      return <Wallet size={size} />;
+  }
+}
 
 export function ClientDetailView({ clientId }: { clientId: number }) {
   const { farmId, hasFarm, hasCommercial } = useCommercialGating();
   const { showToast } = useToast();
   const skip = !hasFarm || !hasCommercial;
+
+  // ── Data fetching — all hooks before early returns ────────────────────────
   const { data: client, isLoading } = useGetClientQuery(
     { farmId: farmId as number, id: clientId },
     { skip },
   );
+  const { data: orders } = useGetOrdersQuery(
+    { farmId: farmId as number, clientId },
+    { skip },
+  );
+  const { data: allSales } = useGetSalesQuery({ farmId: farmId as number }, { skip });
+  const { data: allInvoices } = useGetInvoicesQuery({ farmId: farmId as number }, { skip });
+  const { data: allPayments } = useGetPaymentsQuery({ farmId: farmId as number }, { skip });
+
+  // ── Mutations ─────────────────────────────────────────────────────────────
   const [deactivate] = useDeactivateClientMutation();
   const [editOpen, setEditOpen] = useState(false);
+  const [orderOpen, setOrderOpen] = useState(false);
+  const [payInvoice, setPayInvoice] = useState<Invoice | null>(null);
 
+  // ── Derived state (after hooks, before early returns) ─────────────────────
+  const sales = useMemo(
+    () => (allSales ?? []).filter((s) => s.clientId === clientId),
+    [allSales, clientId],
+  );
+  const invoices = useMemo(
+    () => (allInvoices ?? []).filter((i) => i.clientId === clientId),
+    [allInvoices, clientId],
+  );
+  const payments = useMemo(
+    () => (allPayments ?? []).filter((p) => p.clientId === clientId),
+    [allPayments, clientId],
+  );
+
+  const timeline = useMemo(
+    () =>
+      buildClientTimeline({
+        orders: orders ?? [],
+        sales,
+        invoices,
+        payments,
+      }),
+    [orders, sales, invoices, payments],
+  );
+
+  // First unpaid invoice to enable "Encaisser"
+  const unpaidInvoice = useMemo(
+    () => invoices.find((i) => i.outstandingXof > 0 && i.status !== "CANCELLED" && i.status !== "PAID") ?? null,
+    [invoices],
+  );
+
+  // ── Early returns (after all hooks) ──────────────────────────────────────
   if (hasFarm && !hasCommercial) {
     return <Alert severity="info">Activez le module Commercial pour consulter ce client.</Alert>;
   }
@@ -115,7 +196,24 @@ export function ClientDetailView({ clientId }: { clientId: number }) {
             )}
           </Box>
         </Stack>
-        <Stack direction="row" spacing={1}>
+        <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }} useFlexGap>
+          {unpaidInvoice && (
+            <Button
+              variant="outlined"
+              color="primary"
+              startIcon={<Wallet size={16} />}
+              onClick={() => setPayInvoice(unpaidInvoice)}
+            >
+              Encaisser
+            </Button>
+          )}
+          <Button
+            variant="contained"
+            startIcon={<ShoppingCart size={16} />}
+            onClick={() => setOrderOpen(true)}
+          >
+            Nouvelle commande
+          </Button>
           <Button
             variant="outlined"
             color="inherit"
@@ -125,7 +223,7 @@ export function ClientDetailView({ clientId }: { clientId: number }) {
           >
             Désactiver
           </Button>
-          <Button variant="contained" startIcon={<Pencil size={16} />} onClick={() => setEditOpen(true)}>
+          <Button variant="outlined" color="inherit" startIcon={<Pencil size={16} />} onClick={() => setEditOpen(true)}>
             Éditer
           </Button>
         </Stack>
@@ -194,24 +292,119 @@ export function ClientDetailView({ clientId }: { clientId: number }) {
         </Card>
       </Box>
 
-      {/* Orders / invoices / payments history land in B5-6c/d. */}
+      {/* Historique commercial — compte courant timeline */}
       <Card sx={{ mt: 3 }}>
         <CardContent>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>
             Historique commercial
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            Les commandes, factures et paiements de ce client apparaîtront ici.
-          </Typography>
+          {timeline.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              Aucune activité commerciale enregistrée pour ce client.
+            </Typography>
+          ) : (
+            <List disablePadding>
+              {timeline.map((entry, idx) => (
+                <Box key={`${entry.kind}-${entry.id}`}>
+                  <ListItem
+                    disableGutters
+                    disablePadding
+                    component={Link}
+                    href={entry.href}
+                    sx={{
+                      py: 1.25,
+                      px: 0,
+                      display: "flex",
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 1.5,
+                      color: "inherit",
+                      textDecoration: "none",
+                      "&:hover": { bgcolor: colors.neutral[50], borderRadius: 1 },
+                      cursor: "pointer",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: "50%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                        bgcolor:
+                          entry.kind === "payment"
+                            ? colors.success.light
+                            : entry.kind === "invoice"
+                              ? colors.accent[100]
+                              : entry.kind === "order"
+                                ? colors.primary[100]
+                                : colors.neutral[100],
+                        color:
+                          entry.kind === "payment"
+                            ? colors.success.dark
+                            : entry.kind === "invoice"
+                              ? colors.accent[700]
+                              : entry.kind === "order"
+                                ? colors.primary[700]
+                                : colors.neutral[600],
+                      }}
+                    >
+                      <TimelineIcon kind={entry.kind} />
+                    </Box>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
+                        {entry.label}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {formatDate(entry.date)}
+                      </Typography>
+                    </Box>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        ...mono,
+                        fontWeight: 700,
+                        flexShrink: 0,
+                        color:
+                          entry.kind === "payment" ? colors.success.dark : colors.neutral[800],
+                      }}
+                    >
+                      {formatCurrency(entry.amountXof)}
+                    </Typography>
+                  </ListItem>
+                  {idx < timeline.length - 1 && <Divider />}
+                </Box>
+              ))}
+            </List>
+          )}
         </CardContent>
       </Card>
 
+      {/* Dialogs */}
       {farmId && (
         <ClientDialog
           open={editOpen}
           onClose={() => setEditOpen(false)}
           farmId={farmId}
           client={client}
+        />
+      )}
+      {farmId && (
+        <OrderDialog
+          open={orderOpen}
+          onClose={() => setOrderOpen(false)}
+          farmId={farmId}
+          defaultClientId={clientId}
+        />
+      )}
+      {farmId && payInvoice && (
+        <PaymentDialog
+          open={payInvoice != null}
+          onClose={() => setPayInvoice(null)}
+          farmId={farmId}
+          invoice={payInvoice}
         />
       )}
     </Box>
