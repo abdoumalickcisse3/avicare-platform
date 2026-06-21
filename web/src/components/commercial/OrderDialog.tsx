@@ -38,25 +38,35 @@ export function OrderDialog({
   open,
   onClose,
   farmId,
+  defaultClientId,
 }: {
   open: boolean;
   onClose: () => void;
   farmId: number;
+  defaultClientId?: number;
 }) {
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-      {open && <OrderBody onClose={onClose} farmId={farmId} />}
+      {open && <OrderBody onClose={onClose} farmId={farmId} defaultClientId={defaultClientId} />}
     </Dialog>
   );
 }
 
-function OrderBody({ onClose, farmId }: { onClose: () => void; farmId: number }) {
+function OrderBody({
+  onClose,
+  farmId,
+  defaultClientId,
+}: {
+  onClose: () => void;
+  farmId: number;
+  defaultClientId?: number;
+}) {
   const { showToast } = useToast();
   const { data: articles } = useGetInventoryArticlesQuery({ farmId });
   const { data: clients } = useGetClientsQuery({ farmId });
   const [createOrder, { isLoading: saving }] = useCreateOrderMutation();
 
-  const [clientId, setClientId] = useState("");
+  const [clientId, setClientId] = useState(defaultClientId != null ? String(defaultClientId) : "");
   const [expectedDate, setExpectedDate] = useState("");
   const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
