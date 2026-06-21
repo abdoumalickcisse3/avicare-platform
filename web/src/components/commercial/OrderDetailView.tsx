@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Alert,
   Box,
@@ -21,20 +22,27 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import { Check, PackageCheck, Play, X } from "lucide-react";
+import { X } from "lucide-react";
 import {
   useCancelOrderMutation,
   useConfirmOrderMutation,
   useGetOrderQuery,
   useStartOrderPreparationMutation,
 } from "@/store/api/ordersApi";
+import { useGetDeliveriesQuery } from "@/store/api/deliveriesApi";
+import {
+  useGetInvoicesQuery,
+  useCreateInvoiceFromDeliveryMutation,
+} from "@/store/api/invoicesApi";
 import { useGetClientQuery } from "@/store/api/clientsApi";
 import { useCommercialGating } from "@/hooks/useCommercialGating";
 import { OrderStatusStepper } from "./OrderStatusStepper";
 import { DeliverOrderDialog } from "./DeliverOrderDialog";
+import { DocumentFlow } from "./DocumentFlow";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { apiErrorMessage } from "@/lib/apiError";
-import { ORDER_STATUS_META } from "@/lib/commercial";
+import { ORDER_STATUS_META, orderNextStep } from "@/lib/commercial";
+import type { NextStepKind } from "@/lib/commercial";
 import { formatCurrency, formatDate, formatNumber } from "@/lib/format";
 import { colors } from "@/theme/tokens";
 
@@ -43,7 +51,10 @@ const mono = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums
 export function OrderDetailView({ orderId }: { orderId: number }) {
   const { farmId, hasFarm, hasCommercial } = useCommercialGating();
   const { showToast } = useToast();
+  const router = useRouter();
   const skip = !hasFarm || !hasCommercial;
+
+  // ── Data fetching — all hooks must be called before early returns ─────────
   const { data: order, isLoading } = useGetOrderQuery(
     { farmId: farmId as number, id: orderId },
     { skip },
@@ -52,26 +63,112 @@ export function OrderDetailView({ orderId }: { orderId: number }) {
     { farmId: farmId as number, id: order?.clientId as number },
     { skip: skip || order?.clientId == null },
   );
+  const { data: deliveries } = useGetDeliveriesQuery(
+    { farmId: farmId as number },
+    { skip },
+  );
+  const { data: invoices } = useGetInvoicesQuery(
+    { farmId: farmId as number },
+    { skip },
+  );
+
+  // ── Mutations ─────────────────────────────────────────────────────────────
   const [confirm, { isLoading: confirming }] = useConfirmOrderMutation();
   const [startPrep, { isLoading: starting }] = useStartOrderPreparationMutation();
   const [cancel, { isLoading: cancelling }] = useCancelOrderMutation();
+  const [createInvoiceFromDelivery, { isLoading: invoicing }] =
+    useCreateInvoiceFromDeliveryMutation();
   const [deliverOpen, setDeliverOpen] = useState(false);
 
+  // ── Early returns (after all hooks) ──────────────────────────────────────
   if (hasFarm && !hasCommercial) {
     return <Alert severity="info">Activez le module Commercial pour consulter cette commande.</Alert>;
   }
   if (isLoading) return <Skeleton variant="rectangular" height={360} sx={{ borderRadius: 3 }} />;
   if (!order) return <Alert severity="error">Commande introuvable.</Alert>;
 
+  // ── Derived state ─────────────────────────────────────────────────────────
   const meta = ORDER_STATUS_META[order.status];
-  const busy = confirming || starting || cancelling;
+  const busy = confirming || starting || cancelling || invoicing;
 
+  /** The delivery (DELIVERED status) that belongs to this order, if any. */
+  const delivery = (deliveries ?? []).find(
+    (d) => d.orderId === order.id && d.status === "DELIVERED",
+  );
+
+  /** The invoice generated from this order's delivery, if any. */
+  const invoice = delivery
+    ? (invoices ?? []).find((i) => i.deliveryId === delivery.id)
+    : undefined;
+
+  const hasInvoice = !!invoice;
+  const nextStep = orderNextStep(order, hasInvoice);
+
+  // ── Document-flow links ───────────────────────────────────────────────────
+  const flowLinks = [
+    { label: order.orderNumber, current: true },
+    ...(delivery
+      ? [
+          {
+            label: delivery.deliveryNumber,
+            href: `/commercial/livraisons/${delivery.id}`,
+          },
+        ]
+      : order.status === "DELIVERED"
+      ? []
+      : []),
+    ...(invoice
+      ? [
+          {
+            label: invoice.invoiceNumber,
+            href: `/commercial/factures/${invoice.id}`,
+          },
+        ]
+      : []),
+  ];
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
   const run = async (fn: () => Promise<unknown>, ok: string) => {
     try {
       await fn();
       showToast(ok, "success");
     } catch (err) {
       showToast(apiErrorMessage(err), "error");
+    }
+  };
+
+  const handleAction = async (kind: NextStepKind) => {
+    switch (kind) {
+      case "confirm":
+        await run(
+          () => confirm({ farmId: farmId as number, id: order.id }).unwrap(),
+          "Commande confirmée.",
+        );
+        break;
+      case "startPreparation":
+        await run(
+          () => startPrep({ farmId: farmId as number, id: order.id }).unwrap(),
+          "Commande en préparation.",
+        );
+        break;
+      case "deliver":
+        setDeliverOpen(true);
+        break;
+      case "invoiceFromDelivery":
+        if (!delivery) break;
+        try {
+          const inv = await createInvoiceFromDelivery({
+            farmId: farmId as number,
+            deliveryId: delivery.id,
+          }).unwrap();
+          showToast("Facture générée.", "success");
+          router.push(`/commercial/factures/${inv.id}`);
+        } catch (err) {
+          showToast(apiErrorMessage(err), "error");
+        }
+        break;
+      default:
+        break;
     }
   };
 
@@ -100,31 +197,6 @@ export function OrderDetailView({ orderId }: { orderId: number }) {
           />
         </Stack>
         <Stack direction="row" spacing={1}>
-          {order.status === "PENDING" && (
-            <Button
-              variant="contained"
-              startIcon={<Check size={16} />}
-              disabled={busy}
-              onClick={() => run(() => confirm({ farmId: farmId as number, id: order.id }).unwrap(), "Commande confirmée.")}
-            >
-              Confirmer
-            </Button>
-          )}
-          {order.status === "CONFIRMED" && (
-            <Button
-              variant="contained"
-              startIcon={<Play size={16} />}
-              disabled={busy}
-              onClick={() => run(() => startPrep({ farmId: farmId as number, id: order.id }).unwrap(), "Commande en préparation.")}
-            >
-              Préparer
-            </Button>
-          )}
-          {order.status === "IN_PROGRESS" && (
-            <Button variant="contained" startIcon={<PackageCheck size={16} />} onClick={() => setDeliverOpen(true)}>
-              Livrer la commande
-            </Button>
-          )}
           {order.status !== "DELIVERED" && order.status !== "CANCELLED" && (
             <Button
               variant="outlined"
@@ -138,6 +210,14 @@ export function OrderDetailView({ orderId }: { orderId: number }) {
           )}
         </Stack>
       </Stack>
+
+      {/* Document flow banner (commande → livraison? → facture?) */}
+      <DocumentFlow
+        links={flowLinks}
+        nextStep={nextStep}
+        onAction={handleAction}
+        busy={busy}
+      />
 
       {/* Stepper — the per-order signature */}
       <Card sx={{ mb: 3 }}>
@@ -221,7 +301,7 @@ export function OrderDetailView({ orderId }: { orderId: number }) {
         </Card>
       </Box>
 
-      {farmId && order.status === "IN_PROGRESS" && (
+      {farmId && (
         <DeliverOrderDialog
           open={deliverOpen}
           onClose={() => setDeliverOpen(false)}
