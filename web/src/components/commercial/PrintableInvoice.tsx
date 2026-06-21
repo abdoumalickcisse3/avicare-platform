@@ -62,7 +62,7 @@ export function PrintableInvoice({ invoiceId }: Props) {
       sx={{
         maxWidth: 794, // A4 at 96dpi
         mx: "auto",
-        p: { xs: 3, print: 0 },
+        p: { xs: 3 },
         bgcolor: colors.neutral[0],
         fontFamily: "var(--font-sans)",
         "@media print": {
