@@ -6,6 +6,7 @@ import type {
   InvoiceStatus,
   Order,
   OrderStatus,
+  Payment,
   PaymentMethod,
   Sale,
   SaleStatus,
@@ -182,4 +183,76 @@ export function invoiceNextStep(i: Invoice): NextStep {
 export function saleNextStep(s: Sale, hasInvoice: boolean): NextStep {
   if (s.status !== "COMPLETED" || hasInvoice) return NONE;
   return { kind: "invoiceFromSale", label: "Générer la facture" };
+}
+
+// ── Client timeline (R3) ─────────────────────────────────────────────────────
+
+export type TimelineKind = "order" | "sale" | "invoice" | "payment";
+
+export interface TimelineEntry {
+  kind: TimelineKind;
+  id: number;
+  date: string;
+  label: string;
+  amountXof: number;
+  href: string;
+}
+
+/**
+ * Aggregates orders, sales, invoices, and payments into a unified commercial
+ * timeline for a client's compte-courant view. Sorted by date descending.
+ */
+export function buildClientTimeline(input: {
+  orders: Order[];
+  sales: Sale[];
+  invoices: Invoice[];
+  payments: Payment[];
+}): TimelineEntry[] {
+  const entries: TimelineEntry[] = [];
+
+  for (const o of input.orders) {
+    entries.push({
+      kind: "order",
+      id: o.id,
+      date: o.orderDate,
+      label: o.orderNumber,
+      amountXof: o.totalXof ?? 0,
+      href: `/commercial/commandes/${o.id}`,
+    });
+  }
+
+  for (const s of input.sales) {
+    entries.push({
+      kind: "sale",
+      id: s.id,
+      date: s.saleDate,
+      label: s.saleNumber,
+      amountXof: s.totalXof,
+      href: `/commercial/ventes`,
+    });
+  }
+
+  for (const i of input.invoices) {
+    entries.push({
+      kind: "invoice",
+      id: i.id,
+      date: i.issueDate,
+      label: i.invoiceNumber,
+      amountXof: i.totalXof,
+      href: `/commercial/factures/${i.id}`,
+    });
+  }
+
+  for (const p of input.payments) {
+    entries.push({
+      kind: "payment",
+      id: p.id,
+      date: p.paymentDate,
+      label: p.paymentNumber,
+      amountXof: p.amountXof,
+      href: `/commercial/factures/${p.invoiceId}`,
+    });
+  }
+
+  return entries.sort((a, b) => b.date.localeCompare(a.date));
 }
