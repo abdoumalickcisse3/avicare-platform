@@ -15,6 +15,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Permanent sidebar — desktop */}
       <Box
         component="nav"
+        data-app-chrome
         sx={{
           width: { md: SIDEBAR_WIDTH },
           flexShrink: { md: 0 },
@@ -32,6 +33,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
         ModalProps={{ keepMounted: true }}
+        data-app-chrome
         sx={{
           display: { xs: "block", md: "none" },
           "& .MuiDrawer-paper": { width: SIDEBAR_WIDTH, boxSizing: "border-box" },
@@ -41,7 +43,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </Drawer>
 
       <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-        <Header onMenuClick={() => setMobileOpen(true)} />
+        <Box data-app-chrome>
+          <Header onMenuClick={() => setMobileOpen(true)} />
+        </Box>
         <Box component="main" sx={{ flex: 1, p: { xs: 2, sm: 3, md: 4 } }}>
           {children}
         </Box>
