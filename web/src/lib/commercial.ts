@@ -1,4 +1,4 @@
-import type { Client, ClientType } from "@/types";
+import type { Client, ClientType, PaymentMethod, SaleStatus } from "@/types";
 import { colors } from "@/theme/tokens";
 
 /** Human labels (FR) for the client types. */
@@ -28,6 +28,25 @@ export function initials(name: string): string {
 export function isOverLimit(client: Client): boolean {
   return client.creditLimitXof != null && client.currentBalanceXof > client.creditLimitXof;
 }
+
+/** Payment methods offered for a direct sale (FR labels). Mirrors backend PaymentMethod. */
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  CASH: "Espèces",
+  MOBILE_MONEY: "Mobile Money",
+  BANK_TRANSFER: "Virement",
+};
+
+export const PAYMENT_METHOD_OPTIONS: PaymentMethod[] = [
+  "CASH",
+  "MOBILE_MONEY",
+  "BANK_TRANSFER",
+];
+
+/** Colour + label for a sale status chip. */
+export const SALE_STATUS_META: Record<SaleStatus, { label: string; color: string; bg: string }> = {
+  COMPLETED: { label: "Payé", color: colors.success.dark, bg: colors.success.light },
+  CANCELLED: { label: "Annulée", color: colors.neutral[600], bg: colors.neutral[200] },
+};
 
 /**
  * Credit usage of a client as a fraction of their limit (Décision D26 — purely
