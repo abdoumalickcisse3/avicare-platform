@@ -5,10 +5,10 @@ import type { Order, Sale, Invoice, Payment } from "@/types";
 describe("buildClientTimeline", () => {
   it("merges and sorts by date desc with correct kinds/hrefs", () => {
     const t = buildClientTimeline({
-      orders: [{ id: 1, orderNumber: "ORD-1", orderDate: "2026-01-01", totalXof: 1000 }] as any,
-      sales: [{ id: 2, saleNumber: "V-1", saleDate: "2026-03-01", totalXof: 2000 }] as any,
-      invoices: [{ id: 3, invoiceNumber: "F-1", issueDate: "2026-02-01", totalXof: 1500 }] as any,
-      payments: [{ id: 4, paymentNumber: "P-1", paymentDate: "2026-04-01", amountXof: 500, invoiceId: 3 }] as any,
+      orders: [{ id: 1, orderNumber: "ORD-1", orderDate: "2026-01-01", totalXof: 1000 }] as unknown as Order[],
+      sales: [{ id: 2, saleNumber: "V-1", saleDate: "2026-03-01", totalXof: 2000 }] as unknown as Sale[],
+      invoices: [{ id: 3, invoiceNumber: "F-1", issueDate: "2026-02-01", totalXof: 1500 }] as unknown as Invoice[],
+      payments: [{ id: 4, paymentNumber: "P-1", paymentDate: "2026-04-01", amountXof: 500, invoiceId: 3 }] as unknown as Payment[],
     });
     expect(t.map((e) => e.kind)).toEqual(["payment", "sale", "invoice", "order"]);
     // payment links to its invoice page
@@ -17,7 +17,7 @@ describe("buildClientTimeline", () => {
 
   it("maps order href to /commercial/commandes/{id}", () => {
     const t = buildClientTimeline({
-      orders: [{ id: 7, orderNumber: "ORD-7", orderDate: "2026-05-01", totalXof: null }] as any,
+      orders: [{ id: 7, orderNumber: "ORD-7", orderDate: "2026-05-01", totalXof: null }] as unknown as Order[],
       sales: [],
       invoices: [],
       payments: [],
@@ -31,7 +31,7 @@ describe("buildClientTimeline", () => {
   it("maps sale href to /commercial/ventes (list, no detail)", () => {
     const t = buildClientTimeline({
       orders: [],
-      sales: [{ id: 5, saleNumber: "V-5", saleDate: "2026-06-01", totalXof: 3000 }] as any,
+      sales: [{ id: 5, saleNumber: "V-5", saleDate: "2026-06-01", totalXof: 3000 }] as unknown as Sale[],
       invoices: [],
       payments: [],
     });
@@ -45,7 +45,7 @@ describe("buildClientTimeline", () => {
     const t = buildClientTimeline({
       orders: [],
       sales: [],
-      invoices: [{ id: 9, invoiceNumber: "F-9", issueDate: "2026-06-10", totalXof: 7500 }] as any,
+      invoices: [{ id: 9, invoiceNumber: "F-9", issueDate: "2026-06-10", totalXof: 7500 }] as unknown as Invoice[],
       payments: [],
     });
     expect(t[0].href).toBe("/commercial/factures/9");
