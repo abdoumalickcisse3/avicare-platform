@@ -4,8 +4,10 @@ import type {
   DeliveryStatus,
   Invoice,
   InvoiceStatus,
+  Order,
   OrderStatus,
   PaymentMethod,
+  Sale,
   SaleStatus,
 } from "@/types";
 import { colors } from "@/theme/tokens";
@@ -124,4 +126,60 @@ export function creditColor(client: Client): string {
   if (ratio > 1) return colors.error.main;
   if (ratio >= 0.8) return colors.warning.main;
   return colors.success.main;
+}
+
+// ── Next-step logic (R2.1) ───────────────────────────────────────────────────
+
+export type NextStepKind =
+  | "confirm"
+  | "startPreparation"
+  | "deliver"
+  | "invoiceFromDelivery"
+  | "invoiceFromSale"
+  | "recordPayment"
+  | "none";
+
+export interface NextStep {
+  kind: NextStepKind;
+  label: string;
+}
+
+const NONE: NextStep = { kind: "none", label: "" };
+
+/**
+ * Returns the primary next action for a sales order.
+ * @param o         The order to evaluate.
+ * @param hasInvoice Whether an invoice already exists for this order's delivery.
+ */
+export function orderNextStep(o: Order, hasInvoice: boolean): NextStep {
+  switch (o.status) {
+    case "PENDING":
+      return { kind: "confirm", label: "Confirmer" };
+    case "CONFIRMED":
+      return { kind: "startPreparation", label: "Préparer" };
+    case "IN_PROGRESS":
+      return { kind: "deliver", label: "Livrer" };
+    case "DELIVERED":
+      return hasInvoice ? NONE : { kind: "invoiceFromDelivery", label: "Générer la facture" };
+    default:
+      return NONE;
+  }
+}
+
+/**
+ * Returns the primary next action for an invoice.
+ */
+export function invoiceNextStep(i: Invoice): NextStep {
+  if (i.status === "CANCELLED" || i.status === "PAID") return NONE;
+  return i.outstandingXof > 0 ? { kind: "recordPayment", label: "Encaisser" } : NONE;
+}
+
+/**
+ * Returns the primary next action for a direct sale.
+ * @param s          The sale to evaluate.
+ * @param hasInvoice Whether an invoice already exists for this sale.
+ */
+export function saleNextStep(s: Sale, hasInvoice: boolean): NextStep {
+  if (s.status !== "COMPLETED" || hasInvoice) return NONE;
+  return { kind: "invoiceFromSale", label: "Générer la facture" };
 }
