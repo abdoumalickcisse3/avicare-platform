@@ -1069,3 +1069,66 @@ export interface DeliveryFromOrderInput {
   carrier?: string;
   notes?: string;
 }
+
+// ── Commercial — Invoices & Payments (Sprint B5-6d) ─────────────────────────
+
+/** Lifecycle of an invoice (mirrors backend InvoiceStatus). */
+export type InvoiceStatus = "ISSUED" | "PARTIALLY_PAID" | "PAID" | "CANCELLED";
+
+/** What an invoice was generated from (mirrors backend InvoiceSourceType). */
+export type InvoiceSourceType = "SALE" | "DELIVERY";
+
+export interface InvoiceItem {
+  id: number;
+  articleKey: string;
+  articleSource: ArticleSource;
+  articleLabelSnapshot: string | null;
+  unit: string;
+  quantity: number;
+  unitPriceXof: number;
+  lineTotalXof: number;
+  notes: string | null;
+}
+
+/** An invoice (mirrors backend InvoiceResponse). */
+export interface Invoice {
+  id: number;
+  farmId: number;
+  invoiceNumber: string;
+  clientId: number | null;
+  sourceType: InvoiceSourceType;
+  saleId: number | null;
+  deliveryId: number | null;
+  status: InvoiceStatus;
+  issueDate: string;
+  dueDate: string | null;
+  totalXof: number;
+  amountPaidXof: number;
+  outstandingXof: number;
+  notes: string | null;
+  items: InvoiceItem[];
+}
+
+/** A payment received against an invoice (mirrors backend PaymentResponse). */
+export interface Payment {
+  id: number;
+  farmId: number;
+  paymentNumber: string;
+  invoiceId: number;
+  clientId: number | null;
+  amountXof: number;
+  method: PaymentMethod;
+  status: "COMPLETED" | "CANCELLED";
+  paymentDate: string;
+  reference: string | null;
+  notes: string | null;
+}
+
+export interface PaymentInput {
+  invoiceId: number;
+  amountXof: number;
+  method: PaymentMethod;
+  paymentDate?: string;
+  reference?: string;
+  notes?: string;
+}

@@ -2,6 +2,8 @@ import type {
   Client,
   ClientType,
   DeliveryStatus,
+  Invoice,
+  InvoiceStatus,
   OrderStatus,
   PaymentMethod,
   SaleStatus,
@@ -80,6 +82,27 @@ export const DELIVERY_STATUS_META: Record<
   DELIVERED: { label: "Livrée", color: colors.success.dark, bg: colors.success.light },
   CANCELLED: { label: "Annulée", color: colors.neutral[600], bg: colors.neutral[200] },
 };
+
+/** Colour + label for an invoice status chip. */
+export const INVOICE_STATUS_META: Record<
+  InvoiceStatus,
+  { label: string; color: string; bg: string }
+> = {
+  ISSUED: { label: "Émise", color: colors.accent[700], bg: colors.accent[100] },
+  PARTIALLY_PAID: { label: "Partielle", color: colors.info.dark, bg: colors.info.light },
+  PAID: { label: "Payée", color: colors.success.dark, bg: colors.success.light },
+  CANCELLED: { label: "Annulée", color: colors.neutral[600], bg: colors.neutral[200] },
+};
+
+/**
+ * An invoice is overdue when its due date has passed and it is neither fully paid
+ * nor cancelled (derived, mirrors the backend listOverdue, Décision D26).
+ */
+export function isInvoiceOverdue(inv: Invoice): boolean {
+  if (inv.status === "PAID" || inv.status === "CANCELLED") return false;
+  if (!inv.dueDate) return false;
+  return new Date(inv.dueDate).getTime() < Date.now();
+}
 
 /**
  * Credit usage of a client as a fraction of their limit (Décision D26 — purely
