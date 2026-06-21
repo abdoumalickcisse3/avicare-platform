@@ -60,10 +60,14 @@ Mapping « étape suivante » (réutilise les transitions REST existantes) :
 | Commande PENDING | Confirmer | `POST orders/{id}/confirm` |
 | Commande CONFIRMED | Préparer | `POST orders/{id}/start-preparation` |
 | Commande IN_PROGRESS | Livrer | `POST deliveries` (from order) |
-| Commande/Livraison DELIVERED, non facturée | Générer la facture | `POST invoices/from-delivery` |
-| Vente COMPLETED, non facturée | Générer la facture | `POST invoices/from-sale` |
+| Commande DELIVERED, sa livraison non facturée | Générer la facture | `POST invoices/from-delivery` (sur la **livraison liée** de la commande) |
+| Vente COMPLETED, non facturée | Générer la facture *(action optionnelle)* | `POST invoices/from-sale` |
 | Facture ISSUED/PARTIALLY_PAID (reste dû > 0) | Encaisser | `POST payments` |
 | Facture PAID / doc terminal | (aucun — état final affiché) | — |
+
+Nuances :
+- Une commande ne se facture pas directement (le backend n'expose que `from-sale` / `from-delivery`) : sur une commande livrée, « Générer la facture » agit sur sa **livraison liée**.
+- Une **vente comptant** est déjà payée (paymentMethod sur la vente) : son état COMPLETED est quasi terminal ; « Générer la facture » y est une **action disponible mais optionnelle** (cas où le client réclame une facture formelle), pas une étape imposée.
 
 La détection « déjà facturée » se fait côté front en croisant `invoices` (champs `saleId`/`deliveryId`) — même logique que l'`InvoiceDialog` actuel.
 
@@ -105,7 +109,7 @@ Bouton **Imprimer / PDF** sur :
 - la **facture** (en-tête ferme + client + lignes HT + total + reste dû + statut),
 - le **bon de livraison** (en-tête + client + lignes livrées + transporteur, sans montants si souhaité).
 
-Implémentation front-only via une **feuille print CSS dédiée** (route/vue imprimable `@media print`) ou `react-to-print`. Choix de la lib tranché au plan d'implémentation ; pas de dépendance lourde si une vue print CSS suffit.
+Implémentation front-only, **par défaut sans dépendance** : une vue imprimable dédiée + feuille **`@media print`** (déclenchée par `window.print()`). On n'ajoute `react-to-print`/`jsPDF` que si la vue print CSS s'avère insuffisante — décision prise au plan, le défaut restant « zéro dépendance ».
 
 ## 10. Design (frontend-design)
 
