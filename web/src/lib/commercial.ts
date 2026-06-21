@@ -1,4 +1,11 @@
-import type { Client, ClientType, PaymentMethod, SaleStatus } from "@/types";
+import type {
+  Client,
+  ClientType,
+  DeliveryStatus,
+  OrderStatus,
+  PaymentMethod,
+  SaleStatus,
+} from "@/types";
 import { colors } from "@/theme/tokens";
 
 /** Human labels (FR) for the client types. */
@@ -45,6 +52,32 @@ export const PAYMENT_METHOD_OPTIONS: PaymentMethod[] = [
 /** Colour + label for a sale status chip. */
 export const SALE_STATUS_META: Record<SaleStatus, { label: string; color: string; bg: string }> = {
   COMPLETED: { label: "Payé", color: colors.success.dark, bg: colors.success.light },
+  CANCELLED: { label: "Annulée", color: colors.neutral[600], bg: colors.neutral[200] },
+};
+
+/** Colour + label for an order status chip (D23). */
+export const ORDER_STATUS_META: Record<OrderStatus, { label: string; color: string; bg: string }> = {
+  PENDING: { label: "En attente", color: colors.neutral[700], bg: colors.neutral[200] },
+  CONFIRMED: { label: "Confirmée", color: colors.info.dark, bg: colors.info.light },
+  IN_PROGRESS: { label: "En préparation", color: colors.accent[700], bg: colors.accent[100] },
+  DELIVERED: { label: "Livrée", color: colors.success.dark, bg: colors.success.light },
+  CANCELLED: { label: "Annulée", color: colors.neutral[600], bg: colors.neutral[200] },
+};
+
+/** The happy-path order progression, for the per-order stepper (not a Kanban). */
+export const ORDER_STATUS_FLOW: { status: OrderStatus; label: string }[] = [
+  { status: "PENDING", label: "En attente" },
+  { status: "CONFIRMED", label: "Confirmée" },
+  { status: "IN_PROGRESS", label: "En préparation" },
+  { status: "DELIVERED", label: "Livrée" },
+];
+
+/** Colour + label for a delivery status chip. */
+export const DELIVERY_STATUS_META: Record<
+  DeliveryStatus,
+  { label: string; color: string; bg: string }
+> = {
+  DELIVERED: { label: "Livrée", color: colors.success.dark, bg: colors.success.light },
   CANCELLED: { label: "Annulée", color: colors.neutral[600], bg: colors.neutral[200] },
 };
 

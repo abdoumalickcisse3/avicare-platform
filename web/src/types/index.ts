@@ -969,3 +969,103 @@ export interface SaleInput {
   notes?: string;
   lines: SaleLineInput[];
 }
+
+// ── Commercial — Orders & Deliveries (Sprint B5-6c) ─────────────────────────
+
+/** Lifecycle of a sales order (mirrors backend OrderStatus, D23). */
+export type OrderStatus =
+  | "PENDING"
+  | "CONFIRMED"
+  | "IN_PROGRESS"
+  | "DELIVERED"
+  | "CANCELLED";
+
+export interface OrderItem {
+  id: number;
+  articleKey: string;
+  articleSource: ArticleSource;
+  articleLabelSnapshot: string | null;
+  unit: string;
+  quantity: number;
+  unitPriceXof: number;
+  lineTotalXof: number;
+  notes: string | null;
+}
+
+/** A sales order (mirrors backend OrderResponse). */
+export interface Order {
+  id: number;
+  farmId: number;
+  orderNumber: string;
+  clientId: number | null;
+  status: OrderStatus;
+  orderDate: string;
+  expectedDeliveryDate: string | null;
+  actualDeliveryDate: string | null;
+  deliveryAddress: string | null;
+  deliveryNotes: string | null;
+  expectedPaymentMethod: string | null;
+  expectedPaymentDueDate: string | null;
+  totalXof: number;
+  notes: string | null;
+  items: OrderItem[];
+}
+
+export interface OrderLineInput {
+  articleKey: string;
+  articleSource: ArticleSource;
+  quantity: number;
+  unitPriceXof: number;
+  notes?: string;
+}
+
+/** Create payload (mirrors backend OrderDraftRequest). */
+export interface OrderInput {
+  clientId: number;
+  orderDate?: string;
+  expectedDeliveryDate?: string;
+  deliveryAddress?: string;
+  deliveryNotes?: string;
+  expectedPaymentMethod?: string;
+  expectedPaymentDueDate?: string;
+  notes?: string;
+  lines: OrderLineInput[];
+}
+
+/** Lifecycle of a delivery (mirrors backend DeliveryStatus). */
+export type DeliveryStatus = "DELIVERED" | "CANCELLED";
+
+export interface DeliveryItem {
+  id: number;
+  articleKey: string;
+  articleSource: ArticleSource;
+  articleLabelSnapshot: string | null;
+  unit: string;
+  quantity: number;
+  unitPriceXof: number;
+  lineTotalXof: number;
+  notes: string | null;
+}
+
+/** A delivery (mirrors backend DeliveryResponse). */
+export interface Delivery {
+  id: number;
+  farmId: number;
+  deliveryNumber: string;
+  orderId: number | null;
+  clientId: number | null;
+  status: DeliveryStatus;
+  deliveryDate: string;
+  carrier: string | null;
+  totalXof: number;
+  notes: string | null;
+  items: DeliveryItem[];
+}
+
+/** Convert an order into a delivery (mirrors backend DeliveryFromOrderRequest). */
+export interface DeliveryFromOrderInput {
+  orderId: number;
+  deliveryDate?: string;
+  carrier?: string;
+  notes?: string;
+}
