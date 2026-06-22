@@ -111,7 +111,6 @@ export function OrderDetailView({ orderId }: { orderId: number }) {
       ? [
           {
             label: delivery.deliveryNumber,
-            href: `/commercial/livraisons/${delivery.id}`,
           },
         ]
       : order.status === "DELIVERED"

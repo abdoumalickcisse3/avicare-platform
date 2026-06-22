@@ -84,14 +84,13 @@ export function InvoiceDetailView({ invoiceId }: { invoiceId: number }) {
       ? [
           {
             label: `Livraison #${invoice.deliveryId}`,
-            href: `/commercial/livraisons/${invoice.deliveryId}`,
           },
         ]
       : invoice.sourceType === "SALE" && invoice.saleId
       ? [
           {
             label: `Vente #${invoice.saleId}`,
-            href: `/commercial/ventes/${invoice.saleId}`,
+            href: `/commercial/ventes`,
           },
         ]
       : []),
