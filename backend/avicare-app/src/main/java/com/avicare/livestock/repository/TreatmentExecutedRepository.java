@@ -21,4 +21,18 @@ public interface TreatmentExecutedRepository extends JpaRepository<TreatmentExec
           + "ORDER BY t.startDate DESC")
   List<TreatmentExecuted> findActiveWithdrawals(
       @Param("unitId") Long unitId, @Param("today") LocalDate today);
+
+  // ── Dashboard aggregations (Task 2.1, Spec B) ────────────────────────────
+
+  /**
+   * Count of treatments started on units of a farm within the inclusive period [{@code from},
+   * {@code to}]. Uses {@code start_date} as the period anchor.
+   */
+  @Query(
+      "SELECT COUNT(t) FROM TreatmentExecuted t "
+          + "WHERE t.productionUnit.id IN "
+          + "  (SELECT u.id FROM ProductionUnit u WHERE u.farmId = :farmId) "
+          + "AND t.startDate BETWEEN :from AND :to")
+  long countByFarmAndPeriod(
+      @Param("farmId") Long farmId, @Param("from") LocalDate from, @Param("to") LocalDate to);
 }
