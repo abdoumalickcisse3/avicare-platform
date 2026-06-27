@@ -7,6 +7,8 @@ import static org.mockito.Mockito.when;
 
 import com.avicare.common.api.dto.DayValue;
 import com.avicare.common.api.dto.NamedValue;
+import com.avicare.livestock.api.LivestockFacade;
+import com.avicare.livestock.api.dto.LivestockStats;
 import com.avicare.livestock.commercial.CommercialFacade;
 import com.avicare.livestock.commercial.dto.CommercialStats;
 import com.avicare.reporting.domain.DashboardPeriod;
@@ -24,6 +26,7 @@ class ReportingServiceTest {
 
   @Mock SubscriptionFacade subscriptionFacade;
   @Mock CommercialFacade commercialFacade;
+  @Mock LivestockFacade livestockFacade;
   @InjectMocks ReportingService service;
 
   private static final DashboardPeriod P =
@@ -40,6 +43,23 @@ class ReportingServiceTest {
           List.of(new NamedValue(2L, "Ferme Beta", 30_000L)),
           3L,
           7L);
+
+  /**
+   * Fixture LivestockStats with known values. mortalityRate is null to verify nullable
+   * pass-through.
+   */
+  private static final LivestockStats LIVESTOCK_STATS =
+      new LivestockStats(
+          4L,
+          2800L,
+          35L,
+          null, // mortalityRate null — proves nullable pass-through
+          List.of(new DayValue(LocalDate.of(2026, 6, 10), 5L)),
+          52.3,
+          null, // layingRate null (broiler batch, no laying data)
+          List.of(),
+          6L,
+          3L);
 
   @Test
   void commercial_active_populatesSectionAndCallsFacade() {
@@ -99,5 +119,48 @@ class ReportingServiceTest {
     assertThat(resp.inventory()).isNull();
     assertThat(resp.livestock()).isNull();
     assertThat(resp.period().value()).isEqualTo("30d");
+  }
+
+  @Test
+  void livestock_active_broilerEnabled_populatesSectionAndCallsFacade() {
+    when(subscriptionFacade.isModuleEnabled(1L, "module.commercial.basic")).thenReturn(false);
+    when(subscriptionFacade.isModuleEnabled(1L, "module.inventory")).thenReturn(false);
+    // broiler=true short-circuits the || so layer is never evaluated — do not stub layer
+    when(subscriptionFacade.isModuleEnabled(1L, "module.poultry.broiler")).thenReturn(true);
+    when(livestockFacade.livestockStats(1L, P.from(), P.to())).thenReturn(LIVESTOCK_STATS);
+
+    var resp = service.buildDashboard(1L, P);
+
+    assertThat(resp.livestock()).isNotNull();
+    var ls = resp.livestock();
+    assertThat(ls.activeBatches()).isEqualTo(4L);
+    assertThat(ls.totalHeadcount()).isEqualTo(2800L);
+    assertThat(ls.deaths()).isEqualTo(35L);
+    assertThat(ls.mortalityRate()).isNull(); // nullable — passes through as null
+    assertThat(ls.mortalitySeries()).hasSize(1);
+    assertThat(ls.mortalitySeries().get(0).valueXof()).isEqualTo(5L);
+    assertThat(ls.avgDailyGainG()).isEqualTo(52.3);
+    assertThat(ls.layingRate()).isNull(); // nullable — passes through as null
+    assertThat(ls.layingSeries()).isEmpty();
+    assertThat(ls.vaccinationsCount()).isEqualTo(6L);
+    assertThat(ls.treatmentsCount()).isEqualTo(3L);
+
+    verify(livestockFacade).livestockStats(1L, P.from(), P.to());
+
+    assertThat(resp.commercial()).isNull();
+    assertThat(resp.inventory()).isNull();
+  }
+
+  @Test
+  void livestock_inactive_sectionNullAndFacadeNotCalled() {
+    when(subscriptionFacade.isModuleEnabled(1L, "module.commercial.basic")).thenReturn(false);
+    when(subscriptionFacade.isModuleEnabled(1L, "module.inventory")).thenReturn(false);
+    when(subscriptionFacade.isModuleEnabled(1L, "module.poultry.broiler")).thenReturn(false);
+    when(subscriptionFacade.isModuleEnabled(1L, "module.poultry.layer")).thenReturn(false);
+
+    var resp = service.buildDashboard(1L, P);
+
+    assertThat(resp.livestock()).isNull();
+    verify(livestockFacade, never()).livestockStats(1L, P.from(), P.to());
   }
 }

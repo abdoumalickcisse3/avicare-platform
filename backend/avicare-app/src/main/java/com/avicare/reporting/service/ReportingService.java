@@ -1,5 +1,7 @@
 package com.avicare.reporting.service;
 
+import com.avicare.livestock.api.LivestockFacade;
+import com.avicare.livestock.api.dto.LivestockStats;
 import com.avicare.livestock.commercial.CommercialFacade;
 import com.avicare.livestock.commercial.dto.CommercialStats;
 import com.avicare.reporting.api.dto.DashboardResponse;
@@ -21,8 +23,7 @@ public class ReportingService {
 
   private final SubscriptionFacade subscriptionFacade;
   private final CommercialFacade commercialFacade;
-
-  // Phase 2+ : private final LivestockFacade livestockFacade; (etc.)
+  private final LivestockFacade livestockFacade;
 
   public DashboardResponse buildDashboard(Long farmId, DashboardPeriod period) {
     CommercialSection commercial = null;
@@ -42,7 +43,22 @@ public class ReportingService {
     boolean livestockActive =
         subscriptionFacade.isModuleEnabled(farmId, "module.poultry.broiler")
             || subscriptionFacade.isModuleEnabled(farmId, "module.poultry.layer");
-    LivestockSection livestock = livestockActive ? new LivestockSection() : null;
+    LivestockSection livestock = null;
+    if (livestockActive) {
+      LivestockStats ls = livestockFacade.livestockStats(farmId, period.from(), period.to());
+      livestock =
+          new LivestockSection(
+              ls.activeBatches(),
+              ls.totalHeadcount(),
+              ls.deaths(),
+              ls.mortalityRate(),
+              ls.mortalitySeries(),
+              ls.avgDailyGainG(),
+              ls.layingRate(),
+              ls.layingSeries(),
+              ls.vaccinationsCount(),
+              ls.treatmentsCount());
+    }
     InventorySection inventory =
         subscriptionFacade.isModuleEnabled(farmId, "module.inventory")
             ? new InventorySection()
