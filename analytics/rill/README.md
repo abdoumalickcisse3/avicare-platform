@@ -80,7 +80,7 @@ results locally for fast dashboard rendering.
 
    The required variable:
    ```
-   avicare_postgres_dsn=postgres://avicare:avicare_dev_pwd@localhost:5434/avicare?sslmode=disable
+   avicare_postgres_dsn=postgres://avicare:<DEV_DB_PASSWORD>@localhost:5434/avicare?sslmode=disable
    ```
 
 2. Start Rill from the project directory:
