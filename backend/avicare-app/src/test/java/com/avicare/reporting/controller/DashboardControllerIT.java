@@ -7,6 +7,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.avicare.common.api.dto.DayValue;
+import com.avicare.common.api.dto.NamedValue;
 import com.avicare.common.security.jwt.JwtService;
 import com.avicare.common.security.principal.AvicarePrincipal;
 import com.avicare.common.security.principal.FarmRole;
@@ -157,7 +159,15 @@ class DashboardControllerIT {
     DashboardResponse mockResponse =
         new DashboardResponse(
             new PeriodInfo("preset", "30d", "2026-05-28", "2026-06-27"),
-            new CommercialSection(),
+            new CommercialSection(
+                0L,
+                List.<DayValue>of(),
+                0L,
+                0L,
+                List.<NamedValue>of(),
+                List.<NamedValue>of(),
+                0L,
+                0L),
             null,
             null);
     when(reportingService.buildDashboard(anyLong(), any())).thenReturn(mockResponse);
