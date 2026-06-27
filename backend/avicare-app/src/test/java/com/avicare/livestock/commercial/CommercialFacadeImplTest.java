@@ -8,6 +8,9 @@ import com.avicare.livestock.domain.ClientType;
 import com.avicare.livestock.domain.Invoice;
 import com.avicare.livestock.domain.InvoiceSourceType;
 import com.avicare.livestock.domain.InvoiceStatus;
+import com.avicare.livestock.repository.InvoiceRepository;
+import com.avicare.livestock.repository.OrderRepository;
+import com.avicare.livestock.repository.SaleRepository;
 import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,7 +30,13 @@ class CommercialFacadeImplTest {
   void setUp() {
     clientService = Mockito.mock(ClientService.class);
     invoiceService = Mockito.mock(InvoiceService.class);
-    facade = new CommercialFacadeImpl(clientService, invoiceService);
+    facade =
+        new CommercialFacadeImpl(
+            clientService,
+            invoiceService,
+            Mockito.mock(SaleRepository.class),
+            Mockito.mock(InvoiceRepository.class),
+            Mockito.mock(OrderRepository.class));
   }
 
   @Test
