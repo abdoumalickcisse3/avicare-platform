@@ -1,0 +1,55 @@
+type: metrics_view
+display_name: "Stocks — KPI"
+description: |
+  Current stock levels, low-stock alerts, and estimated stock value.
+  Mirrors InventoryFacade aggregations (Phase 3).
+  Note: this is a snapshot view (no timeseries); stock value = qty × last known price.
+
+model: stocks
+
+dimensions:
+  - name: farm_id
+    display_name: "Farm"
+    column: farm_id
+
+  - name: article_key
+    display_name: "Article"
+    column: article_key
+
+  - name: article_source
+    display_name: "Source"
+    column: article_source
+    description: "INVENTORY or TREATMENT"
+
+  - name: unit
+    display_name: "Unité"
+    column: unit
+
+  - name: is_low_stock
+    display_name: "Stock bas ?"
+    column: is_low_stock
+
+measures:
+  - name: low_stock_count
+    display_name: "Articles en stock bas"
+    description: "Count of stock items below their alert threshold. Maps to lowStockCount."
+    expression: COUNT(*) FILTER (WHERE is_low_stock = TRUE)
+    format_preset: humanize
+    lower_is_better: true
+
+  - name: total_stock_value_xof
+    display_name: "Valeur du stock (XOF)"
+    description: "Sum of qty × last_unit_price. Maps to stockValueXof (V1 = dernier prix)."
+    expression: SUM(estimated_value_xof)
+    format_d3: ",.0f"
+
+  - name: total_articles
+    display_name: "Nb articles actifs"
+    expression: COUNT(*)
+    format_preset: humanize
+
+  - name: avg_quantity
+    display_name: "Quantité moyenne"
+    expression: AVG(current_quantity)
+    format_d3: ",.2f"
+    valid_percent_of_total: false

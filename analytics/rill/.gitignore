@@ -1,0 +1,10 @@
+# Secrets — never commit credentials
+.env
+
+# Rill local runtime state
+tmp/
+.rill/
+
+# OS / editor artifacts
+.DS_Store
+*.swp

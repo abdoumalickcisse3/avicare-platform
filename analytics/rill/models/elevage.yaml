@@ -1,0 +1,92 @@
+type: model
+materialize: true
+
+connector: postgres
+sql: |
+  -- One row per (production_unit, farm) enriched with species metadata.
+  -- For poultry broiler: pulls daily records for mortality/feed aggregates.
+  -- For poultry layer:   pulls egg production aggregates.
+  -- GMQ (ADG) is derived from growth_performance snapshots.
+  SELECT
+    pu.id               AS production_unit_id,
+    pu.farm_id,
+    pu.species,
+    pu.unit_kind,
+    pu.name             AS unit_name,
+    pu.start_date,
+    pu.end_date,
+    pu.current_count,
+    pu.status,
+
+    b.name              AS breed_name,
+    b.code              AS breed_code,
+
+    pb.initial_count    AS broiler_initial_count,
+    pb.target_weight_g  AS broiler_target_weight_g,
+
+    -- Daily mortality aggregate (all recorded days)
+    COALESCE(dr_agg.total_mortality, 0)     AS total_mortality,
+    COALESCE(dr_agg.total_feed_kg,   0)     AS total_feed_kg,
+    COALESCE(dr_agg.record_days,     0)     AS record_days,
+
+    -- Mortality rate: deaths / initial_count (NULL when no initial count)
+    CASE
+      WHEN COALESCE(pb.initial_count, pu.current_count + COALESCE(dr_agg.total_mortality, 0)) > 0
+      THEN ROUND(
+        100.0 * COALESCE(dr_agg.total_mortality, 0)
+          / (COALESCE(pb.initial_count, pu.current_count + COALESCE(dr_agg.total_mortality, 0)))
+        , 2)
+      ELSE NULL
+    END                 AS mortality_rate_pct,
+
+    -- Latest GMQ from growth_performance snapshot
+    gp_latest.gmq_g_per_day AS latest_gmq_g_per_day,
+    gp_latest.current_weight_g AS latest_weight_g,
+    gp_latest.snapshot_date AS latest_snapshot_date,
+
+    -- Layer: aggregate egg production stats
+    COALESCE(dep_agg.total_eggs,  0)        AS total_eggs_collected,
+    COALESCE(dep_agg.production_days, 0)    AS egg_production_days,
+    dep_agg.avg_laying_rate_pct             AS avg_laying_rate_pct
+
+  FROM production_units pu
+  LEFT JOIN breeds b ON b.id = pu.breed_id
+
+  -- Broiler extension
+  LEFT JOIN poultry_batches pb ON pb.id = pu.id
+
+  -- Daily records aggregate (mortality + feed)
+  LEFT JOIN (
+    SELECT
+      production_unit_id,
+      SUM(mortality_count) AS total_mortality,
+      SUM(feed_kg)         AS total_feed_kg,
+      COUNT(*)             AS record_days
+    FROM daily_records
+    GROUP BY production_unit_id
+  ) dr_agg ON dr_agg.production_unit_id = pu.id
+
+  -- Latest growth performance snapshot (broilers)
+  LEFT JOIN LATERAL (
+    SELECT gmq_g_per_day, current_weight_g, snapshot_date
+    FROM growth_performance
+    WHERE poultry_batch_id = pu.id
+    ORDER BY snapshot_date DESC
+    LIMIT 1
+  ) gp_latest ON TRUE
+
+  -- Egg production aggregate (layers)
+  LEFT JOIN (
+    SELECT
+      production_unit_id,
+      SUM(total_eggs_collected)      AS total_eggs,
+      COUNT(*)                       AS production_days,
+      ROUND(AVG(laying_rate_pct), 2) AS avg_laying_rate_pct
+    FROM daily_egg_productions
+    GROUP BY production_unit_id
+  ) dep_agg ON dep_agg.production_unit_id = pu.id
+
+  WHERE pu.deleted_at IS NULL
+
+output:
+  connector: duckdb

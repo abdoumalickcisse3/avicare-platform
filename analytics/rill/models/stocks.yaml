@@ -1,0 +1,38 @@
+type: model
+materialize: true
+
+connector: postgres
+sql: |
+  -- Current stock snapshot: one row per (farm, article).
+  -- Includes low-stock flag and estimated stock value.
+  SELECT
+    si.id                  AS stock_item_id,
+    si.farm_id,
+    si.article_key,
+    si.article_source,
+    si.current_quantity,
+    si.unit,
+    si.alert_threshold,
+    si.typical_unit_price_xof,
+    si.last_movement_at,
+
+    -- Low-stock flag: true when threshold is set and quantity is at or below it
+    CASE
+      WHEN si.alert_threshold IS NOT NULL
+        AND si.current_quantity <= si.alert_threshold
+      THEN TRUE
+      ELSE FALSE
+    END                    AS is_low_stock,
+
+    -- Estimated stock value (V1: last known unit price from stock_items snapshot)
+    CASE
+      WHEN si.typical_unit_price_xof IS NOT NULL AND si.current_quantity > 0
+      THEN ROUND(si.current_quantity * si.typical_unit_price_xof)
+      ELSE 0
+    END                    AS estimated_value_xof
+
+  FROM stock_items si
+  WHERE si.active = TRUE
+
+output:
+  connector: duckdb

@@ -1,0 +1,35 @@
+type: model
+materialize: true
+
+connector: postgres
+sql: |
+  -- OUT stock movements for consumption analysis.
+  -- Joined with stock_items for article metadata.
+  SELECT
+    sm.id               AS movement_id,
+    sm.stock_item_id,
+    si.farm_id,
+    si.article_key,
+    si.article_source,
+    si.unit,
+    sm.movement_date,
+    sm.quantity         AS quantity_out,
+    sm.reason,
+    sm.unit_price_xof,
+    COALESCE(sm.total_value_xof,
+      CASE
+        WHEN sm.unit_price_xof IS NOT NULL
+        THEN ROUND(sm.quantity * sm.unit_price_xof)
+        ELSE 0
+      END
+    )                   AS total_value_xof,
+    sm.production_unit_id,
+    pu.species          AS linked_species
+  FROM stock_movements sm
+  JOIN stock_items si ON si.id = sm.stock_item_id
+  LEFT JOIN production_units pu ON pu.id = sm.production_unit_id
+  WHERE sm.movement_type = 'OUT'
+    AND si.active = TRUE
+
+output:
+  connector: duckdb

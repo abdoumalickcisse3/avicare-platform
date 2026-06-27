@@ -1,0 +1,80 @@
+type: metrics_view
+display_name: "Commercial — KPI"
+description: |
+  Revenue, outstanding receivables, overdue amounts, and top client/debtor
+  rankings. Mirrors the Spring Boot CommercialFacade aggregations (Phase 1).
+
+model: commercial
+timeseries: event_date
+smallest_time_grain: day
+
+dimensions:
+  - name: event_date
+    display_name: "Date"
+    column: event_date
+
+  - name: farm_id
+    display_name: "Farm"
+    column: farm_id
+
+  - name: event_source
+    display_name: "Source"
+    column: event_source
+    description: "SALE (direct) or DELIVERY (from confirmed order)"
+
+  - name: client_name
+    display_name: "Client"
+    column: client_name
+
+  - name: client_type
+    display_name: "Client Type"
+    column: client_type
+
+  - name: client_city
+    display_name: "City"
+    column: client_city
+
+  - name: invoice_status
+    display_name: "Invoice Status"
+    column: invoice_status
+
+measures:
+  - name: total_revenue_xof
+    display_name: "CA (XOF)"
+    description: "Sum of completed sales and deliveries — maps to revenueXof in DashboardResponse"
+    expression: SUM(revenue_xof)
+    format_d3: ",.0f"
+
+  - name: transaction_count
+    display_name: "Nb transactions"
+    expression: COUNT(*)
+    format_preset: humanize
+
+  - name: avg_transaction_xof
+    display_name: "Panier moyen (XOF)"
+    expression: SUM(revenue_xof) / NULLIF(COUNT(*), 0)
+    format_d3: ",.0f"
+    valid_percent_of_total: false
+
+  - name: total_outstanding_xof
+    display_name: "Encours total (XOF)"
+    description: "Snapshot — invoiced minus paid, non-cancelled. Maps to outstandingXof."
+    expression: SUM(outstanding_xof)
+    format_d3: ",.0f"
+
+  - name: total_overdue_xof
+    display_name: "Impayés en retard (XOF)"
+    description: "Outstanding on invoices past due_date. Maps to overdueXof."
+    expression: SUM(overdue_xof)
+    format_d3: ",.0f"
+    lower_is_better: true
+
+  - name: invoiced_xof
+    display_name: "Montant facturé (XOF)"
+    expression: SUM(invoiced_xof)
+    format_d3: ",.0f"
+
+  - name: paid_xof
+    display_name: "Montant encaissé (XOF)"
+    expression: SUM(paid_xof)
+    format_d3: ",.0f"
