@@ -38,4 +38,33 @@ public interface DailyRecordRepository extends JpaRepository<DailyRecord, Long> 
       "SELECT COALESCE(SUM(d.waterL), 0) FROM DailyRecord d "
           + "WHERE d.productionUnit.id = :unitId AND d.recordDate <= :date")
   BigDecimal sumWaterLUpTo(@Param("unitId") Long unitId, @Param("date") LocalDate date);
+
+  // ── Dashboard aggregations (Task 2.1, Spec B) ────────────────────────────
+
+  /**
+   * Total mortality count across all non-soft-deleted units of a farm within the inclusive period
+   * [{@code from}, {@code to}]. Returns {@code null} when no daily records match (no farms, no
+   * records in window).
+   */
+  @Query(
+      "SELECT SUM(d.mortalityCount) FROM DailyRecord d "
+          + "WHERE d.productionUnit.id IN "
+          + "  (SELECT u.id FROM ProductionUnit u WHERE u.farmId = :farmId) "
+          + "AND d.recordDate BETWEEN :from AND :to")
+  Long sumMortalityByFarmAndPeriod(
+      @Param("farmId") Long farmId, @Param("from") LocalDate from, @Param("to") LocalDate to);
+
+  /**
+   * Mortality count per calendar day within [{@code from}, {@code to}] for a farm, ordered by date
+   * ascending. Each row is {@code [LocalDate recordDate, Long mortalitySum]}. Days with no records
+   * are absent.
+   */
+  @Query(
+      "SELECT d.recordDate, SUM(d.mortalityCount) FROM DailyRecord d "
+          + "WHERE d.productionUnit.id IN "
+          + "  (SELECT u.id FROM ProductionUnit u WHERE u.farmId = :farmId) "
+          + "AND d.recordDate BETWEEN :from AND :to "
+          + "GROUP BY d.recordDate ORDER BY d.recordDate ASC")
+  List<Object[]> sumMortalityByDayForFarm(
+      @Param("farmId") Long farmId, @Param("from") LocalDate from, @Param("to") LocalDate to);
 }
