@@ -1,0 +1,90 @@
+type: metrics_view
+display_name: "Élevage — KPI"
+description: |
+  Active batches, headcount, mortality, GMQ (broiler), and laying rate (layer).
+  Mirrors the Spring Boot LivestockFacade aggregations (Phase 2).
+  Note: this is a snapshot view; aggregate values span the full lifetime of
+  each batch. Period filtering is best done on elevage_daily_kpis.
+
+model: elevage
+
+dimensions:
+  - name: farm_id
+    display_name: "Farm"
+    column: farm_id
+
+  - name: species
+    display_name: "Espèce"
+    column: species
+
+  - name: unit_kind
+    display_name: "Type de lot"
+    column: unit_kind
+
+  - name: status
+    display_name: "Statut"
+    column: status
+
+  - name: breed_name
+    display_name: "Race"
+    column: breed_name
+
+  - name: unit_name
+    display_name: "Nom du lot"
+    column: unit_name
+
+  - name: start_date
+    display_name: "Date de mise en place"
+    column: start_date
+
+measures:
+  - name: active_batch_count
+    display_name: "Bandes actives"
+    description: "Count of production units in ACTIVE status. Maps to activeBatchCount."
+    expression: COUNT(*) FILTER (WHERE status = 'ACTIVE')
+    format_preset: humanize
+
+  - name: total_headcount
+    display_name: "Effectif vivant"
+    description: "Sum of current_count across active units. Maps to totalHeadcount."
+    expression: SUM(current_count) FILTER (WHERE status = 'ACTIVE')
+    format_preset: humanize
+
+  - name: total_mortality
+    display_name: "Mortalité totale"
+    description: "Total deaths recorded across all batches."
+    expression: SUM(total_mortality)
+    format_preset: humanize
+    lower_is_better: true
+
+  - name: avg_mortality_rate_pct
+    display_name: "Taux de mortalité moyen (%)"
+    description: "Average mortality rate (deaths / initial_count). Maps to mortalityRatePct."
+    expression: AVG(mortality_rate_pct)
+    format_d3: ".2f"
+    valid_percent_of_total: false
+    lower_is_better: true
+
+  - name: avg_gmq_g_per_day
+    display_name: "GMQ moyen (g/jour)"
+    description: "Average daily weight gain from latest growth_performance snapshot. Maps to avgGmqGPerDay."
+    expression: AVG(latest_gmq_g_per_day) FILTER (WHERE species = 'POULTRY' AND unit_kind = 'BATCH')
+    format_d3: ".1f"
+    valid_percent_of_total: false
+
+  - name: avg_laying_rate_pct
+    display_name: "Taux de ponte moyen (%)"
+    description: "Average laying rate across layer units. Maps to avgLayingRatePct."
+    expression: AVG(avg_laying_rate_pct) FILTER (WHERE species = 'POULTRY')
+    format_d3: ".2f"
+    valid_percent_of_total: false
+
+  - name: total_eggs_collected
+    display_name: "Œufs collectés (total)"
+    expression: SUM(total_eggs_collected)
+    format_preset: humanize
+
+  - name: total_feed_kg
+    display_name: "Aliment consommé (kg)"
+    expression: SUM(total_feed_kg)
+    format_d3: ",.1f"

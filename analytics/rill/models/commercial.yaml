@@ -1,0 +1,76 @@
+type: model
+materialize: true
+
+connector: postgres
+sql: |
+  SELECT
+    -- Sales (direct, walk-in)
+    s.id              AS sale_id,
+    s.farm_id,
+    s.sale_number,
+    s.client_id       AS sale_client_id,
+    s.status          AS sale_status,
+    s.sale_date       AS event_date,
+    s.total_xof       AS revenue_xof,
+    'SALE'            AS event_source,
+
+    -- Client metadata (may be NULL for walk-in sales)
+    c.display_name    AS client_name,
+    c.client_type,
+    c.city            AS client_city,
+
+    -- Invoice associated with this sale (1-to-1)
+    i.id              AS invoice_id,
+    i.status          AS invoice_status,
+    i.issue_date,
+    i.due_date,
+    i.total_xof       AS invoiced_xof,
+    i.amount_paid_xof AS paid_xof,
+    (i.total_xof - i.amount_paid_xof) AS outstanding_xof,
+    CASE
+      WHEN i.status NOT IN ('PAID', 'CANCELLED') AND i.due_date < CURRENT_DATE
+      THEN (i.total_xof - i.amount_paid_xof)
+      ELSE 0
+    END               AS overdue_xof
+
+  FROM sales s
+  LEFT JOIN clients  c ON c.id = s.client_id
+  LEFT JOIN invoices i ON i.sale_id = s.id AND i.status <> 'CANCELLED'
+  WHERE s.status = 'COMPLETED'
+
+  UNION ALL
+
+  SELECT
+    d.id              AS sale_id,
+    d.farm_id,
+    d.delivery_number AS sale_number,
+    d.client_id       AS sale_client_id,
+    d.status          AS sale_status,
+    d.delivery_date   AS event_date,
+    d.total_xof       AS revenue_xof,
+    'DELIVERY'        AS event_source,
+
+    c.display_name    AS client_name,
+    c.client_type,
+    c.city            AS client_city,
+
+    i.id              AS invoice_id,
+    i.status          AS invoice_status,
+    i.issue_date,
+    i.due_date,
+    i.total_xof       AS invoiced_xof,
+    i.amount_paid_xof AS paid_xof,
+    (i.total_xof - i.amount_paid_xof) AS outstanding_xof,
+    CASE
+      WHEN i.status NOT IN ('PAID', 'CANCELLED') AND i.due_date < CURRENT_DATE
+      THEN (i.total_xof - i.amount_paid_xof)
+      ELSE 0
+    END               AS overdue_xof
+
+  FROM deliveries d
+  LEFT JOIN clients  c ON c.id = d.client_id
+  LEFT JOIN invoices i ON i.delivery_id = d.id AND i.status <> 'CANCELLED'
+  WHERE d.status = 'DELIVERED'
+
+output:
+  connector: duckdb

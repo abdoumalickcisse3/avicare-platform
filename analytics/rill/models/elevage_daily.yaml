@@ -1,0 +1,31 @@
+type: model
+materialize: true
+
+connector: postgres
+sql: |
+  -- Daily mortality and feed records per production unit.
+  -- Used for time-series views of mortality and consumption.
+  SELECT
+    dr.id,
+    dr.production_unit_id,
+    pu.farm_id,
+    pu.species,
+    pu.name            AS unit_name,
+    dr.record_date,
+    dr.mortality_count,
+    dr.feed_kg,
+    dr.water_l,
+    pu.current_count,
+    -- Running mortality rate at each record date relative to initial count
+    CASE
+      WHEN COALESCE(pb.initial_count, 1) > 0
+      THEN ROUND(100.0 * dr.mortality_count / pb.initial_count, 4)
+      ELSE NULL
+    END                AS daily_mortality_rate_pct
+  FROM daily_records dr
+  JOIN production_units pu ON pu.id = dr.production_unit_id
+  LEFT JOIN poultry_batches pb ON pb.id = dr.production_unit_id
+  WHERE pu.deleted_at IS NULL
+
+output:
+  connector: duckdb

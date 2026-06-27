@@ -1,0 +1,29 @@
+type: model
+materialize: true
+
+connector: postgres
+sql: |
+  -- Orders pending delivery (CONFIRMED or IN_PROGRESS)
+  SELECT
+    farm_id,
+    'ORDERS_TO_DELIVER'    AS counter_type,
+    COUNT(*)               AS count_value,
+    'order'                AS entity_type
+  FROM orders
+  WHERE status IN ('CONFIRMED', 'IN_PROGRESS')
+  GROUP BY farm_id
+
+  UNION ALL
+
+  -- Invoices not yet fully collected (ISSUED or PARTIALLY_PAID)
+  SELECT
+    farm_id,
+    'INVOICES_TO_COLLECT'  AS counter_type,
+    COUNT(*)               AS count_value,
+    'invoice'              AS entity_type
+  FROM invoices
+  WHERE status IN ('ISSUED', 'PARTIALLY_PAID')
+  GROUP BY farm_id
+
+output:
+  connector: duckdb

@@ -1,0 +1,62 @@
+type: metrics_view
+display_name: "Stocks — Consommation"
+description: |
+  OUT stock movements over time: consumption by period, top consumed articles.
+  Mirrors InventoryFacade consumption aggregations (Phase 3).
+
+model: stock_movements_out
+timeseries: movement_date
+smallest_time_grain: day
+
+dimensions:
+  - name: movement_date
+    display_name: "Date"
+    column: movement_date
+
+  - name: farm_id
+    display_name: "Farm"
+    column: farm_id
+
+  - name: article_key
+    display_name: "Article"
+    column: article_key
+
+  - name: article_source
+    display_name: "Source"
+    column: article_source
+
+  - name: unit
+    display_name: "Unité"
+    column: unit
+
+  - name: reason
+    display_name: "Raison"
+    column: reason
+
+  - name: linked_species
+    display_name: "Espèce liée"
+    column: linked_species
+
+measures:
+  - name: total_quantity_out
+    display_name: "Qté consommée"
+    description: "Total OUT quantity in the selected period. Maps to consumptionTotal."
+    expression: SUM(quantity_out)
+    format_d3: ",.2f"
+
+  - name: total_value_xof
+    display_name: "Valeur consommée (XOF)"
+    description: "Estimated cost of consumption in the period."
+    expression: SUM(total_value_xof)
+    format_d3: ",.0f"
+
+  - name: movement_count
+    display_name: "Nb mouvements OUT"
+    expression: COUNT(*)
+    format_preset: humanize
+
+  - name: avg_quantity_per_movement
+    display_name: "Qté moy par mouvement"
+    expression: SUM(quantity_out) / NULLIF(COUNT(*), 0)
+    format_d3: ",.2f"
+    valid_percent_of_total: false

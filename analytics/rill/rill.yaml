@@ -1,0 +1,9 @@
+display_name: "AviCare — Dashboard KPI Modeling"
+description: |
+  Design-time Rill project for modeling and validating the KPI aggregations
+  that will be implemented in the Spring Boot reporting context (Phases 1-3).
+  This project is NOT deployed, NOT in the production path, NOT a CI gate.
+  It connects to the dev Postgres and serves as living documentation of the
+  metric definitions that mirror the backend aggregations.
+
+olap_connector: duckdb
