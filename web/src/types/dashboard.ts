@@ -33,9 +33,39 @@ export interface CommercialSection {
   invoicesToCollect: number;
 }
 
-// ── Other sections (Phases 2-3 — still opaque) ──────────────────────────────
+// ── Livestock section (Phase 2) ─────────────────────────────────────────────
 
-export type LivestockSection = Record<string, unknown>;
+/** A point in a daily mortality or egg-count series. `valueXof` = raw COUNT (not money). */
+export interface LivestockSeriesPoint {
+  date: string;
+  valueXof: number;
+}
+
+/**
+ * Mirrors `LivestockSectionDto` from the backend (`@JsonInclude(NON_NULL)`).
+ * Rate fields are optional+nullable: absent from JSON when null — render
+ * their widgets ONLY when the value is present (not null/undefined).
+ */
+export interface LivestockSection {
+  activeBatches: number;
+  totalHeadcount: number;
+  deaths: number;
+  /** Mortality rate 0–100 (%). Absent when not computable. */
+  mortalityRate?: number | null;
+  /** Daily death counts over the period. */
+  mortalitySeries: LivestockSeriesPoint[];
+  /** Average daily gain in grams/day. Absent for layer flocks. */
+  avgDailyGainG?: number | null;
+  /** Laying rate 0–100 (%). Absent for broiler/meat flocks. */
+  layingRate?: number | null;
+  /** Daily egg counts over the period. Empty for non-layer flocks. */
+  layingSeries: LivestockSeriesPoint[];
+  vaccinationsCount: number;
+  treatmentsCount: number;
+}
+
+// ── Inventory section (Phase 3 — still opaque) ──────────────────────────────
+
 export type InventorySection = Record<string, unknown>;
 
 export interface DashboardResponse {
