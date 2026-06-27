@@ -10,13 +10,21 @@ import type { HeroTile } from "@/lib/dashboardHero";
 export type { HeroTile };
 
 /**
+ * StatTile display props — same fields as HeroTile but omits `key` (that
+ * field is only needed for React list reconciliation; it is not a component
+ * input). Keeping them separate avoids the "key specified twice" TS error
+ * when spreading a HeroTile alongside an explicit JSX `key={}` attribute.
+ */
+export type StatTileProps = Omit<HeroTile, "key">;
+
+/**
  * Hero KPI tile — large formatted value + label + optional sparkline +
  * optional warning colour when `alert=true` and `value > 0`.
  *
  * Pure presentational: receives a HeroTile from pickHeroTiles, no fetching.
  * Colors are sourced exclusively from `@/theme/tokens`.
  */
-export function StatTile({ label, value, kind, series, alert }: HeroTile) {
+export function StatTile({ label, value, kind, series, alert }: StatTileProps) {
   const isAlert = alert === true && value > 0;
   const accentColor = isAlert ? colors.warning.main : colors.primary[500];
   const bgColor = isAlert ? colors.warning.light : colors.primary[50];
