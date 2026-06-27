@@ -9,11 +9,32 @@ export interface DashboardPeriodState {
   to?: string;
 }
 
-/**
- * Section shapes are populated progressively by Phase 1-3.
- * For Phase 0 they remain opaque (unknown) — the page only checks presence.
- */
-export type CommercialSection = Record<string, unknown>;
+// ── Commercial section (Phase 1) ────────────────────────────────────────────
+
+export interface RevenuePoint {
+  date: string;
+  valueXof: number;
+}
+
+export interface TopEntry {
+  clientId: number;
+  name: string;
+  valueXof: number;
+}
+
+export interface CommercialSection {
+  revenueXof: number;
+  revenueSeries: RevenuePoint[];
+  outstandingXof: number;
+  overdueXof: number;
+  topClients: TopEntry[];
+  topDebtors: TopEntry[];
+  ordersToDeliver: number;
+  invoicesToCollect: number;
+}
+
+// ── Other sections (Phases 2-3 — still opaque) ──────────────────────────────
+
 export type LivestockSection = Record<string, unknown>;
 export type InventorySection = Record<string, unknown>;
 
