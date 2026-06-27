@@ -18,24 +18,14 @@ import { useSelectedFarm } from "@/hooks/useSelectedFarm";
 import { TrialBanner } from "@/components/dashboard/TrialBanner";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { PeriodSelector } from "@/components/dashboard/PeriodSelector";
+import { CommercialSection } from "@/components/dashboard/CommercialSection";
 import { periodToQuery } from "@/lib/dashboard";
 import { colors } from "@/theme/tokens";
 import type { DashboardPeriodState } from "@/types/dashboard";
 
 // ── Phase-0 section placeholders ────────────────────────────────────────────
-// Phases 1-3 will replace these with real widget trees.
-
-function CommercialSection() {
-  return (
-    <Card>
-      <CardContent>
-        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-          Commercial
-        </Typography>
-      </CardContent>
-    </Card>
-  );
-}
+// Phase 1 (CommercialSection) is now a real component imported above.
+// Phases 2-3 will replace the livestock / inventory placeholders below.
 
 function LivestockSection() {
   return (
@@ -159,7 +149,7 @@ export default function DashboardPage() {
         <>
           {hasAnySection ? (
             <Stack spacing={3}>
-              {dashboardData?.commercial && <CommercialSection />}
+              {dashboardData?.commercial && <CommercialSection data={dashboardData.commercial} />}
               {dashboardData?.livestock && <LivestockSection />}
               {dashboardData?.inventory && <InventorySection />}
             </Stack>
