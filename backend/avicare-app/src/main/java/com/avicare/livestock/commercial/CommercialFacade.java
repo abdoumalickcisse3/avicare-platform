@@ -1,5 +1,8 @@
 package com.avicare.livestock.commercial;
 
+import com.avicare.livestock.commercial.dto.CommercialStats;
+import java.time.LocalDate;
+
 /**
  * Public contract of the {@code commercial} sub-domain (doc 03 §4.9). Other parts of the app —
  * finance (B6), reporting, the REST layer (B5-5) — read commercial state through this facade rather
@@ -13,4 +16,11 @@ public interface CommercialFacade {
 
   /** Summary of an invoice (totals, status, outstanding). */
   InvoiceInfo findInvoiceById(Long farmId, Long invoiceId);
+
+  /**
+   * Aggregated dashboard stats for a farm over the inclusive period [{@code from}, {@code to}].
+   * Period KPIs (revenue, series, topClients) honour the window; snapshot KPIs (outstanding,
+   * overdue, worklist counts, topDebtors) reflect the current state. Task 1.1, Spec B.
+   */
+  CommercialStats commercialStats(Long farmId, LocalDate from, LocalDate to);
 }

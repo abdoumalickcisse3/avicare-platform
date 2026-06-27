@@ -28,4 +28,17 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
               + "FROM orders WHERE farm_id = :farmId AND order_number LIKE :prefix",
       nativeQuery = true)
   int findMaxSequence(@Param("farmId") Long farmId, @Param("prefix") String prefix);
+
+  // ── Dashboard aggregations (Task 1.1, Spec B) ────────────────────────────
+
+  /**
+   * Count of orders that are still in the worklist (PENDING, CONFIRMED, or IN_PROGRESS) for a farm.
+   * Snapshot KPI — ignores period. DELIVERED and CANCELLED orders are excluded.
+   */
+  @Query(
+      "SELECT COUNT(o) FROM Order o WHERE o.farmId = :farmId "
+          + "AND o.status IN (com.avicare.livestock.domain.OrderStatus.PENDING, "
+          + "com.avicare.livestock.domain.OrderStatus.CONFIRMED, "
+          + "com.avicare.livestock.domain.OrderStatus.IN_PROGRESS)")
+  long countToDeliver(@Param("farmId") Long farmId);
 }
