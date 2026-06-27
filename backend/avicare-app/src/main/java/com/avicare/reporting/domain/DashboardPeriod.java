@@ -29,8 +29,9 @@ public record DashboardPeriod(String kind, String value, LocalDate from, LocalDa
       case "7d" -> new DashboardPeriod("preset", "7d", today.minusDays(6), today);
       case "30d" -> new DashboardPeriod("preset", "30d", today.minusDays(29), today);
       case "mtd" -> new DashboardPeriod("preset", "mtd", today.withDayOfMonth(1), today);
-      default -> throw new BusinessRuleException(
-          "PERIOD_UNKNOWN_PRESET", "Unknown period preset: " + preset);
+      default ->
+          throw new BusinessRuleException(
+              "PERIOD_UNKNOWN_PRESET", "Unknown period preset: " + preset);
     };
   }
 }

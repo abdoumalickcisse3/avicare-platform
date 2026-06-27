@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ReportingService {
 
   private final SubscriptionFacade subscriptionFacade;
+
   // Phase 1+ : private final CommercialFacade commercialFacade; (etc.)
 
   public DashboardResponse buildDashboard(Long farmId, DashboardPeriod period) {
