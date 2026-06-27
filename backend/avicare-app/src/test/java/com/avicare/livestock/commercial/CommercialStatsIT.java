@@ -34,11 +34,13 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Verifies the dashboard aggregation queries on a real PostgreSQL (Testcontainers, V1–V23). Inserts
- * a minimal fixture (2 clients, 2 COMPLETED sales on different days, 1 PARTIALLY_PAID invoice, 1
- * overdue ISSUED invoice, 1 PENDING order) and asserts every aggregate used by {@link
- * CommercialStats}: revenueXof, revenueSeries, outstandingXof, overdueXof, topClients, topDebtors,
- * ordersToDeliver, invoicesToCollect. CI-only — Testcontainers can't run on this dev machine
- * (Docker 29.x incompatibility, see project memory).
+ * a minimal fixture (2 clients, 3 COMPLETED sales — 2 inside and 1 outside the query window, 1
+ * PARTIALLY_PAID invoice, 1 overdue ISSUED invoice, 1 PENDING order) and asserts every aggregate
+ * used by {@link CommercialStats}: revenueXof, revenueSeries, outstandingXof, overdueXof,
+ * topClients, topDebtors, ordersToDeliver, invoicesToCollect. The out-of-window sale (99 000 XOF,
+ * today-20) ensures that period-filtered queries prove exclusion — without the BETWEEN filter, the
+ * period totals would be inflated. CI-only — Testcontainers can't run on this dev machine (Docker
+ * 29.x incompatibility, see project memory).
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -68,8 +70,10 @@ class CommercialStatsIT {
   Long clientBId;
 
   // Dates computed once per test instance; DAY1 < DAY2 < today, all within [FROM, TO].
+  // DAY_OUTSIDE lies before FROM (today-20 < today-10) and must never appear in period queries.
   LocalDate day1;
   LocalDate day2;
+  LocalDate dayOutside;
   LocalDate from;
   LocalDate to;
 
@@ -78,6 +82,7 @@ class CommercialStatsIT {
     LocalDate today = LocalDate.now();
     day1 = today.minusDays(5);
     day2 = today.minusDays(2);
+    dayOutside = today.minusDays(20); // before FROM — must be excluded by BETWEEN filter
     from = today.minusDays(10);
     to = today;
     int year = today.getYear();
@@ -134,6 +139,21 @@ class CommercialStatsIT {
     s2.setTotalXof(6_000L);
     s2.setStatus(SaleStatus.COMPLETED);
     em.persist(s2);
+
+    // Sale 3 — clientA, dayOutside (today-20, OUTSIDE [from, to]), 99 000 XOF.
+    // Its distinctive amount (99 000) means any period query that forgets the BETWEEN filter
+    // would return an inflated total (e.g. sumRevenueByPeriod → 115 000, not 16 000), causing
+    // the period-assertion tests to fail.  Snapshot KPIs (outstanding, overdue, etc.) are
+    // period-independent and are unaffected by this sale.
+    Sale sOutside = new Sale();
+    sOutside.setFarmId(farmId);
+    sOutside.setClient(clientA);
+    sOutside.setSaleNumber("V-" + year + "-003");
+    sOutside.setSaleDate(dayOutside);
+    sOutside.setTotalXof(99_000L);
+    sOutside.setStatus(SaleStatus.COMPLETED);
+    em.persist(sOutside);
+
     em.flush();
 
     // Invoice 1 — from sale1, clientA, 10 000 total, 3 000 paid → outstanding 7 000, not overdue.
@@ -220,6 +240,33 @@ class CommercialStatsIT {
     List<Object[]> top1 = saleRepo.topClientsByRevenue(farmId, from, to, PageRequest.of(0, 1));
     assertThat(top1).hasSize(1);
     assertThat(((Number) top1.get(0)[0]).longValue()).isEqualTo(clientAId);
+  }
+
+  @Test
+  void period_filter_excludes_out_of_window_sale() {
+    // The fixture contains a COMPLETED sale of 99 000 XOF on dayOutside (today-20), which lies
+    // before the query window [today-10 .. today].  Without the BETWEEN :from AND :to filter:
+    //   sumRevenueByPeriod  would return 115 000 (10 000 + 6 000 + 99 000) instead of 16 000
+    //   sumRevenueByDay     would return 3 rows (dayOutside, day1, day2) instead of 2
+    //   topClientsByRevenue would show clientA at 109 000 (10 000 + 99 000) instead of 10 000
+    // All three assertions below would therefore fail if the filter were accidentally dropped.
+
+    Long revenue = saleRepo.sumRevenueByPeriod(farmId, from, to);
+    assertThat(revenue)
+        .as(
+            "out-of-window sale (99 000 XOF, today-20) must be excluded; "
+                + "total must be 10 000 + 6 000 = 16 000, not 115 000")
+        .isEqualTo(16_000L);
+
+    List<Object[]> series = saleRepo.sumRevenueByDay(farmId, from, to);
+    assertThat(series)
+        .as("series must contain only the 2 in-window sale dates, not dayOutside")
+        .hasSize(2);
+
+    List<Object[]> top = saleRepo.topClientsByRevenue(farmId, from, to, PageRequest.of(0, 5));
+    assertThat(((Number) top.get(0)[2]).longValue())
+        .as("clientA in-window revenue must be 10 000, not 109 000 (out-of-window 99 000 excluded)")
+        .isEqualTo(10_000L);
   }
 
   // ── Snapshot KPI tests ───────────────────────────────────────────────────
