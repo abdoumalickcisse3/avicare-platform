@@ -1,5 +1,7 @@
 package com.avicare.reporting.service;
 
+import com.avicare.livestock.commercial.CommercialFacade;
+import com.avicare.livestock.commercial.dto.CommercialStats;
 import com.avicare.reporting.api.dto.DashboardResponse;
 import com.avicare.reporting.api.dto.DashboardResponse.CommercialSection;
 import com.avicare.reporting.api.dto.DashboardResponse.InventorySection;
@@ -18,14 +20,25 @@ import org.springframework.transaction.annotation.Transactional;
 public class ReportingService {
 
   private final SubscriptionFacade subscriptionFacade;
+  private final CommercialFacade commercialFacade;
 
-  // Phase 1+ : private final CommercialFacade commercialFacade; (etc.)
+  // Phase 2+ : private final LivestockFacade livestockFacade; (etc.)
 
   public DashboardResponse buildDashboard(Long farmId, DashboardPeriod period) {
-    CommercialSection commercial =
-        subscriptionFacade.isModuleEnabled(farmId, "module.commercial.basic")
-            ? new CommercialSection()
-            : null;
+    CommercialSection commercial = null;
+    if (subscriptionFacade.isModuleEnabled(farmId, "module.commercial.basic")) {
+      CommercialStats stats = commercialFacade.commercialStats(farmId, period.from(), period.to());
+      commercial =
+          new CommercialSection(
+              stats.revenueXof(),
+              stats.revenueSeries(),
+              stats.outstandingXof(),
+              stats.overdueXof(),
+              stats.topClients(),
+              stats.topDebtors(),
+              stats.ordersToDeliver(),
+              stats.invoicesToCollect());
+    }
     boolean livestockActive =
         subscriptionFacade.isModuleEnabled(farmId, "module.poultry.broiler")
             || subscriptionFacade.isModuleEnabled(farmId, "module.poultry.layer");
