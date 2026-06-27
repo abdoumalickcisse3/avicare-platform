@@ -1,4 +1,5 @@
 import { Box, Card, CardContent, Stack, Typography } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import type { LucideIcon } from "lucide-react";
 
 export interface KpiCardProps {
@@ -37,7 +38,7 @@ export function KpiCard({ label, value, icon: Icon, tint }: KpiCardProps) {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              bgcolor: `${tint}1A`,
+              bgcolor: alpha(tint, 0.1),
               color: tint,
             }}
           >
