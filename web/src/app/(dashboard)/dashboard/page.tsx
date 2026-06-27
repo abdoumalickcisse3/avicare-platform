@@ -9,27 +9,23 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { Bird, CreditCard, TrendingUp, Warehouse } from "lucide-react";
 import { useGetProfileQuery } from "@/store/api/authApi";
 import { useGetDashboardQuery } from "@/store/api/dashboardApi";
 import { useAppDispatch } from "@/store/hooks";
 import { setCurrentUser } from "@/store/slices/authSlice";
 import { useSelectedFarm } from "@/hooks/useSelectedFarm";
 import { TrialBanner } from "@/components/dashboard/TrialBanner";
-import { KpiCard } from "@/components/dashboard/KpiCard";
+import { HeroKpiRow } from "@/components/dashboard/HeroKpiRow";
 import { PeriodSelector } from "@/components/dashboard/PeriodSelector";
 import { CommercialSection } from "@/components/dashboard/CommercialSection";
 import { LivestockSection } from "@/components/dashboard/LivestockSection";
+import { BentoGrid, BentoItem } from "@/components/dashboard/widgets";
 import { periodToQuery } from "@/lib/dashboard";
-import { colors } from "@/theme/tokens";
 import type { DashboardPeriodState } from "@/types/dashboard";
 
-// ── Phase-0 section placeholders ────────────────────────────────────────────
-// Phase 1 (CommercialSection) is now a real component imported above.
-// Phase 2 (LivestockSection) is now a real component imported above.
-// Phase 3 will replace the inventory placeholder below.
+// ── Inventory placeholder (Phase 3) ─────────────────────────────────────────
 
-function InventorySection() {
+function InventoryPlaceholder() {
   return (
     <Card>
       <CardContent>
@@ -40,15 +36,6 @@ function InventorySection() {
     </Card>
   );
 }
-
-// ── Default KPI cards (no farm selected / no module data yet) ───────────────
-
-const DEFAULT_KPIS = [
-  { label: "Fermes", value: "—", icon: Warehouse, tint: colors.primary[500] },
-  { label: "Bandes actives", value: "—", icon: Bird, tint: colors.accent[400] },
-  { label: "Performance", value: "—", icon: TrendingUp, tint: colors.info.main },
-  { label: "Abonnement", value: "—", icon: CreditCard, tint: colors.success.main },
-];
 
 // ── Page ────────────────────────────────────────────────────────────────────
 
@@ -103,67 +90,102 @@ export default function DashboardPage() {
       </Box>
 
       {/* Period selector — only shown when a farm is selected */}
-      {farmId && (
-        <PeriodSelector value={period} onChange={setPeriod} />
-      )}
+      {farmId && <PeriodSelector value={period} onChange={setPeriod} />}
 
-      {/* KPI row — default placeholder cards (populated by phases 1-3) */}
-      <Box
-        sx={{
-          display: "grid",
-          gap: 2,
-          gridTemplateColumns: {
-            xs: "1fr",
-            sm: "repeat(2, 1fr)",
-            lg: "repeat(4, 1fr)",
-          },
-        }}
-      >
-        {isPageLoading
-          ? DEFAULT_KPIS.map((k) => (
-              <Skeleton key={k.label} variant="rectangular" height={96} sx={{ borderRadius: 2 }} />
-            ))
-          : DEFAULT_KPIS.map((k) => (
-              <KpiCard
-                key={k.label}
-                label={k.label}
-                value={k.value}
-                icon={k.icon}
-                tint={k.tint}
+      {/* ── Loading skeletons ── */}
+      {farmId && isPageLoading && (
+        <>
+          {/* Hero row skeleton */}
+          <Box
+            sx={{
+              display: "grid",
+              gap: 2,
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "repeat(2, 1fr)",
+                lg: "repeat(4, 1fr)",
+              },
+            }}
+          >
+            {[0, 1, 2, 3].map((i) => (
+              <Skeleton
+                key={i}
+                variant="rectangular"
+                height={100}
+                sx={{ borderRadius: 2 }}
               />
             ))}
-      </Box>
+          </Box>
 
-      {/* Adaptive section containers — mounted only when the API says the module is active */}
+          {/* Bento skeleton — 3 representative cells */}
+          <Box
+            sx={{
+              display: "grid",
+              gap: 2,
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "repeat(2, 1fr)",
+                lg: "repeat(3, 1fr)",
+              },
+            }}
+          >
+            {[0, 1, 2].map((i) => (
+              <Skeleton
+                key={i}
+                variant="rectangular"
+                height={200}
+                sx={{ borderRadius: 2 }}
+              />
+            ))}
+          </Box>
+        </>
+      )}
+
+      {/* ── Hero KPI row + bento grid — rendered once data is ready ── */}
       {farmId && !isPageLoading && (
         <>
-          {hasAnySection ? (
-            <Stack spacing={3}>
-              {dashboardData?.commercial && <CommercialSection data={dashboardData.commercial} />}
-              {dashboardData?.livestock && <LivestockSection data={dashboardData.livestock} />}
-              {dashboardData?.inventory && <InventorySection />}
-            </Stack>
+          {/* 4-tile hero row (adaptive, sourced from active modules) */}
+          {dashboardData && <HeroKpiRow data={dashboardData} />}
+
+          {/* Module widgets interleaved in a single bento grid */}
+          {dashboardData && hasAnySection ? (
+            <BentoGrid>
+              {dashboardData.commercial && (
+                <CommercialSection data={dashboardData.commercial} />
+              )}
+              {dashboardData.livestock && (
+                <LivestockSection data={dashboardData.livestock} />
+              )}
+              {/* Inventory placeholder — Phase 3 (replace with real bento items) */}
+              {dashboardData.inventory && (
+                <BentoItem colSpan={12}>
+                  <InventoryPlaceholder />
+                </BentoItem>
+              )}
+            </BentoGrid>
           ) : (
-            <Card>
-              <CardContent>
-                <Stack
-                  spacing={1.5}
-                  sx={{ py: 6, textAlign: "center", alignItems: "center" }}
-                >
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    Aucun module actif
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ maxWidth: 420 }}
+            dashboardData && (
+              <Card>
+                <CardContent>
+                  <Stack
+                    spacing={1.5}
+                    sx={{ py: 6, textAlign: "center", alignItems: "center" }}
                   >
-                    Activez un module commercial, élevage ou stock pour voir vos
-                    indicateurs ici.
-                  </Typography>
-                </Stack>
-              </CardContent>
-            </Card>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      Aucun module actif
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ maxWidth: 420 }}
+                    >
+                      Activez un module commercial, élevage ou stock pour voir vos
+                      indicateurs ici.
+                    </Typography>
+                  </Stack>
+                </CardContent>
+              </Card>
+            )
           )}
         </>
       )}

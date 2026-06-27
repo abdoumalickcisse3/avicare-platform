@@ -17,7 +17,11 @@ export interface ChartWidgetProps {
   label: string;
   /** Time-series data. Safe when empty — shows `emptyMessage`. */
   series: SeriesPoint[];
-  /** "bar" for histogram-style (mortality, etc.); "line" for continuous (CA, eggs). */
+  /**
+   * "bar" for histogram-style (mortality, etc.);
+   * "line" for continuous time-series (CA, eggs) — uses scaleType "point"
+   * for a smoother axis (no band padding).
+   */
   kind?: "bar" | "line";
   /** Y-axis formatter — defaults to formatNumber. */
   yFormatter?: (v: number) => string;
@@ -31,6 +35,9 @@ export interface ChartWidgetProps {
  * Bar or line chart for a single time-series.
  * Pure presentational. Uses @mui/x-charts with token colours.
  * Handles empty data gracefully with an inline message.
+ *
+ * D1-A review fix: line charts use scaleType "point" (not "band") for a
+ * smooth continuous axis — avoids the visual padding artefact on sparse data.
  */
 export function ChartWidget({
   label,
@@ -45,27 +52,15 @@ export function ChartWidget({
   const dates = isEmpty ? [] : series.map((p) => formatDate(p.date));
   const values = isEmpty ? [] : series.map((p) => p.valueXof);
 
-  const commonAxisProps = {
-    xAxis: [
-      {
-        scaleType: "band" as const,
-        data: dates,
-        tickLabelStyle: {
-          fontSize: 11,
-          fill: colors.neutral[500],
-        },
+  const yAxisConfig = [
+    {
+      valueFormatter: yFormatter,
+      tickLabelStyle: {
+        fontSize: 11,
+        fill: colors.neutral[500],
       },
-    ],
-    yAxis: [
-      {
-        valueFormatter: yFormatter,
-        tickLabelStyle: {
-          fontSize: 11,
-          fill: colors.neutral[500],
-        },
-      },
-    ],
-  };
+    },
+  ];
 
   return (
     <Card sx={{ height: "100%" }}>
@@ -92,28 +87,32 @@ export function ChartWidget({
           </Box>
         ) : kind === "bar" ? (
           <BarChart
-            {...commonAxisProps}
-            series={[
+            xAxis={[
               {
-                data: values,
-                color,
+                scaleType: "band" as const,
+                data: dates,
+                tickLabelStyle: { fontSize: 11, fill: colors.neutral[500] },
               },
             ]}
+            yAxis={yAxisConfig}
+            series={[{ data: values, color }]}
             height={200}
             margin={{ top: 8, right: 8, bottom: 40, left: 48 }}
             grid={{ horizontal: true }}
           />
         ) : (
+          // Line charts: scaleType "point" gives a smooth continuous axis
+          // without band-padding artefacts on sparse date series.
           <LineChart
-            {...commonAxisProps}
-            series={[
+            xAxis={[
               {
-                data: values,
-                color,
-                showMark: false,
-                area: true,
+                scaleType: "point" as const,
+                data: dates,
+                tickLabelStyle: { fontSize: 11, fill: colors.neutral[500] },
               },
             ]}
+            yAxis={yAxisConfig}
+            series={[{ data: values, color, showMark: false, area: true }]}
             height={200}
             margin={{ top: 8, right: 8, bottom: 40, left: 48 }}
             grid={{ horizontal: true }}

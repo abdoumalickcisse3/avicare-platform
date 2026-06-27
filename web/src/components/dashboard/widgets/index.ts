@@ -6,7 +6,7 @@ export { StatChip } from "./StatChip";
 export { BentoItem } from "./BentoItem";
 export { BentoGrid } from "./BentoGrid";
 
-export type { HeroTile } from "./StatTile";
+export type { HeroTile, StatTileProps } from "./StatTile";
 export type { GaugeWidgetProps } from "./GaugeWidget";
 export type { ChartWidgetProps, SeriesPoint } from "./ChartWidget";
 export type { ListWidgetProps, ListWidgetRow } from "./ListWidget";
