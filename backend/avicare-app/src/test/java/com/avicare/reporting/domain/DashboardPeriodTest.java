@@ -65,8 +65,7 @@ class DashboardPeriodTest {
 
   @Test
   void rejectsPresetAndCustomTogether() {
-    assertThatThrownBy(
-            () -> DashboardPeriod.resolve("7d", LocalDate.of(2026, 6, 1), null, TODAY))
+    assertThatThrownBy(() -> DashboardPeriod.resolve("7d", LocalDate.of(2026, 6, 1), null, TODAY))
         .isInstanceOf(BusinessRuleException.class);
   }
 }

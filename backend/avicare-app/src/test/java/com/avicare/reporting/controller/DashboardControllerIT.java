@@ -164,7 +164,9 @@ class DashboardControllerIT {
 
     String token = memberToken(FARM_ID);
     mockMvc
-        .perform(get("/api/v1/farms/" + FARM_ID + "/dashboard").header("Authorization", "Bearer " + token))
+        .perform(
+            get("/api/v1/farms/" + FARM_ID + "/dashboard")
+                .header("Authorization", "Bearer " + token))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.period.value").value("30d"))
         .andExpect(jsonPath("$.data.commercial").exists())
@@ -186,7 +188,10 @@ class DashboardControllerIT {
   private String memberToken(Long farmId) {
     return jwtService.generateAccessToken(
         new AvicarePrincipal(
-            10L, "member@avicare.com", UserRole.USER, List.of(new Membership(farmId, FarmRole.FARMER, List.of("*")))));
+            10L,
+            "member@avicare.com",
+            UserRole.USER,
+            List.of(new Membership(farmId, FarmRole.FARMER, List.of("*")))));
   }
 
   // --- in-memory RSA key material ---
