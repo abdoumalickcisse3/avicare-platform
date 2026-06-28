@@ -49,6 +49,7 @@ export const FEED_PHASE_LABELS: Record<FeedPhase, string> = {
 export const ARTICLE_SOURCE_LABELS: Record<ArticleSource, string> = {
   INVENTORY: "Article",
   TREATMENT: "Médicament",
+  PRODUCTION: "Production",
 };
 
 interface BadgeMeta {

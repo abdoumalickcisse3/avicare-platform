@@ -611,7 +611,8 @@ export interface CriticalObservationItem {
 /* ===================== Inventory (Sprint B4) ===================== */
 
 export type MovementType = "IN" | "OUT" | "ADJUSTMENT";
-export type ArticleSource = "INVENTORY" | "TREATMENT";
+export type ArticleSource = "INVENTORY" | "TREATMENT" | "PRODUCTION";
+export type ProductType = "BROILER" | "EGGS";
 export type PurchaseOrderStatus = "DRAFT" | "SENT" | "RECEIVED" | "CANCELLED";
 export type FeedPhase =
   | "STARTER"
@@ -958,6 +959,8 @@ export interface SaleLineInput {
   articleSource: ArticleSource;
   quantity: number;
   unitPriceXof: number;
+  productType?: ProductType;
+  productionUnitId?: number;
   notes?: string;
 }
 
@@ -1016,6 +1019,8 @@ export interface OrderLineInput {
   articleSource: ArticleSource;
   quantity: number;
   unitPriceXof: number;
+  productType?: ProductType;
+  productionUnitId?: number;
   notes?: string;
 }
 
