@@ -8,12 +8,15 @@ import com.avicare.common.security.principal.UserRole;
 import com.avicare.identity.domain.User;
 import com.avicare.livestock.api.LivestockFacade;
 import com.avicare.livestock.api.ProductType;
+import com.avicare.livestock.domain.Breed;
 import com.avicare.livestock.domain.EggTrayStock;
+import com.avicare.livestock.domain.PoultryBatch;
 import com.avicare.livestock.domain.ProductionUnit;
 import com.avicare.livestock.domain.Species;
 import com.avicare.livestock.domain.UnitKind;
 import com.avicare.livestock.domain.UnitStatus;
 import com.avicare.livestock.layer.EggTrayStockService;
+import com.avicare.livestock.repository.BreedRepository;
 import com.avicare.livestock.repository.EggTrayStockRepository;
 import com.avicare.livestock.repository.LifecycleEventRepository;
 import com.avicare.livestock.repository.ProductionUnitRepository;
@@ -65,11 +68,13 @@ class ProductionStockIT {
   @Autowired ProductionUnitRepository productionUnitRepository;
   @Autowired LifecycleEventRepository lifecycleEventRepository;
   @Autowired EggTrayStockRepository eggTrayStockRepository;
+  @Autowired BreedRepository breedRepository;
   @Autowired EntityManager em;
 
   Long farmId;
-  Long unitId; // ACTIVE POULTRY, currentCount=100
-  Long closedUnitId; // CLOSED POULTRY, currentCount=100
+  Long unitId; // ACTIVE PoultryBatch (broiler), currentCount=100
+  Long closedUnitId; // CLOSED PoultryBatch (broiler), currentCount=100
+  Long layerUnitId; // ACTIVE plain ProductionUnit (layer lot, no poultry_batches row)
 
   @BeforeEach
   void setUp() {
@@ -91,32 +96,56 @@ class ProductionStockIT {
     em.flush();
     farmId = farm.getId();
 
-    // ── Active POULTRY unit — currentCount=100 ────────────────────────────────
-    ProductionUnit unit = new ProductionUnit();
-    unit.setFarmId(farmId);
-    unit.setSpecies(Species.POULTRY);
-    unit.setUnitKind(UnitKind.BATCH);
-    unit.setStartDate(LocalDate.now().minusDays(10));
-    unit.setCurrentCount(100);
-    unit.setStatus(UnitStatus.ACTIVE);
-    unit.setCreatedBy(userId);
-    em.persist(unit);
-    em.flush();
-    unitId = unit.getId();
+    // ── Seeded cobb_500 breed (V4 migration, platform breed, farm_id=null) ────
+    Breed breed =
+        breedRepository
+            .findBySpeciesAndCodeAndFarmId(Species.POULTRY, "cobb_500", null)
+            .orElseThrow();
 
-    // ── Closed POULTRY unit — currentCount=100 (used for CLOSED guard test) ──
-    ProductionUnit closed = new ProductionUnit();
-    closed.setFarmId(farmId);
-    closed.setSpecies(Species.POULTRY);
-    closed.setUnitKind(UnitKind.BATCH);
-    closed.setStartDate(LocalDate.now().minusDays(30));
-    closed.setEndDate(LocalDate.now().minusDays(1));
-    closed.setCurrentCount(100);
-    closed.setStatus(UnitStatus.CLOSED);
-    closed.setCreatedBy(userId);
-    em.persist(closed);
+    // ── Active PoultryBatch (broiler) — currentCount=100 ─────────────────────
+    PoultryBatch batch = new PoultryBatch();
+    batch.setFarmId(farmId);
+    batch.setSpecies(Species.POULTRY);
+    batch.setUnitKind(UnitKind.BATCH);
+    batch.setStartDate(LocalDate.now().minusDays(10));
+    batch.setCurrentCount(100);
+    batch.setStatus(UnitStatus.ACTIVE);
+    batch.setCreatedBy(userId);
+    batch.setBreed(breed);
+    batch.setInitialCount(100);
+    em.persist(batch);
     em.flush();
-    closedUnitId = closed.getId();
+    unitId = batch.getId();
+
+    // ── Closed PoultryBatch (broiler) — currentCount=100 (CLOSED guard test) ─
+    PoultryBatch closedBatch = new PoultryBatch();
+    closedBatch.setFarmId(farmId);
+    closedBatch.setSpecies(Species.POULTRY);
+    closedBatch.setUnitKind(UnitKind.BATCH);
+    closedBatch.setStartDate(LocalDate.now().minusDays(30));
+    closedBatch.setEndDate(LocalDate.now().minusDays(1));
+    closedBatch.setCurrentCount(100);
+    closedBatch.setStatus(UnitStatus.CLOSED);
+    closedBatch.setCreatedBy(userId);
+    closedBatch.setBreed(breed);
+    closedBatch.setInitialCount(100);
+    em.persist(closedBatch);
+    em.flush();
+    closedUnitId = closedBatch.getId();
+
+    // ── Layer lot — plain ProductionUnit (no poultry_batches row, POULTRY species)
+    // Used to verify that passing a layer lot as BROILER is rejected (Finding 1).
+    ProductionUnit layer = new ProductionUnit();
+    layer.setFarmId(farmId);
+    layer.setSpecies(Species.POULTRY);
+    layer.setUnitKind(UnitKind.BATCH);
+    layer.setStartDate(LocalDate.now().minusDays(5));
+    layer.setCurrentCount(50);
+    layer.setStatus(UnitStatus.ACTIVE);
+    layer.setCreatedBy(userId);
+    em.persist(layer);
+    em.flush();
+    layerUnitId = layer.getId();
 
     // ── Egg tray stock — full_trays_count=10 ──────────────────────────────────
     EggTrayStock eggStock = new EggTrayStock();
@@ -187,9 +216,20 @@ class ProductionStockIT {
   void consumeProduction_broiler_throws_422_when_unit_is_closed() {
     // closedUnitId has currentCount=100, so the insufficiency guard passes;
     // the CLOSED guard in recordEvent fires (PRODUCTION_UNIT_NOT_OPEN, HTTP 422).
+    // Code must be PRODUCTION_UNIT_NOT_OPEN — not PRODUCTION_INSUFFICIENT — to catch regressions.
     assertThatThrownBy(
             () -> facade.consumeProduction(farmId, ProductType.BROILER, closedUnitId, 30))
-        .isInstanceOf(BusinessRuleException.class);
+        .isInstanceOf(BusinessRuleException.class)
+        .hasFieldOrPropertyWithValue("code", "PRODUCTION_UNIT_NOT_OPEN");
+  }
+
+  @Test
+  void consumeProduction_broiler_throws_422_when_unit_is_layer_lot() {
+    // layerUnitId is a plain ProductionUnit (species=POULTRY, no poultry_batches row).
+    // validateBroilerUnit must reject it with PRODUCTION_TYPE_MISMATCH, not decrement its count.
+    assertThatThrownBy(() -> facade.consumeProduction(farmId, ProductType.BROILER, layerUnitId, 10))
+        .isInstanceOf(BusinessRuleException.class)
+        .hasFieldOrPropertyWithValue("code", "PRODUCTION_TYPE_MISMATCH");
   }
 
   // ── restockProduction ────────────────────────────────────────────────────
