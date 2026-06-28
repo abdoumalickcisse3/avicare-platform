@@ -7,12 +7,13 @@ import com.avicare.livestock.api.LivestockFacade;
 import com.avicare.livestock.api.ProductType;
 import com.avicare.livestock.api.dto.LivestockStats;
 import com.avicare.livestock.api.dto.ProductionUnitInfo;
+import com.avicare.livestock.domain.PoultryBatch;
 import com.avicare.livestock.domain.ProductionUnit;
-import com.avicare.livestock.domain.Species;
 import com.avicare.livestock.domain.UnitStatus;
 import com.avicare.livestock.layer.EggTrayStockService;
 import com.avicare.livestock.repository.DailyEggProductionRepository;
 import com.avicare.livestock.repository.DailyRecordRepository;
+import com.avicare.livestock.repository.EggTrayStockRepository;
 import com.avicare.livestock.repository.LifecycleEventRepository;
 import com.avicare.livestock.repository.ProductionUnitRepository;
 import com.avicare.livestock.repository.TreatmentExecutedRepository;
@@ -40,6 +41,7 @@ public class LivestockFacadeImpl implements LivestockFacade {
   private final TreatmentExecutedRepository treatmentExecutedRepository;
   private final LivestockService livestockService;
   private final EggTrayStockService eggTrayStockService;
+  private final EggTrayStockRepository eggTrayStockRepository;
 
   @Override
   public Optional<ProductionUnitInfo> findUnit(Long unitId) {
@@ -119,8 +121,11 @@ public class LivestockFacadeImpl implements LivestockFacade {
       validateBroilerUnit(farmId, unit);
       return unit.getCurrentCount();
     }
-    // EGGS — farm-wide pool; auto-created with 0 if not yet present
-    return eggTrayStockService.getOrCreateForFarm(farmId).getFullTraysCount();
+    // EGGS — farm-wide pool; 0 if not yet created (pure read, no write on readOnly tx)
+    return eggTrayStockRepository
+        .findByFarmId(farmId)
+        .map(s -> (long) s.getFullTraysCount())
+        .orElse(0L);
   }
 
   @Override
@@ -167,8 +172,10 @@ public class LivestockFacadeImpl implements LivestockFacade {
   }
 
   /**
-   * Validates that {@code unit} belongs to {@code farmId} and is a POULTRY unit (required for
-   * BROILER product type). Throws HTTP-422 on mismatch.
+   * Validates that {@code unit} belongs to {@code farmId} and is a broiler lot (i.e. a {@link
+   * PoultryBatch} subtype — discriminated via JPA JOINED subtype, not species alone, because layer
+   * lots are plain {@code ProductionUnit} rows with {@code species=POULTRY} but no child row in
+   * {@code poultry_batches}). Throws HTTP-422 on mismatch.
    */
   private void validateBroilerUnit(Long farmId, ProductionUnit unit) {
     if (!farmId.equals(unit.getFarmId())) {
@@ -176,14 +183,9 @@ public class LivestockFacadeImpl implements LivestockFacade {
           "PRODUCTION_UNIT_NOT_ON_FARM",
           "Unit " + unit.getId() + " does not belong to farm " + farmId);
     }
-    if (unit.getSpecies() != Species.POULTRY) {
+    if (!(unit instanceof PoultryBatch)) {
       throw new BusinessRuleException(
-          "PRODUCTION_TYPE_MISMATCH",
-          "Unit "
-              + unit.getId()
-              + " has species "
-              + unit.getSpecies()
-              + " but BROILER requires POULTRY");
+          "PRODUCTION_TYPE_MISMATCH", "BROILER requires a PoultryBatch (broiler) unit");
     }
   }
 
