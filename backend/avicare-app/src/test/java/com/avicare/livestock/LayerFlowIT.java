@@ -112,11 +112,13 @@ class LayerFlowIT {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.totalEggsCollected").value(800));
 
-    // Tray stock auto-creates at 0/0, then an adjustment moves it.
+    // Tray stock: auto-credited on production close, then an adjustment moves it further.
+    // egg tray stock auto-credited on production close: floor((collected-broken)/30) (P1.3)
+    // floor((800-10)/30) = floor(790/30) = 26 full trays.
     mockMvc
         .perform(get(base + "/tray-stock").header("Authorization", "Bearer " + owner))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.data.fullTraysCount").value(0))
+        .andExpect(jsonPath("$.data.fullTraysCount").value(26))
         .andExpect(jsonPath("$.data.emptyTraysCount").value(0));
 
     mockMvc
@@ -126,7 +128,7 @@ class LayerFlowIT {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"fullDelta\":50,\"emptyDelta\":20}"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.data.fullTraysCount").value(50))
+        .andExpect(jsonPath("$.data.fullTraysCount").value(76)) // 26 (auto-credited) + 50 delta
         .andExpect(jsonPath("$.data.emptyTraysCount").value(20));
 
     mockMvc
