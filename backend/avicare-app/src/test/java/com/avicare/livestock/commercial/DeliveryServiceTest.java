@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import com.avicare.common.api.exception.BusinessRuleException;
 import com.avicare.common.api.exception.NotFoundException;
+import com.avicare.livestock.api.LivestockFacade;
 import com.avicare.livestock.domain.ArticleSource;
 import com.avicare.livestock.domain.Delivery;
 import com.avicare.livestock.domain.DeliveryStatus;
@@ -45,6 +46,7 @@ class DeliveryServiceTest {
   private OrderService orderService;
   private StockItemService stockItemService;
   private StockMovementService stockMovementService;
+  private LivestockFacade livestockFacade;
   private DeliveryService service;
 
   @BeforeEach
@@ -54,13 +56,15 @@ class DeliveryServiceTest {
     orderService = Mockito.mock(OrderService.class);
     stockItemService = Mockito.mock(StockItemService.class);
     stockMovementService = Mockito.mock(StockMovementService.class);
+    livestockFacade = Mockito.mock(LivestockFacade.class);
     service =
         new DeliveryService(
             deliveryRepository,
             orderRepository,
             orderService,
             stockItemService,
-            stockMovementService);
+            stockMovementService,
+            livestockFacade);
 
     when(deliveryRepository.save(any(Delivery.class))).thenAnswer(inv -> inv.getArgument(0));
     StockItem stockItem = new StockItem();

@@ -188,7 +188,7 @@ class OrderServiceIT {
 
   private static OrderDraftCommand.Line line(String key, String qty, int price) {
     return new OrderDraftCommand.Line(
-        key, ArticleSource.INVENTORY, new BigDecimal(qty), price, null);
+        key, ArticleSource.INVENTORY, new BigDecimal(qty), price, null, null, null);
   }
 
   private long createClient(long farmId) {

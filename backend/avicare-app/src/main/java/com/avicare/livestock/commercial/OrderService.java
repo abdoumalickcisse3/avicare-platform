@@ -3,6 +3,8 @@ package com.avicare.livestock.commercial;
 import com.avicare.common.api.exception.BusinessRuleException;
 import com.avicare.common.api.exception.NotFoundException;
 import com.avicare.common.api.exception.ValidationException;
+import com.avicare.livestock.api.ProductType;
+import com.avicare.livestock.domain.ArticleSource;
 import com.avicare.livestock.domain.Client;
 import com.avicare.livestock.domain.Order;
 import com.avicare.livestock.domain.OrderItem;
@@ -27,10 +29,11 @@ import org.springframework.transaction.annotation.Transactional;
  * Sales order workflow (Sprint B5-1): a strict 5-state machine {@code PENDING → CONFIRMED →
  * IN_PROGRESS → DELIVERED}, with {@code CANCELLED} reachable from any non-terminal state (D23). All
  * transitions are guarded (illegal transition → {@link BusinessRuleException} 422). Order numbers
- * are minted {@code ORD-YYYY-NNN} per farm per year (D24, no lock in V1). Lines reference a
- * sellable PRODUCT-subcategory catalog article; label and unit are snapshot at order time. Totals
- * are HT only (D25). Delivery does NOT touch stock here — that cascade lands in B5-2; {@link
- * #markDelivered} only flips the status. Credit is never checked as a blocker (D26 — see {@link
+ * are minted {@code ORD-YYYY-NNN} per farm per year (D24, no lock in V1). Lines may reference a
+ * sellable PRODUCT-subcategory catalog article (INVENTORY/TREATMENT) or a PRODUCTION unit (D27).
+ * Label and unit are snapshot at order time. Totals are HT only (D25). Delivery does NOT touch
+ * stock here — that cascade lands in B5-2 / D27 via {@link DeliveryService}; {@link #markDelivered}
+ * only flips the status. Credit is never checked as a blocker (D26 — see {@link
  * ClientService#projectCredit}). RBAC is enforced at the controller layer (B5-5).
  */
 @Service
@@ -178,20 +181,30 @@ public class OrderService {
       if (line.unitPriceXof() == null || line.unitPriceXof() < 0) {
         throw new ValidationException("ORDER_LINE_PRICE", "Unit price must be 0 or more");
       }
-      InventoryCatalogItemDto article = catalog.get(line.articleKey());
-      if (article == null) {
-        throw new NotFoundException("ARTICLE_NOT_FOUND", "Unknown article " + line.articleKey());
-      }
-      if (!PRODUCT_SUBCATEGORY.equals(article.subcategory())) {
-        throw new ValidationException(
-            "ARTICLE_NOT_SELLABLE",
-            "Article " + line.articleKey() + " is not a product and cannot be sold");
-      }
       OrderItem item = new OrderItem();
-      item.setArticleKey(line.articleKey());
-      item.setArticleSource(line.articleSource());
-      item.setArticleLabelSnapshot(article.label());
-      item.setUnit(article.unit());
+      if (line.articleSource() == ArticleSource.PRODUCTION) {
+        validateProductionLine(line);
+        item.setArticleKey(line.articleKey());
+        item.setArticleSource(ArticleSource.PRODUCTION);
+        item.setArticleLabelSnapshot(productionLabelFor(line.productType()));
+        item.setUnit(productionUnitFor(line.productType()));
+        item.setProductionUnitId(line.productionUnitId());
+        item.setProductType(line.productType());
+      } else {
+        InventoryCatalogItemDto article = catalog.get(line.articleKey());
+        if (article == null) {
+          throw new NotFoundException("ARTICLE_NOT_FOUND", "Unknown article " + line.articleKey());
+        }
+        if (!PRODUCT_SUBCATEGORY.equals(article.subcategory())) {
+          throw new ValidationException(
+              "ARTICLE_NOT_SELLABLE",
+              "Article " + line.articleKey() + " is not a product and cannot be sold");
+        }
+        item.setArticleKey(line.articleKey());
+        item.setArticleSource(line.articleSource());
+        item.setArticleLabelSnapshot(article.label());
+        item.setUnit(article.unit());
+      }
       item.setQuantity(line.quantity());
       item.setUnitPriceXof(line.unitPriceXof());
       long lineTotal = lineTotal(line.quantity(), line.unitPriceXof());
@@ -201,6 +214,34 @@ public class OrderService {
       total += lineTotal;
     }
     order.setTotalXof(total);
+  }
+
+  private static void validateProductionLine(OrderDraftCommand.Line line) {
+    if (line.productType() == null) {
+      throw new BusinessRuleException(
+          "PRODUCTION_LINE_TYPE_REQUIRED", "productType is required for PRODUCTION lines");
+    }
+    if (line.productType() == ProductType.BROILER && line.productionUnitId() == null) {
+      throw new BusinessRuleException(
+          "PRODUCTION_LINE_UNIT_REQUIRED", "productionUnitId is required for BROILER lines");
+    }
+    if (line.productType() == ProductType.EGGS && line.productionUnitId() != null) {
+      throw new BusinessRuleException(
+          "PRODUCTION_LINE_UNIT_FORBIDDEN", "productionUnitId must be null for EGGS lines");
+    }
+    if (line.quantity().stripTrailingZeros().scale() > 0) {
+      throw new BusinessRuleException(
+          "PRODUCTION_LINE_QUANTITY_INTEGER",
+          "Quantity must be a whole number for PRODUCTION lines");
+    }
+  }
+
+  private static String productionUnitFor(ProductType type) {
+    return type == ProductType.BROILER ? "tête" : "plateau";
+  }
+
+  private static String productionLabelFor(ProductType type) {
+    return type == ProductType.BROILER ? "Poulet de chair" : "Œufs";
   }
 
   private String generateOrderNumber(Long farmId, int year) {

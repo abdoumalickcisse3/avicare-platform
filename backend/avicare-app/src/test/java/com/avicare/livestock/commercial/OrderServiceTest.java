@@ -291,6 +291,6 @@ class OrderServiceTest {
 
   private static OrderDraftCommand.Line line(String articleKey, String qty, int unitPriceXof) {
     return new OrderDraftCommand.Line(
-        articleKey, ArticleSource.INVENTORY, new BigDecimal(qty), unitPriceXof, null);
+        articleKey, ArticleSource.INVENTORY, new BigDecimal(qty), unitPriceXof, null, null, null);
   }
 }

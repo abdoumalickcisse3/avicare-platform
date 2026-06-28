@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import com.avicare.common.api.exception.BusinessRuleException;
 import com.avicare.common.api.exception.NotFoundException;
 import com.avicare.common.api.exception.ValidationException;
+import com.avicare.livestock.api.LivestockFacade;
 import com.avicare.livestock.domain.ArticleSource;
 import com.avicare.livestock.domain.Client;
 import com.avicare.livestock.domain.ClientType;
@@ -50,6 +51,7 @@ class SaleServiceTest {
   private InventoryCatalogService inventoryCatalogService;
   private StockItemService stockItemService;
   private StockMovementService stockMovementService;
+  private LivestockFacade livestockFacade;
   private SaleService service;
 
   @BeforeEach
@@ -59,13 +61,15 @@ class SaleServiceTest {
     inventoryCatalogService = Mockito.mock(InventoryCatalogService.class);
     stockItemService = Mockito.mock(StockItemService.class);
     stockMovementService = Mockito.mock(StockMovementService.class);
+    livestockFacade = Mockito.mock(LivestockFacade.class);
     service =
         new SaleService(
             saleRepository,
             clientRepository,
             inventoryCatalogService,
             stockItemService,
-            stockMovementService);
+            stockMovementService,
+            livestockFacade);
 
     when(saleRepository.save(any(Sale.class))).thenAnswer(inv -> inv.getArgument(0));
     when(clientRepository.findByFarmIdAndId(eq(7L), eq(3L))).thenReturn(Optional.of(client(3L)));
@@ -274,6 +278,6 @@ class SaleServiceTest {
 
   private static SaleCommand.Line line(String articleKey, String qty, int unitPriceXof) {
     return new SaleCommand.Line(
-        articleKey, ArticleSource.INVENTORY, new BigDecimal(qty), unitPriceXof, null);
+        articleKey, ArticleSource.INVENTORY, new BigDecimal(qty), unitPriceXof, null, null, null);
   }
 }

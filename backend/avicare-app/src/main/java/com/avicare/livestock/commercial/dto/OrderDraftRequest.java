@@ -1,5 +1,6 @@
 package com.avicare.livestock.commercial.dto;
 
+import com.avicare.livestock.api.ProductType;
 import com.avicare.livestock.commercial.OrderDraftCommand;
 import com.avicare.livestock.domain.ArticleSource;
 import jakarta.validation.Valid;
@@ -30,10 +31,13 @@ public record OrderDraftRequest(
       @NotNull ArticleSource articleSource,
       @NotNull @Positive BigDecimal quantity,
       @NotNull @PositiveOrZero Integer unitPriceXof,
-      @Size(max = 500) String notes) {
+      @Size(max = 500) String notes,
+      Long productionUnitId,
+      ProductType productType) {
 
     OrderDraftCommand.Line toCommandLine() {
-      return new OrderDraftCommand.Line(articleKey, articleSource, quantity, unitPriceXof, notes);
+      return new OrderDraftCommand.Line(
+          articleKey, articleSource, quantity, unitPriceXof, notes, productionUnitId, productType);
     }
   }
 
