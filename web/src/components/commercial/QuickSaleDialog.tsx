@@ -24,17 +24,25 @@ import { apiErrorMessage } from "@/lib/apiError";
 import { PAYMENT_METHOD_LABELS, PAYMENT_METHOD_OPTIONS } from "@/lib/commercial";
 import { formatCurrency } from "@/lib/format";
 import { colors } from "@/theme/tokens";
-import type { InventoryCatalogItem, PaymentMethod } from "@/types";
+import { useProductionAvailability } from "./useProductionAvailability";
+import type { ArticleSource, InventoryCatalogItem, PaymentMethod, ProductType } from "@/types";
 
 const mono = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" } as const;
 const WALK_IN = "__walk_in__";
 
 interface Line {
+  /** Unique line key: "inv:{articleKey}" | "prod:BROILER:{unitId}" | "prod:EGGS" */
+  key: string;
   articleKey: string;
+  articleSource: ArticleSource;
+  productType?: ProductType;
+  productionUnitId?: number;
   label: string;
   unit: string;
   quantity: number;
   unitPriceXof: number;
+  /** Front-side guard (soft): the backend is the real guard. */
+  max?: number;
 }
 
 /** Pick an icon for a product article from its key/label — small touch of identity. */
@@ -68,6 +76,7 @@ function QuickSaleBody({ onClose, farmId }: { onClose: () => void; farmId: numbe
   const { data: articles, isLoading: articlesLoading } = useGetInventoryArticlesQuery({ farmId });
   const { data: clients } = useGetClientsQuery({ farmId });
   const [createSale, { isLoading: saving }] = useCreateSaleMutation();
+  const { broilerLots, eggsAvailable } = useProductionAvailability(farmId);
 
   const [lines, setLines] = useState<Line[]>([]);
   const [clientId, setClientId] = useState<string>(WALK_IN);
@@ -79,10 +88,12 @@ function QuickSaleBody({ onClose, farmId }: { onClose: () => void; farmId: numbe
   );
 
   const total = lines.reduce((s, l) => s + l.quantity * l.unitPriceXof, 0);
+  const hasOverMax = lines.some((l) => l.max != null && l.quantity > l.max);
 
   const addArticle = (a: InventoryCatalogItem) => {
+    const lineKey = `inv:${a.articleKey}`;
     setLines((cur) => {
-      const i = cur.findIndex((l) => l.articleKey === a.articleKey);
+      const i = cur.findIndex((l) => l.key === lineKey);
       if (i >= 0) {
         const next = [...cur];
         next[i] = { ...next[i], quantity: next[i].quantity + 1 };
@@ -91,7 +102,9 @@ function QuickSaleBody({ onClose, farmId }: { onClose: () => void; farmId: numbe
       return [
         ...cur,
         {
+          key: lineKey,
           articleKey: a.articleKey,
+          articleSource: "INVENTORY",
           label: a.label,
           unit: a.unit ?? "u",
           quantity: 1,
@@ -101,14 +114,68 @@ function QuickSaleBody({ onClose, farmId }: { onClose: () => void; farmId: numbe
     });
   };
 
-  const setQty = (key: string, qty: number) =>
+  const addBroilerLot = (unitId: number, label: string, heads: number) => {
+    const lineKey = `prod:BROILER:${unitId}`;
+    setLines((cur) => {
+      const i = cur.findIndex((l) => l.key === lineKey);
+      if (i >= 0) {
+        const next = [...cur];
+        next[i] = { ...next[i], quantity: next[i].quantity + 1 };
+        return next;
+      }
+      return [
+        ...cur,
+        {
+          key: lineKey,
+          articleKey: "BROILER",
+          articleSource: "PRODUCTION",
+          productType: "BROILER",
+          productionUnitId: unitId,
+          label,
+          unit: "tête",
+          quantity: 1,
+          unitPriceXof: 0,
+          max: heads,
+        },
+      ];
+    });
+  };
+
+  const addEggs = () => {
+    const lineKey = "prod:EGGS";
+    setLines((cur) => {
+      const i = cur.findIndex((l) => l.key === lineKey);
+      if (i >= 0) {
+        const next = [...cur];
+        next[i] = { ...next[i], quantity: next[i].quantity + 1 };
+        return next;
+      }
+      return [
+        ...cur,
+        {
+          key: lineKey,
+          articleKey: "EGGS",
+          articleSource: "PRODUCTION",
+          productType: "EGGS",
+          productionUnitId: undefined,
+          label: "Œufs (plateaux)",
+          unit: "plateau",
+          quantity: 1,
+          unitPriceXof: 0,
+          max: eggsAvailable,
+        },
+      ];
+    });
+  };
+
+  const setQty = (lineKey: string, qty: number) =>
     setLines((cur) =>
       qty <= 0
-        ? cur.filter((l) => l.articleKey !== key)
-        : cur.map((l) => (l.articleKey === key ? { ...l, quantity: qty } : l)),
+        ? cur.filter((l) => l.key !== lineKey)
+        : cur.map((l) => (l.key === lineKey ? { ...l, quantity: qty } : l)),
     );
-  const setPrice = (key: string, price: number) =>
-    setLines((cur) => cur.map((l) => (l.articleKey === key ? { ...l, unitPriceXof: price } : l)));
+  const setPrice = (lineKey: string, price: number) =>
+    setLines((cur) => cur.map((l) => (l.key === lineKey ? { ...l, unitPriceXof: price } : l)));
 
   const submit = async () => {
     if (lines.length === 0) return;
@@ -120,9 +187,12 @@ function QuickSaleBody({ onClose, farmId }: { onClose: () => void; farmId: numbe
           paymentMethod: method,
           lines: lines.map((l) => ({
             articleKey: l.articleKey,
-            articleSource: "INVENTORY",
+            articleSource: l.articleSource,
             quantity: l.quantity,
             unitPriceXof: l.unitPriceXof,
+            ...(l.articleSource === "PRODUCTION"
+              ? { productType: l.productType, productionUnitId: l.productionUnitId }
+              : {}),
           })),
         },
       }).unwrap();
@@ -132,6 +202,8 @@ function QuickSaleBody({ onClose, farmId }: { onClose: () => void; farmId: numbe
       showToast(apiErrorMessage(err), "error");
     }
   };
+
+  const hasProduction = broilerLots.length > 0 || eggsAvailable > 0;
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: { xs: "100%", sm: "auto" } }}>
@@ -220,56 +292,160 @@ function QuickSaleBody({ onClose, farmId }: { onClose: () => void; farmId: numbe
           </Box>
         )}
 
+        {/* Production de la ferme */}
+        {hasProduction && (
+          <Box sx={{ mb: 3 }}>
+            <Typography
+              variant="overline"
+              sx={{ color: colors.neutral[500], display: "block", mb: 1.5 }}
+            >
+              Production de la ferme
+            </Typography>
+            <Box
+              sx={{
+                display: "grid",
+                gap: 1.5,
+                gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(3, 1fr)" },
+              }}
+            >
+              {broilerLots.map((lot) => (
+                <Box
+                  key={lot.unitId}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => addBroilerLot(lot.unitId, lot.label, lot.heads)}
+                  onKeyDown={(e) =>
+                    (e.key === "Enter" || e.key === " ") &&
+                    addBroilerLot(lot.unitId, lot.label, lot.heads)
+                  }
+                  sx={{
+                    cursor: "pointer",
+                    border: `1px solid ${colors.neutral[200]}`,
+                    borderRadius: 3,
+                    p: 2,
+                    transition: "all .12s",
+                    "&:hover": { borderColor: colors.accent[400], bgcolor: colors.accent[50] },
+                  }}
+                >
+                  <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 1 }}>
+                    <Avatar
+                      sx={{ width: 34, height: 34, bgcolor: colors.accent[100], color: colors.accent[700] }}
+                    >
+                      <Drumstick size={18} />
+                    </Avatar>
+                    <Typography sx={{ fontWeight: 600, fontSize: 14, lineHeight: 1.2 }}>
+                      {lot.label}
+                    </Typography>
+                  </Stack>
+                  <Typography variant="caption" sx={{ ...mono, color: colors.neutral[500] }}>
+                    {lot.heads} têtes restantes
+                  </Typography>
+                </Box>
+              ))}
+
+              {eggsAvailable > 0 && (
+                <Box
+                  role="button"
+                  tabIndex={0}
+                  onClick={addEggs}
+                  onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && addEggs()}
+                  sx={{
+                    cursor: "pointer",
+                    border: `1px solid ${colors.neutral[200]}`,
+                    borderRadius: 3,
+                    p: 2,
+                    transition: "all .12s",
+                    "&:hover": { borderColor: colors.accent[400], bgcolor: colors.accent[50] },
+                  }}
+                >
+                  <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 1 }}>
+                    <Avatar
+                      sx={{ width: 34, height: 34, bgcolor: colors.accent[100], color: colors.accent[700] }}
+                    >
+                      <Egg size={18} />
+                    </Avatar>
+                    <Typography sx={{ fontWeight: 600, fontSize: 14, lineHeight: 1.2 }}>
+                      Œufs
+                    </Typography>
+                  </Stack>
+                  <Typography variant="caption" sx={{ ...mono, color: colors.neutral[500] }}>
+                    {eggsAvailable} plateaux disponibles
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          </Box>
+        )}
+
         {/* Cart */}
         {lines.length > 0 && (
-          <Stack spacing={1} sx={{ mb: 2 }}>
+          <Stack spacing={0} sx={{ mb: 2 }}>
             {lines.map((l) => (
-              <Stack
-                key={l.articleKey}
-                direction="row"
-                spacing={1.5}
-                sx={{ alignItems: "center", py: 1, borderBottom: `1px solid ${colors.neutral[100]}` }}
+              <Box
+                key={l.key}
+                sx={{ borderBottom: `1px solid ${colors.neutral[100]}` }}
               >
-                <Typography sx={{ flex: 1, fontWeight: 600 }}>{l.label}</Typography>
-                <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
-                  <IconButton size="small" onClick={() => setQty(l.articleKey, l.quantity - 1)}>
-                    <Minus size={16} />
-                  </IconButton>
+                <Stack
+                  direction="row"
+                  spacing={1.5}
+                  sx={{ alignItems: "center", py: 1 }}
+                >
+                  <Box sx={{ flex: 1 }}>
+                    <Typography sx={{ fontWeight: 600 }}>{l.label}</Typography>
+                    {l.articleSource === "PRODUCTION" && (
+                      <Typography variant="caption" sx={{ color: colors.neutral[500] }}>
+                        {l.unit}
+                      </Typography>
+                    )}
+                  </Box>
+                  <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
+                    <IconButton size="small" onClick={() => setQty(l.key, l.quantity - 1)}>
+                      <Minus size={16} />
+                    </IconButton>
+                    <TextField
+                      value={l.quantity}
+                      onChange={(e) =>
+                        setQty(l.key, Number(e.target.value.replace(/[^0-9]/g, "")) || 0)
+                      }
+                      size="small"
+                      sx={{ width: 56, "& input": { textAlign: "center", ...mono } }}
+                      inputMode="numeric"
+                    />
+                    <IconButton size="small" onClick={() => setQty(l.key, l.quantity + 1)}>
+                      <Plus size={16} />
+                    </IconButton>
+                  </Stack>
                   <TextField
-                    value={l.quantity}
+                    value={l.unitPriceXof}
                     onChange={(e) =>
-                      setQty(l.articleKey, Number(e.target.value.replace(/[^0-9]/g, "")) || 0)
+                      setPrice(l.key, Number(e.target.value.replace(/[^0-9]/g, "")) || 0)
                     }
                     size="small"
-                    sx={{ width: 56, "& input": { textAlign: "center", ...mono } }}
+                    label="PU"
+                    sx={{ width: 96, "& input": { ...mono } }}
                     inputMode="numeric"
                   />
-                  <IconButton size="small" onClick={() => setQty(l.articleKey, l.quantity + 1)}>
-                    <Plus size={16} />
+                  <Typography sx={{ ...mono, width: 96, textAlign: "right", fontWeight: 600 }}>
+                    {formatCurrency(l.quantity * l.unitPriceXof)}
+                  </Typography>
+                  <IconButton
+                    size="small"
+                    aria-label="Retirer"
+                    onClick={() => setQty(l.key, 0)}
+                    sx={{ color: colors.error.main }}
+                  >
+                    <Trash2 size={16} />
                   </IconButton>
                 </Stack>
-                <TextField
-                  value={l.unitPriceXof}
-                  onChange={(e) =>
-                    setPrice(l.articleKey, Number(e.target.value.replace(/[^0-9]/g, "")) || 0)
-                  }
-                  size="small"
-                  label="PU"
-                  sx={{ width: 96, "& input": { ...mono } }}
-                  inputMode="numeric"
-                />
-                <Typography sx={{ ...mono, width: 96, textAlign: "right", fontWeight: 600 }}>
-                  {formatCurrency(l.quantity * l.unitPriceXof)}
-                </Typography>
-                <IconButton
-                  size="small"
-                  aria-label="Retirer"
-                  onClick={() => setQty(l.articleKey, 0)}
-                  sx={{ color: colors.error.main }}
-                >
-                  <Trash2 size={16} />
-                </IconButton>
-              </Stack>
+                {l.max != null && l.quantity > l.max && (
+                  <Typography
+                    variant="caption"
+                    sx={{ color: colors.error.main, display: "block", pb: 0.5 }}
+                  >
+                    Dépasse le disponible ({l.max})
+                  </Typography>
+                )}
+              </Box>
             ))}
           </Stack>
         )}
@@ -303,7 +479,7 @@ function QuickSaleBody({ onClose, farmId }: { onClose: () => void; farmId: numbe
             variant="contained"
             size="large"
             onClick={submit}
-            disabled={lines.length === 0 || saving}
+            disabled={lines.length === 0 || saving || hasOverMax}
             sx={{ px: 4, py: 1.5 }}
           >
             Valider la vente

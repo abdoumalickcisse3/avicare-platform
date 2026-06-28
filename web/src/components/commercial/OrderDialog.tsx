@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
+  ListSubheader,
   MenuItem,
   Stack,
   TextField,
@@ -23,15 +24,24 @@ import { useToast } from "@/components/feedback/ToastProvider";
 import { apiErrorMessage } from "@/lib/apiError";
 import { formatCurrency } from "@/lib/format";
 import { colors } from "@/theme/tokens";
+import { useProductionAvailability } from "./useProductionAvailability";
+import type { ArticleSource, ProductType } from "@/types";
 
 const mono = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" } as const;
 
 interface Line {
+  /** Unique line key: "inv:{articleKey}" | "prod:BROILER:{unitId}" | "prod:EGGS" */
+  key: string;
   articleKey: string;
+  articleSource: ArticleSource;
+  productType?: ProductType;
+  productionUnitId?: number;
   label: string;
   unit: string;
   quantity: number;
   unitPriceXof: number;
+  /** Front-side guard (soft): the backend is the real guard. */
+  max?: number;
 }
 
 export function OrderDialog({
@@ -65,6 +75,7 @@ function OrderBody({
   const { data: articles } = useGetInventoryArticlesQuery({ farmId });
   const { data: clients } = useGetClientsQuery({ farmId });
   const [createOrder, { isLoading: saving }] = useCreateOrderMutation();
+  const { broilerLots, eggsAvailable } = useProductionAvailability(farmId);
 
   const [clientId, setClientId] = useState(defaultClientId != null ? String(defaultClientId) : "");
   const [expectedDate, setExpectedDate] = useState("");
@@ -78,14 +89,76 @@ function OrderBody({
     [articles],
   );
   const total = lines.reduce((s, l) => s + l.quantity * l.unitPriceXof, 0);
+  const hasOverMax = lines.some((l) => l.max != null && l.quantity > l.max);
 
-  const addLine = (articleKey: string) => {
-    const a = products.find((p) => p.articleKey === articleKey);
-    if (!a || lines.some((l) => l.articleKey === articleKey)) return;
+  const addLine = (value: string) => {
+    if (!value) return;
+
+    if (value.startsWith("prod:BROILER:")) {
+      const unitId = Number(value.slice("prod:BROILER:".length));
+      const lot = broilerLots.find((b) => b.unitId === unitId);
+      if (!lot) return;
+      const lineKey = value;
+      if (lines.some((l) => l.key === lineKey)) {
+        setPicker("");
+        return;
+      }
+      setLines((cur) => [
+        ...cur,
+        {
+          key: lineKey,
+          articleKey: "BROILER",
+          articleSource: "PRODUCTION",
+          productType: "BROILER",
+          productionUnitId: unitId,
+          label: lot.label,
+          unit: "tête",
+          quantity: 1,
+          unitPriceXof: 0,
+          max: lot.heads,
+        },
+      ]);
+      setPicker("");
+      return;
+    }
+
+    if (value === "prod:EGGS") {
+      const lineKey = "prod:EGGS";
+      if (lines.some((l) => l.key === lineKey)) {
+        setPicker("");
+        return;
+      }
+      setLines((cur) => [
+        ...cur,
+        {
+          key: lineKey,
+          articleKey: "EGGS",
+          articleSource: "PRODUCTION",
+          productType: "EGGS",
+          productionUnitId: undefined,
+          label: "Œufs (plateaux)",
+          unit: "plateau",
+          quantity: 1,
+          unitPriceXof: 0,
+          max: eggsAvailable,
+        },
+      ]);
+      setPicker("");
+      return;
+    }
+
+    // Inventory article
+    const a = products.find((p) => p.articleKey === value);
+    if (!a || lines.some((l) => l.key === `inv:${a.articleKey}`)) {
+      setPicker("");
+      return;
+    }
     setLines((cur) => [
       ...cur,
       {
+        key: `inv:${a.articleKey}`,
         articleKey: a.articleKey,
+        articleSource: "INVENTORY",
         label: a.label,
         unit: a.unit ?? "u",
         quantity: 1,
@@ -94,9 +167,10 @@ function OrderBody({
     ]);
     setPicker("");
   };
-  const patch = (key: string, p: Partial<Line>) =>
-    setLines((cur) => cur.map((l) => (l.articleKey === key ? { ...l, ...p } : l)));
-  const remove = (key: string) => setLines((cur) => cur.filter((l) => l.articleKey !== key));
+
+  const patch = (lineKey: string, p: Partial<Line>) =>
+    setLines((cur) => cur.map((l) => (l.key === lineKey ? { ...l, ...p } : l)));
+  const remove = (lineKey: string) => setLines((cur) => cur.filter((l) => l.key !== lineKey));
 
   const submit = async () => {
     try {
@@ -109,9 +183,12 @@ function OrderBody({
           notes: notes || undefined,
           lines: lines.map((l) => ({
             articleKey: l.articleKey,
-            articleSource: "INVENTORY",
+            articleSource: l.articleSource,
             quantity: l.quantity,
             unitPriceXof: l.unitPriceXof,
+            ...(l.articleSource === "PRODUCTION"
+              ? { productType: l.productType, productionUnitId: l.productionUnitId }
+              : {}),
           })),
         },
       }).unwrap();
@@ -122,7 +199,9 @@ function OrderBody({
     }
   };
 
-  const canSubmit = clientId !== "" && lines.length > 0 && !saving;
+  const canSubmit = clientId !== "" && lines.length > 0 && !saving && !hasOverMax;
+
+  const hasProduction = broilerLots.length > 0 || eggsAvailable > 0;
 
   return (
     <>
@@ -170,59 +249,99 @@ function OrderBody({
               value={picker}
               onChange={(e) => addLine(e.target.value)}
               fullWidth
-              helperText={products.length === 0 ? "Aucun produit dans la bibliothèque" : undefined}
+              helperText={
+                products.length === 0 && !hasProduction
+                  ? "Aucun produit dans la bibliothèque"
+                  : undefined
+              }
             >
+              {/* Inventory products */}
+              {products.length > 0 && (
+                <ListSubheader>Inventaire</ListSubheader>
+              )}
               {products
-                .filter((p) => !lines.some((l) => l.articleKey === p.articleKey))
+                .filter((p) => !lines.some((l) => l.key === `inv:${p.articleKey}`))
                 .map((p) => (
                   <MenuItem key={p.articleKey} value={p.articleKey}>
                     {p.label} — {formatCurrency(p.typicalUnitPriceXof ?? 0)}/{p.unit ?? "u"}
                   </MenuItem>
                 ))}
+
+              {/* Production options */}
+              {hasProduction && (
+                <ListSubheader>Production de la ferme</ListSubheader>
+              )}
+              {broilerLots
+                .filter((lot) => !lines.some((l) => l.key === `prod:BROILER:${lot.unitId}`))
+                .map((lot) => (
+                  <MenuItem key={`prod:BROILER:${lot.unitId}`} value={`prod:BROILER:${lot.unitId}`}>
+                    Lot {lot.label} — {lot.heads} têtes
+                  </MenuItem>
+                ))}
+              {eggsAvailable > 0 && !lines.some((l) => l.key === "prod:EGGS") && (
+                <MenuItem value="prod:EGGS">
+                  Œufs — {eggsAvailable} plateaux
+                </MenuItem>
+              )}
             </TextField>
 
             {lines.length > 0 && (
-              <Stack spacing={1} sx={{ mt: 2 }}>
+              <Stack spacing={0} sx={{ mt: 2 }}>
                 {lines.map((l) => (
-                  <Stack
-                    key={l.articleKey}
-                    direction="row"
-                    spacing={1.5}
-                    sx={{ alignItems: "center" }}
+                  <Box
+                    key={l.key}
+                    sx={{ borderBottom: `1px solid ${colors.neutral[100]}`, pb: 0.5, mb: 0.5 }}
                   >
-                    <Typography sx={{ flex: 1, fontWeight: 600 }}>{l.label}</Typography>
-                    <TextField
-                      label="Qté"
-                      value={l.quantity}
-                      onChange={(e) =>
-                        patch(l.articleKey, { quantity: Number(e.target.value.replace(/[^0-9]/g, "")) || 0 })
-                      }
-                      size="small"
-                      sx={{ width: 80, "& input": { ...mono, textAlign: "center" } }}
-                      inputMode="numeric"
-                    />
-                    <TextField
-                      label="PU"
-                      value={l.unitPriceXof}
-                      onChange={(e) =>
-                        patch(l.articleKey, { unitPriceXof: Number(e.target.value.replace(/[^0-9]/g, "")) || 0 })
-                      }
-                      size="small"
-                      sx={{ width: 110, "& input": mono }}
-                      inputMode="numeric"
-                    />
-                    <Typography sx={{ ...mono, width: 110, textAlign: "right", fontWeight: 600 }}>
-                      {formatCurrency(l.quantity * l.unitPriceXof)}
-                    </Typography>
-                    <IconButton
-                      size="small"
-                      aria-label="Retirer"
-                      onClick={() => remove(l.articleKey)}
-                      sx={{ color: colors.error.main }}
-                    >
-                      <Trash2 size={16} />
-                    </IconButton>
-                  </Stack>
+                    <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography sx={{ fontWeight: 600 }}>{l.label}</Typography>
+                        {l.articleSource === "PRODUCTION" && (
+                          <Typography variant="caption" sx={{ color: colors.neutral[500] }}>
+                            {l.unit}
+                          </Typography>
+                        )}
+                      </Box>
+                      <TextField
+                        label="Qté"
+                        value={l.quantity}
+                        onChange={(e) =>
+                          patch(l.key, { quantity: Number(e.target.value.replace(/[^0-9]/g, "")) || 0 })
+                        }
+                        size="small"
+                        sx={{ width: 80, "& input": { ...mono, textAlign: "center" } }}
+                        inputMode="numeric"
+                      />
+                      <TextField
+                        label="PU"
+                        value={l.unitPriceXof}
+                        onChange={(e) =>
+                          patch(l.key, { unitPriceXof: Number(e.target.value.replace(/[^0-9]/g, "")) || 0 })
+                        }
+                        size="small"
+                        sx={{ width: 110, "& input": mono }}
+                        inputMode="numeric"
+                      />
+                      <Typography sx={{ ...mono, width: 110, textAlign: "right", fontWeight: 600 }}>
+                        {formatCurrency(l.quantity * l.unitPriceXof)}
+                      </Typography>
+                      <IconButton
+                        size="small"
+                        aria-label="Retirer"
+                        onClick={() => remove(l.key)}
+                        sx={{ color: colors.error.main }}
+                      >
+                        <Trash2 size={16} />
+                      </IconButton>
+                    </Stack>
+                    {l.max != null && l.quantity > l.max && (
+                      <Typography
+                        variant="caption"
+                        sx={{ color: colors.error.main, display: "block" }}
+                      >
+                        Dépasse le disponible ({l.max})
+                      </Typography>
+                    )}
+                  </Box>
                 ))}
               </Stack>
             )}
