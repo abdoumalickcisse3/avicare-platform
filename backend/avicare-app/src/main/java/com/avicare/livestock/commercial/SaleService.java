@@ -3,6 +3,9 @@ package com.avicare.livestock.commercial;
 import com.avicare.common.api.exception.BusinessRuleException;
 import com.avicare.common.api.exception.NotFoundException;
 import com.avicare.common.api.exception.ValidationException;
+import com.avicare.livestock.api.LivestockFacade;
+import com.avicare.livestock.api.ProductType;
+import com.avicare.livestock.domain.ArticleSource;
 import com.avicare.livestock.domain.Client;
 import com.avicare.livestock.domain.MovementReason;
 import com.avicare.livestock.domain.MovementType;
@@ -32,13 +35,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Direct (cash) sales (Sprint B5-2, Décision D22). A sale is immediate: it is created {@code
- * COMPLETED} and decrements PRODUCT stock right away with one OUT movement per line ({@code
- * reason=SALE}, D21) through {@link StockMovementService} — atomically (if any movement fails the
- * whole sale rolls back). Stock may go negative (D19, non-blocking). The client is optional (null =
- * walk-in cash sale). Sale numbers are minted {@code V-YYYY-NNN} per farm per year (D24); amounts
- * are HT only (D25). The client balance is NOT touched here (only by payments, B5-4, D26).
- * Cancelling a sale reverses the stock with compensating IN movements. RBAC is enforced at the
- * controller layer (B5-5).
+ * COMPLETED} and decrements PRODUCT stock right away — either via {@link LivestockFacade}
+ * (PRODUCTION lines, D27 blocking) or via {@link StockMovementService} (INVENTORY/TREATMENT lines,
+ * D18/D19 non-blocking) — atomically per line. The client is optional (null = walk-in cash sale).
+ * Sale numbers are minted {@code V-YYYY-NNN} per farm per year (D24); amounts are HT only (D25).
+ * The client balance is NOT touched here (only by payments, B5-4, D26). Cancelling a sale reverses
+ * the stock symmetrically. RBAC is enforced at the controller layer (B5-5).
  */
 @Service
 @RequiredArgsConstructor
@@ -51,6 +53,7 @@ public class SaleService {
   private final InventoryCatalogService inventoryCatalogService;
   private final StockItemService stockItemService;
   private final StockMovementService stockMovementService;
+  private final LivestockFacade livestockFacade;
 
   @Transactional
   public Sale create(Long farmId, SaleCommand cmd, Long userId) {
@@ -69,25 +72,33 @@ public class SaleService {
     applyLines(sale, cmd.lines());
     Sale saved = saleRepository.save(sale);
 
-    // D21: decrement stock — one OUT movement (reason SALE) per line, backref'd to the sale.
+    // D21 / D27: decrement stock per line — PRODUCTION via facade (blocking), others via inventory.
     for (SaleItem item : saved.getItems()) {
-      recordStockMovement(
-          farmId,
-          item.getArticleSource(),
-          item.getArticleKey(),
-          MovementType.OUT,
-          MovementReason.SALE,
-          item.getQuantity(),
-          item.getUnitPriceXof(),
-          saved.getSaleDate(),
-          "Sale " + saved.getSaleNumber(),
-          saved.getId(),
-          userId);
+      if (item.getArticleSource() == ArticleSource.PRODUCTION) {
+        livestockFacade.consumeProduction(
+            farmId,
+            item.getProductType(),
+            item.getProductionUnitId(),
+            item.getQuantity().longValueExact());
+      } else {
+        recordStockMovement(
+            farmId,
+            item.getArticleSource(),
+            item.getArticleKey(),
+            MovementType.OUT,
+            MovementReason.SALE,
+            item.getQuantity(),
+            item.getUnitPriceXof(),
+            saved.getSaleDate(),
+            "Sale " + saved.getSaleNumber(),
+            saved.getId(),
+            userId);
+      }
     }
     return saved;
   }
 
-  /** COMPLETED → CANCELLED, reversing the stock with compensating IN movements. */
+  /** COMPLETED → CANCELLED, reversing the stock with compensating IN movements / restocks. */
   @Transactional
   public Sale cancel(Long farmId, Long saleId, String reason, Long userId) {
     Sale sale = load(farmId, saleId);
@@ -96,18 +107,26 @@ public class SaleService {
           "INVALID_SALE_TRANSITION", "Cannot cancel a sale in status " + sale.getStatus());
     }
     for (SaleItem item : sale.getItems()) {
-      recordStockMovement(
-          farmId,
-          item.getArticleSource(),
-          item.getArticleKey(),
-          MovementType.IN,
-          MovementReason.ERROR_CORRECTION,
-          item.getQuantity(),
-          item.getUnitPriceXof(),
-          LocalDate.now(),
-          "Cancel sale " + sale.getSaleNumber(),
-          sale.getId(),
-          userId);
+      if (item.getArticleSource() == ArticleSource.PRODUCTION) {
+        livestockFacade.restockProduction(
+            farmId,
+            item.getProductType(),
+            item.getProductionUnitId(),
+            item.getQuantity().longValueExact());
+      } else {
+        recordStockMovement(
+            farmId,
+            item.getArticleSource(),
+            item.getArticleKey(),
+            MovementType.IN,
+            MovementReason.ERROR_CORRECTION,
+            item.getQuantity(),
+            item.getUnitPriceXof(),
+            LocalDate.now(),
+            "Cancel sale " + sale.getSaleNumber(),
+            sale.getId(),
+            userId);
+      }
     }
     sale.setStatus(SaleStatus.CANCELLED);
     sale.setCancelledBy(userId);
@@ -162,20 +181,30 @@ public class SaleService {
       if (line.unitPriceXof() == null || line.unitPriceXof() < 0) {
         throw new ValidationException("SALE_LINE_PRICE", "Unit price must be 0 or more");
       }
-      InventoryCatalogItemDto article = catalog.get(line.articleKey());
-      if (article == null) {
-        throw new NotFoundException("ARTICLE_NOT_FOUND", "Unknown article " + line.articleKey());
-      }
-      if (!PRODUCT_SUBCATEGORY.equals(article.subcategory())) {
-        throw new ValidationException(
-            "ARTICLE_NOT_SELLABLE",
-            "Article " + line.articleKey() + " is not a product and cannot be sold");
-      }
       SaleItem item = new SaleItem();
-      item.setArticleKey(line.articleKey());
-      item.setArticleSource(line.articleSource());
-      item.setArticleLabelSnapshot(article.label());
-      item.setUnit(article.unit());
+      if (line.articleSource() == ArticleSource.PRODUCTION) {
+        validateProductionLine(line);
+        item.setArticleKey(line.articleKey());
+        item.setArticleSource(ArticleSource.PRODUCTION);
+        item.setArticleLabelSnapshot(productionLabelFor(line.productType()));
+        item.setUnit(productionUnitFor(line.productType()));
+        item.setProductionUnitId(line.productionUnitId());
+        item.setProductType(line.productType());
+      } else {
+        InventoryCatalogItemDto article = catalog.get(line.articleKey());
+        if (article == null) {
+          throw new NotFoundException("ARTICLE_NOT_FOUND", "Unknown article " + line.articleKey());
+        }
+        if (!PRODUCT_SUBCATEGORY.equals(article.subcategory())) {
+          throw new ValidationException(
+              "ARTICLE_NOT_SELLABLE",
+              "Article " + line.articleKey() + " is not a product and cannot be sold");
+        }
+        item.setArticleKey(line.articleKey());
+        item.setArticleSource(line.articleSource());
+        item.setArticleLabelSnapshot(article.label());
+        item.setUnit(article.unit());
+      }
       item.setQuantity(line.quantity());
       item.setUnitPriceXof(line.unitPriceXof());
       long lineTotal = lineTotal(line.quantity(), line.unitPriceXof());
@@ -185,6 +214,34 @@ public class SaleService {
       total += lineTotal;
     }
     sale.setTotalXof(total);
+  }
+
+  private static void validateProductionLine(SaleCommand.Line line) {
+    if (line.productType() == null) {
+      throw new BusinessRuleException(
+          "PRODUCTION_LINE_TYPE_REQUIRED", "productType is required for PRODUCTION lines");
+    }
+    if (line.productType() == ProductType.BROILER && line.productionUnitId() == null) {
+      throw new BusinessRuleException(
+          "PRODUCTION_LINE_UNIT_REQUIRED", "productionUnitId is required for BROILER lines");
+    }
+    if (line.productType() == ProductType.EGGS && line.productionUnitId() != null) {
+      throw new BusinessRuleException(
+          "PRODUCTION_LINE_UNIT_FORBIDDEN", "productionUnitId must be null for EGGS lines");
+    }
+    if (line.quantity().stripTrailingZeros().scale() > 0) {
+      throw new BusinessRuleException(
+          "PRODUCTION_LINE_QUANTITY_INTEGER",
+          "Quantity must be a whole number for PRODUCTION lines");
+    }
+  }
+
+  private static String productionUnitFor(ProductType type) {
+    return type == ProductType.BROILER ? "tête" : "plateau";
+  }
+
+  private static String productionLabelFor(ProductType type) {
+    return type == ProductType.BROILER ? "Poulet de chair" : "Œufs";
   }
 
   private void recordStockMovement(

@@ -1,5 +1,6 @@
 package com.avicare.livestock.commercial.dto;
 
+import com.avicare.livestock.api.ProductType;
 import com.avicare.livestock.commercial.SaleCommand;
 import com.avicare.livestock.domain.ArticleSource;
 import jakarta.validation.Valid;
@@ -26,10 +27,13 @@ public record SaleRequest(
       @NotNull ArticleSource articleSource,
       @NotNull @Positive BigDecimal quantity,
       @NotNull @PositiveOrZero Integer unitPriceXof,
-      @Size(max = 500) String notes) {
+      @Size(max = 500) String notes,
+      Long productionUnitId,
+      ProductType productType) {
 
     SaleCommand.Line toCommandLine() {
-      return new SaleCommand.Line(articleKey, articleSource, quantity, unitPriceXof, notes);
+      return new SaleCommand.Line(
+          articleKey, articleSource, quantity, unitPriceXof, notes, productionUnitId, productType);
     }
   }
 

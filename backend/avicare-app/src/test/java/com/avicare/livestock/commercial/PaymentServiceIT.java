@@ -126,7 +126,8 @@ class PaymentServiceIT {
   }
 
   private static SaleCommand.Line line(String key, String qty, int price) {
-    return new SaleCommand.Line(key, ArticleSource.INVENTORY, new BigDecimal(qty), price, null);
+    return new SaleCommand.Line(
+        key, ArticleSource.INVENTORY, new BigDecimal(qty), price, null, null, null);
   }
 
   private long createClient(long farmId) {

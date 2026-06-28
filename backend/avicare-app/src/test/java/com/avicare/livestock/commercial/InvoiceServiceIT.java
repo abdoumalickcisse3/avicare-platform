@@ -144,12 +144,13 @@ class InvoiceServiceIT {
   }
 
   private static SaleCommand.Line saleLine(String key, String qty, int price) {
-    return new SaleCommand.Line(key, ArticleSource.INVENTORY, new BigDecimal(qty), price, null);
+    return new SaleCommand.Line(
+        key, ArticleSource.INVENTORY, new BigDecimal(qty), price, null, null, null);
   }
 
   private static OrderDraftCommand.Line orderLine(String key, String qty, int price) {
     return new OrderDraftCommand.Line(
-        key, ArticleSource.INVENTORY, new BigDecimal(qty), price, null);
+        key, ArticleSource.INVENTORY, new BigDecimal(qty), price, null, null, null);
   }
 
   private long createClient(long farmId) {
