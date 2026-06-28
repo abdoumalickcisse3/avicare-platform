@@ -11,6 +11,7 @@ import com.avicare.livestock.domain.ArticleSource;
 import com.avicare.livestock.domain.ClientType;
 import com.avicare.livestock.domain.Sale;
 import com.avicare.livestock.domain.Species;
+import com.avicare.livestock.inventory.StockItemService;
 import com.avicare.livestock.layer.EggTrayStockService;
 import com.avicare.livestock.layer.EggTrayStockUpdate;
 import com.avicare.livestock.poultry.PoultryBatchCreate;
@@ -77,6 +78,7 @@ class CommercialProductionIT {
   @Autowired private ProductionUnitRepository productionUnitRepository;
   @Autowired private EggTrayStockRepository eggTrayStockRepository;
   @Autowired private SaleRepository saleRepository;
+  @Autowired private StockItemService stockItemService;
 
   // ── Case 1: direct BROILER sale decrements current_count ────────────
 
@@ -301,6 +303,50 @@ class CommercialProductionIT {
         .hasFieldOrPropertyWithValue("code", "PRODUCTION_LINE_QUANTITY_INTEGER");
   }
 
+  // ── Case 7: mixed sale (inventory + production oversell) → global rollback ──
+
+  @Test
+  void mixedSale_productionOversell_rollsBackInventoryToo() throws Exception {
+    FarmContext ctx = createFarm("mixedrollback." + System.nanoTime() + "@prod.io");
+    Long unitId = createBatch(ctx.farmId(), ctx.userId(), 10);
+
+    // Capture inventory stock BEFORE (creates the row at qty=0 on first access)
+    BigDecimal stockBefore =
+        stockItemService
+            .createOrGet(ctx.farmId(), ArticleSource.INVENTORY, "chicken_meat", ctx.userId())
+            .getCurrentQuantity();
+
+    // 2-line sale: line 1 = INVENTORY qty=3 (OK); line 2 = BROILER qty=50 > 10 (oversell)
+    assertThatThrownBy(
+            () ->
+                saleService.create(
+                    ctx.farmId(),
+                    new SaleCommand(
+                        null,
+                        null,
+                        "CASH",
+                        null,
+                        List.of(
+                            inventoryLine("chicken_meat", 3, 2500), broilerLine(unitId, 50, 5000))),
+                    ctx.userId()))
+        .isInstanceOf(BusinessRuleException.class)
+        .hasFieldOrPropertyWithValue("code", "PRODUCTION_INSUFFICIENT");
+
+    // Production count must be unchanged
+    assertThat(productionUnitRepository.findById(unitId).orElseThrow().getCurrentCount())
+        .isEqualTo(10);
+
+    // Inventory OUT from line 1 must have been rolled back with the transaction
+    assertThat(
+            stockItemService
+                .createOrGet(ctx.farmId(), ArticleSource.INVENTORY, "chicken_meat", ctx.userId())
+                .getCurrentQuantity())
+        .isEqualByComparingTo(stockBefore);
+
+    // No sale must be persisted for this farm
+    assertThat(saleRepository.findByFarmIdOrderBySaleDateDescIdDesc(ctx.farmId())).isEmpty();
+  }
+
   // ── helpers ──────────────────────────────────────────────────────────
 
   private record FarmContext(long farmId, long userId) {}
@@ -366,6 +412,11 @@ class CommercialProductionIT {
                 ClientType.BUSINESS, "Client Test", null, null, null, null, null, null, null, null),
             userId)
         .getId();
+  }
+
+  private static SaleCommand.Line inventoryLine(String key, int qty, int price) {
+    return new SaleCommand.Line(
+        key, ArticleSource.INVENTORY, BigDecimal.valueOf(qty), price, null, null, null);
   }
 
   private static SaleCommand.Line broilerLine(Long unitId, int qty, int price) {
