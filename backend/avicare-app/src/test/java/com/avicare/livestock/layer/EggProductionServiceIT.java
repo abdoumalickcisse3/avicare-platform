@@ -12,6 +12,7 @@ import com.avicare.livestock.domain.Species;
 import com.avicare.livestock.poultry.PoultryBatchCreate;
 import com.avicare.livestock.poultry.PoultryBatchService;
 import com.avicare.livestock.repository.BreedRepository;
+import com.avicare.livestock.repository.EggTrayStockRepository;
 import com.avicare.livestock.repository.LifecycleEventRepository;
 import com.avicare.tenancy.domain.Farm;
 import jakarta.persistence.EntityManager;
@@ -54,11 +55,13 @@ class EggProductionServiceIT {
   @Autowired private EggProductionService eggProductionService;
   @Autowired private EggCollectionService eggCollectionService;
   @Autowired private LifecycleEventRepository lifecycleEventRepository;
+  @Autowired private EggTrayStockRepository eggTrayStockRepository;
   @Autowired private PoultryBatchService poultryBatchService;
   @Autowired private BreedRepository breedRepository;
   @Autowired private EntityManager em;
 
   private long userId;
+  private long farmId;
 
   private long createLayerUnit(int count) {
     User u = new User();
@@ -73,6 +76,7 @@ class EggProductionServiceIT {
     f.setCreatedBy(u.getId());
     em.persist(f);
     em.flush();
+    farmId = f.getId();
 
     long breedId =
         breedRepository
@@ -185,5 +189,30 @@ class EggProductionServiceIT {
     assertThat(lifecycleEventRepository.findByProductionUnitId(unitId))
         .extracting(LifecycleEvent::getEventType)
         .contains(EggProductionService.EVENT_DAILY_PRODUCTION_CLOSED);
+  }
+
+  /**
+   * P1.3 — closing a day with collected=95, broken=5 (90 good eggs) on a farm that starts at 0
+   * trays must credit floor(90/30)=3 full trays. A re-close of the same day (idempotent path) must
+   * NOT double-credit.
+   */
+  @Test
+  void closeDay_creditsEggTrayStockOnFirstClose_andNotOnReclose() {
+    long unitId = createLayerUnit(500);
+    collect(unitId, "morning", 95, 5, Map.of());
+
+    // farm starts with no tray-stock row (auto-created at 0 by adjustStock)
+    eggProductionService.closeDay(unitId, DAY, userId);
+
+    int fullTrays = eggTrayStockRepository.findByFarmId(farmId).orElseThrow().getFullTraysCount();
+    assertThat(fullTrays).as("floor((95-5)/30) = 3 full trays credited").isEqualTo(3);
+
+    // Re-close with an additional collection: must NOT credit again
+    collect(unitId, "evening", 30, 0, Map.of());
+    eggProductionService.closeDay(unitId, DAY, userId);
+
+    int afterReclose =
+        eggTrayStockRepository.findByFarmId(farmId).orElseThrow().getFullTraysCount();
+    assertThat(afterReclose).as("re-close must not double-credit").isEqualTo(3);
   }
 }

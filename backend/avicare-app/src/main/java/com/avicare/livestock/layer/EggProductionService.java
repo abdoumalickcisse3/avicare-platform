@@ -5,6 +5,7 @@ import com.avicare.livestock.domain.DailyEggProduction;
 import com.avicare.livestock.domain.EggCollection;
 import com.avicare.livestock.domain.LifecycleEvent;
 import com.avicare.livestock.domain.ProductionUnit;
+import com.avicare.livestock.production.ProductionStockMath;
 import com.avicare.livestock.repository.DailyEggProductionRepository;
 import com.avicare.livestock.repository.EggCollectionRepository;
 import com.avicare.livestock.repository.LifecycleEventRepository;
@@ -42,6 +43,7 @@ public class EggProductionService {
   private final EggCollectionRepository eggCollectionRepository;
   private final LifecycleEventRepository lifecycleEventRepository;
   private final LivestockService livestockService;
+  private final EggTrayStockService eggTrayStockService;
 
   @Transactional
   public DailyEggProduction closeDay(Long unitId, LocalDate date, Long closedByUserId) {
@@ -63,6 +65,9 @@ public class EggProductionService {
         dailyEggProductionRepository
             .findByProductionUnitIdAndProductionDate(unitId, date)
             .orElseGet(DailyEggProduction::new);
+
+    // Guard: only credit tray stock on the FIRST close (not on idempotent re-closes).
+    boolean isFirstClose = snapshot.getId() == null;
 
     snapshot.setProductionUnit(unit);
     snapshot.setProductionDate(date);
@@ -93,6 +98,12 @@ public class EggProductionService {
             String.valueOf(saved.getLayingRatePct())));
     event.setCreatedBy(closedByUserId);
     lifecycleEventRepository.save(event);
+
+    // Auto-credit egg tray stock from production (same transaction, first close only).
+    if (isFirstClose) {
+      eggTrayStockService.adjustStock(
+          unit.getFarmId(), ProductionStockMath.goodEggsToTrays(totalEggs, totalBroken), 0);
+    }
 
     return saved;
   }
