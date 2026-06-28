@@ -34,6 +34,8 @@ public class LivestockService {
   public static final String EVENT_MORTALITY = "MORTALITY";
   public static final String EVENT_COUNT_ADJUSTMENT = "COUNT_ADJUSTMENT";
   public static final String EVENT_CREATED = "CREATED";
+  public static final String EVENT_SALE = "SALE";
+  public static final String EVENT_SALE_CANCEL = "SALE_CANCEL";
 
   private final ProductionUnitRepository productionUnitRepository;
   private final LifecycleEventRepository lifecycleEventRepository;
@@ -173,6 +175,36 @@ public class LivestockService {
     ProductionUnit unit = getUnit(unitId);
     int delta = newCount - unit.getCurrentCount();
     return recordEvent(unitId, EVENT_COUNT_ADJUSTMENT, delta, reason, Map.of(), userId);
+  }
+
+  /**
+   * Decrement the unit's head count by {@code heads} for a sale (D27 blocking): throws {@link
+   * BusinessRuleException} with code {@code PRODUCTION_INSUFFICIENT} if there are fewer heads
+   * available, or {@code PRODUCTION_UNIT_NOT_OPEN} if the unit is CLOSED/CANCELLED.
+   */
+  @Transactional
+  public LifecycleEvent consumeHeads(Long unitId, long heads, Long userId) {
+    ProductionUnit unit = getUnit(unitId);
+    if (unit.getCurrentCount() < heads) {
+      throw new BusinessRuleException(
+          "PRODUCTION_INSUFFICIENT",
+          "Requested "
+              + heads
+              + " heads but only "
+              + unit.getCurrentCount()
+              + " available in unit "
+              + unitId);
+    }
+    return recordEvent(unitId, EVENT_SALE, -(int) heads, "sale", Map.of(), userId);
+  }
+
+  /**
+   * Re-increment the unit's head count by {@code heads} to cancel a previous sale (SALE_CANCEL
+   * event). The unit must not be CLOSED/CANCELLED.
+   */
+  @Transactional
+  public LifecycleEvent restockHeads(Long unitId, long heads, Long userId) {
+    return recordEvent(unitId, EVENT_SALE_CANCEL, (int) heads, "sale-cancel", Map.of(), userId);
   }
 
   /** Close a unit (end of production cycle): status CLOSED + end date today. */
