@@ -1,11 +1,16 @@
 package com.avicare.livestock.service;
 
 import com.avicare.common.api.dto.DayValue;
+import com.avicare.common.api.exception.BusinessRuleException;
+import com.avicare.common.api.exception.NotFoundException;
 import com.avicare.livestock.api.LivestockFacade;
+import com.avicare.livestock.api.ProductType;
 import com.avicare.livestock.api.dto.LivestockStats;
 import com.avicare.livestock.api.dto.ProductionUnitInfo;
 import com.avicare.livestock.domain.ProductionUnit;
+import com.avicare.livestock.domain.Species;
 import com.avicare.livestock.domain.UnitStatus;
+import com.avicare.livestock.layer.EggTrayStockService;
 import com.avicare.livestock.repository.DailyEggProductionRepository;
 import com.avicare.livestock.repository.DailyRecordRepository;
 import com.avicare.livestock.repository.LifecycleEventRepository;
@@ -33,6 +38,8 @@ public class LivestockFacadeImpl implements LivestockFacade {
   private final DailyEggProductionRepository dailyEggProductionRepository;
   private final VaccinationRepository vaccinationRepository;
   private final TreatmentExecutedRepository treatmentExecutedRepository;
+  private final LivestockService livestockService;
+  private final EggTrayStockService eggTrayStockService;
 
   @Override
   public Optional<ProductionUnitInfo> findUnit(Long unitId) {
@@ -98,6 +105,86 @@ public class LivestockFacadeImpl implements LivestockFacade {
         layingSeries,
         vaccinationsCount,
         treatmentsCount);
+  }
+
+  // ── Production stock (D27 blocking) ─────────────────────────────────────
+
+  @Override
+  public long productionAvailable(Long farmId, ProductType type, Long unitId) {
+    if (type == ProductType.BROILER) {
+      ProductionUnit unit =
+          productionUnitRepository
+              .findById(unitId)
+              .orElseThrow(() -> NotFoundException.of("ProductionUnit", unitId));
+      validateBroilerUnit(farmId, unit);
+      return unit.getCurrentCount();
+    }
+    // EGGS — farm-wide pool; auto-created with 0 if not yet present
+    return eggTrayStockService.getOrCreateForFarm(farmId).getFullTraysCount();
+  }
+
+  @Override
+  @Transactional
+  public void consumeProduction(Long farmId, ProductType type, Long unitId, long qty) {
+    if (type == ProductType.BROILER) {
+      ProductionUnit unit =
+          productionUnitRepository
+              .findById(unitId)
+              .orElseThrow(() -> NotFoundException.of("ProductionUnit", unitId));
+      validateBroilerUnit(farmId, unit);
+      livestockService.consumeHeads(unitId, qty, null);
+    } else {
+      // EGGS
+      long available = eggTrayStockService.getOrCreateForFarm(farmId).getFullTraysCount();
+      if (available < qty) {
+        throw new BusinessRuleException(
+            "PRODUCTION_INSUFFICIENT",
+            "Requested "
+                + qty
+                + " full trays but only "
+                + available
+                + " available for farm "
+                + farmId);
+      }
+      eggTrayStockService.adjustStock(farmId, -(int) qty, 0);
+    }
+  }
+
+  @Override
+  @Transactional
+  public void restockProduction(Long farmId, ProductType type, Long unitId, long qty) {
+    if (type == ProductType.BROILER) {
+      ProductionUnit unit =
+          productionUnitRepository
+              .findById(unitId)
+              .orElseThrow(() -> NotFoundException.of("ProductionUnit", unitId));
+      validateBroilerUnit(farmId, unit);
+      livestockService.restockHeads(unitId, qty, null);
+    } else {
+      // EGGS
+      eggTrayStockService.adjustStock(farmId, (int) qty, 0);
+    }
+  }
+
+  /**
+   * Validates that {@code unit} belongs to {@code farmId} and is a POULTRY unit (required for
+   * BROILER product type). Throws HTTP-422 on mismatch.
+   */
+  private void validateBroilerUnit(Long farmId, ProductionUnit unit) {
+    if (!farmId.equals(unit.getFarmId())) {
+      throw new BusinessRuleException(
+          "PRODUCTION_UNIT_NOT_ON_FARM",
+          "Unit " + unit.getId() + " does not belong to farm " + farmId);
+    }
+    if (unit.getSpecies() != Species.POULTRY) {
+      throw new BusinessRuleException(
+          "PRODUCTION_TYPE_MISMATCH",
+          "Unit "
+              + unit.getId()
+              + " has species "
+              + unit.getSpecies()
+              + " but BROILER requires POULTRY");
+    }
   }
 
   private static ProductionUnitInfo toInfo(ProductionUnit u) {
