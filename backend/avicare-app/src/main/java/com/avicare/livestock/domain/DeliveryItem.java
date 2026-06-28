@@ -1,5 +1,6 @@
 package com.avicare.livestock.domain;
 
+import com.avicare.livestock.api.ProductType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -62,6 +63,17 @@ public class DeliveryItem {
   private Long lineTotalXof;
 
   @Column private String notes;
+
+  /**
+   * FK to the production unit (broiler batch) sold — populated only when articleSource=PRODUCTION.
+   */
+  @Column(name = "production_unit_id")
+  private Long productionUnitId;
+
+  /** Sellable production type (BROILER or EGGS) — populated only when articleSource=PRODUCTION. */
+  @Enumerated(EnumType.STRING)
+  @Column(name = "product_type")
+  private ProductType productType;
 
   @Column(name = "created_at", insertable = false, updatable = false)
   private LocalDateTime createdAt;
