@@ -13,7 +13,7 @@ import {
   Tabs,
   Typography,
 } from "@mui/material";
-import { Bird, ChevronRight, Lock, Plus } from "lucide-react";
+import { ChevronRight, Lock, Plus } from "lucide-react";
 import {
   useGetCollectionsQuery,
   useGetGradesQuery,
@@ -31,7 +31,7 @@ import { BatchStatusChip } from "@/components/poultry/BatchStatusChip";
 import { HealthTab } from "@/components/health/HealthTab";
 import { LayerOverviewTab } from "./LayerOverviewTab";
 import { LayerCollectionsTab } from "./LayerCollectionsTab";
-import { LayerPlaceholderTab } from "./LayerPlaceholderTab";
+import { LayerFlockTab } from "./LayerFlockTab";
 import { CloseDayButton } from "./CloseDayButton";
 import { EggCollectionDialog } from "./EggCollectionDialog";
 
@@ -206,13 +206,7 @@ export function LayerUnitDetailView({ unitId }: { unitId: number }) {
       {tab === "collections" && (
         <LayerCollectionsTab farmId={farmId as number} unit={unit} />
       )}
-      {tab === "layers" && (
-        <LayerPlaceholderTab
-          icon={Bird}
-          title="Suivi des pondeuses — bientôt disponible"
-          description="Le détail par bande (entrée en ponte, réforme, mortalité dédiée) arrivera dans une prochaine version."
-        />
-      )}
+      {tab === "layers" && <LayerFlockTab farmId={farmId as number} unit={unit} />}
       {tab === "health" && (
         <HealthTab
           farmId={farmId as number}
