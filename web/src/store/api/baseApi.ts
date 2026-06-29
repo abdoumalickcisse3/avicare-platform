@@ -70,6 +70,7 @@ export const baseApi = createApi({
     "Setting",
     "Catalog",
     "ProductionUnit",
+    "UnitEvent",
     "Breed",
     "PoultryBatch",
     "DailyRecord",

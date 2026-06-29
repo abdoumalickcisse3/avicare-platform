@@ -1137,3 +1137,28 @@ export interface PaymentInput {
   reference?: string;
   notes?: string;
 }
+
+/** A production-unit lifecycle event (mirrors backend LifecycleEventResponse). */
+export interface LifecycleEvent {
+  id: number;
+  productionUnitId: number;
+  /** CREATED | MORTALITY | REFORM | COUNT_ADJUSTMENT | SALE | SALE_CANCEL */
+  eventType: string;
+  quantityDelta: number;
+  reason: string | null;
+  details: Record<string, unknown>;
+  occurredAt: string;
+}
+
+/** Record mortality on a production unit (mirrors backend RecordMortalityRequest). */
+export interface MortalityInput {
+  count: number;
+  reason?: string;
+}
+
+/** Record a generic lifecycle event (mirrors backend LifecycleEventRequest). */
+export interface UnitEventInput {
+  eventType: string;
+  quantityDelta: number;
+  reason?: string;
+}
