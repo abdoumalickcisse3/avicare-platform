@@ -19,6 +19,25 @@ const BATCH = {
   targetAgeDays: null,
 };
 
+// A layer lot — must NOT be offered as a sellable meat lot.
+const LAYER_BATCH = {
+  id: 77,
+  farmId: 1,
+  breedId: 5,
+  name: "Lot Pondeuse",
+  startDate: "2026-01-01",
+  status: "ACTIVE",
+  currentCount: 30,
+  initialCount: 30,
+  targetWeightG: null,
+  targetAgeDays: null,
+};
+
+const BREEDS = [
+  { id: 1, species: "POULTRY", code: "cobb_500", name: "Cobb 500", type: "broiler", farmId: null, active: true },
+  { id: 5, species: "POULTRY", code: "hyline_w36", name: "Hy-Line W-36", type: "layer", farmId: null, active: true },
+];
+
 const TRAY_STOCK = {
   farmId: 1,
   fullTraysCount: 8,
@@ -52,7 +71,8 @@ function setupFetch() {
     vi.fn((input: RequestInfo | URL) => {
       // RTK Query passes a Request object; extract the URL string.
       const url = input instanceof Request ? input.url : String(input);
-      if (url.includes("poultry-batches")) return respond([BATCH]);
+      if (url.includes("poultry-batches")) return respond([BATCH, LAYER_BATCH]);
+      if (url.includes("/breeds")) return respond(BREEDS);
       if (url.includes("tray-stock")) return respond(TRAY_STOCK);
       if (url.includes("inventory/catalog/articles")) return respond(ARTICLES);
       if (url.includes("commercial/clients")) return respond([]);
@@ -122,5 +142,14 @@ describe("QuickSaleDialog — production availability", () => {
     await screen.findByText("50 têtes restantes");
     // Even though an inventory PRODUCT article exists in the catalog, it is not offered here.
     expect(screen.queryByText("Poulet entier")).not.toBeInTheDocument();
+  });
+
+  it("exclut les lots de ponte du sélecteur de chair (seuls les lots de chair vendent des têtes)", async () => {
+    setup();
+    // The broiler lot is offered…
+    await screen.findByText("50 têtes restantes");
+    // …but the layer lot (breed type "layer") is not shown as a meat lot.
+    expect(screen.queryByText("Lot Pondeuse")).not.toBeInTheDocument();
+    expect(screen.queryByText("30 têtes restantes")).not.toBeInTheDocument();
   });
 });
