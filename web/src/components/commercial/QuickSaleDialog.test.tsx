@@ -115,4 +115,12 @@ describe("QuickSaleDialog — production availability", () => {
       expect(screen.getByRole("button", { name: /Valider la vente/i })).not.toBeDisabled();
     });
   });
+
+  it("ne propose que la production — pas les articles d'inventaire « produit »", async () => {
+    setup();
+    // Wait until production has loaded so the dialog body is settled.
+    await screen.findByText("50 têtes restantes");
+    // Even though an inventory PRODUCT article exists in the catalog, it is not offered here.
+    expect(screen.queryByText("Poulet entier")).not.toBeInTheDocument();
+  });
 });
