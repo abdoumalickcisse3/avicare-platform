@@ -131,8 +131,12 @@ export const eggProductionApi = baseApi.injectEndpoints({
         method: "POST",
       }),
       transformResponse: (r: ApiEnvelope<DailyProduction>) => r.data,
+      // Closing a day auto-credits the farm tray stock (good eggs → trays), so the
+      // tray-stock cache must refresh too — otherwise newly produced eggs stay
+      // invisible to the sale/order dialogs until a full reload.
       invalidatesTags: (_r, _e, { unitId }) => [
         { type: "DailyProduction", id: unitId },
+        { type: "TrayStock", id: "CURRENT" },
       ],
     }),
 
