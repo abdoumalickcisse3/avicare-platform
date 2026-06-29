@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   Alert,
   Box,
@@ -10,14 +10,12 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
-  ListSubheader,
   MenuItem,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
 import { Plus, Trash2, X } from "lucide-react";
-import { useGetInventoryArticlesQuery } from "@/store/api/inventoryCatalogApi";
 import { useGetClientsQuery } from "@/store/api/clientsApi";
 import { useCreateOrderMutation } from "@/store/api/ordersApi";
 import { useToast } from "@/components/feedback/ToastProvider";
@@ -30,7 +28,7 @@ import type { ArticleSource, ProductType } from "@/types";
 const mono = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" } as const;
 
 interface Line {
-  /** Unique line key: "inv:{articleKey}" | "prod:BROILER:{unitId}" | "prod:EGGS" */
+  /** Unique line key: "prod:BROILER:{unitId}" | "prod:EGGS" */
   key: string;
   articleKey: string;
   articleSource: ArticleSource;
@@ -72,10 +70,9 @@ function OrderBody({
   defaultClientId?: number;
 }) {
   const { showToast } = useToast();
-  const { data: articles } = useGetInventoryArticlesQuery({ farmId });
   const { data: clients } = useGetClientsQuery({ farmId });
   const [createOrder, { isLoading: saving }] = useCreateOrderMutation();
-  const { broilerLots, eggsAvailable } = useProductionAvailability(farmId);
+  const { broilerLots, eggsAvailable, loading } = useProductionAvailability(farmId);
 
   const [clientId, setClientId] = useState(defaultClientId != null ? String(defaultClientId) : "");
   const [expectedDate, setExpectedDate] = useState("");
@@ -84,10 +81,6 @@ function OrderBody({
   const [lines, setLines] = useState<Line[]>([]);
   const [picker, setPicker] = useState("");
 
-  const products = useMemo(
-    () => (articles ?? []).filter((a) => a.subcategory === "PRODUCT"),
-    [articles],
-  );
   const total = lines.reduce((s, l) => s + l.quantity * l.unitPriceXof, 0);
   const hasOverMax = lines.some((l) => l.max != null && l.quantity > l.max);
 
@@ -147,24 +140,6 @@ function OrderBody({
       return;
     }
 
-    // Inventory article
-    const a = products.find((p) => p.articleKey === value);
-    if (!a || lines.some((l) => l.key === `inv:${a.articleKey}`)) {
-      setPicker("");
-      return;
-    }
-    setLines((cur) => [
-      ...cur,
-      {
-        key: `inv:${a.articleKey}`,
-        articleKey: a.articleKey,
-        articleSource: "INVENTORY",
-        label: a.label,
-        unit: a.unit ?? "u",
-        quantity: 1,
-        unitPriceXof: a.typicalUnitPriceXof ?? 0,
-      },
-    ]);
     setPicker("");
   };
 
@@ -245,32 +220,17 @@ function OrderBody({
           <Box>
             <TextField
               select
-              label="Ajouter un article"
+              label="Ajouter de la production"
               value={picker}
               onChange={(e) => addLine(e.target.value)}
               fullWidth
               helperText={
-                products.length === 0 && !hasProduction
-                  ? "Aucun produit dans la bibliothèque"
+                !loading && !hasProduction
+                  ? "Aucune production à vendre — créez un lot de chair ou enregistrez du stock d'œufs"
                   : undefined
               }
             >
-              {/* Inventory products */}
-              {products.length > 0 && (
-                <ListSubheader>Inventaire</ListSubheader>
-              )}
-              {products
-                .filter((p) => !lines.some((l) => l.key === `inv:${p.articleKey}`))
-                .map((p) => (
-                  <MenuItem key={p.articleKey} value={p.articleKey}>
-                    {p.label} — {formatCurrency(p.typicalUnitPriceXof ?? 0)}/{p.unit ?? "u"}
-                  </MenuItem>
-                ))}
-
               {/* Production options */}
-              {hasProduction && (
-                <ListSubheader>Production de la ferme</ListSubheader>
-              )}
               {broilerLots
                 .filter((lot) => !lines.some((l) => l.key === `prod:BROILER:${lot.unitId}`))
                 .map((lot) => (
