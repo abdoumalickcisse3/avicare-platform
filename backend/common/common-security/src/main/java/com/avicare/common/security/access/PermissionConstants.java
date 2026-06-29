@@ -39,4 +39,14 @@ public final class PermissionConstants {
 
   /** Wildcard granting every permission (typically OWNER only). */
   public static final String ALL = "*";
+
+  /** All known resources and their verbs (single source for the catalog/validator). */
+  public static final java.util.Map<String, java.util.List<String>> RESOURCE_VERBS =
+      java.util.Map.of(
+          "poultry", java.util.List.of("read", "write", "delete"),
+          "health", java.util.List.of("read", "write"),
+          "commercial", java.util.List.of("read", "write"),
+          "inventory", java.util.List.of("read", "write"),
+          "finance", java.util.List.of("read", "write"),
+          "settings", java.util.List.of("read", "write"));
 }
