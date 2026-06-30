@@ -1,5 +1,6 @@
 package com.avicare.identity.api;
 
+import com.avicare.identity.api.dto.ProvisionUserCommand;
 import com.avicare.identity.api.dto.UserInfo;
 
 /**
@@ -19,4 +20,14 @@ public interface IdentityFacade {
   UserInfo findByEmail(String email);
 
   boolean isActive(Long userId);
+
+  /**
+   * Provision a new user account (e.g. created by a farm owner for a worker).
+   *
+   * @throws com.avicare.common.api.exception.ConflictException if the email is already used
+   */
+  UserInfo provisionUser(ProvisionUserCommand command);
+
+  /** Set a new password for an existing user (BCrypt-encoded). */
+  void resetPassword(Long userId, String rawPassword);
 }

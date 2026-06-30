@@ -39,7 +39,7 @@ class MembershipServiceTest {
   @Test
   void addMember_resolvesUserAndPersistsWithDefaultPermissions() {
     when(identityFacade.findByEmail("vet@avicare.io"))
-        .thenReturn(new UserInfo(5L, "vet@avicare.io", "Vet", UserRole.USER, true));
+        .thenReturn(new UserInfo(5L, "vet@avicare.io", "Vet", null, UserRole.USER, true));
     when(userFarmRepository.existsByUserIdAndFarmId(5L, 3L)).thenReturn(false);
     when(userFarmRepository.save(any(UserFarm.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -51,7 +51,7 @@ class MembershipServiceTest {
   @Test
   void addMember_duplicate_throwsConflict() {
     when(identityFacade.findByEmail("dup@avicare.io"))
-        .thenReturn(new UserInfo(5L, "dup@avicare.io", "Dup", UserRole.USER, true));
+        .thenReturn(new UserInfo(5L, "dup@avicare.io", "Dup", null, UserRole.USER, true));
     when(userFarmRepository.existsByUserIdAndFarmId(5L, 3L)).thenReturn(true);
 
     assertThatThrownBy(

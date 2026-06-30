@@ -42,20 +42,25 @@ public class AuthService {
   private final IdentityMapper identityMapper;
   private final MembershipProvider membershipProvider;
 
+  /** Create + persist a USER account (shared by signup and provisioning). */
+  @Transactional
+  public User createUser(String fullName, String email, String phone, String rawPassword) {
+    if (userRepository.existsByEmailIgnoreCase(email)) {
+      throw new ConflictException("EMAIL_ALREADY_USED", "Email is already registered");
+    }
+    User user = new User();
+    user.setEmail(email);
+    user.setPasswordHash(passwordEncoder.encode(rawPassword));
+    user.setFullName(fullName);
+    user.setPhone(phone);
+    return userRepository.save(user);
+  }
+
   /** Register a new USER account and return an initial token pair. */
   @Transactional
   public AuthTokens signup(SignupRequest request) {
-    if (userRepository.existsByEmailIgnoreCase(request.email())) {
-      throw new ConflictException("EMAIL_ALREADY_USED", "Email is already registered");
-    }
-
-    User user = new User();
-    user.setEmail(request.email());
-    user.setPasswordHash(passwordEncoder.encode(request.password()));
-    user.setFullName(request.fullName());
-    user.setPhone(request.phone());
-    User saved = userRepository.save(user);
-
+    User saved =
+        createUser(request.fullName(), request.email(), request.phone(), request.password());
     log.info("New user registered: id={}", saved.getId());
     return issueTokens(saved);
   }
