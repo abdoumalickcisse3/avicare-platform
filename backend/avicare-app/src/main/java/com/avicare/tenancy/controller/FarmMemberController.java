@@ -37,13 +37,18 @@ public class FarmMemberController {
     return ApiResponse.of(membershipService.listMembers(farmId));
   }
 
+  /**
+   * @deprecated Task 5 replaces this endpoint with {@code CreateMemberRequest} /
+   *     createMemberAccount. Stub kept to avoid compile break before Task 5 lands.
+   */
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   @PreAuthorize(
       "@farmAccess.hasRole(#farmId, T(com.avicare.common.security.principal.FarmRole).OWNER, T(com.avicare.common.security.principal.FarmRole).MANAGER)")
   public ApiResponse<MemberResponse> add(
       @PathVariable Long farmId, @RequestBody @Valid AddMemberRequest request) {
-    return ApiResponse.of(membershipService.addMember(farmId, request));
+    // TODO Task 5: replace body with membershipService.createMemberAccount(...)
+    throw new UnsupportedOperationException("Replaced in Task 5 — use createMemberAccount");
   }
 
   @PutMapping("/{userId}")

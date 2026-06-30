@@ -7,18 +7,18 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.avicare.common.api.exception.ConflictException;
+import com.avicare.common.api.exception.BusinessRuleException;
 import com.avicare.common.security.principal.FarmRole;
 import com.avicare.common.security.principal.UserRole;
 import com.avicare.identity.api.IdentityFacade;
+import com.avicare.identity.api.dto.ProvisionUserCommand;
 import com.avicare.identity.api.dto.UserInfo;
 import com.avicare.tenancy.domain.UserFarm;
-import com.avicare.tenancy.dto.request.AddMemberRequest;
-import com.avicare.tenancy.mapper.TenancyMapper;
+import com.avicare.tenancy.dto.request.CreateMemberRequest;
+import com.avicare.tenancy.dto.response.CreateMemberResult;
 import com.avicare.tenancy.repository.UserFarmRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mapstruct.factory.Mappers;
 import org.mockito.Mockito;
 
 /** Unit test for {@link MembershipService}: identity facade + repository mocked. */
@@ -32,33 +32,40 @@ class MembershipServiceTest {
   void setUp() {
     userFarmRepository = Mockito.mock(UserFarmRepository.class);
     identityFacade = Mockito.mock(IdentityFacade.class);
-    TenancyMapper mapper = Mappers.getMapper(TenancyMapper.class);
-    membershipService = new MembershipService(userFarmRepository, identityFacade, mapper);
+    membershipService = new MembershipService(userFarmRepository, identityFacade);
   }
 
   @Test
-  void addMember_resolvesUserAndPersistsWithDefaultPermissions() {
-    when(identityFacade.findByEmail("vet@avicare.io"))
-        .thenReturn(new UserInfo(5L, "vet@avicare.io", "Vet", null, UserRole.USER, true));
+  void createMemberAccount_provisionsUserAndPersistsMembership() {
+    UserInfo provisioned =
+        new UserInfo(5L, "worker@avicare.io", "Worker Name", null, UserRole.USER, true);
+    when(identityFacade.provisionUser(any(ProvisionUserCommand.class))).thenReturn(provisioned);
     when(userFarmRepository.existsByUserIdAndFarmId(5L, 3L)).thenReturn(false);
-    when(userFarmRepository.save(any(UserFarm.class))).thenAnswer(inv -> inv.getArgument(0));
+    when(userFarmRepository.save(any(UserFarm.class)))
+        .thenAnswer(
+            inv -> {
+              UserFarm m = inv.getArgument(0);
+              m.setUserId(5L);
+              return m;
+            });
+    when(identityFacade.findById(5L)).thenReturn(provisioned);
 
-    membershipService.addMember(3L, new AddMemberRequest("vet@avicare.io", FarmRole.VETERINARIAN));
+    CreateMemberRequest req =
+        new CreateMemberRequest("Worker Name", "worker@avicare.io", null, FarmRole.FARMER, null);
+    CreateMemberResult result = membershipService.createMemberAccount(3L, req);
 
     verify(userFarmRepository).save(any(UserFarm.class));
+    assertThat(result.temporaryPassword()).isNotBlank();
+    assertThat(result.member().email()).isEqualTo("worker@avicare.io");
   }
 
   @Test
-  void addMember_duplicate_throwsConflict() {
-    when(identityFacade.findByEmail("dup@avicare.io"))
-        .thenReturn(new UserInfo(5L, "dup@avicare.io", "Dup", null, UserRole.USER, true));
-    when(userFarmRepository.existsByUserIdAndFarmId(5L, 3L)).thenReturn(true);
+  void createMemberAccount_ownerRole_throwsBusinessRule() {
+    CreateMemberRequest req =
+        new CreateMemberRequest("Boss", "boss@avicare.io", null, FarmRole.OWNER, null);
 
-    assertThatThrownBy(
-            () ->
-                membershipService.addMember(
-                    3L, new AddMemberRequest("dup@avicare.io", FarmRole.FARMER)))
-        .isInstanceOf(ConflictException.class);
+    assertThatThrownBy(() -> membershipService.createMemberAccount(3L, req))
+        .isInstanceOf(BusinessRuleException.class);
 
     verify(userFarmRepository, never()).save(any());
   }
