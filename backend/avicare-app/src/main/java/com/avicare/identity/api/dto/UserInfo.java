@@ -7,4 +7,5 @@ import com.avicare.common.security.principal.UserRole;
  * com.avicare.identity.api.IdentityFacade}. Other bounded contexts depend on this record, never on
  * the {@code User} entity.
  */
-public record UserInfo(Long id, String email, String fullName, UserRole role, boolean active) {}
+public record UserInfo(
+    Long id, String email, String fullName, String phone, UserRole role, boolean active) {}
