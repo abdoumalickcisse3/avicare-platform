@@ -1,7 +1,6 @@
 import { baseApi } from "./baseApi";
-import type { FarmRole, InviteMemberInput, Member } from "@/types";
+import type { CreateMemberInput, CreateMemberResult, FarmRole, Member } from "@/types";
 
-/** Backend wraps every payload in { data, meta }; unwrap to the data field. */
 interface ApiEnvelope<T> {
   data: T;
 }
@@ -11,53 +10,56 @@ export const membersApi = baseApi.injectEndpoints({
     getMembers: build.query<Member[], number>({
       query: (farmId) => `/api/v1/farms/${farmId}/users`,
       transformResponse: (r: ApiEnvelope<Member[]>) => r.data,
-      providesTags: (_result, _e, farmId) => [
-        { type: "Member", id: `LIST-${farmId}` },
-      ],
+      providesTags: (_r, _e, farmId) => [{ type: "Member", id: `LIST-${farmId}` }],
     }),
-    inviteMember: build.mutation<
-      Member,
-      { farmId: number; body: InviteMemberInput }
+    createMember: build.mutation<
+      CreateMemberResult,
+      { farmId: number; body: CreateMemberInput }
     >({
       query: ({ farmId, body }) => ({
         url: `/api/v1/farms/${farmId}/users`,
         method: "POST",
         body,
       }),
-      transformResponse: (r: ApiEnvelope<Member>) => r.data,
-      invalidatesTags: (_r, _e, { farmId }) => [
-        { type: "Member", id: `LIST-${farmId}` },
-      ],
+      transformResponse: (r: ApiEnvelope<CreateMemberResult>) => r.data,
+      invalidatesTags: (_r, _e, { farmId }) => [{ type: "Member", id: `LIST-${farmId}` }],
     }),
     updateMember: build.mutation<
       Member,
-      { farmId: number; userId: number; role: FarmRole; permissions?: string[] }
+      { farmId: number; userId: number; role: FarmRole; permissions?: string[]; active?: boolean }
     >({
-      query: ({ farmId, userId, role, permissions }) => ({
+      query: ({ farmId, userId, role, permissions, active }) => ({
         url: `/api/v1/farms/${farmId}/users/${userId}`,
         method: "PUT",
-        body: { role, permissions },
+        body: { role, permissions, active },
       }),
       transformResponse: (r: ApiEnvelope<Member>) => r.data,
-      invalidatesTags: (_r, _e, { farmId }) => [
-        { type: "Member", id: `LIST-${farmId}` },
-      ],
+      invalidatesTags: (_r, _e, { farmId }) => [{ type: "Member", id: `LIST-${farmId}` }],
+    }),
+    resetMemberPassword: build.mutation<
+      { temporaryPassword: string },
+      { farmId: number; userId: number }
+    >({
+      query: ({ farmId, userId }) => ({
+        url: `/api/v1/farms/${farmId}/users/${userId}/reset-password`,
+        method: "POST",
+      }),
+      transformResponse: (r: ApiEnvelope<{ temporaryPassword: string }>) => r.data,
     }),
     removeMember: build.mutation<void, { farmId: number; userId: number }>({
       query: ({ farmId, userId }) => ({
         url: `/api/v1/farms/${farmId}/users/${userId}`,
         method: "DELETE",
       }),
-      invalidatesTags: (_r, _e, { farmId }) => [
-        { type: "Member", id: `LIST-${farmId}` },
-      ],
+      invalidatesTags: (_r, _e, { farmId }) => [{ type: "Member", id: `LIST-${farmId}` }],
     }),
   }),
 });
 
 export const {
   useGetMembersQuery,
-  useInviteMemberMutation,
+  useCreateMemberMutation,
   useUpdateMemberMutation,
+  useResetMemberPasswordMutation,
   useRemoveMemberMutation,
 } = membersApi;

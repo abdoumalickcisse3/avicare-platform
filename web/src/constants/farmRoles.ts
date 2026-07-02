@@ -17,3 +17,11 @@ export const FARM_ROLES: FarmRole[] = [
   "VETERINARIAN",
   "BUYER",
 ];
+
+/** Roles assignable to a created member (OWNER excluded — that is the farm creator). */
+export const ASSIGNABLE_FARM_ROLES: FarmRole[] = [
+  "MANAGER",
+  "FARMER",
+  "VETERINARIAN",
+  "BUYER",
+];

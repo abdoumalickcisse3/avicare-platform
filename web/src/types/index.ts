@@ -59,14 +59,41 @@ export interface FarmInput {
 /** Tenant-level role inside a farm (mirrors backend FarmRole enum). */
 export type FarmRole = "OWNER" | "MANAGER" | "FARMER" | "VETERINARIAN" | "BUYER";
 
-/** Mirrors backend MemberResponse — note: no user name/email/avatar is returned. */
+/** Member enrichi (mirrors backend MemberResponse). */
 export interface Member {
   id: number;
   userId: number;
   farmId: number;
+  fullName: string;
+  email: string;
+  phone: string | null;
   role: FarmRole;
   permissions: string[];
   active: boolean;
+}
+
+export interface PermissionResourceDef {
+  resource: string;
+  label: string;
+  verbs: string[];
+}
+
+export interface PermissionCatalog {
+  resources: PermissionResourceDef[];
+  roleDefaults: Record<string, string[]>;
+}
+
+export interface CreateMemberInput {
+  fullName: string;
+  email: string;
+  phone?: string;
+  role: FarmRole;
+  permissions?: string[];
+}
+
+export interface CreateMemberResult {
+  member: Member;
+  temporaryPassword: string;
 }
 
 /** Invite payload (mirrors backend AddMemberRequest). */

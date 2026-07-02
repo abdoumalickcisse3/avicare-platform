@@ -66,6 +66,7 @@ export const baseApi = createApi({
     "User",
     "Farm",
     "Member",
+    "Permission",
     "Subscription",
     "Setting",
     "Catalog",
