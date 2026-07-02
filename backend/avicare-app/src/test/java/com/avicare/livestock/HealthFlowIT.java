@@ -193,15 +193,20 @@ class HealthFlowIT {
     long unitId = seedUnit(farmId, "cobb_500", LocalDate.now().minusDays(3));
     String base = "/api/v1/farms/" + farmId + "/health";
 
-    signup("vet@health.io", "password123", "Vet");
-    mockMvc
-        .perform(
-            post("/api/v1/farms/" + farmId + "/users")
-                .header("Authorization", "Bearer " + owner)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"vet@health.io\",\"role\":\"VETERINARIAN\"}"))
-        .andExpect(status().isCreated());
-    String vet = login("vet@health.io", "password123");
+    String vetJson =
+        mockMvc
+            .perform(
+                post("/api/v1/farms/" + farmId + "/users")
+                    .header("Authorization", "Bearer " + owner)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        "{\"fullName\":\"Vet\",\"email\":\"vet@health.io\",\"role\":\"VETERINARIAN\"}"))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    String vetPw = objectMapper.readTree(vetJson).get("data").get("temporaryPassword").asText();
+    String vet = login("vet@health.io", vetPw);
 
     // VET reads vaccinations...
     mockMvc

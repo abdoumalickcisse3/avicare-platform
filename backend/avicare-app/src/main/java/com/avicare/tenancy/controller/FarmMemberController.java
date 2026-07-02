@@ -1,12 +1,14 @@
 package com.avicare.tenancy.controller;
 
 import com.avicare.common.api.response.ApiResponse;
-import com.avicare.tenancy.dto.request.AddMemberRequest;
+import com.avicare.tenancy.dto.request.CreateMemberRequest;
 import com.avicare.tenancy.dto.request.UpdateMemberRequest;
+import com.avicare.tenancy.dto.response.CreateMemberResult;
 import com.avicare.tenancy.dto.response.MemberResponse;
 import com.avicare.tenancy.service.MembershipService;
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -37,18 +39,22 @@ public class FarmMemberController {
     return ApiResponse.of(membershipService.listMembers(farmId));
   }
 
-  /**
-   * @deprecated Task 5 replaces this endpoint with {@code CreateMemberRequest} /
-   *     createMemberAccount. Stub kept to avoid compile break before Task 5 lands.
-   */
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   @PreAuthorize(
       "@farmAccess.hasRole(#farmId, T(com.avicare.common.security.principal.FarmRole).OWNER, T(com.avicare.common.security.principal.FarmRole).MANAGER)")
-  public ApiResponse<MemberResponse> add(
-      @PathVariable Long farmId, @RequestBody @Valid AddMemberRequest request) {
-    // TODO Task 5: replace body with membershipService.createMemberAccount(...)
-    throw new UnsupportedOperationException("Replaced in Task 5 — use createMemberAccount");
+  public ApiResponse<CreateMemberResult> create(
+      @PathVariable Long farmId, @RequestBody @Valid CreateMemberRequest request) {
+    return ApiResponse.of(membershipService.createMemberAccount(farmId, request));
+  }
+
+  @PostMapping("/{userId}/reset-password")
+  @PreAuthorize(
+      "@farmAccess.hasRole(#farmId, T(com.avicare.common.security.principal.FarmRole).OWNER, T(com.avicare.common.security.principal.FarmRole).MANAGER)")
+  public ApiResponse<Map<String, String>> resetPassword(
+      @PathVariable Long farmId, @PathVariable Long userId) {
+    String pw = membershipService.resetMemberPassword(farmId, userId);
+    return ApiResponse.of(Map.of("temporaryPassword", pw));
   }
 
   @PutMapping("/{userId}")

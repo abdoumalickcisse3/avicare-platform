@@ -138,15 +138,20 @@ class PoultryFlowIT {
     owner = login("o2@poultry.io", "password123");
     enableBroilerModule(owner, farmId);
 
-    signupAndAccess("vet@poultry.io", "password123", "Vet");
-    mockMvc
-        .perform(
-            post("/api/v1/farms/" + farmId + "/users")
-                .header("Authorization", "Bearer " + owner)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"vet@poultry.io\",\"role\":\"VETERINARIAN\"}"))
-        .andExpect(status().isCreated());
-    String vet = login("vet@poultry.io", "password123");
+    String vetJson =
+        mockMvc
+            .perform(
+                post("/api/v1/farms/" + farmId + "/users")
+                    .header("Authorization", "Bearer " + owner)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        "{\"fullName\":\"Vet\",\"email\":\"vet@poultry.io\",\"role\":\"VETERINARIAN\"}"))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    String vetPw = objectMapper.readTree(vetJson).get("data").get("temporaryPassword").asText();
+    String vet = login("vet@poultry.io", vetPw);
 
     long breedId =
         breedRepository

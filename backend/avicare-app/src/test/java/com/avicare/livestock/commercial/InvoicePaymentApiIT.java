@@ -152,9 +152,8 @@ class InvoicePaymentApiIT {
     long saleId =
         data(postOk(base + "/sales", owner, saleBody(clientId, 1, 3000))).get("id").asLong();
 
-    onboardOwner("ip-farmer");
-    addMember(owner, farmId, "ip-farmer@co.io", "FARMER");
-    String farmer = relogin("ip-farmer");
+    String farmerPw = addMember(owner, farmId, "Farmer Ip", "ip-farmer@co.io", "FARMER");
+    String farmer = loginWith("ip-farmer@co.io", farmerPw);
 
     mockMvc
         .perform(
@@ -299,14 +298,40 @@ class InvoicePaymentApiIT {
         .andExpect(status().isCreated());
   }
 
-  private void addMember(String ownerToken, long farmId, String email, String role)
-      throws Exception {
-    mockMvc
-        .perform(
-            post("/api/v1/farms/" + farmId + "/users")
-                .header("Authorization", "Bearer " + ownerToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"" + email + "\",\"role\":\"" + role + "\"}"))
-        .andExpect(status().isCreated());
+  private String addMember(
+      String ownerToken, long farmId, String fullName, String email, String role) throws Exception {
+    String json =
+        mockMvc
+            .perform(
+                post("/api/v1/farms/" + farmId + "/users")
+                    .header("Authorization", "Bearer " + ownerToken)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        "{\"fullName\":\""
+                            + fullName
+                            + "\",\"email\":\""
+                            + email
+                            + "\",\"role\":\""
+                            + role
+                            + "\"}"))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    return objectMapper.readTree(json).get("data").get("temporaryPassword").asText();
+  }
+
+  private String loginWith(String email, String password) throws Exception {
+    String json =
+        mockMvc
+            .perform(
+                post("/api/v1/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"email\":\"" + email + "\",\"password\":\"" + password + "\"}"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    return objectMapper.readTree(json).get("data").get("accessToken").asText();
   }
 }

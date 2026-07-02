@@ -147,11 +147,10 @@ class ClientOrderApiIT {
             .get("id")
             .asLong();
 
-    // A real FARMER: onboard the user, add them to the farm as FARMER, then log in so the token
-    // carries the membership (created_by needs a real user id, so we can't forge a fake one).
-    onboardOwner("co-farmer");
-    addMember(owner, farmId, "co-farmer@co.io", "FARMER");
-    String farmer = relogin("co-farmer");
+    // A real FARMER: provision the member (server creates the account + temp password),
+    // then log in with that password so the token carries the FARMER membership.
+    String farmerPw = addMember(owner, farmId, "Farmer Co", "co-farmer@co.io", "FARMER");
+    String farmer = loginWith("co-farmer@co.io", farmerPw);
 
     // FARMER may create an order (field op)
     JsonNode order =
@@ -296,14 +295,40 @@ class ClientOrderApiIT {
         .andExpect(status().isCreated());
   }
 
-  private void addMember(String ownerToken, long farmId, String email, String role)
-      throws Exception {
-    mockMvc
-        .perform(
-            post("/api/v1/farms/" + farmId + "/users")
-                .header("Authorization", "Bearer " + ownerToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"" + email + "\",\"role\":\"" + role + "\"}"))
-        .andExpect(status().isCreated());
+  private String addMember(
+      String ownerToken, long farmId, String fullName, String email, String role) throws Exception {
+    String json =
+        mockMvc
+            .perform(
+                post("/api/v1/farms/" + farmId + "/users")
+                    .header("Authorization", "Bearer " + ownerToken)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        "{\"fullName\":\""
+                            + fullName
+                            + "\",\"email\":\""
+                            + email
+                            + "\",\"role\":\""
+                            + role
+                            + "\"}"))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    return objectMapper.readTree(json).get("data").get("temporaryPassword").asText();
+  }
+
+  private String loginWith(String email, String password) throws Exception {
+    String json =
+        mockMvc
+            .perform(
+                post("/api/v1/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"email\":\"" + email + "\",\"password\":\"" + password + "\"}"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    return objectMapper.readTree(json).get("data").get("accessToken").asText();
   }
 }

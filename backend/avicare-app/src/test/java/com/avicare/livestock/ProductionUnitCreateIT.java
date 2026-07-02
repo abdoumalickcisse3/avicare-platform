@@ -99,15 +99,21 @@ class ProductionUnitCreateIT {
     long farmId = createFarm(owner, "Ferme F");
     owner = login("o2@unit.io", "password123");
 
-    signup("farmer@unit.io", "password123", "Farmer");
-    mockMvc
-        .perform(
-            post("/api/v1/farms/" + farmId + "/users")
-                .header("Authorization", "Bearer " + owner)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"farmer@unit.io\",\"role\":\"FARMER\"}"))
-        .andExpect(status().isCreated());
-    String farmer = login("farmer@unit.io", "password123");
+    String farmerJson =
+        mockMvc
+            .perform(
+                post("/api/v1/farms/" + farmId + "/users")
+                    .header("Authorization", "Bearer " + owner)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        "{\"fullName\":\"Farmer\",\"email\":\"farmer@unit.io\",\"role\":\"FARMER\"}"))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    String farmerPw =
+        objectMapper.readTree(farmerJson).get("data").get("temporaryPassword").asText();
+    String farmer = login("farmer@unit.io", farmerPw);
 
     long breedId =
         breedRepository
