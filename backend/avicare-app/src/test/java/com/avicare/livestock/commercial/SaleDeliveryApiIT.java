@@ -122,9 +122,8 @@ class SaleDeliveryApiIT {
     String base = "/api/v1/farms/" + farmId + "/commercial";
     long clientId = createClient(owner, base, "Client");
 
-    onboardOwner("sd-farmer");
-    addMember(owner, farmId, "sd-farmer@co.io", "FARMER");
-    String farmer = relogin("sd-farmer");
+    String farmerPw = addMember(owner, farmId, "Farmer Sd", "sd-farmer@co.io", "FARMER");
+    String farmer = loginWith("sd-farmer@co.io", farmerPw);
 
     // FARMER drives an order to IN_PROGRESS then delivers it (field ops)
     long orderId = createInProgressOrder(farmer, base, clientId);
@@ -283,14 +282,40 @@ class SaleDeliveryApiIT {
         .andExpect(status().isCreated());
   }
 
-  private void addMember(String ownerToken, long farmId, String email, String role)
-      throws Exception {
-    mockMvc
-        .perform(
-            post("/api/v1/farms/" + farmId + "/users")
-                .header("Authorization", "Bearer " + ownerToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"" + email + "\",\"role\":\"" + role + "\"}"))
-        .andExpect(status().isCreated());
+  private String addMember(
+      String ownerToken, long farmId, String fullName, String email, String role) throws Exception {
+    String json =
+        mockMvc
+            .perform(
+                post("/api/v1/farms/" + farmId + "/users")
+                    .header("Authorization", "Bearer " + ownerToken)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        "{\"fullName\":\""
+                            + fullName
+                            + "\",\"email\":\""
+                            + email
+                            + "\",\"role\":\""
+                            + role
+                            + "\"}"))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    return objectMapper.readTree(json).get("data").get("temporaryPassword").asText();
+  }
+
+  private String loginWith(String email, String password) throws Exception {
+    String json =
+        mockMvc
+            .perform(
+                post("/api/v1/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"email\":\"" + email + "\",\"password\":\"" + password + "\"}"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    return objectMapper.readTree(json).get("data").get("accessToken").asText();
   }
 }

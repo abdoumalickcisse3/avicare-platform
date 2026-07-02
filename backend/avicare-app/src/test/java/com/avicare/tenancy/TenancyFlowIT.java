@@ -76,17 +76,22 @@ class TenancyFlowIT {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.name").value("Ferme Keur Massar"));
 
-    // Invite a second user, who then sees the farm after logging in.
-    signupAndAccess("vet@farm.io", "password123", "Vet");
-    mockMvc
-        .perform(
-            post("/api/v1/farms/" + farmId + "/users")
-                .header("Authorization", "Bearer " + ownerAccess2)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"vet@farm.io\",\"role\":\"VETERINARIAN\"}"))
-        .andExpect(status().isCreated());
+    // Provision a second member, who then sees the farm after logging in with the temp password.
+    String vetJson =
+        mockMvc
+            .perform(
+                post("/api/v1/farms/" + farmId + "/users")
+                    .header("Authorization", "Bearer " + ownerAccess2)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        "{\"fullName\":\"Vet\",\"email\":\"vet@farm.io\",\"role\":\"VETERINARIAN\"}"))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    String vetPw = objectMapper.readTree(vetJson).get("data").get("temporaryPassword").asText();
 
-    String vetAccess = login("vet@farm.io", "password123");
+    String vetAccess = login("vet@farm.io", vetPw);
     mockMvc
         .perform(get("/api/v1/farms/" + farmId).header("Authorization", "Bearer " + vetAccess))
         .andExpect(status().isOk());

@@ -150,15 +150,20 @@ class LayerFlowIT {
     enableLayerModule(owner, farmId);
     long unitId = seedLayerUnit(farmId, 500);
 
-    signupAndAccess("vet@layer.io", "password123", "Vet");
-    mockMvc
-        .perform(
-            post("/api/v1/farms/" + farmId + "/users")
-                .header("Authorization", "Bearer " + owner)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"vet@layer.io\",\"role\":\"VETERINARIAN\"}"))
-        .andExpect(status().isCreated());
-    String vet = login("vet@layer.io", "password123");
+    String vetJson =
+        mockMvc
+            .perform(
+                post("/api/v1/farms/" + farmId + "/users")
+                    .header("Authorization", "Bearer " + owner)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        "{\"fullName\":\"Vet\",\"email\":\"vet@layer.io\",\"role\":\"VETERINARIAN\"}"))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    String vetPw = objectMapper.readTree(vetJson).get("data").get("temporaryPassword").asText();
+    String vet = login("vet@layer.io", vetPw);
 
     String base = "/api/v1/farms/" + farmId + "/egg-production";
 
