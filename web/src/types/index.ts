@@ -96,12 +96,6 @@ export interface CreateMemberResult {
   temporaryPassword: string;
 }
 
-/** Invite payload (mirrors backend AddMemberRequest). */
-export interface InviteMemberInput {
-  email: string;
-  role: FarmRole;
-}
-
 /** Subscription lifecycle status (mirrors backend SubscriptionStatus). */
 export type SubscriptionStatus =
   | "TRIAL"
