@@ -18,46 +18,38 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import { Trash2, UserPlus } from "lucide-react";
-import {
-  useGetMembersQuery,
-  useRemoveMemberMutation,
-} from "@/store/api/membersApi";
+import { Pencil, UserPlus } from "lucide-react";
+import { useGetMembersQuery } from "@/store/api/membersApi";
 import { apiErrorMessage } from "@/lib/apiError";
-import { useToast } from "@/components/feedback/ToastProvider";
 import { FARM_ROLE_LABELS } from "@/constants/farmRoles";
 import { colors } from "@/theme/tokens";
-import { InviteMemberDialog } from "./InviteMemberDialog";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { AddMemberDialog } from "./AddMemberDialog";
+import { EditMemberDialog } from "./EditMemberDialog";
 import type { Member } from "@/types";
 
 interface FarmTeamTabProps {
   farmId: number;
 }
 
+function initials(fullName: string): string {
+  return fullName
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("");
+}
+
 /**
- * Team management tab (A6-2 step 4.7). The backend MemberResponse exposes only
- * userId/role/permissions/active — no name, email or avatar — so members are
- * shown as "Utilisateur #id" with a role badge and active status.
+ * Team management tab (A6-2 step 4.7). MemberResponse is enriched with
+ * fullName/email/phone alongside role/permissions/active, so members are
+ * shown by name with a role badge and active status.
  */
 export function FarmTeamTab({ farmId }: FarmTeamTabProps) {
   const { data: members, isLoading, error } = useGetMembersQuery(farmId);
-  const [removeMember, { isLoading: removing }] = useRemoveMemberMutation();
-  const { showToast } = useToast();
 
-  const [inviteOpen, setInviteOpen] = useState(false);
-  const [toRemove, setToRemove] = useState<Member | null>(null);
-
-  const handleRemove = async () => {
-    if (!toRemove) return;
-    try {
-      await removeMember({ farmId, userId: toRemove.userId }).unwrap();
-      showToast("Membre retiré.", "success");
-      setToRemove(null);
-    } catch (err) {
-      showToast(apiErrorMessage(err), "error");
-    }
-  };
+  const [addOpen, setAddOpen] = useState(false);
+  const [editMember, setEditMember] = useState<Member | null>(null);
 
   return (
     <Box>
@@ -78,9 +70,9 @@ export function FarmTeamTab({ farmId }: FarmTeamTabProps) {
           variant="contained"
           color="primary"
           startIcon={<UserPlus size={18} />}
-          onClick={() => setInviteOpen(true)}
+          onClick={() => setAddOpen(true)}
         >
-          Inviter un membre
+          Ajouter un membre
         </Button>
       </Stack>
 
@@ -94,7 +86,7 @@ export function FarmTeamTab({ farmId }: FarmTeamTabProps) {
 
       {!isLoading && !error && members && members.length === 0 && (
         <Typography variant="body2" color="text.secondary" sx={{ py: 4, textAlign: "center" }}>
-          Aucun membre pour l&apos;instant. Invitez votre premier collaborateur.
+          Aucun membre pour l&apos;instant. Ajoutez votre premier collaborateur.
         </Typography>
       )}
 
@@ -114,12 +106,24 @@ export function FarmTeamTab({ farmId }: FarmTeamTabProps) {
                 <TableRow key={member.id} hover>
                   <TableCell>
                     <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-                      <Avatar sx={{ width: 32, height: 32, bgcolor: colors.primary[500], fontSize: "0.8rem" }}>
-                        {String(member.userId).slice(-2)}
+                      <Avatar
+                        sx={{
+                          width: 32,
+                          height: 32,
+                          bgcolor: colors.primary[50],
+                          color: colors.primary[700],
+                          fontSize: "0.8rem",
+                          fontWeight: 700,
+                        }}
+                      >
+                        {initials(member.fullName)}
                       </Avatar>
-                      <Typography variant="body2">
-                        Utilisateur #{member.userId}
-                      </Typography>
+                      <Stack spacing={0}>
+                        <Typography variant="body2">{member.fullName}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {member.email}
+                        </Typography>
+                      </Stack>
                     </Stack>
                   </TableCell>
                   <TableCell>
@@ -146,12 +150,11 @@ export function FarmTeamTab({ farmId }: FarmTeamTabProps) {
                   </TableCell>
                   <TableCell align="right">
                     <IconButton
-                      aria-label={`Retirer l'utilisateur ${member.userId}`}
-                      onClick={() => setToRemove(member)}
-                      disabled={member.role === "OWNER"}
+                      aria-label={`Modifier ${member.fullName}`}
+                      onClick={() => setEditMember(member)}
                       size="small"
                     >
-                      <Trash2 size={18} />
+                      <Pencil size={18} />
                     </IconButton>
                   </TableCell>
                 </TableRow>
@@ -161,25 +164,15 @@ export function FarmTeamTab({ farmId }: FarmTeamTabProps) {
         </TableContainer>
       )}
 
-      <InviteMemberDialog
-        open={inviteOpen}
-        onClose={() => setInviteOpen(false)}
-        farmId={farmId}
-      />
-      <ConfirmDialog
-        open={Boolean(toRemove)}
-        title="Retirer ce membre ?"
-        message={
-          toRemove
-            ? `L'utilisateur #${toRemove.userId} perdra l'accès à cette ferme.`
-            : ""
-        }
-        confirmLabel="Retirer"
-        danger
-        loading={removing}
-        onConfirm={handleRemove}
-        onClose={() => setToRemove(null)}
-      />
+      <AddMemberDialog open={addOpen} onClose={() => setAddOpen(false)} farmId={farmId} />
+      {editMember && (
+        <EditMemberDialog
+          open
+          onClose={() => setEditMember(null)}
+          farmId={farmId}
+          member={editMember}
+        />
+      )}
     </Box>
   );
 }
