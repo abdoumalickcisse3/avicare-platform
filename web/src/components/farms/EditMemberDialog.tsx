@@ -69,17 +69,27 @@ export function EditMemberDialog({ open, onClose, farmId, member }: EditMemberDi
   const [confirmRemoveOpen, setConfirmRemoveOpen] = useState(false);
 
   // Render-phase reset (per React docs "you might not need an effect"): whenever
-  // the dialog (re)opens for this member, reload local state from the latest
-  // member snapshot. Tracking (open, member.id) avoids resetting on every
-  // render while still covering both a fresh open and a different member.
-  const [seededFor, setSeededFor] = useState<string | null>(null);
-  const seedKey = `${open}:${member.userId}`;
-  if (open && seedKey !== seededFor) {
-    setSeededFor(seedKey);
+  // the dialog transitions closed->open, or a different member is swapped in
+  // while it stays open, reload local state from the latest member snapshot.
+  // Tracking `wasOpen` (edge-triggered) rather than a combined key ensures a
+  // reopen of the SAME member always reseeds, discarding unsaved edits.
+  const [wasOpen, setWasOpen] = useState(false);
+  const [seededUserId, setSeededUserId] = useState<number | null>(null);
+
+  const reseed = () => {
     setRole(member.role);
     setPermissions(member.permissions);
     setActive(member.active);
     setTemporaryPassword(null);
+    setSeededUserId(member.userId);
+  };
+
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) reseed();
+  }
+  if (open && seededUserId !== member.userId) {
+    reseed();
   }
 
   const handleRoleChange = (next: FarmRole) => {

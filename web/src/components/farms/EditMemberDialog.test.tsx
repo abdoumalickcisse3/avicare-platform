@@ -1,9 +1,14 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "@/test/render";
 import { EditMemberDialog } from "./EditMemberDialog";
 import type { Member } from "@/types";
+import { Provider } from "react-redux";
+import { ThemeProvider } from "@mui/material/styles";
+import { makeStore } from "@/store/store";
+import { avicareTheme } from "@/theme";
+import { ToastProvider } from "@/components/feedback/ToastProvider";
 
 const MEMBER: Member = {
   id: 3,
@@ -115,5 +120,62 @@ describe("EditMemberDialog", () => {
     );
 
     expect(await screen.findByText("New456xyz")).toBeInTheDocument();
+  });
+
+  it("saving with permissions unchanged sends the seeded permissions array in the PUT body", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <EditMemberDialog open onClose={vi.fn()} farmId={1} member={MEMBER} />,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: /enregistrer les modifications/i }),
+    );
+
+    await waitFor(() => expect(lastBody).not.toBeNull());
+    expect(Array.isArray(lastBody?.permissions)).toBe(true);
+    expect(lastBody?.permissions).toEqual(MEMBER.permissions);
+  });
+
+  it("reopening the same member discards unsaved edits made before closing without saving", async () => {
+    const user = userEvent.setup();
+    const store = makeStore();
+    const wrap = (open: boolean) => (
+      <Provider store={store}>
+        <ThemeProvider theme={avicareTheme}>
+          <ToastProvider>
+            <EditMemberDialog open={open} onClose={vi.fn()} farmId={1} member={MEMBER} />
+          </ToastProvider>
+        </ThemeProvider>
+      </Provider>
+    );
+
+    const { rerender } = render(wrap(true));
+
+    // Open: toggle "Compte actif" off (unsaved edit).
+    await waitFor(() =>
+      expect(screen.getByRole("switch", { name: /compte actif/i })).toBeChecked(),
+    );
+    await user.click(screen.getByRole("switch", { name: /compte actif/i }));
+    expect(screen.getByRole("switch", { name: /compte actif/i })).not.toBeChecked();
+
+    // Close without saving.
+    rerender(wrap(false));
+
+    // Reopen the SAME member.
+    rerender(wrap(true));
+
+    // The switch should reflect the seeded member.active === true again, not
+    // the abandoned "off" edit.
+    await waitFor(() =>
+      expect(screen.getByRole("switch", { name: /compte actif/i })).toBeChecked(),
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: /enregistrer les modifications/i }),
+    );
+
+    await waitFor(() => expect(lastBody).not.toBeNull());
+    expect(lastBody?.active).toBe(true);
   });
 });
