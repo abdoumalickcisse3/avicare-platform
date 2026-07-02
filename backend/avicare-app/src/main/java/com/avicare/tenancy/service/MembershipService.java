@@ -93,6 +93,10 @@ public class MembershipService {
 
   @Transactional
   public MemberResponse updateMember(Long farmId, Long userId, UpdateMemberRequest request) {
+    if (request.role() == FarmRole.OWNER) {
+      throw new BusinessRuleException(
+          "OWNER_NOT_ASSIGNABLE", "The OWNER role cannot be assigned to a member");
+    }
     UserFarm membership = load(farmId, userId);
     membership.setRole(request.role());
     membership.setPermissions(
