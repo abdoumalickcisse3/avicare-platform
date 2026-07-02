@@ -85,7 +85,7 @@ Défauts rôles (`FarmRole.defaultPermissions()`) : MANAGER `["poultry:*","healt
 
 **`common-security`** :
 - `PermissionValidator.validate(List<String>)` — chaque entrée ∈ { `*`, `resource:*`, `resource:verb` } du
-  registre `PermissionConstants` (sinon `ValidationException` 422). Réutilisé par add + update.
+  registre `PermissionConstants` (sinon `ValidationException` → 400). Réutilisé par add + update.
 
 **`tenancy`** :
 - `PermissionCatalogController` : `GET /api/v1/permissions/catalog` → `PermissionCatalogResponse{
@@ -133,7 +133,7 @@ Défauts rôles (`FarmRole.defaultPermissions()`) : MANAGER `["poultry:*","healt
 ## 7. Gestion d'erreurs & états
 
 - Catalogue en chargement → toggle « Personnaliser » désactivé + skeleton.
-- Email déjà pris → 422 (toast). Permission inconnue → 422.
+- Email déjà pris → 422 (toast). Permission inconnue → 400 (`ValidationException`).
 - Mot de passe temporaire : affiché **une seule fois** ; aucune relecture (pas stocké en clair).
 - Gating ajout/édition réservé OWNER/MANAGER via `@farmAccess` (inchangé). Rôle OWNER en création → 422.
 - Révocation/rétrogradation (mémo) : permissions dans le JWT → la rotation refresh (A3) + désactivation
