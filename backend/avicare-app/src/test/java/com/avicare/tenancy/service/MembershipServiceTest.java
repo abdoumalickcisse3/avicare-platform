@@ -15,6 +15,7 @@ import com.avicare.identity.api.dto.ProvisionUserCommand;
 import com.avicare.identity.api.dto.UserInfo;
 import com.avicare.tenancy.domain.UserFarm;
 import com.avicare.tenancy.dto.request.CreateMemberRequest;
+import com.avicare.tenancy.dto.request.UpdateMemberRequest;
 import com.avicare.tenancy.dto.response.CreateMemberResult;
 import com.avicare.tenancy.repository.UserFarmRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -68,6 +69,16 @@ class MembershipServiceTest {
         .isInstanceOf(BusinessRuleException.class);
 
     verify(userFarmRepository, never()).save(any());
+  }
+
+  @Test
+  void updateMember_ownerRole_throwsBusinessRule() {
+    UpdateMemberRequest req = new UpdateMemberRequest(FarmRole.OWNER, null, null);
+
+    assertThatThrownBy(() -> membershipService.updateMember(3L, 5L, req))
+        .isInstanceOf(BusinessRuleException.class);
+
+    verify(userFarmRepository, never()).findByUserIdAndFarmId(any(), any());
   }
 
   @Test
