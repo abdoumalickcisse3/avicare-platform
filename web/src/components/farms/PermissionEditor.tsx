@@ -89,7 +89,7 @@ export function PermissionEditor({
                     disabled={disabled}
                     checked={selected.has(perm)}
                     onChange={(e) => toggle(perm, e.target.checked)}
-                    slotProps={{ input: { "aria-label": perm } as any }}
+                    slotProps={{ input: { "aria-label": perm } }}
                     sx={{ color: colors.primary[400], "&.Mui-checked": { color: colors.primary[600] } }}
                   />
                 ) : (
