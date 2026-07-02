@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
@@ -67,26 +67,41 @@ export function AddMemberDialog({ open, onClose, farmId }: AddMemberDialogProps)
   const [permissions, setPermissions] = useState<string[]>([]);
   const [temporaryPassword, setTemporaryPassword] = useState<string | null>(null);
 
-  const { control, handleSubmit, reset, watch } = useForm<AddMemberForm>({
+  const { control, handleSubmit, reset } = useForm<AddMemberForm>({
     resolver: zodResolver(addMemberSchema),
     defaultValues: DEFAULT_VALUES,
   });
 
-  const role = watch("role");
+  const role = useWatch({ control, name: "role" });
 
+  // reset() is the RHF-sanctioned way to reload form fields on (re)open.
   useEffect(() => {
     if (open) {
       reset(DEFAULT_VALUES);
-      setCustomize(false);
-      setTemporaryPassword(null);
     }
   }, [open, reset]);
 
-  useEffect(() => {
-    if (catalog) {
-      setPermissions(catalog.roleDefaults[role] ?? []);
+  // Render-phase resets (per React docs "you might not need an effect"):
+  // whenever the dialog (re)opens we clear the customize toggle, temp password,
+  // and force a permission reseed — even if the role value is unchanged. The
+  // role/catalog change below then re-seeds permissions to the role defaults,
+  // which also covers the catalog arriving after the dialog is already open.
+  const [wasOpen, setWasOpen] = useState(open);
+  const [seededRole, setSeededRole] = useState<string | null>(null);
+
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) {
+      setCustomize(false);
+      setTemporaryPassword(null);
+      setSeededRole(null);
     }
-  }, [role, catalog]);
+  }
+
+  if (open && catalog && seededRole !== role) {
+    setSeededRole(role);
+    setPermissions(catalog.roleDefaults[role] ?? []);
+  }
 
   const onSubmit = async (values: AddMemberForm) => {
     try {

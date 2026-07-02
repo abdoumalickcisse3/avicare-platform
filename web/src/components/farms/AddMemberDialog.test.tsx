@@ -1,7 +1,13 @@
+import type { ReactNode } from "react";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { Provider } from "react-redux";
+import { ThemeProvider } from "@mui/material/styles";
 import { renderWithProviders } from "@/test/render";
+import { makeStore } from "@/store/store";
+import { avicareTheme } from "@/theme";
+import { ToastProvider } from "@/components/feedback/ToastProvider";
 import { AddMemberDialog } from "./AddMemberDialog";
 
 function respond(data: unknown) {
@@ -116,5 +122,59 @@ describe("AddMemberDialog", () => {
     await user.click(screen.getByRole("button", { name: /créer le compte/i }));
 
     expect(await screen.findByText("Temp123abcd")).toBeInTheDocument();
+  });
+
+  it("seeds the permission grid from the role's defaults when customization is toggled on", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<AddMemberDialog open onClose={vi.fn()} farmId={1} />);
+
+    await waitFor(() =>
+      expect(screen.getByRole("switch", { name: /personnaliser les accès/i })).toBeEnabled(),
+    );
+    await user.click(screen.getByRole("switch", { name: /personnaliser les accès/i }));
+    await screen.findByText("Élevage volaille");
+
+    expect(screen.getByRole("checkbox", { name: "poultry:read" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "poultry:write" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "poultry:delete" })).not.toBeChecked();
+  });
+
+  it("resets edited permissions to the role's defaults when the dialog is reopened", async () => {
+    const user = userEvent.setup();
+    // Use a wrapper-based render so `rerender` keeps the Redux/theme/toast
+    // context alive across the close/reopen cycle (renderWithProviders'
+    // rerender would tear the whole provider tree down with it).
+    const store = makeStore();
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <Provider store={store}>
+        <ThemeProvider theme={avicareTheme}>
+          <ToastProvider>{children}</ToastProvider>
+        </ThemeProvider>
+      </Provider>
+    );
+    const { rerender } = render(<AddMemberDialog open onClose={vi.fn()} farmId={1} />, {
+      wrapper,
+    });
+
+    await waitFor(() =>
+      expect(screen.getByRole("switch", { name: /personnaliser les accès/i })).toBeEnabled(),
+    );
+    await user.click(screen.getByRole("switch", { name: /personnaliser les accès/i }));
+    await screen.findByText("Élevage volaille");
+
+    // Edit away from the FARMER defaults.
+    await user.click(screen.getByRole("checkbox", { name: "poultry:delete" }));
+    expect(screen.getByRole("checkbox", { name: "poultry:delete" })).toBeChecked();
+
+    // Close then reopen the dialog.
+    rerender(<AddMemberDialog open={false} onClose={vi.fn()} farmId={1} />);
+    rerender(<AddMemberDialog open onClose={vi.fn()} farmId={1} />);
+
+    await user.click(screen.getByRole("switch", { name: /personnaliser les accès/i }));
+    await screen.findByText("Élevage volaille");
+
+    expect(screen.getByRole("checkbox", { name: "poultry:read" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "poultry:write" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "poultry:delete" })).not.toBeChecked();
   });
 });
