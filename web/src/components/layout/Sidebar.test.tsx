@@ -18,6 +18,20 @@ vi.mock("@/hooks/useCurrentFarmFocus", () => ({
   useCurrentFarmFocus: () => focusMock(),
 }));
 
+const permsMock = vi.fn();
+vi.mock("@/hooks/useFarmPermissions", () => ({
+  useFarmPermissions: () => permsMock(),
+}));
+
+function mockPerms(perms: string[]) {
+  permsMock.mockReturnValue({
+    can: (p: string) =>
+      perms.includes("*") ||
+      perms.includes(p) ||
+      perms.includes(`${p.split(":")[0]}:*`),
+  });
+}
+
 function mockModules(active: string[], { isLoading = false } = {}) {
   activeModulesMock.mockReturnValue({
     farmId: 1,
@@ -36,7 +50,9 @@ describe("Sidebar module filtering", () => {
   beforeEach(() => {
     activeModulesMock.mockReset();
     focusMock.mockReset();
+    permsMock.mockReset();
     mockFocus([]); // default: no explicit focus → modules alone decide
+    mockPerms(["*"]); // default: OWNER-like, sees everything
   });
 
   it("always shows Fermes and Réglages", () => {
@@ -128,5 +144,40 @@ describe("Sidebar module filtering", () => {
     expect(screen.getByText("Factures")).toBeInTheDocument();
     expect(screen.queryByText("Livraisons")).not.toBeInTheDocument();
     expect(screen.queryByText("Paiements")).not.toBeInTheDocument();
+  });
+});
+
+describe("Sidebar permission gating", () => {
+  beforeEach(() => {
+    activeModulesMock.mockReset();
+    focusMock.mockReset();
+    permsMock.mockReset();
+    mockFocus([]);
+  });
+
+  it("hides Stocks, Commercial and Réglages from a FARMER (poultry+health only)", () => {
+    mockModules(["module.poultry.broiler", "module.inventory", "module.commercial.basic"]);
+    mockPerms(["poultry:read", "poultry:write", "health:read", "health:write"]);
+    renderWithProviders(<Sidebar />);
+    expect(screen.queryByText("Stocks")).not.toBeInTheDocument();
+    expect(screen.queryByText("Commercial")).not.toBeInTheDocument();
+    expect(screen.queryByText("Réglages")).not.toBeInTheDocument();
+    expect(screen.getByText("Élevage")).toBeInTheDocument();
+  });
+
+  it("shows every module to an OWNER (wildcard)", () => {
+    mockModules(["module.poultry.broiler", "module.inventory", "module.commercial.basic"]);
+    mockPerms(["*"]);
+    renderWithProviders(<Sidebar />);
+    expect(screen.getByText("Stocks")).toBeInTheDocument();
+    expect(screen.getByText("Commercial")).toBeInTheDocument();
+    expect(screen.getByText("Réglages")).toBeInTheDocument();
+  });
+
+  it("still hides a module the farm has not subscribed to, even with the permission", () => {
+    mockModules(["module.poultry.broiler"]); // inventory NOT subscribed
+    mockPerms(["*"]);
+    renderWithProviders(<Sidebar />);
+    expect(screen.queryByText("Stocks")).not.toBeInTheDocument();
   });
 });

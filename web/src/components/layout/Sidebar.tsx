@@ -40,6 +40,7 @@ import {
 } from "lucide-react";
 import { useActiveModules } from "@/hooks/useActiveModules";
 import { useCurrentFarmFocus } from "@/hooks/useCurrentFarmFocus";
+import { useFarmPermissions } from "@/hooks/useFarmPermissions";
 import { colors } from "@/theme/tokens";
 
 export const SIDEBAR_WIDTH = 264;
@@ -53,6 +54,7 @@ interface Leaf {
   enabled?: boolean; // default true
   requiredModule?: string;
   requiredModuleAny?: string[];
+  requiredPermission?: string;
   focusToken?: "broiler" | "layer";
 }
 interface Group {
@@ -61,6 +63,7 @@ interface Group {
   icon: IconType;
   /** Group hidden unless this module is active (children share the gate). */
   requiredModule?: string;
+  requiredPermission?: string;
   /** Show the "activate a module" CTA when no child is visible (Élevage). */
   emptyStateCta?: boolean;
   children: Leaf[];
@@ -100,6 +103,7 @@ const NAV: Section[] = [
             href: "/elevage/lots",
             icon: Drumstick,
             requiredModule: "module.poultry.broiler",
+            requiredPermission: "poultry:read",
             focusToken: "broiler",
           },
           {
@@ -107,6 +111,7 @@ const NAV: Section[] = [
             href: "/elevage/oeufs",
             icon: Egg,
             requiredModule: "module.poultry.layer",
+            requiredPermission: "poultry:read",
             focusToken: "layer",
           },
           {
@@ -114,6 +119,7 @@ const NAV: Section[] = [
             href: "/elevage/sanitaire",
             icon: HeartPulse,
             requiredModuleAny: ["module.health.basic", "module.health.advanced"],
+            requiredPermission: "health:read",
           },
         ],
       },
@@ -123,6 +129,7 @@ const NAV: Section[] = [
         label: "Stocks",
         icon: Boxes,
         requiredModule: "module.inventory",
+        requiredPermission: "inventory:read",
         children: [
           { label: "Vue d'ensemble", href: "/stocks", icon: LayoutGrid },
           { label: "Bibliothèque", href: "/stocks/articles", icon: BookOpen },
@@ -137,6 +144,7 @@ const NAV: Section[] = [
         label: "Commercial",
         icon: ShoppingCart,
         requiredModule: "module.commercial.basic",
+        requiredPermission: "commercial:read",
         children: [
           { label: "Clients", href: "/commercial/clients", icon: Users },
           { label: "Commandes", href: "/commercial/commandes", icon: ShoppingBag },
@@ -145,7 +153,13 @@ const NAV: Section[] = [
         ],
       },
       { kind: "leaf", label: "Abonnement", href: "/abonnement", icon: CreditCard, enabled: false },
-      { kind: "leaf", label: "Réglages", href: "/reglages", icon: Settings },
+      {
+        kind: "leaf",
+        label: "Réglages",
+        href: "/reglages",
+        icon: Settings,
+        requiredPermission: "settings:read",
+      },
     ],
   },
 ];
@@ -169,6 +183,7 @@ const HEADING_SX = {
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const { isModuleActive, isLoading, farmId, hasFarm } = useActiveModules();
+  const { can } = useFarmPermissions(farmId);
   const { focus } = useCurrentFarmFocus();
   // Groups are open by default (discoverability); track the ones the user closes.
   const [collapsedKeys, setCollapsedKeys] = useState<Set<string>>(new Set());
@@ -182,6 +197,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const childVisible = (c: Leaf) =>
     (!c.requiredModule || isModuleActive(c.requiredModule)) &&
     (!c.requiredModuleAny || c.requiredModuleAny.some(isModuleActive)) &&
+    (!c.requiredPermission || can(c.requiredPermission)) &&
     (!c.focusToken || focus.length === 0 || focus.includes(c.focusToken));
 
   const toggleCollapsed = (key: string) =>
@@ -248,6 +264,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
   const renderGroup = (group: Group) => {
     if (group.requiredModule && !isModuleActive(group.requiredModule)) return null;
+    if (group.requiredPermission && !can(group.requiredPermission)) return null;
 
     const visible = group.children.filter(childVisible);
     if (visible.length === 0) {
@@ -368,7 +385,11 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             ) : (
               <List disablePadding>
                 {section.entries.map((entry) =>
-                  entry.kind === "group" ? renderGroup(entry) : leafButton(entry, false),
+                  entry.kind === "group"
+                    ? renderGroup(entry)
+                    : entry.requiredPermission && !can(entry.requiredPermission)
+                      ? null
+                      : leafButton(entry, false),
                 )}
               </List>
             )}
