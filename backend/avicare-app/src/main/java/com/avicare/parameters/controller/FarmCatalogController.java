@@ -20,7 +20,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Farm-level catalog: the effective list (platform + customizations) and a farm's overrides /
- * disables. Reading needs farm access; mutating is restricted to OWNER/MANAGER.
+ * disables. Reading needs the {@code settings:read} permission; mutating is restricted to
+ * OWNER/MANAGER.
  */
 @RestController
 @RequestMapping("/api/v1/farms/{farmId}/catalog/{category}")
@@ -30,7 +31,7 @@ public class FarmCatalogController {
   private final CatalogService catalogService;
 
   @GetMapping
-  @PreAuthorize("@farmAccess.hasAccess(#farmId)")
+  @PreAuthorize("@farmAccess.hasPermission(#farmId, 'settings:read')")
   public ApiResponse<List<CatalogEntryResponse>> list(
       @PathVariable Long farmId, @PathVariable String category) {
     List<CatalogEntryResponse> entries =

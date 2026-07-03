@@ -23,8 +23,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Farm price lists and their items. Reading needs farm access; mutating is restricted to
- * OWNER/MANAGER via the {@code @farmAccess} SpEL bean.
+ * Farm price lists and their items. Reading needs the {@code settings:read} permission; mutating is
+ * restricted to OWNER/MANAGER via the {@code @farmAccess} SpEL bean.
  */
 @RestController
 @RequestMapping("/api/v1/farms/{farmId}/price-lists")
@@ -34,7 +34,7 @@ public class PriceListController {
   private final PriceListService priceListService;
 
   @GetMapping
-  @PreAuthorize("@farmAccess.hasAccess(#farmId)")
+  @PreAuthorize("@farmAccess.hasPermission(#farmId, 'settings:read')")
   public ApiResponse<List<PriceListResponse>> list(@PathVariable Long farmId) {
     return ApiResponse.of(
         priceListService.listForFarm(farmId).stream()
@@ -67,7 +67,7 @@ public class PriceListController {
   }
 
   @GetMapping("/{priceListId}/items")
-  @PreAuthorize("@farmAccess.hasAccess(#farmId)")
+  @PreAuthorize("@farmAccess.hasPermission(#farmId, 'settings:read')")
   public ApiResponse<List<PriceListItemResponse>> listItems(
       @PathVariable Long farmId, @PathVariable Long priceListId) {
     return ApiResponse.of(

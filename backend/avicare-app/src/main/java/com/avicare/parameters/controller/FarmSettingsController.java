@@ -17,8 +17,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Farm-level settings (layer 2). Reading needs farm access; writing is restricted to OWNER/MANAGER
- * via the {@code @farmAccess} SpEL bean.
+ * Farm-level settings (layer 2). Reading needs the {@code settings:read} permission; writing is
+ * restricted to OWNER/MANAGER via the {@code @farmAccess} SpEL bean.
  */
 @RestController
 @RequestMapping("/api/v1/farms/{farmId}/settings")
@@ -28,7 +28,7 @@ public class FarmSettingsController {
   private final FarmSettingService farmSettingService;
 
   @GetMapping
-  @PreAuthorize("@farmAccess.hasAccess(#farmId)")
+  @PreAuthorize("@farmAccess.hasPermission(#farmId, 'settings:read')")
   public ApiResponse<List<SettingResponse>> list(@PathVariable Long farmId) {
     List<SettingResponse> settings =
         farmSettingService.getFarmSettings(farmId).stream()

@@ -20,8 +20,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Farm alert thresholds. Reading needs farm access; mutating is restricted to OWNER/MANAGER. One
- * threshold per (farm, type); the type is the path key.
+ * Farm alert thresholds. Reading needs the {@code settings:read} permission; mutating is restricted
+ * to OWNER/MANAGER. One threshold per (farm, type); the type is the path key.
  */
 @RestController
 @RequestMapping("/api/v1/farms/{farmId}/thresholds")
@@ -31,7 +31,7 @@ public class AlertThresholdController {
   private final ThresholdService thresholdService;
 
   @GetMapping
-  @PreAuthorize("@farmAccess.hasAccess(#farmId)")
+  @PreAuthorize("@farmAccess.hasPermission(#farmId, 'settings:read')")
   public ApiResponse<List<ThresholdResponse>> list(@PathVariable Long farmId) {
     return ApiResponse.of(
         thresholdService.list(farmId).stream().map(AlertThresholdController::toResponse).toList());
