@@ -101,6 +101,28 @@ class ModulePermissionIT {
         .andExpect(status().isOk());
   }
 
+  @Test
+  void farmer_withoutSettingsRead_isForbidden_owner_isOk() throws Exception {
+    String owner = onboardOwner("mpe-set");
+    long farmId = createFarm(owner, "Ferme Réglages");
+    owner = relogin("mpe-set");
+
+    // Real provisioned FARMER: default perms = poultry + health only, NO settings:read.
+    String farmerPw = addMember(owner, farmId, "Farmer Set", "mpe-set-farmer@co.io", "FARMER");
+    String farmer = loginWith("mpe-set-farmer@co.io", farmerPw);
+
+    mockMvc
+        .perform(
+            get("/api/v1/farms/" + farmId + "/settings")
+                .header("Authorization", "Bearer " + farmer))
+        .andExpect(status().isForbidden());
+
+    mockMvc
+        .perform(
+            get("/api/v1/farms/" + farmId + "/settings").header("Authorization", "Bearer " + owner))
+        .andExpect(status().isOk());
+  }
+
   // --- helpers (copied verbatim from com.avicare.livestock.commercial.ClientOrderApiIT) --------
 
   private String onboardOwner(String slug) throws Exception {
