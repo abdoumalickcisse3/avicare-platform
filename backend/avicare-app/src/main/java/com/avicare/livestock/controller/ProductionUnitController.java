@@ -25,8 +25,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Transverse, species-agnostic read + lifecycle endpoints over a farm's production units. Reading
- * needs farm access; recording events/mortality needs an operational role (FARMER/MANAGER/OWNER).
- * Unit creation is species-specific and lives in the species contexts (Sprint B1+).
+ * needs {@code poultry:read} (parity with the per-species controllers); recording events/mortality
+ * needs an operational role (FARMER/MANAGER/OWNER). Unit creation is species-specific and lives in
+ * the species contexts (Sprint B1+).
  */
 @RestController
 @RequestMapping("/api/v1/farms/{farmId}/production-units")
@@ -45,10 +46,15 @@ public class ProductionUnitController {
           + "T(com.avicare.common.security.principal.FarmRole).OWNER, "
           + "T(com.avicare.common.security.principal.FarmRole).MANAGER)";
 
+  // Reads on this transverse endpoint expose production units (all poultry in V1), so they
+  // require poultry:read — parity with the per-species PoultryBatch/Layer read gating.
+  private static final String READ_PERMISSION =
+      "@farmAccess.hasPermission(#farmId, 'poultry:read')";
+
   private final LivestockService livestockService;
 
   @GetMapping
-  @PreAuthorize("@farmAccess.hasAccess(#farmId)")
+  @PreAuthorize(READ_PERMISSION)
   public ApiResponse<List<ProductionUnitResponse>> list(@PathVariable Long farmId) {
     return ApiResponse.of(
         livestockService.listByFarm(farmId).stream()
@@ -75,14 +81,14 @@ public class ProductionUnitController {
   }
 
   @GetMapping("/{unitId}")
-  @PreAuthorize("@farmAccess.hasAccess(#farmId)")
+  @PreAuthorize(READ_PERMISSION)
   public ApiResponse<ProductionUnitResponse> get(
       @PathVariable Long farmId, @PathVariable Long unitId) {
     return ApiResponse.of(toResponse(livestockService.getUnit(unitId)));
   }
 
   @GetMapping("/{unitId}/events")
-  @PreAuthorize("@farmAccess.hasAccess(#farmId)")
+  @PreAuthorize(READ_PERMISSION)
   public ApiResponse<List<LifecycleEventResponse>> events(
       @PathVariable Long farmId, @PathVariable Long unitId) {
     return ApiResponse.of(
