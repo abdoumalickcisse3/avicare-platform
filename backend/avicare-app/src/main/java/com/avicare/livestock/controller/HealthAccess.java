@@ -18,7 +18,7 @@ final class HealthAccess {
   private static final String FARMER = "T(com.avicare.common.security.principal.FarmRole).FARMER";
 
   // --- basic tier -----------------------------------------------------
-  static final String READ_BASIC = "@farmAccess.hasAccess(#farmId) and " + BASIC;
+  static final String READ_BASIC = "@farmAccess.hasPermission(#farmId, 'health:read') and " + BASIC;
 
   /** OWNER / MANAGER / FARMER — field entry (record vaccination, observation). */
   static final String WRITE_BASIC_FARMER =
@@ -29,7 +29,8 @@ final class HealthAccess {
       "@farmAccess.hasRole(#farmId, " + OWNER + ", " + MANAGER + ") and " + BASIC;
 
   // --- advanced tier --------------------------------------------------
-  static final String READ_ADVANCED = "@farmAccess.hasAccess(#farmId) and " + ADVANCED;
+  static final String READ_ADVANCED =
+      "@farmAccess.hasPermission(#farmId, 'health:read') and " + ADVANCED;
 
   /** OWNER / MANAGER — treatments, vet directory, vet visits. */
   static final String WRITE_ADVANCED_MANAGER =
