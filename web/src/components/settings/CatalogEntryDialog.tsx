@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -39,7 +39,10 @@ export function CatalogEntryDialog({ open, onClose, config, farmId, entry }: Pro
   const [override, { isLoading }] = useOverrideCatalogEntryMutation();
 
   // Editable fields = those without a const value.
-  const editable = useMemo(() => config.fields.filter((f) => !f.const), [config.fields]);
+  const editable = useMemo(
+    () => config.fields.filter((f) => f.const === undefined),
+    [config.fields],
+  );
 
   const schema = useMemo(
     () =>
@@ -66,8 +69,12 @@ export function CatalogEntryDialog({ open, onClose, config, farmId, entry }: Pro
     defaultValues: defaults,
   });
 
+  const wasOpen = useRef(false);
   useEffect(() => {
-    if (open) reset(defaults);
+    if (open && !wasOpen.current) {
+      reset(defaults);
+    }
+    wasOpen.current = open;
   }, [open, defaults, reset]);
 
   const onSubmit = async (values: FormValues) => {
