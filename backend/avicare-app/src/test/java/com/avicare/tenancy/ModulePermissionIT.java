@@ -123,6 +123,31 @@ class ModulePermissionIT {
         .andExpect(status().isOk());
   }
 
+  @Test
+  void memberWithoutPoultryRead_isForbiddenOnTransverseProductionUnits_owner_isOk()
+      throws Exception {
+    String owner = onboardOwner("mpe-pu");
+    long farmId = createFarm(owner, "Ferme Unités");
+    owner = relogin("mpe-pu");
+
+    // A BUYER's default permissions are commercial:read + finance:read — NO poultry:read. The
+    // transverse /production-units endpoint must not undercut the per-species poultry:read gate.
+    String buyerPw = addMember(owner, farmId, "Buyer PU", "mpe-pu-buyer@co.io", "BUYER");
+    String buyer = loginWith("mpe-pu-buyer@co.io", buyerPw);
+
+    mockMvc
+        .perform(
+            get("/api/v1/farms/" + farmId + "/production-units")
+                .header("Authorization", "Bearer " + buyer))
+        .andExpect(status().isForbidden());
+
+    mockMvc
+        .perform(
+            get("/api/v1/farms/" + farmId + "/production-units")
+                .header("Authorization", "Bearer " + owner))
+        .andExpect(status().isOk());
+  }
+
   // --- helpers (copied verbatim from com.avicare.livestock.commercial.ClientOrderApiIT) --------
 
   private String onboardOwner(String slug) throws Exception {
