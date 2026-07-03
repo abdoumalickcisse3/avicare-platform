@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { Box, Breadcrumbs, Button, Card, CardContent, Typography } from "@mui/material";
+import { Box, Breadcrumbs, Typography } from "@mui/material";
+import { getCategoryConfig } from "@/constants/catalogCategories";
+import { CatalogCategoryView } from "@/components/settings/CatalogCategoryView";
 
 const CATEGORY_NAMES: Record<string, string> = {
   stock: "Stock",
@@ -9,18 +11,14 @@ const CATEGORY_NAMES: Record<string, string> = {
   comptabilite: "Comptabilité",
 };
 
-/**
- * Placeholder for a settings category management page (A6-3 step 4.5). The
- * per-category catalog UI lands in V2; for now this confirms the route and
- * links back to the hub. `params` is a Promise in Next 16.
- */
+/** Settings category page: renders the generic catalog manager for configured slugs. */
 export default async function SettingsCategoryPage({
   params,
 }: {
   params: Promise<{ category: string }>;
 }) {
   const { category } = await params;
-  const name = CATEGORY_NAMES[category] ?? category;
+  const name = getCategoryConfig(category)?.title ?? CATEGORY_NAMES[category] ?? category;
 
   return (
     <Box>
@@ -35,22 +33,7 @@ export default async function SettingsCategoryPage({
         {name}
       </Typography>
 
-      <Card>
-        <CardContent>
-          <Box sx={{ py: 6, textAlign: "center" }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-              Bientôt disponible
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              La gestion des paramètres « {name} » arrivera dans une prochaine
-              version.
-            </Typography>
-            <Button component={Link} href="/reglages" variant="outlined">
-              Retour aux réglages
-            </Button>
-          </Box>
-        </CardContent>
-      </Card>
+      <CatalogCategoryView slug={category} />
     </Box>
   );
 }
