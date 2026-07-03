@@ -3,8 +3,9 @@ package com.avicare.livestock.controller;
 /**
  * Shared {@code @PreAuthorize} SpEL expressions for the health module endpoints (Sprint B3-4). Two
  * feature tiers: {@code module.health.basic} (vaccinations + observations + their library) and
- * {@code module.health.advanced} (treatments + withdrawal + vets + visits). Reads need farm access;
- * writes need an operational role; sensitive writes need a supervisory role.
+ * {@code module.health.advanced} (treatments + withdrawal + vets + visits). Reads need the {@code
+ * health:read} permission; writes need an operational role; sensitive writes need a supervisory
+ * role.
  */
 final class HealthAccess {
 
