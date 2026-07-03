@@ -39,8 +39,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * End-to-end inventory REST API over HTTP on a real PostgreSQL (Testcontainers, V1–V19, Sprint
  * B4-6): the full owner happy-path across the 7 controllers (catalog, suppliers, purchase-order
  * workflow with cascade to stock, manual movements, feed-formula clone/update, alerts), the D18
- * coupling exposure (positive + Option α 422), feature gating (403), RBAC (VETERINARIAN read-only)
- * and cross-farm isolation (404). Gating is FORCED ON. CI-only where Docker is unavailable.
+ * coupling exposure (positive + Option α 422), feature gating (403), RBAC (a default VETERINARIAN
+ * has no inventory:read/write and is denied both) and cross-farm isolation (404). Gating is FORCED
+ * ON. CI-only where Docker is unavailable.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
@@ -231,7 +232,7 @@ class InventoryApiIT {
   }
 
   @Test
-  void veterinarian_canRead_butCannotCreatePurchaseOrder() throws Exception {
+  void veterinarian_withoutInventoryPermission_cannotReadOrWriteInventory() throws Exception {
     String owner = onboardOwner("inv-rbac");
     long farmId = createFarm(owner, "Ferme RBAC");
     owner = relogin("inv-rbac");
@@ -244,9 +245,16 @@ class InventoryApiIT {
                 888L,
                 "vet@inv.io",
                 UserRole.USER,
-                List.of(new Membership(farmId, FarmRole.VETERINARIAN, List.of("inventory:read")))));
+                List.of(
+                    new Membership(
+                        farmId,
+                        FarmRole.VETERINARIAN,
+                        List.of("health:read", "health:write", "poultry:read")))));
 
-    getOk(inv + "/suppliers", vet); // read allowed (explicit inventory:read grant)
+    // default VET permissions carry no inventory:read -> read is forbidden
+    mockMvc
+        .perform(get(inv + "/suppliers").header("Authorization", "Bearer " + vet))
+        .andExpect(status().isForbidden());
     mockMvc
         .perform(
             post(inv + "/purchase-orders")

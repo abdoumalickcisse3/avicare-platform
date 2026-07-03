@@ -24,8 +24,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Broiler batch endpoints (Sprint B1-3). Farm-scoped and gated behind the {@code
- * module.poultry.broiler} feature; reading needs farm access, creating needs an operational role
- * (FARMER/MANAGER/OWNER).
+ * module.poultry.broiler} feature; reading needs the {@code poultry:read} permission, creating
+ * needs an operational role (FARMER/MANAGER/OWNER).
  */
 @RestController
 @RequestMapping("/api/v1/farms/{farmId}/poultry-batches")

@@ -3,8 +3,8 @@ package com.avicare.livestock.controller;
 /**
  * Shared {@code @PreAuthorize} SpEL expressions for the poultry layer (egg-production) endpoints
  * (Sprint B2-3). Every route is farm-scoped and gated behind the {@code module.poultry.layer}
- * feature; reads need farm access, writes need an operational role and sensitive writes
- * (delete/overwrite/close) need a supervisory role.
+ * feature; reads need the {@code poultry:read} permission, writes need an operational role and
+ * sensitive writes (delete/overwrite/close) need a supervisory role.
  *
  * <p>The constants are compile-time string constants so they can be used as {@code @PreAuthorize}
  * values.
