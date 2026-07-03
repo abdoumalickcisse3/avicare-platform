@@ -244,9 +244,9 @@ class InventoryApiIT {
                 888L,
                 "vet@inv.io",
                 UserRole.USER,
-                List.of(new Membership(farmId, FarmRole.VETERINARIAN, List.of()))));
+                List.of(new Membership(farmId, FarmRole.VETERINARIAN, List.of("inventory:read")))));
 
-    getOk(inv + "/suppliers", vet); // read allowed
+    getOk(inv + "/suppliers", vet); // read allowed (explicit inventory:read grant)
     mockMvc
         .perform(
             post(inv + "/purchase-orders")

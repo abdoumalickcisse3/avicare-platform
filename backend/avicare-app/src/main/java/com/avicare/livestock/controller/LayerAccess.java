@@ -15,7 +15,7 @@ final class LayerAccess {
 
   static final String FEATURE = "@features.isEnabled(#farmId, 'module.poultry.layer')";
 
-  static final String READ = "@farmAccess.hasAccess(#farmId) and " + FEATURE;
+  static final String READ = "@farmAccess.hasPermission(#farmId, 'poultry:read') and " + FEATURE;
 
   /** OWNER / MANAGER / FARMER — daily field operations (record, adjust). */
   static final String WRITE_FARMER =

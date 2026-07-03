@@ -21,8 +21,11 @@ final class InventoryAccess {
 
   static final String FEATURE = "@features.isEnabled(#farmId, 'module.inventory')";
 
-  /** Any farm member — browse catalog, stock, movements, suppliers, orders, formulas, alerts. */
-  static final String READ = "@farmAccess.hasAccess(#farmId) and " + FEATURE;
+  /**
+   * Members holding {@code inventory:read} — browse catalog, stock, movements, suppliers, orders,
+   * formulas, alerts.
+   */
+  static final String READ = "@farmAccess.hasPermission(#farmId, 'inventory:read') and " + FEATURE;
 
   /** OWNER / MANAGER / FARMER — field entry (manual stock movement). */
   static final String WRITE_FARMER =

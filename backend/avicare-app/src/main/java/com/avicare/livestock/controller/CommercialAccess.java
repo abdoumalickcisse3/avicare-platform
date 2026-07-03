@@ -20,8 +20,11 @@ final class CommercialAccess {
 
   static final String FEATURE = "@features.isEnabled(#farmId, 'module.commercial.basic')";
 
-  /** Any farm member — browse clients, orders, sales, deliveries, invoices, payments. */
-  static final String READ = "@farmAccess.hasAccess(#farmId) and " + FEATURE;
+  /**
+   * Members holding {@code commercial:read} — browse clients, orders, sales, deliveries, invoices,
+   * payments.
+   */
+  static final String READ = "@farmAccess.hasPermission(#farmId, 'commercial:read') and " + FEATURE;
 
   /** OWNER / MANAGER / FARMER — field pipeline ops (create/confirm/prepare an order, deliver). */
   static final String WRITE_FARMER =

@@ -33,7 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class PoultryBatchController {
 
   static final String FEATURE = "@features.isEnabled(#farmId, 'module.poultry.broiler')";
-  static final String READ = "@farmAccess.hasAccess(#farmId) and " + FEATURE;
+  static final String READ = "@farmAccess.hasPermission(#farmId, 'poultry:read') and " + FEATURE;
   static final String WRITE =
       "@farmAccess.hasRole(#farmId, "
           + "T(com.avicare.common.security.principal.FarmRole).OWNER, "
