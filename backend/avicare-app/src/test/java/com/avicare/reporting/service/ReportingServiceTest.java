@@ -7,10 +7,12 @@ import static org.mockito.Mockito.when;
 
 import com.avicare.common.api.dto.DayValue;
 import com.avicare.common.api.dto.NamedValue;
+import com.avicare.common.security.access.FarmAccessChecker;
 import com.avicare.livestock.api.LivestockFacade;
 import com.avicare.livestock.api.dto.LivestockStats;
 import com.avicare.livestock.commercial.CommercialFacade;
 import com.avicare.livestock.commercial.dto.CommercialStats;
+import com.avicare.reporting.api.dto.DashboardResponse;
 import com.avicare.reporting.domain.DashboardPeriod;
 import com.avicare.subscription.api.SubscriptionFacade;
 import java.time.LocalDate;
@@ -27,6 +29,7 @@ class ReportingServiceTest {
   @Mock SubscriptionFacade subscriptionFacade;
   @Mock CommercialFacade commercialFacade;
   @Mock LivestockFacade livestockFacade;
+  @Mock FarmAccessChecker farmAccess;
   @InjectMocks ReportingService service;
 
   private static final DashboardPeriod P =
@@ -67,6 +70,7 @@ class ReportingServiceTest {
     when(subscriptionFacade.isModuleEnabled(1L, "module.inventory")).thenReturn(false);
     when(subscriptionFacade.isModuleEnabled(1L, "module.poultry.broiler")).thenReturn(false);
     when(subscriptionFacade.isModuleEnabled(1L, "module.poultry.layer")).thenReturn(false);
+    when(farmAccess.hasAnyPermission(1L, "commercial:read", "finance:read")).thenReturn(true);
     when(commercialFacade.commercialStats(1L, P.from(), P.to())).thenReturn(STATS);
 
     var resp = service.buildDashboard(1L, P);
@@ -111,6 +115,7 @@ class ReportingServiceTest {
     when(subscriptionFacade.isModuleEnabled(1L, "module.inventory")).thenReturn(false);
     when(subscriptionFacade.isModuleEnabled(1L, "module.poultry.broiler")).thenReturn(false);
     when(subscriptionFacade.isModuleEnabled(1L, "module.poultry.layer")).thenReturn(false);
+    when(farmAccess.hasAnyPermission(1L, "commercial:read", "finance:read")).thenReturn(true);
     when(commercialFacade.commercialStats(1L, P.from(), P.to())).thenReturn(STATS);
 
     var resp = service.buildDashboard(1L, P);
@@ -127,6 +132,7 @@ class ReportingServiceTest {
     when(subscriptionFacade.isModuleEnabled(1L, "module.inventory")).thenReturn(false);
     // broiler=true short-circuits the || so layer is never evaluated — do not stub layer
     when(subscriptionFacade.isModuleEnabled(1L, "module.poultry.broiler")).thenReturn(true);
+    when(farmAccess.hasPermission(1L, "poultry:read")).thenReturn(true);
     when(livestockFacade.livestockStats(1L, P.from(), P.to())).thenReturn(LIVESTOCK_STATS);
 
     var resp = service.buildDashboard(1L, P);
@@ -162,5 +168,17 @@ class ReportingServiceTest {
 
     assertThat(resp.livestock()).isNull();
     verify(livestockFacade, never()).livestockStats(1L, P.from(), P.to());
+  }
+
+  @Test
+  void buildDashboard_omitsCommercialWhenMemberLacksReadPermission() {
+    // subscription enables commercial, but the member has neither commercial:read nor finance:read
+    when(subscriptionFacade.isModuleEnabled(1L, "module.commercial.basic")).thenReturn(true);
+    when(farmAccess.hasAnyPermission(1L, "commercial:read", "finance:read")).thenReturn(false);
+
+    DashboardResponse res =
+        service.buildDashboard(1L, DashboardPeriod.resolve("30d", null, null, LocalDate.now()));
+
+    assertThat(res.commercial()).isNull();
   }
 }

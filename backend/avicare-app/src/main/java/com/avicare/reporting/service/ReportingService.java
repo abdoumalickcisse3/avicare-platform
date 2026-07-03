@@ -1,5 +1,6 @@
 package com.avicare.reporting.service;
 
+import com.avicare.common.security.access.FarmAccessChecker;
 import com.avicare.livestock.api.LivestockFacade;
 import com.avicare.livestock.api.dto.LivestockStats;
 import com.avicare.livestock.commercial.CommercialFacade;
@@ -24,10 +25,12 @@ public class ReportingService {
   private final SubscriptionFacade subscriptionFacade;
   private final CommercialFacade commercialFacade;
   private final LivestockFacade livestockFacade;
+  private final FarmAccessChecker farmAccess;
 
   public DashboardResponse buildDashboard(Long farmId, DashboardPeriod period) {
     CommercialSection commercial = null;
-    if (subscriptionFacade.isModuleEnabled(farmId, "module.commercial.basic")) {
+    if (subscriptionFacade.isModuleEnabled(farmId, "module.commercial.basic")
+        && farmAccess.hasAnyPermission(farmId, "commercial:read", "finance:read")) {
       CommercialStats stats = commercialFacade.commercialStats(farmId, period.from(), period.to());
       commercial =
           new CommercialSection(
@@ -44,7 +47,7 @@ public class ReportingService {
         subscriptionFacade.isModuleEnabled(farmId, "module.poultry.broiler")
             || subscriptionFacade.isModuleEnabled(farmId, "module.poultry.layer");
     LivestockSection livestock = null;
-    if (livestockActive) {
+    if (livestockActive && farmAccess.hasPermission(farmId, "poultry:read")) {
       LivestockStats ls = livestockFacade.livestockStats(farmId, period.from(), period.to());
       livestock =
           new LivestockSection(
@@ -61,6 +64,7 @@ public class ReportingService {
     }
     InventorySection inventory =
         subscriptionFacade.isModuleEnabled(farmId, "module.inventory")
+                && farmAccess.hasPermission(farmId, "inventory:read")
             ? new InventorySection()
             : null;
     return new DashboardResponse(
