@@ -155,7 +155,11 @@ public class PurchaseOrderService {
     for (PurchaseOrderItem item : po.getItems()) {
       BigDecimal received = receipts.getOrDefault(item.getId(), BigDecimal.ZERO);
       if (received.signum() > 0 && item.getUnitPriceXof() != null) {
-        long lineTotal = received.multiply(BigDecimal.valueOf(item.getUnitPriceXof())).longValue();
+        long lineTotal =
+            received
+                .multiply(BigDecimal.valueOf(item.getUnitPriceXof()))
+                .setScale(0, RoundingMode.HALF_UP)
+                .longValueExact();
         InventoryCatalogItemDto article = catalog.get(item.getArticleKey());
         expenseLines.add(
             new FinanceFacade.PurchaseExpenseLine(

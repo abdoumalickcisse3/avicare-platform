@@ -1,5 +1,6 @@
 package com.avicare.livestock.inventory;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -22,6 +23,8 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -37,6 +40,7 @@ class StockMovementServiceTest {
   @Mock StockItemRepository stockItemRepository;
   @Mock FinanceFacade financeFacade;
   @Mock InventoryCatalogService inventoryCatalogService;
+  @Captor ArgumentCaptor<Long> amountCaptor;
 
   StockMovementService service;
 
@@ -199,5 +203,56 @@ class StockMovementServiceTest {
     verify(financeFacade, never())
         .recordStockEntryExpense(
             anyLong(), anyLong(), any(), any(), any(), anyLong(), any(), any(), anyLong());
+  }
+
+  @Test
+  void recordMovement_manualPositiveAdjustmentValued_recordsDeltaValueExpense() {
+    StockItem item = stockItem(ArticleSource.INVENTORY, "feed-grower");
+    item.setCurrentQuantity(new BigDecimal("10")); // before = 10
+    when(stockItemRepository.findByFarmIdAndId(FARM_ID, STOCK_ITEM_ID))
+        .thenReturn(Optional.of(item));
+    when(inventoryCatalogService.listAllAvailableArticles())
+        .thenReturn(
+            List.of(
+                new InventoryCatalogItemDto(
+                    "feed-grower",
+                    ArticleSource.INVENTORY,
+                    "Aliment croissance",
+                    "FEED",
+                    "kg",
+                    500)));
+
+    LocalDate date = LocalDate.of(2026, 7, 4);
+    // ADJUSTMENT: target = 25, so delta = 25 - 10 = 15
+    StockMovementCommand cmd =
+        new StockMovementCommand(
+            STOCK_ITEM_ID,
+            MovementType.ADJUSTMENT,
+            new BigDecimal("25"), // target quantity
+            MovementReason.INVENTORY_PHYSICAL,
+            date,
+            null,
+            null,
+            null,
+            null,
+            100, // unit price
+            "Inventory recount",
+            null);
+
+    service.recordMovement(FARM_ID, cmd, USER_ID);
+
+    // Verify recordStockEntryExpense called with amount = delta × price = 15 × 100 = 1500
+    verify(financeFacade)
+        .recordStockEntryExpense(
+            eq(FARM_ID),
+            eq(999L),
+            eq("INVENTORY"),
+            eq("FEED"),
+            eq("Aliment croissance"),
+            amountCaptor.capture(),
+            eq(date),
+            eq(null),
+            eq(USER_ID));
+    assertThat(amountCaptor.getValue()).isEqualTo(1500L);
   }
 }
