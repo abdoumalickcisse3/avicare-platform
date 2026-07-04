@@ -45,4 +45,7 @@ public interface LivestockFacade {
    * BROILER, records a SALE_CANCEL lifecycle event. For EGGS, adds trays back to the farm pool.
    */
   void restockProduction(Long farmId, ProductType type, Long unitId, long qty);
+
+  /** Initial headcount of a unit = sum of CREATED lifecycle event deltas (0 if none). */
+  long initialCountOf(Long unitId);
 }

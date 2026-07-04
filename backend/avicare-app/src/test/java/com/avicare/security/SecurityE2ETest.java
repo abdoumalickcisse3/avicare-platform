@@ -31,6 +31,7 @@ import com.avicare.livestock.repository.PoultryBatchRepository;
 import com.avicare.livestock.repository.ProductionUnitRepository;
 import com.avicare.livestock.repository.PurchaseOrderItemRepository;
 import com.avicare.livestock.repository.PurchaseOrderRepository;
+import com.avicare.livestock.repository.SaleItemRepository;
 import com.avicare.livestock.repository.SaleRepository;
 import com.avicare.livestock.repository.StockItemRepository;
 import com.avicare.livestock.repository.StockMovementRepository;
@@ -136,6 +137,7 @@ class SecurityE2ETest {
   @MockitoBean private ClientRepository clientRepository;
   @MockitoBean private OrderRepository orderRepository;
   @MockitoBean private SaleRepository saleRepository;
+  @MockitoBean private SaleItemRepository saleItemRepository;
   @MockitoBean private DeliveryRepository deliveryRepository;
   @MockitoBean private InvoiceRepository invoiceRepository;
   @MockitoBean private PaymentRepository paymentRepository;
