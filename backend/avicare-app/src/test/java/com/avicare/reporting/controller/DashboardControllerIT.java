@@ -14,6 +14,7 @@ import com.avicare.common.security.principal.AvicarePrincipal;
 import com.avicare.common.security.principal.FarmRole;
 import com.avicare.common.security.principal.Membership;
 import com.avicare.common.security.principal.UserRole;
+import com.avicare.finance.repository.ExpenseRepository;
 import com.avicare.identity.repository.RefreshTokenRepository;
 import com.avicare.identity.repository.UserRepository;
 import com.avicare.livestock.repository.BreedRepository;
@@ -139,6 +140,7 @@ class DashboardControllerIT {
   @MockitoBean private OrderRepository orderRepository;
   @MockitoBean private SaleRepository saleRepository;
   @MockitoBean private SaleItemRepository saleItemRepository;
+  @MockitoBean private ExpenseRepository expenseRepository;
   @MockitoBean private DeliveryRepository deliveryRepository;
   @MockitoBean private InvoiceRepository invoiceRepository;
   @MockitoBean private PaymentRepository paymentRepository;
