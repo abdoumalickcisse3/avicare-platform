@@ -10,6 +10,7 @@ import com.avicare.common.security.principal.FarmRole;
 import com.avicare.common.security.principal.Membership;
 import com.avicare.common.security.principal.UserRole;
 import com.avicare.common.tenancy.context.TenancyContext;
+import com.avicare.finance.repository.ExpenseRepository;
 import com.avicare.identity.repository.RefreshTokenRepository;
 import com.avicare.identity.repository.UserRepository;
 import com.avicare.livestock.repository.BreedRepository;
@@ -138,6 +139,7 @@ class SecurityE2ETest {
   @MockitoBean private DeliveryRepository deliveryRepository;
   @MockitoBean private InvoiceRepository invoiceRepository;
   @MockitoBean private PaymentRepository paymentRepository;
+  @MockitoBean private ExpenseRepository expenseRepository;
 
   @DynamicPropertySource
   static void jwtKeys(DynamicPropertyRegistry registry) {
