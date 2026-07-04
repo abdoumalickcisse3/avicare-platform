@@ -180,4 +180,27 @@ describe("Sidebar permission gating", () => {
     renderWithProviders(<Sidebar />);
     expect(screen.queryByText("Stocks")).not.toBeInTheDocument();
   });
+
+  it("shows the Finance group with its children when module.finance is active and finance:read is granted", () => {
+    mockModules(["module.finance"]);
+    mockPerms(["finance:read"]);
+    renderWithProviders(<Sidebar />);
+    expect(screen.getByText("Finance")).toBeInTheDocument();
+    expect(screen.getByText("Dépenses")).toBeInTheDocument();
+    expect(screen.getByText("Analytique")).toBeInTheDocument();
+  });
+
+  it("hides Finance from a FARMER (poultry+health only), even with module.finance active", () => {
+    mockModules(["module.poultry.broiler", "module.finance"]);
+    mockPerms(["poultry:read", "poultry:write", "health:read", "health:write"]);
+    renderWithProviders(<Sidebar />);
+    expect(screen.queryByText("Finance")).not.toBeInTheDocument();
+  });
+
+  it("still hides Finance when the farm has not subscribed to the module, even with the wildcard permission", () => {
+    mockModules(["module.poultry.broiler"]); // finance NOT subscribed
+    mockPerms(["*"]);
+    renderWithProviders(<Sidebar />);
+    expect(screen.queryByText("Finance")).not.toBeInTheDocument();
+  });
 });
