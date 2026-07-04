@@ -1183,3 +1183,46 @@ export interface UnitEventInput {
   quantityDelta: number;
   reason?: string;
 }
+
+/** Where an expense line came from; only MANUAL rows are editable (mirrors backend ExpenseSource). */
+export type ExpenseSource = "MANUAL" | "PURCHASE" | "STOCK_ENTRY" | "SALARY";
+
+/** A finance expense line (mirrors backend ExpenseResponse). */
+export interface Expense {
+  id: number;
+  categoryKey: string;
+  amountXof: number;
+  expenseDate: string;
+  label: string;
+  notes: string | null;
+  productionUnitId: number | null;
+  source: ExpenseSource;
+  purchaseOrderId: number | null;
+  stockMovementId: number | null;
+}
+
+/** Create/update payload for a manual expense (mirrors backend ExpenseRequest). */
+export interface ExpenseInput {
+  categoryKey: string;
+  amountXof: number;
+  expenseDate: string;
+  label: string;
+  notes?: string;
+  productionUnitId?: number;
+}
+
+/** Expense totals by category over a period (mirrors backend ExpenseSummaryResponse). */
+export interface ExpenseSummary {
+  categories: { categoryKey: string; amountXof: number }[];
+  totalXof: number;
+}
+
+/** Cost/margin analytics for a single production unit (mirrors backend UnitAnalyticsResponse). */
+export interface UnitAnalytics {
+  unitId: number;
+  costs: { categoryKey: string; label: string; amountXof: number }[];
+  totalCostXof: number;
+  costPerHeadXof: number | null;
+  revenueXof: number;
+  marginXof: number;
+}
