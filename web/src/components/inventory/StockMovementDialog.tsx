@@ -183,7 +183,10 @@ function StockMovementBody({
               options={activeItems}
               getOptionLabel={(o) => o.articleKey}
               value={item}
-              onChange={(_e, v) => setSelectedId(v?.id ?? null)}
+              onChange={(_e, v) => {
+                setSelectedId(v?.id ?? null);
+                setUnitPrice(v?.typicalUnitPriceXof != null ? String(v.typicalUnitPriceXof) : "");
+              }}
               isOptionEqualToValue={(o, v) => o.id === v.id}
               renderInput={(params) => <TextField {...params} label="Article" />}
             />
@@ -272,6 +275,7 @@ function StockMovementBody({
               onChange={(e) => setUnitPrice(e.target.value)}
               type="number"
               fullWidth
+              helperText="Une entrée valorisée est enregistrée automatiquement en dépense."
               slotProps={{ htmlInput: { inputMode: "numeric", min: 0 } }}
             />
           )}
