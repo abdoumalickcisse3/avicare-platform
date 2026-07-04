@@ -65,10 +65,10 @@ CREATE TABLE expenses (
 |---|---|---|---|---|
 | `MANUAL` | Formulaire Dépenses | saisi | choisie (catalogue) | optionnel |
 | `PURCHASE` | **Réception d'un bon de commande** (`PurchaseOrderService.receive`) | Σ `lineTotalXof` des lignes reçues, **groupées par catégorie d'article** | mapping article→dépense : aliment→`feed`, traitement/médicament→`veterinary`, sinon→`other` | non (achat = niveau ferme) |
-| `STOCK_ENTRY` | Entrée manuelle / ajustement **positif** de stock avec le champ optionnel « Montant dépensé (XOF) » rempli (pré-rempli `typicalUnitPriceXof × quantité`) | saisi | mapping article→dépense (idem) | non |
+| `STOCK_ENTRY` | Entrée manuelle / ajustement **positif** de stock **valorisé** — le DTO `StockMovementRequest` expose déjà `unitPriceXof` et le mouvement stocke `totalValueXof` (vérifié) ; aucun nouveau champ | `totalValueXof` du mouvement | mapping article→dépense (idem) | **hérité** du `productionUnitId` optionnel du mouvement |
 
 - Accroche `PURCHASE` : `PurchaseOrderService.receive` appelle `FinanceFacade.recordPurchaseExpenses(farmId, purchaseOrderId, lignes reçues)` **dans la même transaction** (précédent : commercial→livestock `consumeProduction`). L'annulation d'un bon RECEIVED n'existe pas en V1 (workflow B4-3) → pas de reverse à gérer.
-- Accroche `STOCK_ENTRY` : le DTO du mouvement manuel gagne un champ optionnel `spentAmountXof` ; si présent et mouvement IN/ajustement positif → `FinanceFacade.recordStockEntryExpense(...)` même transaction. Aucun changement de schéma sur `stock_movements`.
+- Accroche `STOCK_ENTRY` : dans `StockMovementService.recordMovement`, si le mouvement est **manuel** (aucun backref `purchaseOrderId/saleId/dailyRecordId/vaccinationId/treatmentExecutedId`), de type IN ou ajustement à delta positif, et **valorisé** (`totalValueXof > 0`) → `FinanceFacade.recordStockEntryExpense(...)` même transaction. Aucun changement de schéma ni de DTO.
 - **Anti-double-compte** : dépenses auto badgées par source dans l'UI (« Achat », « Entrée stock ») et **non modifiables/supprimables** par le formulaire (leur vérité vient du flux source) ; le formulaire manuel affiche un rappel « Les achats de stock sont enregistrés automatiquement ».
 - CRUD manuel : create/update/soft-delete réservés aux dépenses `MANUAL`. Update/delete d'une dépense auto → 422 `EXPENSE_NOT_EDITABLE`.
 
