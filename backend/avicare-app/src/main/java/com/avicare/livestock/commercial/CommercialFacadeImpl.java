@@ -7,6 +7,7 @@ import com.avicare.livestock.domain.Client;
 import com.avicare.livestock.domain.Invoice;
 import com.avicare.livestock.repository.InvoiceRepository;
 import com.avicare.livestock.repository.OrderRepository;
+import com.avicare.livestock.repository.SaleItemRepository;
 import com.avicare.livestock.repository.SaleRepository;
 import java.time.LocalDate;
 import java.util.List;
@@ -31,6 +32,7 @@ public class CommercialFacadeImpl implements CommercialFacade {
   private final SaleRepository saleRepository;
   private final InvoiceRepository invoiceRepository;
   private final OrderRepository orderRepository;
+  private final SaleItemRepository saleItemRepository;
 
   @Override
   public ClientCreditInfo getClientCredit(Long farmId, Long clientId) {
@@ -105,6 +107,11 @@ public class CommercialFacadeImpl implements CommercialFacade {
         topDebtors,
         ordersToDeliver,
         invoicesToCollect);
+  }
+
+  @Override
+  public long revenueByProductionUnit(Long farmId, Long productionUnitId) {
+    return saleItemRepository.sumRevenueForUnit(farmId, productionUnitId);
   }
 
   /** Null-safe coalesce for aggregate SUM results that return null when no rows match. */

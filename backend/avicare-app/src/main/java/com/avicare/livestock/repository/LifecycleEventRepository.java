@@ -31,4 +31,18 @@ public interface LifecycleEventRepository extends JpaRepository<LifecycleEvent, 
               + "AND e.event_type = 'CREATED'",
       nativeQuery = true)
   long sumInitialCountByFarm(@Param("farmId") Long farmId);
+
+  /**
+   * Sum of {@code quantity_delta} for all {@code CREATED} lifecycle events on a single production
+   * unit. Represents the unit's initial headcount (finance per-unit analytics, B4). Returns 0 when
+   * no CREATED event exists.
+   */
+  @Query(
+      value =
+          "SELECT CAST(COALESCE(SUM(e.quantity_delta), 0) AS BIGINT) "
+              + "FROM lifecycle_events e "
+              + "WHERE e.production_unit_id = :unitId "
+              + "AND e.event_type = 'CREATED'",
+      nativeQuery = true)
+  long sumInitialCountByUnit(@Param("unitId") Long unitId);
 }

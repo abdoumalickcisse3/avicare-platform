@@ -189,6 +189,11 @@ public class LivestockFacadeImpl implements LivestockFacade {
     }
   }
 
+  @Override
+  public long initialCountOf(Long unitId) {
+    return lifecycleEventRepository.sumInitialCountByUnit(unitId);
+  }
+
   private static ProductionUnitInfo toInfo(ProductionUnit u) {
     return new ProductionUnitInfo(
         u.getId(),

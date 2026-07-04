@@ -23,4 +23,7 @@ public interface CommercialFacade {
    * overdue, worklist counts, topDebtors) reflect the current state. Task 1.1, Spec B.
    */
   CommercialStats commercialStats(Long farmId, LocalDate from, LocalDate to);
+
+  /** Total revenue (COMPLETED sales) attributed to a production unit. */
+  long revenueByProductionUnit(Long farmId, Long productionUnitId);
 }

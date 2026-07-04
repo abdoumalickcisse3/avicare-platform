@@ -10,6 +10,7 @@ import com.avicare.livestock.domain.InvoiceSourceType;
 import com.avicare.livestock.domain.InvoiceStatus;
 import com.avicare.livestock.repository.InvoiceRepository;
 import com.avicare.livestock.repository.OrderRepository;
+import com.avicare.livestock.repository.SaleItemRepository;
 import com.avicare.livestock.repository.SaleRepository;
 import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,7 +37,8 @@ class CommercialFacadeImplTest {
             invoiceService,
             Mockito.mock(SaleRepository.class),
             Mockito.mock(InvoiceRepository.class),
-            Mockito.mock(OrderRepository.class));
+            Mockito.mock(OrderRepository.class),
+            Mockito.mock(SaleItemRepository.class));
   }
 
   @Test
