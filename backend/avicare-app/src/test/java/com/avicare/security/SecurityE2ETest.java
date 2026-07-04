@@ -11,6 +11,9 @@ import com.avicare.common.security.principal.Membership;
 import com.avicare.common.security.principal.UserRole;
 import com.avicare.common.tenancy.context.TenancyContext;
 import com.avicare.finance.repository.ExpenseRepository;
+import com.avicare.finance.repository.SalaryAdvanceRepository;
+import com.avicare.finance.repository.SalaryRepository;
+import com.avicare.finance.repository.SalarySettingRepository;
 import com.avicare.identity.repository.RefreshTokenRepository;
 import com.avicare.identity.repository.UserRepository;
 import com.avicare.livestock.repository.BreedRepository;
@@ -142,6 +145,9 @@ class SecurityE2ETest {
   @MockitoBean private InvoiceRepository invoiceRepository;
   @MockitoBean private PaymentRepository paymentRepository;
   @MockitoBean private ExpenseRepository expenseRepository;
+  @MockitoBean private SalarySettingRepository salarySettingRepository;
+  @MockitoBean private SalaryRepository salaryRepository;
+  @MockitoBean private SalaryAdvanceRepository salaryAdvanceRepository;
 
   @DynamicPropertySource
   static void jwtKeys(DynamicPropertyRegistry registry) {
