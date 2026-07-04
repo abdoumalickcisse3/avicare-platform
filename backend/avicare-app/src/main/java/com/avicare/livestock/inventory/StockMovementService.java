@@ -3,6 +3,7 @@ package com.avicare.livestock.inventory;
 import com.avicare.common.api.exception.BusinessRuleException;
 import com.avicare.common.api.exception.NotFoundException;
 import com.avicare.common.api.exception.ValidationException;
+import com.avicare.finance.api.FinanceFacade;
 import com.avicare.livestock.domain.MovementType;
 import com.avicare.livestock.domain.StockItem;
 import com.avicare.livestock.domain.StockMovement;
@@ -45,6 +46,8 @@ public class StockMovementService {
 
   private final StockMovementRepository stockMovementRepository;
   private final StockItemRepository stockItemRepository;
+  private final FinanceFacade financeFacade;
+  private final InventoryCatalogService inventoryCatalogService;
 
   @Transactional
   public StockMovement recordMovement(Long farmId, StockMovementCommand cmd, Long userId) {
@@ -105,7 +108,40 @@ public class StockMovementService {
     movement.setNotes(cmd.notes());
     movement.setPerformedByUserId(userId);
     movement.setCreatedBy(userId);
-    return stockMovementRepository.save(movement);
+    movement = stockMovementRepository.save(movement);
+
+    // Finance P1: a manual valued inflow is an expense (spec B6 §4, source STOCK_ENTRY).
+    boolean manual =
+        cmd.purchaseOrderId() == null
+            && cmd.dailyRecordId() == null
+            && cmd.vaccinationId() == null
+            && cmd.treatmentExecutedId() == null;
+    boolean inflow =
+        cmd.movementType() == MovementType.IN
+            || (cmd.movementType() == MovementType.ADJUSTMENT
+                && movement.getQuantityAfter().compareTo(movement.getQuantityBefore()) > 0);
+    if (manual
+        && inflow
+        && movement.getTotalValueXof() != null
+        && movement.getTotalValueXof() > 0) {
+      InventoryCatalogItemDto article =
+          inventoryCatalogService.listAllAvailableArticles().stream()
+              .filter(a -> a.articleKey().equals(item.getArticleKey()))
+              .findFirst()
+              .orElse(null);
+      financeFacade.recordStockEntryExpense(
+          farmId,
+          movement.getId(),
+          item.getArticleSource().name(),
+          article != null ? article.subcategory() : null,
+          article != null ? article.label() : item.getArticleKey(),
+          movement.getTotalValueXof(),
+          movement.getMovementDate(),
+          cmd.productionUnitId(),
+          userId);
+    }
+
+    return movement;
   }
 
   @Transactional(readOnly = true)

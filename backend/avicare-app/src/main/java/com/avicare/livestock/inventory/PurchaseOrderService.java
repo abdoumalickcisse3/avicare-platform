@@ -3,6 +3,7 @@ package com.avicare.livestock.inventory;
 import com.avicare.common.api.exception.BusinessRuleException;
 import com.avicare.common.api.exception.NotFoundException;
 import com.avicare.common.api.exception.ValidationException;
+import com.avicare.finance.api.FinanceFacade;
 import com.avicare.livestock.domain.ArticleSource;
 import com.avicare.livestock.domain.MovementReason;
 import com.avicare.livestock.domain.MovementType;
@@ -17,6 +18,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -46,6 +48,7 @@ public class PurchaseOrderService {
   private final InventoryCatalogService inventoryCatalogService;
   private final StockItemService stockItemService;
   private final StockMovementService stockMovementService;
+  private final FinanceFacade financeFacade;
 
   @Transactional
   public PurchaseOrder createDraft(Long farmId, PurchaseOrderDraftCommand cmd, Long userId) {
@@ -143,6 +146,29 @@ public class PurchaseOrderService {
     po.setActualDeliveryDate(deliveryDate);
     po.setReceivedBy(userId);
     po.setReceivedAt(LocalDateTime.now());
+
+    // Finance P1: a valued reception feeds the expense ledger (spec B6 §4).
+    Map<String, InventoryCatalogItemDto> catalog =
+        inventoryCatalogService.listAllAvailableArticles().stream()
+            .collect(Collectors.toMap(InventoryCatalogItemDto::articleKey, a -> a, (a, b) -> a));
+    List<FinanceFacade.PurchaseExpenseLine> expenseLines = new ArrayList<>();
+    for (PurchaseOrderItem item : po.getItems()) {
+      BigDecimal received = receipts.getOrDefault(item.getId(), BigDecimal.ZERO);
+      if (received.signum() > 0 && item.getUnitPriceXof() != null) {
+        long lineTotal = received.multiply(BigDecimal.valueOf(item.getUnitPriceXof())).longValue();
+        InventoryCatalogItemDto article = catalog.get(item.getArticleKey());
+        expenseLines.add(
+            new FinanceFacade.PurchaseExpenseLine(
+                item.getArticleSource().name(),
+                article != null ? article.subcategory() : null,
+                lineTotal));
+      }
+    }
+    if (!expenseLines.isEmpty()) {
+      financeFacade.recordPurchaseExpenses(
+          farmId, po.getId(), po.getOrderNumber(), deliveryDate, expenseLines, userId);
+    }
+
     return po;
   }
 
