@@ -6,6 +6,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.avicare.finance.repository.ExpenseRepository;
+import com.avicare.finance.repository.SalaryAdvanceRepository;
+import com.avicare.finance.repository.SalaryRepository;
+import com.avicare.finance.repository.SalarySettingRepository;
 import com.avicare.identity.repository.RefreshTokenRepository;
 import com.avicare.identity.repository.UserRepository;
 import com.avicare.livestock.repository.BreedRepository;
@@ -118,6 +121,9 @@ class SecurityIntegrationTest {
   @MockitoBean private InvoiceRepository invoiceRepository;
   @MockitoBean private PaymentRepository paymentRepository;
   @MockitoBean private ExpenseRepository expenseRepository;
+  @MockitoBean private SalarySettingRepository salarySettingRepository;
+  @MockitoBean private SalaryRepository salaryRepository;
+  @MockitoBean private SalaryAdvanceRepository salaryAdvanceRepository;
 
   @Test
   void healthEndpoint_isPublic() throws Exception {
