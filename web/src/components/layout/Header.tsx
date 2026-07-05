@@ -16,12 +16,13 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { Bell, Check, ChevronDown, LogOut, Menu as MenuIcon, Warehouse } from "lucide-react";
+import { Bell, Check, ChevronDown, HandCoins, LogOut, Menu as MenuIcon, Warehouse } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { clearAuth } from "@/store/slices/authSlice";
 import { setSelectedFarmId } from "@/store/slices/uiSlice";
 import { useSelectedFarm } from "@/hooks/useSelectedFarm";
 import { useGetMyFarmsQuery } from "@/store/api/farmsApi";
+import { MyAdvancesDialog } from "@/components/account/MyAdvancesDialog";
 import { colors } from "@/theme/tokens";
 
 /** Longest-prefix → page title (+ parent crumb) for the header context label. */
@@ -70,6 +71,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
 
   const [accountAnchor, setAccountAnchor] = useState<null | HTMLElement>(null);
   const [farmAnchor, setFarmAnchor] = useState<null | HTMLElement>(null);
+  const [advancesOpen, setAdvancesOpen] = useState(false);
 
   const page = PAGE_TITLES.filter(
     (p) => pathname === p.prefix || pathname.startsWith(`${p.prefix}/`),
@@ -203,11 +205,21 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
             </Typography>
           </Box>
           <Divider />
+          <MenuItem
+            onClick={() => {
+              setAccountAnchor(null);
+              setAdvancesOpen(true);
+            }}
+          >
+            <HandCoins size={16} style={{ marginRight: 8 }} />
+            Mes avances
+          </MenuItem>
           <MenuItem onClick={handleLogout}>
             <LogOut size={16} style={{ marginRight: 8 }} />
             Se déconnecter
           </MenuItem>
         </Menu>
+        <MyAdvancesDialog open={advancesOpen} onClose={() => setAdvancesOpen(false)} />
       </Toolbar>
     </AppBar>
   );
