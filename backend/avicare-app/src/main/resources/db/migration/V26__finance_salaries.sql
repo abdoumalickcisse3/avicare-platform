@@ -20,7 +20,7 @@ CREATE TABLE salaries (
     id                    BIGSERIAL PRIMARY KEY,
     farm_id               BIGINT NOT NULL REFERENCES farms(id) ON DELETE CASCADE,
     user_id               BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    period                CHAR(7) NOT NULL,
+    period                VARCHAR(7) NOT NULL,
     gross_xof             BIGINT NOT NULL CHECK (gross_xof > 0),
     advance_deducted_xof  BIGINT NOT NULL DEFAULT 0 CHECK (advance_deducted_xof >= 0),
     net_xof               BIGINT NOT NULL CHECK (net_xof >= 0),
