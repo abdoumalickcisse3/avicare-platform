@@ -24,6 +24,7 @@ import com.avicare.support.RsaKeys;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.security.KeyPair;
+import java.time.LocalDate;
 import java.util.Base64;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -69,6 +70,7 @@ class CommercialProductionIT {
   @Autowired private MockMvc mockMvc;
   @Autowired private ObjectMapper objectMapper;
   @Autowired private SaleService saleService;
+  @Autowired private InvoiceService invoiceService;
   @Autowired private OrderService orderService;
   @Autowired private DeliveryService deliveryService;
   @Autowired private ClientService clientService;
@@ -96,6 +98,26 @@ class CommercialProductionIT {
     assertThat(sale.getStatus().name()).isEqualTo("COMPLETED");
     assertThat(productionUnitRepository.findById(unitId).orElseThrow().getCurrentCount())
         .isEqualTo(80);
+  }
+
+  // ── Régression V27: facturer une vente de PRODUCTION persiste bien un
+  //    invoice_item article_source=PRODUCTION (avant V27, viole le CHECK → 500).
+  @Test
+  void invoiceFromProductionSale_persistsProductionArticleSource() throws Exception {
+    FarmContext ctx = createFarm("prodinvoice." + System.nanoTime() + "@prod.io");
+    Long unitId = createBatch(ctx.farmId(), ctx.userId(), 100);
+    Sale sale =
+        saleService.create(
+            ctx.farmId(),
+            new SaleCommand(null, null, "CASH", null, List.of(broilerLine(unitId, 20, 5000))),
+            ctx.userId());
+
+    Invoice invoice =
+        invoiceService.createFromSale(
+            ctx.farmId(), sale.getId(), LocalDate.now().plusDays(15), ctx.userId());
+
+    assertThat(invoice.getId()).isNotNull();
+    assertThat(invoice.getItems()).anyMatch(i -> i.getArticleSource().name().equals("PRODUCTION"));
   }
 
   // ── Case 2: direct EGGS sale decrements full_trays_count ────────────
