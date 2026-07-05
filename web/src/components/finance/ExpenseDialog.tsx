@@ -21,7 +21,6 @@ import {
 } from "@mui/material";
 import { X } from "lucide-react";
 import { useGetCatalogQuery } from "@/store/api/catalogApi";
-import { useGetProductionUnitsQuery } from "@/store/api/productionUnitsApi";
 import { useCreateExpenseMutation, useUpdateExpenseMutation } from "@/store/api/financeApi";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -39,7 +38,6 @@ const schema = z.object({
     .refine((v) => Number(v) > 0, "Le montant doit être supérieur à 0"),
   expenseDate: z.string().min(1, "Date requise"),
   notes: z.string().optional().or(z.literal("")),
-  productionUnitId: z.string().optional().or(z.literal("")),
 });
 
 type ExpenseForm = z.infer<typeof schema>;
@@ -57,7 +55,6 @@ export function ExpenseDialog({ open, onClose, farmId, expense }: Props) {
     { farmId, category: "expense_categories" },
     { skip: !open },
   );
-  const { data: units = [] } = useGetProductionUnitsQuery({ farmId }, { skip: !open });
   const [createExpense, { isLoading: creating }] = useCreateExpenseMutation();
   const [updateExpense, { isLoading: updating }] = useUpdateExpenseMutation();
   const isLoading = creating || updating;
@@ -69,7 +66,6 @@ export function ExpenseDialog({ open, onClose, farmId, expense }: Props) {
       amountXof: expense ? String(expense.amountXof) : "",
       expenseDate: expense?.expenseDate ?? today(),
       notes: expense?.notes ?? "",
-      productionUnitId: expense?.productionUnitId != null ? String(expense.productionUnitId) : "",
     }),
     [expense],
   );
@@ -94,7 +90,6 @@ export function ExpenseDialog({ open, onClose, farmId, expense }: Props) {
       amountXof: Number(values.amountXof),
       expenseDate: values.expenseDate,
       notes: values.notes || undefined,
-      productionUnitId: values.productionUnitId ? Number(values.productionUnitId) : undefined,
     };
     try {
       if (expense) {
@@ -194,20 +189,6 @@ export function ExpenseDialog({ open, onClose, farmId, expense }: Props) {
                 )}
               />
             </Box>
-            <Controller
-              name="productionUnitId"
-              control={control}
-              render={({ field }) => (
-                <TextField {...field} select label="Lot" fullWidth>
-                  <MenuItem value="">Aucun lot</MenuItem>
-                  {units.map((u) => (
-                    <MenuItem key={u.id} value={String(u.id)}>
-                      {u.name ?? `Lot #${u.id}`}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
-            />
             <Controller
               name="notes"
               control={control}
