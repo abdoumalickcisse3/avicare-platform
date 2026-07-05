@@ -84,19 +84,17 @@ describe("ExpenseDialog", () => {
     await user.type(screen.getByLabelText("Libellé"), "Sac aliment");
     await user.type(screen.getByLabelText("Montant (XOF)"), "5000");
 
-    await user.click(screen.getByRole("combobox", { name: "Lot" }));
-    await user.click(await screen.findByRole("option", { name: "Lot A" }));
-
     await user.click(screen.getByRole("button", { name: /Enregistrer/i }));
 
     await waitFor(() => expect(lastMethod).toBe("POST"));
+    // Plus de champ « Lot » : une dépense n'est plus taguée à un lot à la création.
     expect(lastBody).toEqual({
       categoryKey: "feed",
       label: "Sac aliment",
       amountXof: 5000,
       expenseDate: isoToday,
-      productionUnitId: 7,
     });
+    expect(screen.queryByRole("combobox", { name: "Lot" })).not.toBeInTheDocument();
   });
 
   it("edits a MANUAL expense via PUT, preserving its id", async () => {
