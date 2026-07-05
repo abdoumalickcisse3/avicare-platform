@@ -128,6 +128,7 @@ export const financeApi = baseApi.injectEndpoints({
       transformResponse: (r: ApiEnvelope<Advance>) => r.data,
       invalidatesTags: (_r, _e, { farmId }) => [
         { type: "Advance", id: `LIST-${farmId}` },
+        { type: "Advance", id: `MINE-${farmId}` },
         { type: "Expense", id: `LIST-${farmId}` },
       ],
     }),
@@ -139,6 +140,7 @@ export const financeApi = baseApi.injectEndpoints({
       transformResponse: (r: ApiEnvelope<Advance>) => r.data,
       invalidatesTags: (_r, _e, { farmId }) => [
         { type: "Advance", id: `LIST-${farmId}` },
+        { type: "Advance", id: `MINE-${farmId}` },
         { type: "Expense", id: `LIST-${farmId}` },
       ],
     }),
