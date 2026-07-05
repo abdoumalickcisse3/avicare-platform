@@ -1226,3 +1226,49 @@ export interface UnitAnalytics {
   revenueXof: number;
   marginXof: number;
 }
+
+/* ===================== Salaries & advances (Sprint B6 P2) ===================== */
+
+/** Monthly salary setting for a member (mirrors backend SalarySettingResponse). */
+export interface SalarySetting {
+  id: number;
+  userId: number;
+  monthlySalaryXof: number;
+  active: boolean;
+}
+
+/** Lifecycle of a generated salary line (mirrors backend SalaryStatus). */
+export type SalaryStatus = "DUE" | "PAID";
+
+/** A generated monthly salary line (mirrors backend SalaryResponse). */
+export interface Salary {
+  id: number;
+  userId: number;
+  period: string;
+  grossXof: number;
+  advanceDeductedXof: number;
+  netXof: number;
+  status: SalaryStatus;
+  paidAt: string | null;
+}
+
+/** Lifecycle of an advance request (mirrors backend AdvanceStatus). */
+export type AdvanceStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+/** A salary advance request (mirrors backend AdvanceResponse). */
+export interface Advance {
+  id: number;
+  userId: number;
+  amountXof: number;
+  reason: string | null;
+  status: AdvanceStatus;
+  requestedAt: string;
+  remainingXof: number;
+}
+
+/** Self-service advance request payload (mirrors backend AdvanceRequest). */
+export interface AdvanceInput {
+  farmId: number;
+  amountXof: number;
+  reason?: string;
+}

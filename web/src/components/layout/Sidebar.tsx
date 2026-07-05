@@ -164,6 +164,7 @@ const NAV: Section[] = [
         children: [
           { label: "Dépenses", href: "/finance/depenses", icon: Receipt },
           { label: "Analytique", href: "/finance/analytique", icon: TrendingUp },
+          { label: "Salaires", href: "/finance/salaires", icon: Users },
         ],
       },
       { kind: "leaf", label: "Abonnement", href: "/abonnement", icon: CreditCard, enabled: false },
