@@ -9,11 +9,12 @@ import { hasAccessToken } from "@/lib/auth";
 const noopSubscribe = () => () => {};
 
 /**
- * Client-side auth guard. Tokens live in localStorage (V1), so the gate runs in
- * the browser: unauthenticated users are bounced to /login before any dashboard
- * content renders. `useSyncExternalStore` reads the token client-only (server
- * snapshot = false) to avoid a hydration mismatch. The proper edge guard
- * arrives with httpOnly-cookie refresh.
+ * Client-side auth guard. Tokens live in localStorage (V1). `useSyncExternalStore`
+ * drives the render (server snapshot = false → spinner, then the client snapshot
+ * flips it once localStorage is read). The redirect effect re-reads the token LIVE
+ * rather than the render snapshot, so a page refresh never bounces an authenticated
+ * user to /login during hydration (the server snapshot is false at that instant).
+ * The proper edge guard arrives with httpOnly-cookie refresh.
  */
 export default function DashboardLayout({
   children,
@@ -28,8 +29,10 @@ export default function DashboardLayout({
   );
 
   useEffect(() => {
-    if (!authorized) router.replace("/login");
-  }, [authorized, router]);
+    // Live read on the client (localStorage is available here), not the possibly
+    // stale hydration snapshot — otherwise a refresh redirects a logged-in user.
+    if (!hasAccessToken()) router.replace("/login");
+  }, [router]);
 
   if (!authorized) {
     return (
