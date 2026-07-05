@@ -21,6 +21,10 @@ function ownerToken() {
   return makeJwt({ memberships: [{ farmId: 1, farmRole: "OWNER", permissions: ["*"] }] });
 }
 
+function farmerToken() {
+  return makeJwt({ memberships: [{ farmId: 1, farmRole: "FARMER", permissions: ["poultry:read"] }] });
+}
+
 const MEMBERS: Member[] = [
   {
     id: 1,
@@ -133,5 +137,20 @@ describe("SalariesView", () => {
     );
     const generateCall = calls.find((c) => c.url.includes("/finance/salaries/generate"))!;
     expect(generateCall.body).toEqual({ period });
+  });
+
+  it("hides all write actions when user lacks manager role", async () => {
+    const { store } = renderWithProviders(<SalariesView farmId={1} />);
+    store.dispatch(setTokens({ accessToken: farmerToken(), refreshToken: "r", expiresIn: 3600 }));
+
+    // Wait for settings table to render (contains "Awa Diop" and settings data)
+    await screen.findByRole("table", { name: "Réglages de salaire" });
+
+    // Assert all write buttons are absent
+    expect(screen.queryByRole("button", { name: /Ajouter/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Générer les salaires/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Marquer payé/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Approuver/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Rejeter/i })).not.toBeInTheDocument();
   });
 });
