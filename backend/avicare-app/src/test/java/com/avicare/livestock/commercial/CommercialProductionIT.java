@@ -112,7 +112,7 @@ class CommercialProductionIT {
             new SaleCommand(null, null, "CASH", null, List.of(broilerLine(unitId, 20, 5000))),
             ctx.userId());
 
-    Invoice invoice =
+    var invoice =
         invoiceService.createFromSale(
             ctx.farmId(), sale.getId(), LocalDate.now().plusDays(15), ctx.userId());
 
