@@ -45,18 +45,6 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
       @Param("unitId") Long unitId);
 
   /**
-   * Sums expenses by category for a specific production unit (lot).
-   *
-   * @param farmId the farm id
-   * @param unitId the production unit id
-   * @return list of [categoryKey, sum] pairs
-   */
-  @Query(
-      "SELECT e.categoryKey, SUM(e.amountXof) FROM Expense e "
-          + "WHERE e.farmId = :farmId AND e.productionUnitId = :unitId GROUP BY e.categoryKey")
-  List<Object[]> sumByCategoryForUnit(@Param("farmId") Long farmId, @Param("unitId") Long unitId);
-
-  /**
    * Sums expenses by category over a date range for a farm (Expenses page analytics).
    *
    * @param farmId the farm id

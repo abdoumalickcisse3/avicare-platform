@@ -61,7 +61,7 @@ class FinanceModuleIT {
   @Autowired private ObjectMapper objectMapper;
 
   @Test
-  void manualExpense_feedsUnitAnalyticsAndFarmSummary() throws Exception {
+  void manualExpense_feedsFarmAnalyticsAndSummary() throws Exception {
     String owner = onboardOwner("fin-manual");
     long farmId = createFarm(owner, "Ferme Finance Manuelle");
     owner = relogin("fin-manual");
