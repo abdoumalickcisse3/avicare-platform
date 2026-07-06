@@ -34,4 +34,21 @@ public interface FinanceFacade {
       LocalDate date,
       Long productionUnitId,
       Long userId);
+
+  /**
+   * Enregistre une dépense catégorie {@code veterinary}, source {@code VET_VISIT}, liée à la
+   * visite. Idempotent : ne fait rien si une dépense existe déjà pour {@code vetVisitId}, ou si
+   * {@code amountXof <= 0}.
+   */
+  void recordVetVisitExpense(
+      Long farmId,
+      Long vetVisitId,
+      String label,
+      long amountXof,
+      LocalDate date,
+      Long productionUnitId,
+      Long userId);
+
+  /** Réverse (soft-delete) la dépense liée à une visite supprimée. No-op si absente. */
+  void reverseVetVisitExpense(Long farmId, Long vetVisitId);
 }
