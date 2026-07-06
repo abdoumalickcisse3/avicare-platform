@@ -28,12 +28,12 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * End-to-end finance REST API over HTTP on a real PostgreSQL (Testcontainers, Sprint B6 P1, task
- * B5): a manual expense feeds per-unit analytics (cost-per-head, margin) and the farm summary (SUM
- * Object[] mapping against real Postgres); a purchase-order reception and a manual valued stock
- * movement each auto-record an expense (PURCHASE / STOCK_ENTRY) that cannot be edited (422); a real
- * provisioned FARMER (default perms have no {@code finance:read}) is refused, and so is an owner on
- * a farm without {@code module.finance} enabled. Gating is FORCED ON. CI-only where Docker is
- * unavailable.
+ * B5): a manual expense feeds the farm-wide analytics (total expenses, margin) and the farm summary
+ * (SUM Object[] mapping against real Postgres); a purchase-order reception and a manual valued
+ * stock movement each auto-record an expense (PURCHASE / STOCK_ENTRY) that cannot be edited (422);
+ * a real provisioned FARMER (default perms have no {@code finance:read}) is refused, and so is an
+ * owner on a farm without {@code module.finance} enabled. Gating is FORCED ON. CI-only where Docker
+ * is unavailable.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
@@ -91,9 +91,9 @@ class FinanceModuleIT {
                     LocalDate.now(), unitId)));
     assertThat(expense.get("source").asText()).isEqualTo("MANUAL");
 
-    JsonNode analytics = data(getOk(fin + "/units/" + unitId + "/analytics", owner));
-    assertThat(analytics.get("totalCostXof").asLong()).isEqualTo(50000);
-    assertThat(analytics.get("costPerHeadXof").asLong()).isEqualTo(500);
+    JsonNode analytics = data(getOk(fin + "/analytics", owner));
+    assertThat(analytics.get("totalExpenseXof").asLong()).isEqualTo(50000);
+    assertThat(analytics.get("totalRevenueXof").asLong()).isZero();
     assertThat(analytics.get("marginXof").asLong()).isEqualTo(-50000);
 
     // Real-Postgres SUM(Object[]) mapping (B2 review follow-up).
