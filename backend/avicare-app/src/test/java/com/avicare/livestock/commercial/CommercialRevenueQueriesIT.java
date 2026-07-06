@@ -50,7 +50,8 @@ class CommercialRevenueQueriesIT {
       long farmId, InvoiceSourceType src, InvoiceStatus st, long total, long paid) {
     Invoice i = new Invoice();
     i.setFarmId(farmId);
-    i.setInvoiceNumber("INV-" + System.nanoTime());
+    // invoice_number must match chk_invoice_number_format: ^F-\d{4}-\d+$
+    i.setInvoiceNumber("F-2026-" + System.nanoTime());
     i.setSourceType(src);
     if (src == InvoiceSourceType.SALE) i.setSaleId(1L);
     else i.setDeliveryId(1L);
