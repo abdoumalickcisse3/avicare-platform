@@ -81,4 +81,38 @@ public class FinanceFacadeImpl implements FinanceFacade {
     expense.setCreatedBy(userId);
     expenseRepository.save(expense);
   }
+
+  @Override
+  @Transactional
+  public void recordVetVisitExpense(
+      Long farmId,
+      Long vetVisitId,
+      String label,
+      long amountXof,
+      LocalDate date,
+      Long productionUnitId,
+      Long userId) {
+    if (amountXof <= 0) return;
+    if (expenseRepository.findByFarmIdAndVetVisitId(farmId, vetVisitId).isPresent()) return;
+
+    Expense expense = new Expense();
+    expense.setFarmId(farmId);
+    expense.setCategoryKey("veterinary");
+    expense.setAmountXof(amountXof);
+    expense.setExpenseDate(date);
+    expense.setLabel(label);
+    expense.setSource(ExpenseSource.VET_VISIT);
+    expense.setVetVisitId(vetVisitId);
+    expense.setProductionUnitId(productionUnitId);
+    expense.setCreatedBy(userId);
+    expenseRepository.save(expense);
+  }
+
+  @Override
+  @Transactional
+  public void reverseVetVisitExpense(Long farmId, Long vetVisitId) {
+    expenseRepository
+        .findByFarmIdAndVetVisitId(farmId, vetVisitId)
+        .ifPresent(expenseRepository::delete);
+  }
 }
