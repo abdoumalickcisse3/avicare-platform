@@ -2,9 +2,9 @@
 
 import { Box, Skeleton, Typography } from "@mui/material";
 import { useSelectedFarm } from "@/hooks/useSelectedFarm";
-import { UnitAnalyticsView } from "@/components/finance/UnitAnalyticsView";
+import { FarmAnalyticsView } from "@/components/finance/FarmAnalyticsView";
 
-/** Finance / Analytique page: resolves the active farm, then renders the per-lot analytics. */
+/** Finance / Analytique : résout la ferme active puis affiche le compte de résultat ferme. */
 export default function AnalyticsPage() {
   const { farmId, isLoading } = useSelectedFarm();
 
@@ -17,7 +17,7 @@ export default function AnalyticsPage() {
       {isLoading || !farmId ? (
         <Skeleton variant="rectangular" height={240} sx={{ borderRadius: 2 }} />
       ) : (
-        <UnitAnalyticsView farmId={farmId} />
+        <FarmAnalyticsView farmId={farmId} />
       )}
     </Box>
   );

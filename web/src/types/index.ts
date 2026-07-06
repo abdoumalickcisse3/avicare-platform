@@ -1217,14 +1217,15 @@ export interface ExpenseSummary {
   totalXof: number;
 }
 
-/** Cost/margin analytics for a single production unit (mirrors backend UnitAnalyticsResponse). */
-export interface UnitAnalytics {
-  unitId: number;
-  costs: { categoryKey: string; label: string; amountXof: number }[];
-  totalCostXof: number;
-  costPerHeadXof: number | null;
-  revenueXof: number;
+/** Compte de résultat ferme (mirrors backend FarmAnalyticsResponse). */
+export interface FarmAnalytics {
+  totalRevenueXof: number;
+  directSalesXof: number;
+  paidOrdersXof: number;
+  totalExpenseXof: number;
   marginXof: number;
+  expensesByCategory: { categoryKey: string; label: string; amountXof: number }[];
+  revenueByUnit: { unitId: number; unitName: string; revenueXof: number }[];
 }
 
 /* ===================== Salaries & advances (Sprint B6 P2) ===================== */
