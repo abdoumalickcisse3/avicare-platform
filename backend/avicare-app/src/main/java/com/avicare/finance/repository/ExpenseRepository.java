@@ -3,6 +3,7 @@ package com.avicare.finance.repository;
 import com.avicare.finance.domain.Expense;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -70,4 +71,13 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
           + "AND (:to IS NULL OR e.expenseDate <= :to) GROUP BY e.categoryKey")
   List<Object[]> sumByCategory(
       @Param("farmId") Long farmId, @Param("from") LocalDate from, @Param("to") LocalDate to);
+
+  /**
+   * Dépense liée à une visite vétérinaire donnée (idempotence de l'auto-dépense).
+   *
+   * @param farmId the farm id
+   * @param vetVisitId the vet visit id
+   * @return the expense for the given vet visit, or empty if none exists
+   */
+  Optional<Expense> findByFarmIdAndVetVisitId(Long farmId, Long vetVisitId);
 }

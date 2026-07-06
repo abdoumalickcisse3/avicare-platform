@@ -79,6 +79,9 @@ public class Expense {
   @Column(name = "salary_id")
   private Long salaryId;
 
+  @Column(name = "vet_visit_id")
+  private Long vetVisitId;
+
   @Column(name = "created_by", nullable = false)
   private Long createdBy;
 
