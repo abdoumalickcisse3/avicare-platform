@@ -73,4 +73,11 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
       @Param("from") LocalDate from,
       @Param("to") LocalDate to,
       Pageable pageable);
+
+  /** Σ des ventes COMPLETED de la ferme, tous exercices confondus (finance P&L). 0 si aucune. */
+  @Query(
+      "SELECT COALESCE(SUM(s.totalXof), 0) FROM Sale s "
+          + "WHERE s.farmId = :farmId "
+          + "AND s.status = com.avicare.livestock.domain.SaleStatus.COMPLETED")
+  long sumAllRevenue(@Param("farmId") Long farmId);
 }

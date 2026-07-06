@@ -100,4 +100,15 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
               + "LIMIT 5",
       nativeQuery = true)
   List<Object[]> topDebtors(@Param("farmId") Long farmId);
+
+  /**
+   * Σ des montants encaissés sur les factures issues d'une LIVRAISON (non annulées) pour la ferme,
+   * tous exercices confondus (finance P&L : « commandes payées »). 0 si aucune.
+   */
+  @Query(
+      "SELECT COALESCE(SUM(i.amountPaidXof), 0) FROM Invoice i "
+          + "WHERE i.farmId = :farmId "
+          + "AND i.sourceType = com.avicare.livestock.domain.InvoiceSourceType.DELIVERY "
+          + "AND i.status <> com.avicare.livestock.domain.InvoiceStatus.CANCELLED")
+  long sumPaidFromDeliveries(@Param("farmId") Long farmId);
 }
