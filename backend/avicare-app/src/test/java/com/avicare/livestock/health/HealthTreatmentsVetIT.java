@@ -6,10 +6,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.avicare.common.api.exception.ValidationException;
+import com.avicare.finance.domain.Expense;
+import com.avicare.finance.domain.ExpenseSource;
+import com.avicare.finance.repository.ExpenseRepository;
+import com.avicare.identity.repository.UserRepository;
 import com.avicare.livestock.domain.ProductionUnit;
 import com.avicare.livestock.domain.Species;
 import com.avicare.livestock.domain.UnitKind;
 import com.avicare.livestock.domain.UnitStatus;
+import com.avicare.livestock.domain.VetVisit;
 import com.avicare.livestock.domain.Veterinarian;
 import com.avicare.livestock.repository.BreedRepository;
 import com.avicare.livestock.repository.ProductionUnitRepository;
@@ -18,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.security.KeyPair;
 import java.time.LocalDate;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -63,6 +69,8 @@ class HealthTreatmentsVetIT {
   @Autowired private VeterinarianService veterinarianService;
   @Autowired private TreatmentExecutedService treatmentService;
   @Autowired private VetVisitService vetVisitService;
+  @Autowired private ExpenseRepository expenseRepository;
+  @Autowired private UserRepository userRepository;
 
   @Test
   void veterinarianDirectory_crudAndTenantIsolation() throws Exception {
@@ -171,7 +179,7 @@ class HealthTreatmentsVetIT {
         unitId,
         new VetVisitCommand(null, LocalDate.now(), "Contrôle", null, null, null, false, null, null),
         null);
-    // visit with vet + follow-up in 10 days
+    // visit with vet + follow-up in 10 days (coût null : ce test ne porte pas sur la dépense)
     vetVisitService.record(
         unitId,
         new VetVisitCommand(
@@ -180,7 +188,7 @@ class HealthTreatmentsVetIT {
             "Suivi",
             "RAS",
             "Revenir",
-            15000,
+            null,
             true,
             LocalDate.now().plusDays(10),
             null),
@@ -206,6 +214,32 @@ class HealthTreatmentsVetIT {
                         null),
                     null))
         .isInstanceOf(ValidationException.class);
+  }
+
+  @Test
+  void vetVisitWithCost_createsAndReversesVeterinaryExpense() throws Exception {
+    long farmId = createFarm();
+    long unitId = seedUnit(farmId);
+    // Le created_by de la dépense est une FK users(id) : utiliser un vrai id d'utilisateur.
+    long ownerId = userRepository.findAll().get(0).getId();
+
+    VetVisit visit =
+        vetVisitService.record(
+            unitId,
+            new VetVisitCommand(
+                null, LocalDate.now(), "Vaccination", null, null, 12000, false, null, null),
+            ownerId);
+
+    Optional<Expense> created = expenseRepository.findByFarmIdAndVetVisitId(farmId, visit.getId());
+    assertThat(created).isPresent();
+    assertThat(created.get().getCategoryKey()).isEqualTo("veterinary");
+    assertThat(created.get().getSource()).isEqualTo(ExpenseSource.VET_VISIT);
+    assertThat(created.get().getAmountXof()).isEqualTo(12000L);
+    assertThat(created.get().getProductionUnitId()).isEqualTo(unitId);
+
+    vetVisitService.delete(visit.getId());
+    // Soft-delete → @SQLRestriction rend la dépense invisible.
+    assertThat(expenseRepository.findByFarmIdAndVetVisitId(farmId, visit.getId())).isEmpty();
   }
 
   // --- helpers --------------------------------------------------------

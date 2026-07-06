@@ -2,6 +2,7 @@ package com.avicare.livestock.health;
 
 import com.avicare.common.api.exception.NotFoundException;
 import com.avicare.common.api.exception.ValidationException;
+import com.avicare.finance.api.FinanceFacade;
 import com.avicare.livestock.domain.LifecycleEvent;
 import com.avicare.livestock.domain.ProductionUnit;
 import com.avicare.livestock.domain.VetVisit;
@@ -33,6 +34,7 @@ public class VetVisitService {
   private final LifecycleEventRepository lifecycleEventRepository;
   private final LivestockService livestockService;
   private final VeterinarianRepository veterinarianRepository;
+  private final FinanceFacade financeFacade;
 
   @Transactional
   public VetVisit record(Long unitId, VetVisitCommand cmd, Long userId) {
@@ -69,6 +71,17 @@ public class VetVisitService {
     event.setCreatedBy(userId);
     lifecycleEventRepository.save(event);
 
+    if (cmd.costXof() != null && cmd.costXof() > 0) {
+      financeFacade.recordVetVisitExpense(
+          unit.getFarmId(),
+          saved.getId(),
+          "Visite vétérinaire — " + cmd.reason(),
+          cmd.costXof(),
+          cmd.visitDate(),
+          unitId,
+          userId);
+    }
+
     return saved;
   }
 
@@ -91,7 +104,10 @@ public class VetVisitService {
 
   @Transactional
   public void delete(Long id) {
-    vetVisitRepository.delete(get(id));
+    VetVisit visit = get(id);
+    Long farmId = visit.getProductionUnit().getFarmId();
+    financeFacade.reverseVetVisitExpense(farmId, id);
+    vetVisitRepository.delete(visit);
   }
 
   private Veterinarian resolveVet(Long vetId, Long unitFarmId) {
