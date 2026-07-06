@@ -5,7 +5,7 @@ import com.avicare.common.tenancy.context.TenancyContext;
 import com.avicare.finance.dto.request.ExpenseRequest;
 import com.avicare.finance.dto.response.ExpenseResponse;
 import com.avicare.finance.dto.response.ExpenseSummaryResponse;
-import com.avicare.finance.dto.response.UnitAnalyticsResponse;
+import com.avicare.finance.dto.response.FarmAnalyticsResponse;
 import com.avicare.finance.service.ExpenseService;
 import com.avicare.finance.service.FinanceAnalyticsService;
 import jakarta.validation.Valid;
@@ -27,9 +27,9 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Expense ledger + per-unit financial analytics endpoints (Sprint B6 P1, task B5). Manual expense
- * CRUD is OWNER/MANAGER only; auto-recorded expenses (PURCHASE, STOCK_ENTRY, SALARY) are read-only
- * here and rejected on edit/delete by {@link ExpenseService} (422 {@code EXPENSE_NOT_EDITABLE}).
+ * Expense ledger + farm-wide financial analytics endpoints (Sprint B6). Manual expense CRUD is
+ * OWNER/MANAGER only; auto-recorded expenses (PURCHASE, STOCK_ENTRY, SALARY) are read-only here and
+ * rejected on edit/delete by {@link ExpenseService} (422 {@code EXPENSE_NOT_EDITABLE}).
  */
 @RestController
 @RequestMapping("/api/v1/farms/{farmId}/finance")
@@ -88,10 +88,9 @@ public class ExpenseController {
     return ApiResponse.of(new ExpenseSummaryResponse(categories, summary.totalXof()));
   }
 
-  @GetMapping("/units/{unitId}/analytics")
+  @GetMapping("/analytics")
   @PreAuthorize(FinanceAccess.READ)
-  public ApiResponse<UnitAnalyticsResponse> unitAnalytics(
-      @PathVariable Long farmId, @PathVariable Long unitId) {
-    return ApiResponse.of(financeAnalyticsService.unitAnalytics(farmId, unitId));
+  public ApiResponse<FarmAnalyticsResponse> farmAnalytics(@PathVariable Long farmId) {
+    return ApiResponse.of(financeAnalyticsService.farmAnalytics(farmId));
   }
 }
