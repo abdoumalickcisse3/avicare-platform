@@ -26,4 +26,10 @@ public interface CommercialFacade {
 
   /** Total revenue (COMPLETED sales) attributed to a production unit. */
   long revenueByProductionUnit(Long farmId, Long productionUnitId);
+
+  /** Σ des ventes directes COMPLETED de la ferme (lifetime), pour le P&L finance. */
+  long totalSalesRevenue(Long farmId);
+
+  /** Σ des montants encaissés sur les factures de LIVRAISON non annulées (lifetime). */
+  long totalPaidFromDeliveryInvoices(Long farmId);
 }

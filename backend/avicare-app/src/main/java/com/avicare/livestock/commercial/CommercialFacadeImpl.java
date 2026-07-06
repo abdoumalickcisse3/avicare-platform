@@ -114,6 +114,16 @@ public class CommercialFacadeImpl implements CommercialFacade {
     return saleItemRepository.sumRevenueForUnit(farmId, productionUnitId);
   }
 
+  @Override
+  public long totalSalesRevenue(Long farmId) {
+    return saleRepository.sumAllRevenue(farmId);
+  }
+
+  @Override
+  public long totalPaidFromDeliveryInvoices(Long farmId) {
+    return invoiceRepository.sumPaidFromDeliveries(farmId);
+  }
+
   /** Null-safe coalesce for aggregate SUM results that return null when no rows match. */
   private static long coalesce(Long value) {
     return value != null ? value : 0L;
