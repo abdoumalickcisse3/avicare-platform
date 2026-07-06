@@ -21,7 +21,6 @@ import com.avicare.livestock.repository.VaccinationRepository;
 import com.avicare.livestock.repository.WeighingSampleRepository;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,11 +41,6 @@ public class LivestockFacadeImpl implements LivestockFacade {
   private final LivestockService livestockService;
   private final EggTrayStockService eggTrayStockService;
   private final EggTrayStockRepository eggTrayStockRepository;
-
-  @Override
-  public Optional<ProductionUnitInfo> findUnit(Long unitId) {
-    return productionUnitRepository.findById(unitId).map(LivestockFacadeImpl::toInfo);
-  }
 
   @Override
   public List<ProductionUnitInfo> listFarmUnits(Long farmId) {
@@ -187,11 +181,6 @@ public class LivestockFacadeImpl implements LivestockFacade {
       throw new BusinessRuleException(
           "PRODUCTION_TYPE_MISMATCH", "BROILER requires a PoultryBatch (broiler) unit");
     }
-  }
-
-  @Override
-  public long initialCountOf(Long unitId) {
-    return lifecycleEventRepository.sumInitialCountByUnit(unitId);
   }
 
   private static ProductionUnitInfo toInfo(ProductionUnit u) {

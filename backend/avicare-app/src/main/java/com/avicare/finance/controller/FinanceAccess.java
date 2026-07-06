@@ -20,7 +20,7 @@ final class FinanceAccess {
 
   static final String FEATURE = "@features.isEnabled(#farmId, 'module.finance')";
 
-  /** Members holding {@code finance:read} — browse expenses, summary, unit analytics. */
+  /** Members holding {@code finance:read} — browse expenses, summary, farm analytics. */
   static final String READ = "@farmAccess.hasPermission(#farmId, 'finance:read') and " + FEATURE;
 
   /** OWNER / MANAGER — manual expense CRUD. */

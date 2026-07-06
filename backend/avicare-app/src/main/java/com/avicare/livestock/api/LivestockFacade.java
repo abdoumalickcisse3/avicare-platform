@@ -4,15 +4,12 @@ import com.avicare.livestock.api.dto.LivestockStats;
 import com.avicare.livestock.api.dto.ProductionUnitInfo;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Public contract of the livestock bounded context (doc 03 §4). Transverse business contexts read
  * production units through this facade, species-agnostically.
  */
 public interface LivestockFacade {
-
-  Optional<ProductionUnitInfo> findUnit(Long unitId);
 
   List<ProductionUnitInfo> listFarmUnits(Long farmId);
 
@@ -45,7 +42,4 @@ public interface LivestockFacade {
    * BROILER, records a SALE_CANCEL lifecycle event. For EGGS, adds trays back to the farm pool.
    */
   void restockProduction(Long farmId, ProductType type, Long unitId, long qty);
-
-  /** Initial headcount of a unit = sum of CREATED lifecycle event deltas (0 if none). */
-  long initialCountOf(Long unitId);
 }
