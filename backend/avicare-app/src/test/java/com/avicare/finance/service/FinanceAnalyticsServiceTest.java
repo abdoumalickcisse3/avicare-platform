@@ -1,11 +1,9 @@
 package com.avicare.finance.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
-import com.avicare.common.api.exception.NotFoundException;
-import com.avicare.finance.dto.response.UnitAnalyticsResponse;
+import com.avicare.finance.dto.response.FarmAnalyticsResponse;
 import com.avicare.finance.repository.ExpenseRepository;
 import com.avicare.livestock.api.LivestockFacade;
 import com.avicare.livestock.api.dto.ProductionUnitInfo;
@@ -17,12 +15,11 @@ import com.avicare.parameters.api.ParametersFacade;
 import com.avicare.parameters.api.dto.CatalogEntryInfo;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-/** Unit test for {@link FinanceAnalyticsService}: all dependencies mocked. */
+/** Unit test for {@link FinanceAnalyticsService#farmAnalytics}: all dependencies mocked. */
 class FinanceAnalyticsServiceTest {
 
   private ExpenseRepository expenseRepository;
@@ -42,79 +39,78 @@ class FinanceAnalyticsServiceTest {
             expenseRepository, livestockFacade, commercialFacade, parametersFacade);
   }
 
-  private static ProductionUnitInfo unitInfo(Long id, Long farmId) {
+  private static ProductionUnitInfo unit(Long id, Long farmId, String name) {
     return new ProductionUnitInfo(
-        id, farmId, Species.POULTRY, UnitKind.BATCH, 1L, "Lot test", 100, UnitStatus.ACTIVE);
+        id, farmId, Species.POULTRY, UnitKind.BATCH, 1L, name, 100, UnitStatus.ACTIVE);
   }
 
   @Test
-  void unitAnalytics_computesCostsRevenueAndMargin() {
-    when(livestockFacade.findUnit(42L)).thenReturn(Optional.of(unitInfo(42L, 3L)));
-    when(expenseRepository.sumByCategoryForUnit(3L, 42L))
+  void farmAnalytics_revenueMinusExpensesIsMargin_withCategoryLabelsAndPerUnitRevenue() {
+    long farmId = 3L;
+    when(commercialFacade.totalSalesRevenue(farmId)).thenReturn(700_000L);
+    when(commercialFacade.totalPaidFromDeliveryInvoices(farmId)).thenReturn(50_000L);
+    when(expenseRepository.sumByCategory(farmId, null, null))
         .thenReturn(
-            List.<Object[]>of(new Object[] {"feed", 50000L}, new Object[] {"veterinary", 5000L}));
-    when(parametersFacade.listForFarm(3L, "expense_categories"))
+            List.<Object[]>of(
+                new Object[] {"feed", 344_000L}, new Object[] {"veterinary", 6_000L}));
+    when(parametersFacade.listForFarm(farmId, "expense_categories"))
         .thenReturn(
             List.of(
                 new CatalogEntryInfo(
                     "expense_categories", "feed", Map.of("label", "Aliment"), false)));
-    when(commercialFacade.revenueByProductionUnit(3L, 42L)).thenReturn(120000L);
-    when(livestockFacade.initialCountOf(42L)).thenReturn(100L);
+    when(livestockFacade.listFarmUnits(farmId))
+        .thenReturn(List.of(unit(10L, farmId, "Lot A"), unit(11L, farmId, "Lot B")));
+    when(commercialFacade.revenueByProductionUnit(farmId, 10L)).thenReturn(700_000L);
+    when(commercialFacade.revenueByProductionUnit(farmId, 11L)).thenReturn(0L);
 
-    UnitAnalyticsResponse response = service.unitAnalytics(3L, 42L);
+    FarmAnalyticsResponse r = service.farmAnalytics(farmId);
 
-    assertThat(response.unitId()).isEqualTo(42L);
-    assertThat(response.totalCostXof()).isEqualTo(55000L);
-    assertThat(response.costPerHeadXof()).isEqualTo(550L);
-    assertThat(response.revenueXof()).isEqualTo(120000L);
-    assertThat(response.marginXof()).isEqualTo(65000L);
+    assertThat(r.directSalesXof()).isEqualTo(700_000L);
+    assertThat(r.paidOrdersXof()).isEqualTo(50_000L);
+    assertThat(r.totalRevenueXof()).isEqualTo(750_000L);
+    assertThat(r.totalExpenseXof()).isEqualTo(350_000L);
+    assertThat(r.marginXof()).isEqualTo(400_000L);
 
-    assertThat(response.costs())
-        .extracting(UnitAnalyticsResponse.CategoryCost::categoryKey)
+    assertThat(r.expensesByCategory())
+        .extracting(FarmAnalyticsResponse.CategoryCost::categoryKey)
         .containsExactlyInAnyOrder("feed", "veterinary");
-    UnitAnalyticsResponse.CategoryCost feedCost =
-        response.costs().stream()
+    FarmAnalyticsResponse.CategoryCost feed =
+        r.expensesByCategory().stream()
             .filter(c -> c.categoryKey().equals("feed"))
             .findFirst()
             .orElseThrow();
-    assertThat(feedCost.label()).isEqualTo("Aliment");
-    assertThat(feedCost.amountXof()).isEqualTo(50000L);
-    UnitAnalyticsResponse.CategoryCost vetCost =
-        response.costs().stream()
+    assertThat(feed.label()).isEqualTo("Aliment");
+    assertThat(feed.amountXof()).isEqualTo(344_000L);
+    // libellé absent du catalogue mocké -> fallback sur la clé
+    FarmAnalyticsResponse.CategoryCost vet =
+        r.expensesByCategory().stream()
             .filter(c -> c.categoryKey().equals("veterinary"))
             .findFirst()
             .orElseThrow();
-    // fallback: label absent from the (mocked) catalog -> falls back to the key itself.
-    assertThat(vetCost.label()).isEqualTo("veterinary");
+    assertThat(vet.label()).isEqualTo("veterinary");
+
+    // Seuls les lots à revenu > 0 sont listés.
+    assertThat(r.revenueByUnit()).hasSize(1);
+    assertThat(r.revenueByUnit().get(0).unitId()).isEqualTo(10L);
+    assertThat(r.revenueByUnit().get(0).unitName()).isEqualTo("Lot A");
+    assertThat(r.revenueByUnit().get(0).revenueXof()).isEqualTo(700_000L);
   }
 
   @Test
-  void unitAnalytics_crossFarmUnit_throwsNotFound() {
-    when(livestockFacade.findUnit(42L)).thenReturn(Optional.of(unitInfo(42L, 99L)));
+  void farmAnalytics_noData_allZero() {
+    long farmId = 5L;
+    when(commercialFacade.totalSalesRevenue(farmId)).thenReturn(0L);
+    when(commercialFacade.totalPaidFromDeliveryInvoices(farmId)).thenReturn(0L);
+    when(expenseRepository.sumByCategory(farmId, null, null)).thenReturn(List.of());
+    when(parametersFacade.listForFarm(farmId, "expense_categories")).thenReturn(List.of());
+    when(livestockFacade.listFarmUnits(farmId)).thenReturn(List.of());
 
-    assertThatThrownBy(() -> service.unitAnalytics(3L, 42L)).isInstanceOf(NotFoundException.class);
-  }
+    FarmAnalyticsResponse r = service.farmAnalytics(farmId);
 
-  @Test
-  void unitAnalytics_unknownUnit_throwsNotFound() {
-    when(livestockFacade.findUnit(42L)).thenReturn(Optional.empty());
-
-    assertThatThrownBy(() -> service.unitAnalytics(3L, 42L)).isInstanceOf(NotFoundException.class);
-  }
-
-  @Test
-  void unitAnalytics_zeroInitialCount_costPerHeadIsNull() {
-    when(livestockFacade.findUnit(42L)).thenReturn(Optional.of(unitInfo(42L, 3L)));
-    when(expenseRepository.sumByCategoryForUnit(3L, 42L))
-        .thenReturn(List.<Object[]>of(new Object[] {"feed", 10000L}));
-    when(parametersFacade.listForFarm(3L, "expense_categories")).thenReturn(List.of());
-    when(commercialFacade.revenueByProductionUnit(3L, 42L)).thenReturn(0L);
-    when(livestockFacade.initialCountOf(42L)).thenReturn(0L);
-
-    UnitAnalyticsResponse response = service.unitAnalytics(3L, 42L);
-
-    assertThat(response.costPerHeadXof()).isNull();
-    assertThat(response.totalCostXof()).isEqualTo(10000L);
-    assertThat(response.marginXof()).isEqualTo(-10000L);
+    assertThat(r.totalRevenueXof()).isZero();
+    assertThat(r.totalExpenseXof()).isZero();
+    assertThat(r.marginXof()).isZero();
+    assertThat(r.expensesByCategory()).isEmpty();
+    assertThat(r.revenueByUnit()).isEmpty();
   }
 }
