@@ -34,7 +34,11 @@ export function FarmAnalyticsView({ farmId }: { farmId: number }) {
     return <Alert severity="error">{apiErrorMessage(error)}</Alert>;
   }
   if (!data) {
-    return null;
+    return (
+      <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: "center" }}>
+        Aucune donnée financière pour le moment.
+      </Typography>
+    );
   }
 
   const empty = data.totalRevenueXof === 0 && data.totalExpenseXof === 0;
