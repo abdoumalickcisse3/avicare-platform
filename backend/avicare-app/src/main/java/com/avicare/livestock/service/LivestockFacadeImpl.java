@@ -201,6 +201,7 @@ public class LivestockFacadeImpl implements LivestockFacade {
         u.getSpecies(),
         u.getUnitKind(),
         u.getBreedId(),
+        u.getName(),
         u.getCurrentCount(),
         u.getStatus());
   }

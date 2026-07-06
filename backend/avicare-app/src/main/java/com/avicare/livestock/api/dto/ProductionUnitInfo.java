@@ -14,5 +14,6 @@ public record ProductionUnitInfo(
     Species species,
     UnitKind unitKind,
     Long breedId,
+    String name,
     int currentCount,
     UnitStatus status) {}

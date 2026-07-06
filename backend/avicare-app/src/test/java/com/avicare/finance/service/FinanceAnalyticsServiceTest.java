@@ -44,7 +44,7 @@ class FinanceAnalyticsServiceTest {
 
   private static ProductionUnitInfo unitInfo(Long id, Long farmId) {
     return new ProductionUnitInfo(
-        id, farmId, Species.POULTRY, UnitKind.BATCH, 1L, 100, UnitStatus.ACTIVE);
+        id, farmId, Species.POULTRY, UnitKind.BATCH, 1L, "Lot test", 100, UnitStatus.ACTIVE);
   }
 
   @Test
