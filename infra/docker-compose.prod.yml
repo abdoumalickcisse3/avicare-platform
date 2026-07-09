@@ -1,0 +1,97 @@
+# =====================================================================
+# AviCare Platform — PRODUCTION stack (single VPS, docker-compose).
+#   caddy (80/443, auto-HTTPS)  ->  web (Next.js) + backend (Spring Boot)
+#   backend -> postgres + redis (internal network only, no host ports)
+#
+# Run via ./deploy.sh (it sources .env and injects the JWT PEM keys).
+# See infra/DEPLOY.md for the full runbook.
+# =====================================================================
+
+name: avicare-prod
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-avicare}
+      POSTGRES_USER: ${DB_USER:-avicare}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-avicare} -d ${DB_NAME:-avicare}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [internal]
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [internal]
+
+  backend:
+    image: ${BACKEND_IMAGE:?set BACKEND_IMAGE in .env}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: ${DB_NAME:-avicare}
+      DB_USER: ${DB_USER:-avicare}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      JWT_ISSUER: ${JWT_ISSUER:-avicare-platform}
+      JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY:?export JWT_PRIVATE_KEY (deploy.sh does this)}
+      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY:?export JWT_PUBLIC_KEY (deploy.sh does this)}
+    mem_limit: ${BACKEND_MEM:-3g}
+    networks: [internal]
+
+  web:
+    image: ${WEB_IMAGE:?set WEB_IMAGE in .env}
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_started
+    networks: [internal]
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - web
+      - backend
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [internal]
+
+volumes:
+  postgres_data:
+  redis_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  internal:

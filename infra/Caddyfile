@@ -1,0 +1,19 @@
+# AviCare reverse proxy — automatic HTTPS (Let's Encrypt) for {$DOMAIN}.
+# Requires public DNS A/AAAA -> this VPS and ports 80/443 open.
+# If Cloudflare is in front, use DNS-only (grey cloud) for the first cert,
+# then optionally enable the orange-cloud proxy (Full/strict). See DEPLOY.md.
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	# Backend: REST API, actuator, OpenAPI/Swagger.
+	@backend path /api/* /actuator/* /v3/api-docs* /swagger-ui*
+	handle @backend {
+		reverse_proxy backend:8080
+	}
+
+	# Everything else -> Next.js web app.
+	handle {
+		reverse_proxy web:3000
+	}
+}
