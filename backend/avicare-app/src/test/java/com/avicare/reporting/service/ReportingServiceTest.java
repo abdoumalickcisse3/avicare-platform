@@ -62,7 +62,8 @@ class ReportingServiceTest {
           null, // layingRate null (broiler batch, no laying data)
           List.of(),
           6L,
-          3L);
+          3L,
+          8.5);
 
   @Test
   void commercial_active_populatesSectionAndCallsFacade() {
@@ -150,6 +151,7 @@ class ReportingServiceTest {
     assertThat(ls.layingSeries()).isEmpty();
     assertThat(ls.vaccinationsCount()).isEqualTo(6L);
     assertThat(ls.treatmentsCount()).isEqualTo(3L);
+    assertThat(ls.dailyFeedKg()).isEqualTo(8.5);
 
     verify(livestockFacade).livestockStats(1L, P.from(), P.to());
 

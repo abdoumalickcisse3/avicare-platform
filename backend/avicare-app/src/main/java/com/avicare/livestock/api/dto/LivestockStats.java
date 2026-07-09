@@ -14,7 +14,8 @@ import java.util.List;
  * <p>Rates are percentages (0–100). {@code mortalityRate} is null when no initial effectif is
  * known; {@code avgDailyGainG} is null when fewer than two weighing samples exist in the window;
  * {@code layingRate} is null when no daily egg production records exist in the window. Series lists
- * are empty (never null) when there is no data for the period.
+ * are empty (never null) when there is no data for the period. {@code dailyFeedKg} = average daily
+ * feed_kg over the window, null when no daily records exist in the window.
  *
  * <p>In {@link DayValue}, the {@code valueXof} field carries a generic integer count: death counts
  * for {@code mortalitySeries}, egg counts for {@code layingSeries}.
@@ -29,4 +30,5 @@ public record LivestockStats(
     Double layingRate,
     List<DayValue> layingSeries,
     long vaccinationsCount,
-    long treatmentsCount) {}
+    long treatmentsCount,
+    Double dailyFeedKg) {}

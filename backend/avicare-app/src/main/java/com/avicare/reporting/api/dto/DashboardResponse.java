@@ -36,9 +36,10 @@ public record DashboardResponse(
    * Livestock KPIs aggregated by {@link com.avicare.livestock.api.LivestockFacade#livestockStats}.
    * Snapshot KPIs ({@code activeBatches}, {@code totalHeadcount}) reflect the current state and
    * ignore the period. Period KPIs ({@code deaths}, {@code mortalitySeries}, {@code avgDailyGainG},
-   * {@code layingRate}, {@code layingSeries}, {@code vaccinationsCount}, {@code treatmentsCount})
-   * honour the dashboard period window. Rates are percentages (0–100); nullable fields are omitted
-   * from JSON when null.
+   * {@code layingRate}, {@code layingSeries}, {@code vaccinationsCount}, {@code treatmentsCount},
+   * {@code dailyFeedKg}) honour the dashboard period window. Rates are percentages (0–100); {@code
+   * dailyFeedKg} = average daily feed_kg over the window; nullable fields are omitted from JSON
+   * when null.
    */
   @JsonInclude(JsonInclude.Include.NON_NULL)
   public record LivestockSection(
@@ -51,7 +52,8 @@ public record DashboardResponse(
       Double layingRate,
       List<DayValue> layingSeries,
       long vaccinationsCount,
-      long treatmentsCount) {}
+      long treatmentsCount,
+      Double dailyFeedKg) {}
 
   // Phase 3 enrichira ce record (stock bas, valeur, consommation).
   public record InventorySection() {}
