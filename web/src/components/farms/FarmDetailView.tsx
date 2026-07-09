@@ -22,6 +22,7 @@ import {
   useDeleteFarmMutation,
   useGetFarmQuery,
 } from "@/store/api/farmsApi";
+import { useGetDashboardQuery } from "@/store/api/dashboardApi";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { colors } from "@/theme/tokens";
@@ -34,12 +35,10 @@ type TabKey = "overview" | "team" | "subscription" | "settings";
 
 const TAB_KEYS: TabKey[] = ["overview", "team", "subscription", "settings"];
 
-const OVERVIEW_STATS = [
-  { label: "Effectif total", hint: "Sujets actifs" },
-  { label: "Taux de mortalité", hint: "Moyenne pondérée" },
-  { label: "Production (7j)", hint: "Taux de ponte" },
-  { label: "Aliment (journalier)", hint: "Indice de conversion" },
-];
+const pct = (v: number | null | undefined) =>
+  v != null ? `${v.toFixed(1)} %` : "n/d";
+const kg = (v: number | null | undefined) =>
+  v != null ? `${v.toFixed(1)} kg` : "n/d";
 
 function Placeholder({ children }: { children: React.ReactNode }) {
   return (
@@ -57,6 +56,34 @@ export function FarmDetailView({ farmId }: { farmId: number }) {
   const { showToast } = useToast();
   const { data: farm, isLoading, error } = useGetFarmQuery(farmId);
   const [deleteFarm, { isLoading: deleting }] = useDeleteFarmMutation();
+  const { data: dashboard } = useGetDashboardQuery({
+    farmId,
+    query: { period: "7d" },
+  });
+  const ls = dashboard?.livestock;
+
+  const overviewCards = [
+    {
+      label: "Effectif total",
+      hint: "Sujets actifs",
+      value: ls ? String(ls.totalHeadcount) : "…",
+    },
+    {
+      label: "Taux de mortalité",
+      hint: "Sur 7 jours",
+      value: ls ? pct(ls.mortalityRate) : "…",
+    },
+    {
+      label: "Production (7j)",
+      hint: "Taux de ponte",
+      value: ls ? pct(ls.layingRate) : "…",
+    },
+    {
+      label: "Aliment (journalier)",
+      hint: "Consommation moy./jour",
+      value: ls ? kg(ls.dailyFeedKg) : "…",
+    },
+  ];
 
   const initialTabParam = searchParams.get("tab");
   const initialTab: TabKey = TAB_KEYS.includes(initialTabParam as TabKey)
@@ -172,17 +199,17 @@ export function FarmDetailView({ farmId }: { farmId: number }) {
               mb: 3,
             }}
           >
-            {OVERVIEW_STATS.map((stat) => (
-              <Card key={stat.label}>
+            {overviewCards.map((card) => (
+              <Card key={card.label}>
                 <CardContent>
                   <Typography variant="body2" color="text.secondary">
-                    {stat.label}
+                    {card.label}
                   </Typography>
                   <Typography variant="h5" sx={{ fontWeight: 700, my: 0.5 }}>
-                    —
+                    {card.value}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {stat.hint} · bientôt disponible
+                    {card.hint}
                   </Typography>
                 </CardContent>
               </Card>
