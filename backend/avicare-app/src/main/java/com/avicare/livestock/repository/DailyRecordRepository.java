@@ -67,4 +67,25 @@ public interface DailyRecordRepository extends JpaRepository<DailyRecord, Long> 
           + "GROUP BY d.recordDate ORDER BY d.recordDate ASC")
   List<Object[]> sumMortalityByDayForFarm(
       @Param("farmId") Long farmId, @Param("from") LocalDate from, @Param("to") LocalDate to);
+
+  /**
+   * Total feed (kg) across all units of a farm within [{@code from}, {@code to}]. COALESCE to 0 so
+   * the caller distinguishes "no records" via {@link #countFeedDaysByFarmAndPeriod}.
+   */
+  @Query(
+      "SELECT COALESCE(SUM(d.feedKg), 0) FROM DailyRecord d "
+          + "WHERE d.productionUnit.id IN "
+          + "  (SELECT u.id FROM ProductionUnit u WHERE u.farmId = :farmId) "
+          + "AND d.recordDate BETWEEN :from AND :to")
+  BigDecimal sumFeedKgByFarmAndPeriod(
+      @Param("farmId") Long farmId, @Param("from") LocalDate from, @Param("to") LocalDate to);
+
+  /** Number of distinct calendar days with a daily record for a farm within the window. */
+  @Query(
+      "SELECT COUNT(DISTINCT d.recordDate) FROM DailyRecord d "
+          + "WHERE d.productionUnit.id IN "
+          + "  (SELECT u.id FROM ProductionUnit u WHERE u.farmId = :farmId) "
+          + "AND d.recordDate BETWEEN :from AND :to")
+  long countFeedDaysByFarmAndPeriod(
+      @Param("farmId") Long farmId, @Param("from") LocalDate from, @Param("to") LocalDate to);
 }

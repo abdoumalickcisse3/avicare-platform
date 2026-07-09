@@ -60,7 +60,8 @@ public class ReportingService {
               ls.layingRate(),
               ls.layingSeries(),
               ls.vaccinationsCount(),
-              ls.treatmentsCount());
+              ls.treatmentsCount(),
+              ls.dailyFeedKg());
     }
     InventorySection inventory =
         subscriptionFacade.isModuleEnabled(farmId, "module.inventory")

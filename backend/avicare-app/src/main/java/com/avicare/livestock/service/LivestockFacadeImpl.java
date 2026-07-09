@@ -90,6 +90,14 @@ public class LivestockFacadeImpl implements LivestockFacade {
     long vaccinationsCount = vaccinationRepository.countByFarmAndPeriod(farmId, from, to);
     long treatmentsCount = treatmentExecutedRepository.countByFarmAndPeriod(farmId, from, to);
 
+    // ── Period KPIs — feed consumption ───────────────────────────────────────
+    long feedDays = dailyRecordRepository.countFeedDaysByFarmAndPeriod(farmId, from, to);
+    Double dailyFeedKg =
+        feedDays > 0
+            ? dailyRecordRepository.sumFeedKgByFarmAndPeriod(farmId, from, to).doubleValue()
+                / feedDays
+            : null;
+
     return new LivestockStats(
         activeBatches,
         totalHeadcount,
@@ -100,7 +108,8 @@ public class LivestockFacadeImpl implements LivestockFacade {
         layingRate,
         layingSeries,
         vaccinationsCount,
-        treatmentsCount);
+        treatmentsCount,
+        dailyFeedKg);
   }
 
   // ── Production stock (D27 blocking) ─────────────────────────────────────
