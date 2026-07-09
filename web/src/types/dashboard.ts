@@ -60,6 +60,8 @@ export interface LivestockSection {
   layingRate?: number | null;
   /** Daily egg counts over the period. Empty for non-layer flocks. */
   layingSeries: LivestockSeriesPoint[];
+  /** Average daily feed consumption (kg/day) over the period. Absent when not computable. */
+  dailyFeedKg?: number | null;
   vaccinationsCount: number;
   treatmentsCount: number;
 }
