@@ -1,0 +1,42 @@
+# Prod profile — every secret and endpoint is supplied via environment variables
+# (see infra/docker-compose.prod.yml and infra/DEPLOY.md). Never put real secrets
+# in this file. Activated with SPRING_PROFILES_ACTIVE=prod.
+#
+# JWT RSA keys are read from JWT_PRIVATE_KEY / JWT_PUBLIC_KEY (declared in the base
+# application.yml). In prod they MUST be provided — the app boots inert otherwise.
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:postgres}:${DB_PORT:5432}/${DB_NAME:avicare}
+    username: ${DB_USER:avicare}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX:15}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+
+avicare:
+  features:
+    # Subscription feature gating ENFORCED in prod (ADR-004: a boot guard refuses
+    # gating-enabled=false under a prod profile).
+    gating-enabled: true
+
+logging:
+  level:
+    root: INFO
+    com.avicare: INFO
+    org.springframework.web: WARN
+    org.hibernate.SQL: WARN
