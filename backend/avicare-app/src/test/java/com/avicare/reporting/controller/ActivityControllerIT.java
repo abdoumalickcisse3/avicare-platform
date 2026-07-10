@@ -129,11 +129,27 @@ class ActivityControllerIT {
                     null))),
         1L);
 
+    // The login token predates the farm, so it lacks the new OWNER membership → re-login.
+    String freshToken =
+        objectMapper
+            .readTree(
+                mockMvc
+                    .perform(
+                        post("/api/v1/auth/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"email\":\"" + email + "\",\"password\":\"password123\"}"))
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString())
+            .get("data")
+            .get("accessToken")
+            .asText();
+
     String body =
         mockMvc
             .perform(
                 get("/api/v1/farms/" + farmId + "/activity?limit=20")
-                    .header("Authorization", "Bearer " + token))
+                    .header("Authorization", "Bearer " + freshToken))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data").isArray())
             .andReturn()

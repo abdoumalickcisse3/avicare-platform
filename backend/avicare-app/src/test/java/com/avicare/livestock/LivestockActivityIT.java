@@ -37,6 +37,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 /** Verifies LivestockFacade.recentActivity whitelist + ordering on a real DB. CI-only. */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @Testcontainers
+@org.springframework.transaction.annotation.Transactional
 class LivestockActivityIT {
 
   @Container
