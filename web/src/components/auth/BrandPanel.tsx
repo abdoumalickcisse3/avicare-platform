@@ -1,6 +1,5 @@
 import { Box, Stack, Typography } from "@mui/material";
 import type { ReactNode } from "react";
-import { Egg } from "lucide-react";
 import { colors } from "@/theme/tokens";
 
 interface BrandPanelProps {
@@ -39,24 +38,12 @@ export function BrandPanel({
         background: `linear-gradient(160deg, ${colors.primary[800]} 0%, ${colors.primary[500]} 100%)`,
       }}
     >
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-        <Box
-          sx={{
-            width: 44,
-            height: 44,
-            borderRadius: 2,
-            bgcolor: "rgba(255,255,255,0.12)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Egg size={24} strokeWidth={1.75} />
-        </Box>
-        <Typography variant="h5" sx={{ fontWeight: 700 }}>
-          AviCare
-        </Typography>
-      </Box>
+      <Box
+        component="img"
+        src="/logo/logo-dark.png"
+        alt="AviCare Platform"
+        sx={{ height: 60, width: "auto", alignSelf: "flex-start" }}
+      />
 
       <Stack spacing={2} sx={{ maxWidth: 460 }}>
         <Typography variant="h3" sx={{ fontWeight: 700, lineHeight: 1.15 }}>

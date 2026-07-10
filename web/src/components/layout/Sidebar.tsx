@@ -363,24 +363,13 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         borderRight: `1px solid ${colors.neutral[200]}`,
       }}
     >
-      <Box sx={{ px: 3, py: 2.5, display: "flex", alignItems: "center", gap: 1 }}>
+      <Box sx={{ px: 3, py: 2.5 }}>
         <Box
-          sx={{
-            width: 30,
-            height: 30,
-            borderRadius: 2,
-            bgcolor: colors.primary[500],
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: colors.neutral[0],
-          }}
-        >
-          <Drumstick size={18} />
-        </Box>
-        <Typography variant="h5" sx={{ fontWeight: 700, color: colors.primary[600] }}>
-          AviCare
-        </Typography>
+          component="img"
+          src="/logo/logo.png"
+          alt="AviCare Platform"
+          sx={{ height: 48, width: "auto", maxWidth: "100%", display: "block" }}
+        />
       </Box>
 
       <Box sx={{ px: 1.5, flex: 1, overflowY: "auto" }}>
