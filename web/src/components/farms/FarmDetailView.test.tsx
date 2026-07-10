@@ -60,6 +60,22 @@ beforeEach(() => {
           inventory: null,
         });
       }
+      if (url.includes("/activity")) {
+        return respond([
+          {
+            kind: "MORTALITY",
+            at: "2026-07-06T08:00:00",
+            label: "Mortalité : 5 sujets",
+            detail: null,
+          },
+          {
+            kind: "SALE",
+            at: "2026-07-05T10:00:00",
+            label: "Vente 700000 XOF",
+            detail: null,
+          },
+        ]);
+      }
       if (url.includes("/api/v1/farms/1")) {
         return respond(farm);
       }
@@ -77,5 +93,14 @@ describe("FarmDetailView overview KPI cards", () => {
     expect(screen.getByText("3.1 %")).toBeInTheDocument(); // Mortalité
     expect(screen.getByText("n/d")).toBeInTheDocument(); // Production (layingRate null)
     expect(screen.getByText("42.5 kg")).toBeInTheDocument(); // Aliment
+  });
+});
+
+describe("FarmDetailView recent activity feed", () => {
+  it("renders the merged activity items from the activity endpoint", async () => {
+    renderWithProviders(<FarmDetailView farmId={1} />);
+
+    expect(await screen.findByText("Mortalité : 5 sujets")).toBeInTheDocument();
+    expect(screen.getByText("Vente 700000 XOF")).toBeInTheDocument();
   });
 });

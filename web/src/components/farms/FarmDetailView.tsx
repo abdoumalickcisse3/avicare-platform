@@ -11,6 +11,9 @@ import {
   Card,
   CardContent,
   Chip,
+  List,
+  ListItem,
+  ListItemText,
   Skeleton,
   Stack,
   Tab,
@@ -23,6 +26,7 @@ import {
   useGetFarmQuery,
 } from "@/store/api/farmsApi";
 import { useGetDashboardQuery } from "@/store/api/dashboardApi";
+import { useGetFarmActivityQuery } from "@/store/api/activityApi";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { colors } from "@/theme/tokens";
@@ -61,6 +65,8 @@ export function FarmDetailView({ farmId }: { farmId: number }) {
     query: { period: "7d" },
   });
   const ls = dashboard?.livestock;
+  const { data: activity = [], isLoading: activityLoading } =
+    useGetFarmActivityQuery({ farmId, limit: 20 });
 
   const overviewCards = [
     {
@@ -220,10 +226,22 @@ export function FarmDetailView({ farmId }: { farmId: number }) {
               <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
                 Activité récente
               </Typography>
-              <Placeholder>
-                Les indicateurs de production seront disponibles une fois le
-                module élevage activé.
-              </Placeholder>
+              {activityLoading ? (
+                <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 1 }} />
+              ) : activity.length === 0 ? (
+                <Placeholder>Aucune activité récente.</Placeholder>
+              ) : (
+                <List dense disablePadding>
+                  {activity.map((item, i) => (
+                    <ListItem key={`${item.at}-${i}`} disableGutters>
+                      <ListItemText
+                        primary={item.label}
+                        secondary={new Date(item.at).toLocaleString("fr-FR")}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              )}
             </CardContent>
           </Card>
         </Box>

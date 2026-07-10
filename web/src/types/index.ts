@@ -1273,3 +1273,13 @@ export interface AdvanceInput {
   amountXof: number;
   reason?: string;
 }
+
+/* ===================== Farm overview activity feed (Sprint C reporting) ===================== */
+
+/** One item in a farm's recent-activity feed (mirrors backend ActivityItem). */
+export interface ActivityItem {
+  kind: string;
+  at: string; // ISO LocalDateTime
+  label: string;
+  detail: string | null;
+}
