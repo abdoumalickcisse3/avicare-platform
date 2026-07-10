@@ -1,0 +1,84 @@
+package com.avicare.livestock;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import com.avicare.common.api.dto.ActivityItem;
+import com.avicare.livestock.api.LivestockFacade;
+import com.avicare.livestock.domain.LifecycleEvent;
+import com.avicare.livestock.domain.ProductionUnit;
+import com.avicare.livestock.domain.Species;
+import com.avicare.livestock.domain.UnitKind;
+import com.avicare.livestock.domain.UnitStatus;
+import com.avicare.livestock.repository.LifecycleEventRepository;
+import com.avicare.livestock.repository.ProductionUnitRepository;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+
+/** Verifies LivestockFacade.recentActivity whitelist + ordering on a real DB. CI-only. */
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
+@Testcontainers
+class LivestockActivityIT {
+
+  @Container
+  static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine");
+
+  @DynamicPropertySource
+  static void props(DynamicPropertyRegistry r) {
+    r.add("spring.datasource.url", POSTGRES::getJdbcUrl);
+    r.add("spring.datasource.username", POSTGRES::getUsername);
+    r.add("spring.datasource.password", POSTGRES::getPassword);
+    r.add("spring.flyway.enabled", () -> "true");
+    r.add("spring.jpa.hibernate.ddl-auto", () -> "validate");
+  }
+
+  @Autowired private LivestockFacade livestockFacade;
+  @Autowired private ProductionUnitRepository productionUnitRepository;
+  @Autowired private LifecycleEventRepository lifecycleEventRepository;
+
+  private Long unit(long farmId) {
+    ProductionUnit u = new ProductionUnit();
+    u.setFarmId(farmId);
+    u.setSpecies(Species.POULTRY);
+    u.setUnitKind(UnitKind.BATCH);
+    u.setName("Lot");
+    u.setStartDate(java.time.LocalDate.now().minusDays(5));
+    u.setCurrentCount(100);
+    u.setStatus(UnitStatus.ACTIVE);
+    return productionUnitRepository.save(u).getId();
+  }
+
+  private void event(Long unitId, String type, int delta) {
+    LifecycleEvent e = new LifecycleEvent();
+    e.setProductionUnitId(unitId);
+    e.setEventType(type);
+    e.setQuantityDelta(delta);
+    lifecycleEventRepository.save(e);
+  }
+
+  @Test
+  void recentActivity_whitelistsMeaningfulEvents_andExcludesGuards() {
+    long farmId = 772_000L;
+    Long unitId = unit(farmId);
+    event(unitId, "MORTALITY", -5);
+    event(unitId, "VET_VISIT_RECORDED", 0);
+    event(unitId, "INVALID_MORTALITY_COUNT", 0); // guard marker → excluded
+    event(unitId, "DAILY_RECORD", 0); // noisy → excluded (not in whitelist)
+
+    List<ActivityItem> items = livestockFacade.recentActivity(farmId, 20);
+
+    assertThat(items)
+        .extracting(ActivityItem::kind)
+        .contains("MORTALITY", "VET_VISIT_RECORDED")
+        .doesNotContain("INVALID_MORTALITY_COUNT", "DAILY_RECORD");
+    assertThat(items)
+        .extracting(ActivityItem::label)
+        .anyMatch(l -> l.equals("Mortalité : 5 sujets"));
+  }
+}

@@ -1,5 +1,6 @@
 package com.avicare.livestock.api;
 
+import com.avicare.common.api.dto.ActivityItem;
 import com.avicare.livestock.api.dto.LivestockStats;
 import com.avicare.livestock.api.dto.ProductionUnitInfo;
 import java.time.LocalDate;
@@ -42,4 +43,9 @@ public interface LivestockFacade {
    * BROILER, records a SALE_CANCEL lifecycle event. For EGGS, adds trays back to the farm pool.
    */
   void restockProduction(Long farmId, ProductType type, Long unitId, long qty);
+
+  /**
+   * Up to {@code limit} most recent livestock activity items (lifecycle events + stock movements).
+   */
+  List<ActivityItem> recentActivity(Long farmId, int limit);
 }
