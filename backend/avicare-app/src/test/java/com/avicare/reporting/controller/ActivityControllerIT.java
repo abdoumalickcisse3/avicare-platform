@@ -44,6 +44,8 @@ class ActivityControllerIT {
 
   @Autowired private MockMvc mockMvc;
   @Autowired private ObjectMapper objectMapper;
+  @Autowired private com.avicare.livestock.commercial.ClientService clientService;
+  @Autowired private com.avicare.livestock.commercial.SaleService saleService;
 
   @Test
   void activityEndpoint_returnsMergedFeed() throws Exception {
@@ -88,12 +90,63 @@ class ActivityControllerIT {
             .get("id")
             .asLong();
 
-    // Empty feed is a valid 200 (no activity yet) — asserts the endpoint + RBAC wire up.
-    mockMvc
-        .perform(
-            get("/api/v1/farms/" + farmId + "/activity?limit=20")
-                .header("Authorization", "Bearer " + token))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.data").isArray());
+    // Seed one COMPLETED sale so the merged feed carries a real item (mirrors
+    // CommercialActivityIT).
+    // An INVENTORY-article sale also emits a stock OUT movement, so the feed exercises both
+    // sources.
+    long clientId =
+        clientService
+            .create(
+                farmId,
+                new com.avicare.livestock.commercial.ClientCommand(
+                    com.avicare.livestock.domain.ClientType.BUSINESS,
+                    "Ferme du Soleil",
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null),
+                1L)
+            .getId();
+    saleService.create(
+        farmId,
+        new com.avicare.livestock.commercial.SaleCommand(
+            clientId,
+            null,
+            "CREDIT",
+            null,
+            java.util.List.of(
+                new com.avicare.livestock.commercial.SaleCommand.Line(
+                    "eggs_consumption",
+                    com.avicare.livestock.domain.ArticleSource.INVENTORY,
+                    new java.math.BigDecimal("10"),
+                    3000,
+                    null,
+                    null,
+                    null))),
+        1L);
+
+    String body =
+        mockMvc
+            .perform(
+                get("/api/v1/farms/" + farmId + "/activity?limit=20")
+                    .header("Authorization", "Bearer " + token))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data").isArray())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    boolean hasSale = false;
+    for (com.fasterxml.jackson.databind.JsonNode n : objectMapper.readTree(body).get("data")) {
+      if ("SALE".equals(n.get("kind").asText())) {
+        hasSale = true;
+      }
+    }
+    org.assertj.core.api.Assertions.assertThat(hasSale)
+        .as("activity feed contains the seeded SALE")
+        .isTrue();
   }
 }
