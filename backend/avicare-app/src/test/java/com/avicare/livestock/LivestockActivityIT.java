@@ -3,6 +3,8 @@ package com.avicare.livestock;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.avicare.common.api.dto.ActivityItem;
+import com.avicare.common.security.principal.UserRole;
+import com.avicare.identity.domain.User;
 import com.avicare.livestock.api.LivestockFacade;
 import com.avicare.livestock.domain.LifecycleEvent;
 import com.avicare.livestock.domain.MovementReason;
@@ -17,6 +19,8 @@ import com.avicare.livestock.repository.LifecycleEventRepository;
 import com.avicare.livestock.repository.ProductionUnitRepository;
 import com.avicare.livestock.repository.StockItemRepository;
 import com.avicare.livestock.repository.StockMovementRepository;
+import com.avicare.tenancy.domain.Farm;
+import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Comparator;
@@ -52,6 +56,22 @@ class LivestockActivityIT {
   @Autowired private LifecycleEventRepository lifecycleEventRepository;
   @Autowired private StockItemRepository stockItemRepository;
   @Autowired private StockMovementRepository stockMovementRepository;
+  @Autowired private EntityManager em;
+
+  private long seedFarm() {
+    User u = new User();
+    u.setEmail("seed" + System.nanoTime() + "@example.com");
+    u.setPasswordHash("$2a$12$abcdefghijklmnopqrstuv");
+    u.setFullName("Seed");
+    u.setRole(UserRole.USER);
+    em.persist(u);
+    Farm f = new Farm();
+    f.setName("Ferme seed");
+    f.setCreatedBy(u.getId());
+    em.persist(f);
+    em.flush();
+    return f.getId();
+  }
 
   private Long unit(long farmId) {
     ProductionUnit u = new ProductionUnit();
@@ -92,7 +112,7 @@ class LivestockActivityIT {
 
   @Test
   void recentActivity_whitelistsMeaningfulEvents_andExcludesGuards() {
-    long farmId = 772_000L;
+    long farmId = seedFarm();
     Long unitId = unit(farmId);
     event(unitId, "MORTALITY", -5);
     event(unitId, "VET_VISIT_RECORDED", 0);
@@ -112,7 +132,7 @@ class LivestockActivityIT {
 
   @Test
   void recentActivity_mergesStockMovements_andSortsMostRecentFirst() {
-    long farmId = 772_001L;
+    long farmId = seedFarm();
     Long unitId = unit(farmId);
     // lifecycle events land "now" (occurred_at is DB-defaulted to NOW()).
     event(unitId, "MORTALITY", -3);
