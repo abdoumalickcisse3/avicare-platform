@@ -94,6 +94,32 @@ describe("FarmDetailView overview KPI cards", () => {
     expect(screen.getByText("n/d")).toBeInTheDocument(); // Production (layingRate null)
     expect(screen.getByText("42.5 kg")).toBeInTheDocument(); // Aliment
   });
+
+  it("shows n/d (not a spinner) once the dashboard resolves without a livestock section", async () => {
+    // Re-stub: the dashboard query succeeds but livestock is null (module off).
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = input instanceof Request ? input.url : String(input);
+        if (url.includes("/dashboard")) {
+          return respond({
+            period: { kind: "preset", value: "7d", from: "2026-07-02", to: "2026-07-09" },
+            commercial: null,
+            livestock: null,
+            inventory: null,
+          });
+        }
+        if (url.includes("/activity")) return respond([]);
+        if (url.includes("/api/v1/farms/1")) return respond(farm);
+        return respond(null);
+      }),
+    );
+
+    renderWithProviders(<FarmDetailView farmId={1} />);
+
+    expect(await screen.findAllByText("n/d")).toHaveLength(4);
+    expect(screen.queryByText("…")).not.toBeInTheDocument();
+  });
 });
 
 describe("FarmDetailView recent activity feed", () => {
