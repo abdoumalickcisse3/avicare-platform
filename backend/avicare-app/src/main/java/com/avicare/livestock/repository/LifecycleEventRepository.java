@@ -1,7 +1,9 @@
 package com.avicare.livestock.repository;
 
 import com.avicare.livestock.domain.LifecycleEvent;
+import java.util.Collection;
 import java.util.List;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -47,4 +49,14 @@ public interface LifecycleEventRepository extends JpaRepository<LifecycleEvent, 
               + "AND e.event_type = 'CREATED'",
       nativeQuery = true)
   long sumInitialCountByUnit(@Param("unitId") Long unitId);
+
+  /**
+   * Recent whitelisted lifecycle events for a farm, most recent first, capped by {@code pageable}.
+   */
+  @Query(
+      "SELECT e FROM LifecycleEvent e WHERE e.productionUnitId IN "
+          + "  (SELECT u.id FROM ProductionUnit u WHERE u.farmId = :farmId) "
+          + "AND e.eventType IN :types ORDER BY e.occurredAt DESC")
+  List<LifecycleEvent> findRecentByFarmAndTypes(
+      @Param("farmId") Long farmId, @Param("types") Collection<String> types, Pageable pageable);
 }

@@ -1,5 +1,6 @@
 package com.avicare.livestock.service;
 
+import com.avicare.common.api.dto.ActivityItem;
 import com.avicare.common.api.dto.DayValue;
 import com.avicare.common.api.exception.BusinessRuleException;
 import com.avicare.common.api.exception.NotFoundException;
@@ -7,8 +8,10 @@ import com.avicare.livestock.api.LivestockFacade;
 import com.avicare.livestock.api.ProductType;
 import com.avicare.livestock.api.dto.LivestockStats;
 import com.avicare.livestock.api.dto.ProductionUnitInfo;
+import com.avicare.livestock.domain.LifecycleEvent;
 import com.avicare.livestock.domain.PoultryBatch;
 import com.avicare.livestock.domain.ProductionUnit;
+import com.avicare.livestock.domain.StockMovement;
 import com.avicare.livestock.domain.UnitStatus;
 import com.avicare.livestock.layer.EggTrayStockService;
 import com.avicare.livestock.repository.DailyEggProductionRepository;
@@ -16,12 +19,18 @@ import com.avicare.livestock.repository.DailyRecordRepository;
 import com.avicare.livestock.repository.EggTrayStockRepository;
 import com.avicare.livestock.repository.LifecycleEventRepository;
 import com.avicare.livestock.repository.ProductionUnitRepository;
+import com.avicare.livestock.repository.StockMovementRepository;
 import com.avicare.livestock.repository.TreatmentExecutedRepository;
 import com.avicare.livestock.repository.VaccinationRepository;
 import com.avicare.livestock.repository.WeighingSampleRepository;
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +50,18 @@ public class LivestockFacadeImpl implements LivestockFacade {
   private final LivestockService livestockService;
   private final EggTrayStockService eggTrayStockService;
   private final EggTrayStockRepository eggTrayStockRepository;
+  private final StockMovementRepository stockMovementRepository;
+
+  private static final Set<String> ACTIVITY_EVENT_TYPES =
+      Set.of(
+          "MORTALITY",
+          "COUNT_ADJUSTMENT",
+          "VACCINATION_ADMINISTERED",
+          "TREATMENT_ADMINISTERED",
+          "VET_VISIT_RECORDED",
+          "DAILY_PRODUCTION_CLOSED",
+          "CREATED",
+          "HEALTH_OBSERVATION");
 
   @Override
   public List<ProductionUnitInfo> listFarmUnits(Long farmId) {
@@ -172,6 +193,67 @@ public class LivestockFacadeImpl implements LivestockFacade {
       // EGGS
       eggTrayStockService.adjustStock(farmId, (int) qty, 0);
     }
+  }
+
+  // ── Recent activity feed (Task 3) ───────────────────────────────────────
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<ActivityItem> recentActivity(Long farmId, int limit) {
+    Pageable page = PageRequest.of(0, limit);
+    Stream<ActivityItem> events =
+        lifecycleEventRepository
+            .findRecentByFarmAndTypes(farmId, ACTIVITY_EVENT_TYPES, page)
+            .stream()
+            .map(LivestockFacadeImpl::lifecycleToActivity);
+    Stream<ActivityItem> movements =
+        stockMovementRepository
+            .findByStockItem_FarmIdOrderByMovementDateDescIdDesc(farmId, page)
+            .stream()
+            .map(LivestockFacadeImpl::movementToActivity);
+    return Stream.concat(events, movements)
+        .sorted(
+            Comparator.comparing(ActivityItem::at, Comparator.nullsLast(Comparator.naturalOrder()))
+                .reversed())
+        .limit(limit)
+        .toList();
+  }
+
+  private static ActivityItem lifecycleToActivity(LifecycleEvent e) {
+    String label =
+        switch (e.getEventType()) {
+          case "MORTALITY" -> "Mortalité : " + Math.abs(e.getQuantityDelta()) + " sujets";
+          case "COUNT_ADJUSTMENT" -> "Ajustement d'effectif";
+          case "VACCINATION_ADMINISTERED" -> "Vaccination";
+          case "TREATMENT_ADMINISTERED" -> "Traitement administré";
+          case "VET_VISIT_RECORDED" -> "Visite vétérinaire";
+          case "DAILY_PRODUCTION_CLOSED" -> "Production journalière clôturée";
+          case "CREATED" -> "Lot créé";
+          case "HEALTH_OBSERVATION" -> "Observation sanitaire";
+          default -> e.getEventType();
+        };
+    return new ActivityItem(e.getEventType(), e.getOccurredAt(), label, e.getReason());
+  }
+
+  private static ActivityItem movementToActivity(StockMovement m) {
+    String article = m.getStockItem().getArticleKey();
+    String kind =
+        switch (m.getMovementType()) {
+          case IN -> "STOCK_IN";
+          case OUT -> "STOCK_OUT";
+          case ADJUSTMENT -> "STOCK_ADJUSTMENT";
+        };
+    String label =
+        switch (m.getMovementType()) {
+          case IN -> "Entrée stock : " + article;
+          case OUT -> "Sortie stock : " + article;
+          case ADJUSTMENT -> "Ajustement stock : " + article;
+        };
+    return new ActivityItem(
+        kind,
+        m.getMovementDate().atStartOfDay(),
+        label,
+        m.getQuantity().toPlainString() + " unités");
   }
 
   /**
