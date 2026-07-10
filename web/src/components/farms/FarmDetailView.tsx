@@ -60,7 +60,7 @@ export function FarmDetailView({ farmId }: { farmId: number }) {
   const { showToast } = useToast();
   const { data: farm, isLoading, error } = useGetFarmQuery(farmId);
   const [deleteFarm, { isLoading: deleting }] = useDeleteFarmMutation();
-  const { data: dashboard } = useGetDashboardQuery({
+  const { data: dashboard, isLoading: dashLoading } = useGetDashboardQuery({
     farmId,
     query: { period: "7d" },
   });
@@ -68,26 +68,29 @@ export function FarmDetailView({ farmId }: { farmId: number }) {
   const { data: activity = [], isLoading: activityLoading } =
     useGetFarmActivityQuery({ farmId, limit: 20 });
 
+  // While the dashboard query is in flight, show "…"; once it resolves, the
+  // formatters fall back to "n/d" for absent values (e.g. livestock module off,
+  // so `livestock` is null) rather than a permanent spinner.
   const overviewCards = [
     {
       label: "Effectif total",
       hint: "Sujets actifs",
-      value: ls ? String(ls.totalHeadcount) : "…",
+      value: dashLoading ? "…" : ls ? String(ls.totalHeadcount) : "n/d",
     },
     {
       label: "Taux de mortalité",
       hint: "Sur 7 jours",
-      value: ls ? pct(ls.mortalityRate) : "…",
+      value: dashLoading ? "…" : pct(ls?.mortalityRate),
     },
     {
       label: "Production (7j)",
       hint: "Taux de ponte",
-      value: ls ? pct(ls.layingRate) : "…",
+      value: dashLoading ? "…" : pct(ls?.layingRate),
     },
     {
       label: "Aliment (journalier)",
       hint: "Consommation moy./jour",
-      value: ls ? kg(ls.dailyFeedKg) : "…",
+      value: dashLoading ? "…" : kg(ls?.dailyFeedKg),
     },
   ];
 
