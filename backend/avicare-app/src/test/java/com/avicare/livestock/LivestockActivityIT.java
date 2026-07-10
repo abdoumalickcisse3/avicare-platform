@@ -5,12 +5,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.avicare.common.api.dto.ActivityItem;
 import com.avicare.livestock.api.LivestockFacade;
 import com.avicare.livestock.domain.LifecycleEvent;
+import com.avicare.livestock.domain.MovementReason;
+import com.avicare.livestock.domain.MovementType;
 import com.avicare.livestock.domain.ProductionUnit;
 import com.avicare.livestock.domain.Species;
+import com.avicare.livestock.domain.StockItem;
+import com.avicare.livestock.domain.StockMovement;
 import com.avicare.livestock.domain.UnitKind;
 import com.avicare.livestock.domain.UnitStatus;
 import com.avicare.livestock.repository.LifecycleEventRepository;
 import com.avicare.livestock.repository.ProductionUnitRepository;
+import com.avicare.livestock.repository.StockItemRepository;
+import com.avicare.livestock.repository.StockMovementRepository;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +50,8 @@ class LivestockActivityIT {
   @Autowired private LivestockFacade livestockFacade;
   @Autowired private ProductionUnitRepository productionUnitRepository;
   @Autowired private LifecycleEventRepository lifecycleEventRepository;
+  @Autowired private StockItemRepository stockItemRepository;
+  @Autowired private StockMovementRepository stockMovementRepository;
 
   private Long unit(long farmId) {
     ProductionUnit u = new ProductionUnit();
@@ -62,6 +73,23 @@ class LivestockActivityIT {
     lifecycleEventRepository.save(e);
   }
 
+  private Long stockMovement(long farmId, LocalDate movementDate) {
+    StockItem item = new StockItem();
+    item.setFarmId(farmId);
+    item.setArticleKey("feed_starter_broiler");
+    item = stockItemRepository.save(item);
+
+    StockMovement movement = new StockMovement();
+    movement.setStockItem(item);
+    movement.setMovementType(MovementType.IN);
+    movement.setMovementDate(movementDate);
+    movement.setQuantity(new BigDecimal("50"));
+    movement.setQuantityBefore(BigDecimal.ZERO);
+    movement.setQuantityAfter(new BigDecimal("50"));
+    movement.setReason(MovementReason.RECEPTION_PURCHASE);
+    return stockMovementRepository.save(movement).getId();
+  }
+
   @Test
   void recentActivity_whitelistsMeaningfulEvents_andExcludesGuards() {
     long farmId = 772_000L;
@@ -80,5 +108,22 @@ class LivestockActivityIT {
     assertThat(items)
         .extracting(ActivityItem::label)
         .anyMatch(l -> l.equals("Mortalité : 5 sujets"));
+  }
+
+  @Test
+  void recentActivity_mergesStockMovements_andSortsMostRecentFirst() {
+    long farmId = 772_001L;
+    Long unitId = unit(farmId);
+    // lifecycle events land "now" (occurred_at is DB-defaulted to NOW()).
+    event(unitId, "MORTALITY", -3);
+    event(unitId, "VET_VISIT_RECORDED", 0);
+    // stock movement dated clearly in the future so it is unambiguously the most recent entry.
+    stockMovement(farmId, LocalDate.now().plusDays(2));
+
+    List<ActivityItem> items = livestockFacade.recentActivity(farmId, 20);
+
+    assertThat(items).extracting(ActivityItem::kind).anyMatch(k -> k.startsWith("STOCK_"));
+    assertThat(items).isSortedAccordingTo(Comparator.comparing(ActivityItem::at).reversed());
+    assertThat(items.get(0).kind()).isEqualTo("STOCK_IN");
   }
 }
