@@ -213,8 +213,7 @@ public class LivestockFacadeImpl implements LivestockFacade {
             .map(LivestockFacadeImpl::movementToActivity);
     return Stream.concat(events, movements)
         .sorted(
-            Comparator.comparing(ActivityItem::at, Comparator.nullsLast(Comparator.naturalOrder()))
-                .reversed())
+            Comparator.comparing(ActivityItem::at, Comparator.nullsLast(Comparator.reverseOrder())))
         .limit(limit)
         .toList();
   }
