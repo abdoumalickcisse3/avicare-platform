@@ -2,6 +2,8 @@ package com.avicare.livestock;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.avicare.common.security.principal.UserRole;
+import com.avicare.identity.domain.User;
 import com.avicare.livestock.domain.DailyRecord;
 import com.avicare.livestock.domain.ProductionUnit;
 import com.avicare.livestock.domain.Species;
@@ -9,6 +11,8 @@ import com.avicare.livestock.domain.UnitKind;
 import com.avicare.livestock.domain.UnitStatus;
 import com.avicare.livestock.repository.DailyRecordRepository;
 import com.avicare.livestock.repository.ProductionUnitRepository;
+import com.avicare.tenancy.domain.Farm;
+import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
@@ -38,6 +42,22 @@ class DailyRecordFeedAggregateIT {
 
   @Autowired private DailyRecordRepository dailyRecordRepository;
   @Autowired private ProductionUnitRepository productionUnitRepository;
+  @Autowired private EntityManager em;
+
+  private long seedFarm() {
+    User u = new User();
+    u.setEmail("seed" + System.nanoTime() + "@example.com");
+    u.setPasswordHash("$2a$12$abcdefghijklmnopqrstuv");
+    u.setFullName("Seed");
+    u.setRole(UserRole.USER);
+    em.persist(u);
+    Farm f = new Farm();
+    f.setName("Ferme seed");
+    f.setCreatedBy(u.getId());
+    em.persist(f);
+    em.flush();
+    return f.getId();
+  }
 
   private Long unit(long farmId) {
     ProductionUnit u = new ProductionUnit();
@@ -62,7 +82,7 @@ class DailyRecordFeedAggregateIT {
 
   @Test
   void sumsFeedAcrossUnits_andCountsDistinctDays() {
-    long farmId = 771_000L;
+    long farmId = seedFarm();
     Long u1 = unit(farmId);
     Long u2 = unit(farmId);
     LocalDate d1 = LocalDate.now().minusDays(1);
