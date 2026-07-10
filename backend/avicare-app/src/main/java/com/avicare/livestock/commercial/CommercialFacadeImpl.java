@@ -1,16 +1,23 @@
 package com.avicare.livestock.commercial;
 
+import com.avicare.common.api.dto.ActivityItem;
 import com.avicare.common.api.dto.DayValue;
 import com.avicare.common.api.dto.NamedValue;
 import com.avicare.livestock.commercial.dto.CommercialStats;
 import com.avicare.livestock.domain.Client;
 import com.avicare.livestock.domain.Invoice;
+import com.avicare.livestock.domain.Payment;
+import com.avicare.livestock.domain.Sale;
+import com.avicare.livestock.domain.SaleStatus;
 import com.avicare.livestock.repository.InvoiceRepository;
 import com.avicare.livestock.repository.OrderRepository;
+import com.avicare.livestock.repository.PaymentRepository;
 import com.avicare.livestock.repository.SaleItemRepository;
 import com.avicare.livestock.repository.SaleRepository;
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -33,6 +40,7 @@ public class CommercialFacadeImpl implements CommercialFacade {
   private final InvoiceRepository invoiceRepository;
   private final OrderRepository orderRepository;
   private final SaleItemRepository saleItemRepository;
+  private final PaymentRepository paymentRepository;
 
   @Override
   public ClientCreditInfo getClientCredit(Long farmId, Long clientId) {
@@ -122,6 +130,33 @@ public class CommercialFacadeImpl implements CommercialFacade {
   @Override
   public long totalPaidFromDeliveryInvoices(Long farmId) {
     return invoiceRepository.sumPaidFromDeliveries(farmId);
+  }
+
+  @Override
+  public List<ActivityItem> recentActivity(Long farmId, int limit) {
+    Pageable page = PageRequest.of(0, limit);
+    Stream<ActivityItem> sales =
+        saleRepository
+            .findByFarmIdAndStatusOrderBySaleDateDescIdDesc(farmId, SaleStatus.COMPLETED, page)
+            .stream()
+            .map(CommercialFacadeImpl::saleToActivity);
+    Stream<ActivityItem> payments =
+        paymentRepository.findByFarmIdOrderByPaymentDateDescIdDesc(farmId, page).stream()
+            .map(CommercialFacadeImpl::paymentToActivity);
+    return Stream.concat(sales, payments)
+        .sorted(
+            Comparator.comparing(ActivityItem::at, Comparator.nullsLast(Comparator.reverseOrder())))
+        .limit(limit)
+        .toList();
+  }
+
+  private static ActivityItem saleToActivity(Sale s) {
+    return new ActivityItem("SALE", s.getCreatedAt(), "Vente " + s.getTotalXof() + " XOF", null);
+  }
+
+  private static ActivityItem paymentToActivity(Payment p) {
+    return new ActivityItem(
+        "PAYMENT", p.getCreatedAt(), "Paiement reçu " + p.getAmountXof() + " XOF", null);
   }
 
   /** Null-safe coalesce for aggregate SUM results that return null when no rows match. */

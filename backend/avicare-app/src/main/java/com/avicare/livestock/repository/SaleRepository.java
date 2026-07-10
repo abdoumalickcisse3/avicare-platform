@@ -16,6 +16,9 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
 
   List<Sale> findByFarmIdAndStatusOrderBySaleDateDescIdDesc(Long farmId, SaleStatus status);
 
+  List<Sale> findByFarmIdAndStatusOrderBySaleDateDescIdDesc(
+      Long farmId, SaleStatus status, Pageable pageable);
+
   List<Sale> findByFarmIdAndClientIdOrderBySaleDateDescIdDesc(Long farmId, Long clientId);
 
   Optional<Sale> findByFarmIdAndId(Long farmId, Long id);

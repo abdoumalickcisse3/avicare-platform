@@ -1,7 +1,9 @@
 package com.avicare.livestock.commercial;
 
+import com.avicare.common.api.dto.ActivityItem;
 import com.avicare.livestock.commercial.dto.CommercialStats;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Public contract of the {@code commercial} sub-domain (doc 03 §4.9). Other parts of the app —
@@ -32,4 +34,7 @@ public interface CommercialFacade {
 
   /** Σ des montants encaissés sur les factures de LIVRAISON non annulées (lifetime). */
   long totalPaidFromDeliveryInvoices(Long farmId);
+
+  /** Up to {@code limit} most recent commercial activity items (sales + payments). */
+  List<ActivityItem> recentActivity(Long farmId, int limit);
 }

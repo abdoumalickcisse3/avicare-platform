@@ -3,6 +3,7 @@ package com.avicare.livestock.repository;
 import com.avicare.livestock.domain.Payment;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -10,6 +11,8 @@ import org.springframework.data.repository.query.Param;
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
   List<Payment> findByFarmIdOrderByPaymentDateDescIdDesc(Long farmId);
+
+  List<Payment> findByFarmIdOrderByPaymentDateDescIdDesc(Long farmId, Pageable pageable);
 
   List<Payment> findByFarmIdAndInvoiceIdOrderById(Long farmId, Long invoiceId);
 
