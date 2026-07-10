@@ -20,7 +20,6 @@ import com.avicare.livestock.repository.ProductionUnitRepository;
 import com.avicare.livestock.repository.StockItemRepository;
 import com.avicare.livestock.repository.StockMovementRepository;
 import com.avicare.tenancy.domain.Farm;
-import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Comparator;
@@ -37,7 +36,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 /** Verifies LivestockFacade.recentActivity whitelist + ordering on a real DB. CI-only. */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @Testcontainers
-@org.springframework.transaction.annotation.Transactional
 class LivestockActivityIT {
 
   @Container
@@ -57,7 +55,8 @@ class LivestockActivityIT {
   @Autowired private LifecycleEventRepository lifecycleEventRepository;
   @Autowired private StockItemRepository stockItemRepository;
   @Autowired private StockMovementRepository stockMovementRepository;
-  @Autowired private EntityManager em;
+  @Autowired private com.avicare.identity.repository.UserRepository userRepository;
+  @Autowired private com.avicare.tenancy.repository.FarmRepository farmRepository;
 
   private long seedFarm() {
     User u = new User();
@@ -65,13 +64,11 @@ class LivestockActivityIT {
     u.setPasswordHash("$2a$12$abcdefghijklmnopqrstuv");
     u.setFullName("Seed");
     u.setRole(UserRole.USER);
-    em.persist(u);
+    u = userRepository.save(u);
     Farm f = new Farm();
     f.setName("Ferme seed");
     f.setCreatedBy(u.getId());
-    em.persist(f);
-    em.flush();
-    return f.getId();
+    return farmRepository.save(f).getId();
   }
 
   private Long unit(long farmId) {
