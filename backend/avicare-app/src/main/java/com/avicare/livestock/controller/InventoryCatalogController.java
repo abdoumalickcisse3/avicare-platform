@@ -29,21 +29,21 @@ public class InventoryCatalogController {
   @GetMapping("/articles")
   @PreAuthorize(InventoryAccess.READ)
   public ApiResponse<List<InventoryCatalogItemDto>> articles(@PathVariable Long farmId) {
-    return ApiResponse.of(catalogService.listInventoryArticles());
+    return ApiResponse.of(catalogService.listInventoryArticles(farmId));
   }
 
   /** All stockable articles: inventory items ∪ medications referenced from the health catalog. */
   @GetMapping("/articles/all")
   @PreAuthorize(InventoryAccess.READ)
   public ApiResponse<List<InventoryCatalogItemDto>> allArticles(@PathVariable Long farmId) {
-    return ApiResponse.of(catalogService.listAllAvailableArticles());
+    return ApiResponse.of(catalogService.listAllAvailableArticles(farmId));
   }
 
   /** Platform feed-formula templates (the source for cloning). */
   @GetMapping("/feed-formulas")
   @PreAuthorize(InventoryAccess.READ)
   public ApiResponse<List<PlatformFormulaDto>> platformFormulas(@PathVariable Long farmId) {
-    return ApiResponse.of(feedFormulaService.listPlatformFormulas());
+    return ApiResponse.of(feedFormulaService.listPlatformFormulas(farmId));
   }
 
   /** A single platform feed-formula template by key. */
@@ -51,6 +51,6 @@ public class InventoryCatalogController {
   @PreAuthorize(InventoryAccess.READ)
   public ApiResponse<PlatformFormulaDto> platformFormula(
       @PathVariable Long farmId, @PathVariable String key) {
-    return ApiResponse.of(feedFormulaService.getPlatformFormula(key));
+    return ApiResponse.of(feedFormulaService.getPlatformFormula(farmId, key));
   }
 }

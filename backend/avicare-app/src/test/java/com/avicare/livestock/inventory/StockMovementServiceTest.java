@@ -78,7 +78,7 @@ class StockMovementServiceTest {
     StockItem item = stockItem(ArticleSource.INVENTORY, "feed-starter");
     when(stockItemRepository.findByFarmIdAndId(FARM_ID, STOCK_ITEM_ID))
         .thenReturn(Optional.of(item));
-    when(inventoryCatalogService.listAllAvailableArticles())
+    when(inventoryCatalogService.listAllAvailableArticles(org.mockito.ArgumentMatchers.anyLong()))
         .thenReturn(
             List.of(
                 new InventoryCatalogItemDto(
@@ -87,7 +87,8 @@ class StockMovementServiceTest {
                     "Aliment démarrage",
                     "FEED",
                     "kg",
-                    500)));
+                    500,
+                    false)));
 
     LocalDate date = LocalDate.of(2026, 7, 4);
     StockMovementCommand cmd =
@@ -211,7 +212,7 @@ class StockMovementServiceTest {
     item.setCurrentQuantity(new BigDecimal("10")); // before = 10
     when(stockItemRepository.findByFarmIdAndId(FARM_ID, STOCK_ITEM_ID))
         .thenReturn(Optional.of(item));
-    when(inventoryCatalogService.listAllAvailableArticles())
+    when(inventoryCatalogService.listAllAvailableArticles(org.mockito.ArgumentMatchers.anyLong()))
         .thenReturn(
             List.of(
                 new InventoryCatalogItemDto(
@@ -220,7 +221,8 @@ class StockMovementServiceTest {
                     "Aliment croissance",
                     "FEED",
                     "kg",
-                    500)));
+                    500,
+                    false)));
 
     LocalDate date = LocalDate.of(2026, 7, 4);
     // ADJUSTMENT: target = 25, so delta = 25 - 10 = 15

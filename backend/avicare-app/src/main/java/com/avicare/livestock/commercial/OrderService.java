@@ -64,7 +64,7 @@ public class OrderService {
     order.setNotes(cmd.notes());
     order.setCreatedBy(userId);
     order.setOrderNumber(generateOrderNumber(farmId, order.getOrderDate().getYear()));
-    applyLines(order, cmd.lines());
+    applyLines(farmId, order, cmd.lines());
     return orderRepository.save(order);
   }
 
@@ -167,9 +167,9 @@ public class OrderService {
     }
   }
 
-  private void applyLines(Order order, List<OrderDraftCommand.Line> lines) {
+  private void applyLines(Long farmId, Order order, List<OrderDraftCommand.Line> lines) {
     Map<String, InventoryCatalogItemDto> catalog =
-        inventoryCatalogService.listInventoryArticles().stream()
+        inventoryCatalogService.listInventoryArticles(farmId).stream()
             .collect(
                 Collectors.toMap(
                     InventoryCatalogItemDto::articleKey, Function.identity(), (a, b) -> a));

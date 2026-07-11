@@ -61,7 +61,7 @@ class InventoryFlowIT {
 
   @Test
   void catalog_unifiesInventoryItemsAndMedications() {
-    List<InventoryCatalogItemDto> inventory = inventoryCatalogService.listInventoryArticles();
+    List<InventoryCatalogItemDto> inventory = inventoryCatalogService.listInventoryArticles(1L);
     List<InventoryCatalogItemDto> medications = inventoryCatalogService.listMedicationArticles();
 
     assertThat(inventory).hasSize(17);
@@ -84,7 +84,7 @@ class InventoryFlowIT {
                     && m.unit() == null
                     && m.typicalUnitPriceXof() == null);
 
-    assertThat(inventoryCatalogService.listAllAvailableArticles()).hasSize(23);
+    assertThat(inventoryCatalogService.listAllAvailableArticles(1L)).hasSize(23);
   }
 
   @Test

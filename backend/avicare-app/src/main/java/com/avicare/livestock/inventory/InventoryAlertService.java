@@ -59,7 +59,7 @@ public class InventoryAlertService {
   @Transactional(readOnly = true)
   public StockAlertsResponse computeStockAlertsForFarm(Long farmId) {
     Map<String, String> labels =
-        inventoryCatalogService.listAllAvailableArticles().stream()
+        inventoryCatalogService.listAllAvailableArticles(farmId).stream()
             .collect(
                 Collectors.toMap(
                     InventoryCatalogItemDto::articleKey,

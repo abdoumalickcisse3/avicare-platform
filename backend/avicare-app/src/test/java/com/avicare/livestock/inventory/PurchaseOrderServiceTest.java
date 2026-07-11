@@ -80,7 +80,7 @@ class PurchaseOrderServiceTest {
 
     when(purchaseOrderRepository.findByFarmIdAndId(FARM_ID, po.getId()))
         .thenReturn(Optional.of(po));
-    when(inventoryCatalogService.listAllAvailableArticles())
+    when(inventoryCatalogService.listAllAvailableArticles(org.mockito.ArgumentMatchers.anyLong()))
         .thenReturn(
             List.of(
                 new InventoryCatalogItemDto(
@@ -89,16 +89,24 @@ class PurchaseOrderServiceTest {
                     "Aliment démarrage",
                     "FEED",
                     "kg",
-                    500),
+                    500,
+                    false),
                 new InventoryCatalogItemDto(
                     "feed-grower",
                     ArticleSource.INVENTORY,
                     "Aliment croissance",
                     "FEED",
                     "kg",
-                    400),
+                    400,
+                    false),
                 new InventoryCatalogItemDto(
-                    "med-x", ArticleSource.TREATMENT, "Médicament X", "MEDICATION", null, null)));
+                    "med-x",
+                    ArticleSource.TREATMENT,
+                    "Médicament X",
+                    "MEDICATION",
+                    null,
+                    null,
+                    false)));
     when(stockItemService.createOrGet(
             eq(FARM_ID), any(ArticleSource.class), any(String.class), eq(USER_ID)))
         .thenReturn(mock(StockItem.class));
@@ -147,7 +155,8 @@ class PurchaseOrderServiceTest {
 
     when(purchaseOrderRepository.findByFarmIdAndId(FARM_ID, po.getId()))
         .thenReturn(Optional.of(po));
-    when(inventoryCatalogService.listAllAvailableArticles()).thenReturn(List.of());
+    when(inventoryCatalogService.listAllAvailableArticles(org.mockito.ArgumentMatchers.anyLong()))
+        .thenReturn(List.of());
 
     PurchaseOrderReceiveCommand cmd =
         new PurchaseOrderReceiveCommand(
