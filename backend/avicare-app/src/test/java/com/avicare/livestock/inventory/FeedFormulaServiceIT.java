@@ -60,7 +60,7 @@ class FeedFormulaServiceIT {
 
   @Test
   void platformFormulas_listedWithComputedCost() {
-    List<PlatformFormulaDto> platform = feedFormulaService.listPlatformFormulas();
+    List<PlatformFormulaDto> platform = feedFormulaService.listPlatformFormulas(1L);
     assertThat(platform).hasSize(6);
     // Cobb 500 starter: corn 55*300 + protein 30*700 + starter 15*500 = 45000
     assertThat(platform)

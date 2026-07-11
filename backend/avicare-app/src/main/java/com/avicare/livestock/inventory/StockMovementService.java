@@ -125,7 +125,7 @@ public class StockMovementService {
         && movement.getTotalValueXof() != null
         && movement.getTotalValueXof() > 0) {
       InventoryCatalogItemDto article =
-          inventoryCatalogService.listAllAvailableArticles().stream()
+          inventoryCatalogService.listAllAvailableArticles(farmId).stream()
               .filter(a -> a.articleKey().equals(item.getArticleKey()))
               .findFirst()
               .orElse(null);

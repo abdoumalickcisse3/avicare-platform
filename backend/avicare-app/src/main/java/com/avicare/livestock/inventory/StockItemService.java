@@ -40,7 +40,7 @@ public class StockItemService {
 
   private StockItem create(
       Long farmId, ArticleSource articleSource, String articleKey, Long userId) {
-    InventoryCatalogItemDto catalog = resolveCatalog(articleSource, articleKey);
+    InventoryCatalogItemDto catalog = resolveCatalog(farmId, articleSource, articleKey);
     StockItem item = new StockItem();
     item.setFarmId(farmId);
     item.setArticleSource(articleSource);
@@ -52,11 +52,12 @@ public class StockItemService {
     return stockItemRepository.save(item);
   }
 
-  private InventoryCatalogItemDto resolveCatalog(ArticleSource source, String articleKey) {
+  private InventoryCatalogItemDto resolveCatalog(
+      Long farmId, ArticleSource source, String articleKey) {
     List<InventoryCatalogItemDto> catalog =
         source == ArticleSource.TREATMENT
             ? inventoryCatalogService.listMedicationArticles()
-            : inventoryCatalogService.listInventoryArticles();
+            : inventoryCatalogService.listInventoryArticles(farmId);
     return catalog.stream()
         .filter(c -> c.articleKey().equals(articleKey))
         .findFirst()

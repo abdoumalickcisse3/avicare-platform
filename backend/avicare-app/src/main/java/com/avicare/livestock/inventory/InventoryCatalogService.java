@@ -36,8 +36,8 @@ public class InventoryCatalogService {
   private final ParametersFacade parametersFacade;
   private final HealthCatalogService healthCatalogService;
 
-  public List<InventoryCatalogItemDto> listInventoryArticles() {
-    return parametersFacade.listPlatform(CAT_INVENTORY_ITEMS).stream()
+  public List<InventoryCatalogItemDto> listInventoryArticles(Long farmId) {
+    return parametersFacade.listForFarm(farmId, CAT_INVENTORY_ITEMS).stream()
         .map(InventoryCatalogService::toInventoryDto)
         .toList();
   }
@@ -52,13 +52,14 @@ public class InventoryCatalogService {
                     t.label(),
                     MEDICATION_SUBCATEGORY,
                     null,
-                    null))
+                    null,
+                    false))
         .toList();
   }
 
   /** The full list of stockable articles: inventory items ∪ medications. */
-  public List<InventoryCatalogItemDto> listAllAvailableArticles() {
-    return Stream.concat(listInventoryArticles().stream(), listMedicationArticles().stream())
+  public List<InventoryCatalogItemDto> listAllAvailableArticles(Long farmId) {
+    return Stream.concat(listInventoryArticles(farmId).stream(), listMedicationArticles().stream())
         .toList();
   }
 
@@ -70,7 +71,8 @@ public class InventoryCatalogService {
         str(v, "label"),
         str(v, "subcategory"),
         str(v, "unit"),
-        intg(v, "typical_unit_price_xof"));
+        intg(v, "typical_unit_price_xof"),
+        e.custom());
   }
 
   private static String str(Map<String, Object> v, String key) {

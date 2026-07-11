@@ -64,7 +64,7 @@ public class PurchaseOrderService {
     po.setNotes(cmd.notes());
     po.setCreatedBy(userId);
     po.setOrderNumber(generateOrderNumber(farmId, po.getOrderDate().getYear()));
-    applyLines(po, cmd.lines());
+    applyLines(farmId, po, cmd.lines());
     return purchaseOrderRepository.save(po);
   }
 
@@ -82,7 +82,7 @@ public class PurchaseOrderService {
     po.setExpectedDeliveryDate(cmd.expectedDeliveryDate());
     po.setNotes(cmd.notes());
     po.getItems().clear(); // orphanRemoval deletes the old lines
-    applyLines(po, cmd.lines());
+    applyLines(farmId, po, cmd.lines());
     return po;
   }
 
@@ -149,7 +149,7 @@ public class PurchaseOrderService {
 
     // Finance P1: a valued reception feeds the expense ledger (spec B6 §4).
     Map<String, InventoryCatalogItemDto> catalog =
-        inventoryCatalogService.listAllAvailableArticles().stream()
+        inventoryCatalogService.listAllAvailableArticles(farmId).stream()
             .collect(Collectors.toMap(InventoryCatalogItemDto::articleKey, a -> a, (a, b) -> a));
     List<FinanceFacade.PurchaseExpenseLine> expenseLines = new ArrayList<>();
     for (PurchaseOrderItem item : po.getItems()) {
@@ -224,9 +224,10 @@ public class PurchaseOrderService {
     }
   }
 
-  private void applyLines(PurchaseOrder po, List<PurchaseOrderDraftCommand.Line> lines) {
+  private void applyLines(
+      Long farmId, PurchaseOrder po, List<PurchaseOrderDraftCommand.Line> lines) {
     Map<String, InventoryCatalogItemDto> catalog =
-        inventoryCatalogService.listAllAvailableArticles().stream()
+        inventoryCatalogService.listAllAvailableArticles(farmId).stream()
             .collect(
                 Collectors.toMap(
                     d -> catalogKey(d.articleSource(), d.articleKey()),

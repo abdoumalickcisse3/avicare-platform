@@ -69,7 +69,7 @@ public class SaleService {
     sale.setNotes(cmd.notes());
     sale.setCreatedBy(userId);
     sale.setSaleNumber(generateSaleNumber(farmId, sale.getSaleDate().getYear()));
-    applyLines(sale, cmd.lines());
+    applyLines(farmId, sale, cmd.lines());
     Sale saved = saleRepository.save(sale);
 
     // D21 / D27: decrement stock per line — PRODUCTION via facade (blocking), others via inventory.
@@ -167,9 +167,9 @@ public class SaleService {
     }
   }
 
-  private void applyLines(Sale sale, List<SaleCommand.Line> lines) {
+  private void applyLines(Long farmId, Sale sale, List<SaleCommand.Line> lines) {
     Map<String, InventoryCatalogItemDto> catalog =
-        inventoryCatalogService.listInventoryArticles().stream()
+        inventoryCatalogService.listInventoryArticles(farmId).stream()
             .collect(
                 Collectors.toMap(
                     InventoryCatalogItemDto::articleKey, Function.identity(), (a, b) -> a));

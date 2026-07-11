@@ -45,7 +45,7 @@ class OrderServiceTest {
     service = new OrderService(orderRepository, clientRepository, inventoryCatalogService);
     when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
     when(clientRepository.findByFarmIdAndId(eq(7L), eq(3L))).thenReturn(Optional.of(client(3L)));
-    when(inventoryCatalogService.listInventoryArticles())
+    when(inventoryCatalogService.listInventoryArticles(org.mockito.ArgumentMatchers.anyLong()))
         .thenReturn(
             List.of(
                 new InventoryCatalogItemDto(
@@ -54,11 +54,18 @@ class OrderServiceTest {
                     "Oeufs",
                     "PRODUCT",
                     "plateau",
-                    2500),
+                    2500,
+                    false),
                 new InventoryCatalogItemDto(
-                    "chicken_meat", ArticleSource.INVENTORY, "Poulet", "PRODUCT", "kg", 2500),
+                    "chicken_meat",
+                    ArticleSource.INVENTORY,
+                    "Poulet",
+                    "PRODUCT",
+                    "kg",
+                    2500,
+                    false),
                 new InventoryCatalogItemDto(
-                    "layer_feed", ArticleSource.INVENTORY, "Aliment", "FEED", "kg", 300)));
+                    "layer_feed", ArticleSource.INVENTORY, "Aliment", "FEED", "kg", 300, false)));
   }
 
   // --- createDraft ----------------------------------------------------

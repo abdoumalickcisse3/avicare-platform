@@ -47,8 +47,8 @@ public class FeedFormulaService {
   // --- platform templates ---------------------------------------------
 
   @Transactional(readOnly = true)
-  public List<PlatformFormulaDto> listPlatformFormulas() {
-    Map<String, Integer> prices = priceByArticleKey();
+  public List<PlatformFormulaDto> listPlatformFormulas(Long farmId) {
+    Map<String, Integer> prices = priceByArticleKey(farmId);
     return parametersFacade.listPlatform(CAT_FEED_FORMULAS).stream()
         .map(e -> toPlatformDto(e, prices))
         .toList();
@@ -56,8 +56,8 @@ public class FeedFormulaService {
 
   /** A single platform template by key (404 if unknown) — backs the catalog detail endpoint. */
   @Transactional(readOnly = true)
-  public PlatformFormulaDto getPlatformFormula(String key) {
-    return listPlatformFormulas().stream()
+  public PlatformFormulaDto getPlatformFormula(Long farmId, String key) {
+    return listPlatformFormulas(farmId).stream()
         .filter(p -> p.key().equals(key))
         .findFirst()
         .orElseThrow(() -> NotFoundException.of("PlatformFeedFormula", key));
@@ -70,7 +70,7 @@ public class FeedFormulaService {
 
   @Transactional(readOnly = true)
   public AvailableFormulasResponse listAllAvailable(Long farmId) {
-    return new AvailableFormulasResponse(listPlatformFormulas(), listFarmFormulas(farmId));
+    return new AvailableFormulasResponse(listPlatformFormulas(farmId), listFarmFormulas(farmId));
   }
 
   // --- farm formulas --------------------------------------------------
@@ -88,7 +88,7 @@ public class FeedFormulaService {
   public FeedFormula cloneFromPlatform(
       Long farmId, String sourceFormulaKey, String newName, Long userId) {
     PlatformFormulaDto source =
-        listPlatformFormulas().stream()
+        listPlatformFormulas(farmId).stream()
             .filter(p -> p.key().equals(sourceFormulaKey))
             .findFirst()
             .orElseThrow(
@@ -151,7 +151,7 @@ public class FeedFormulaService {
     if (cmd.targetPhase() == null) {
       throw new ValidationException("FORMULA_PHASE_REQUIRED", "A formula needs a target phase");
     }
-    validateIngredients(cmd.ingredients());
+    validateIngredients(formula.getFarmId(), cmd.ingredients());
     formula.setName(cmd.name());
     formula.setDescription(cmd.description());
     formula.setTargetBreedKeys(cmd.targetBreedKeys() != null ? cmd.targetBreedKeys() : List.of());
@@ -163,13 +163,13 @@ public class FeedFormulaService {
     applyComputed(formula);
   }
 
-  private void validateIngredients(List<FormulaIngredient> ingredients) {
+  private void validateIngredients(Long farmId, List<FormulaIngredient> ingredients) {
     if (ingredients == null || ingredients.isEmpty()) {
       throw new ValidationException(
           "FORMULA_NO_INGREDIENTS", "A formula needs at least one ingredient");
     }
     List<String> inventoryKeys =
-        inventoryCatalogService.listInventoryArticles().stream()
+        inventoryCatalogService.listInventoryArticles(farmId).stream()
             .map(InventoryCatalogItemDto::articleKey)
             .toList();
     for (FormulaIngredient ingredient : ingredients) {
@@ -196,7 +196,7 @@ public class FeedFormulaService {
 
   /** Recompute total percentage + estimated cost from the formula's ingredients. */
   private void applyComputed(FeedFormula formula) {
-    Map<String, Integer> prices = priceByArticleKey();
+    Map<String, Integer> prices = priceByArticleKey(formula.getFarmId());
     BigDecimal total = BigDecimal.ZERO;
     BigDecimal cost = BigDecimal.ZERO;
     boolean missingPrice = false;
@@ -227,9 +227,9 @@ public class FeedFormulaService {
     formula.setEstimatedCostCalculatedAt(LocalDateTime.now());
   }
 
-  private Map<String, Integer> priceByArticleKey() {
+  private Map<String, Integer> priceByArticleKey(Long farmId) {
     Map<String, Integer> prices = new HashMap<>();
-    for (InventoryCatalogItemDto dto : inventoryCatalogService.listAllAvailableArticles()) {
+    for (InventoryCatalogItemDto dto : inventoryCatalogService.listAllAvailableArticles(farmId)) {
       if (dto.typicalUnitPriceXof() != null) {
         prices.put(dto.articleKey(), dto.typicalUnitPriceXof());
       }

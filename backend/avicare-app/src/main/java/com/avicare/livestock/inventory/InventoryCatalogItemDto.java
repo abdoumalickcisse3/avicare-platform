@@ -14,4 +14,5 @@ public record InventoryCatalogItemDto(
     String label,
     String subcategory,
     String unit,
-    Integer typicalUnitPriceXof) {}
+    Integer typicalUnitPriceXof,
+    boolean custom) {}
