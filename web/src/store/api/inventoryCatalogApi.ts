@@ -29,6 +29,44 @@ export const inventoryCatalogApi = baseApi.injectEndpoints({
       transformResponse: (r: ApiEnvelope<PlatformFormula[]>) => r.data,
       providesTags: [{ type: "InventoryCatalog", id: "platform-formulas" }],
     }),
+    createArticle: build.mutation<
+      void,
+      { farmId: number; key: string; value: Record<string, unknown> }
+    >({
+      query: ({ farmId, key, value }) => ({
+        url: `/api/v1/farms/${farmId}/catalog/inventory_items`,
+        method: "POST",
+        body: { key, value },
+      }),
+      invalidatesTags: [
+        { type: "InventoryCatalog", id: "articles" },
+        { type: "InventoryCatalog", id: "all" },
+      ],
+    }),
+    updateArticle: build.mutation<
+      void,
+      { farmId: number; key: string; value: Record<string, unknown> }
+    >({
+      query: ({ farmId, key, value }) => ({
+        url: `/api/v1/farms/${farmId}/catalog/inventory_items`,
+        method: "POST",
+        body: { key, value },
+      }),
+      invalidatesTags: [
+        { type: "InventoryCatalog", id: "articles" },
+        { type: "InventoryCatalog", id: "all" },
+      ],
+    }),
+    deleteArticle: build.mutation<void, { farmId: number; key: string }>({
+      query: ({ farmId, key }) => ({
+        url: `/api/v1/farms/${farmId}/catalog/inventory_items/${key}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: [
+        { type: "InventoryCatalog", id: "articles" },
+        { type: "InventoryCatalog", id: "all" },
+      ],
+    }),
   }),
 });
 
@@ -36,4 +74,7 @@ export const {
   useGetInventoryArticlesQuery,
   useGetAllArticlesQuery,
   useGetPlatformFormulasQuery,
+  useCreateArticleMutation,
+  useUpdateArticleMutation,
+  useDeleteArticleMutation,
 } = inventoryCatalogApi;

@@ -708,6 +708,7 @@ export interface InventoryCatalogItem {
   subcategory: string | null;
   unit: string | null;
   typicalUnitPriceXof: number | null;
+  custom: boolean;
 }
 
 export interface StockValuationItem {
