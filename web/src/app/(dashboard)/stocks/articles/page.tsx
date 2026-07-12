@@ -192,6 +192,7 @@ export default function ArticleLibraryPage() {
           onClose={() => setDialogOpen(false)}
           farmId={farmId}
           article={editing}
+          existingKeys={(articles ?? []).map((a) => a.articleKey)}
         />
       )}
       <Dialog open={toDelete != null} onClose={() => setToDelete(null)}>

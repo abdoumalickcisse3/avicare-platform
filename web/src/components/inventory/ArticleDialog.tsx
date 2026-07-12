@@ -38,15 +38,17 @@ interface Props {
   farmId: number;
   /** When set, the dialog edits this custom article (key is fixed). */
   article?: InventoryCatalogItem;
+  /** Existing article keys (all farm-visible articles) — used to reject duplicate creates. */
+  existingKeys?: string[];
 }
 
-export function ArticleDialog({ open, onClose, farmId, article }: Props) {
+export function ArticleDialog({ open, onClose, farmId, article, existingKeys = [] }: Props) {
   const { showToast } = useToast();
   const [createArticle, { isLoading: creating }] = useCreateArticleMutation();
   const [updateArticle, { isLoading: updating }] = useUpdateArticleMutation();
   const isEdit = article != null;
 
-  const { control, handleSubmit, reset } = useForm<FormValues>({
+  const { control, handleSubmit, reset, setError } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { label: "", subcategory: "FEED", unit: "", price: "" },
   });
@@ -72,6 +74,10 @@ export function ArticleDialog({ open, onClose, farmId, article }: Props) {
     if (values.unit) value.unit = values.unit;
     if (values.price) value.typical_unit_price_xof = Number(values.price);
     const key = isEdit ? article!.articleKey : slugify(values.label);
+    if (!isEdit && existingKeys.includes(key)) {
+      setError("label", { message: "Un article avec ce nom existe déjà" });
+      return;
+    }
     try {
       if (isEdit) await updateArticle({ farmId, key, value }).unwrap();
       else await createArticle({ farmId, key, value }).unwrap();
