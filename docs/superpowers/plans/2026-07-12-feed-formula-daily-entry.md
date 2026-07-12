@@ -73,8 +73,8 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
-import com.avicare.common.exception.BusinessRuleException;
-import com.avicare.common.exception.NotFoundException;
+import com.avicare.common.api.exception.BusinessRuleException;
+import com.avicare.common.api.exception.NotFoundException;
 import com.avicare.livestock.domain.ArticleSource;
 import com.avicare.livestock.domain.FeedFormula;
 import com.avicare.livestock.domain.FormulaIngredient;
@@ -157,7 +157,7 @@ Expected: FAIL — compile error / `resolveIngredients` method does not exist.
 
 - [ ] **Step 3: Write minimal implementation**
 
-In `FeedFormulaService.java`, add these imports if absent (`FormulaIngredient` is in `com.avicare.livestock.domain`, `NotFoundException`/`BusinessRuleException` in `com.avicare.common.exception`), then add the method (place it just after `getPlatformFormula`):
+In `FeedFormulaService.java`, add these imports if absent (`FormulaIngredient` is in `com.avicare.livestock.domain`, `NotFoundException`/`BusinessRuleException` in `com.avicare.common.api.exception`), then add the method (place it just after `getPlatformFormula`):
 
 ```java
   /**
@@ -229,7 +229,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.avicare.common.exception.BusinessRuleException;
+import com.avicare.common.api.exception.BusinessRuleException;
 import com.avicare.livestock.domain.ArticleSource;
 import com.avicare.livestock.domain.DailyRecord;
 import com.avicare.livestock.domain.FormulaIngredient;
@@ -400,7 +400,7 @@ public record DailyRecordCommand(
 
 In `DailyRecordService.java`:
 
-1. Add imports: `com.avicare.common.exception.BusinessRuleException`, `com.avicare.livestock.domain.FormulaIngredient`, `com.avicare.livestock.inventory.FeedFormulaService`, `com.avicare.livestock.inventory.StockConsumption`, `java.math.RoundingMode`.
+1. Add imports: `com.avicare.common.api.exception.BusinessRuleException`, `com.avicare.livestock.domain.FormulaIngredient`, `com.avicare.livestock.inventory.FeedFormulaService`, `com.avicare.livestock.inventory.StockConsumption`, `java.math.RoundingMode`.
 2. Add the dependency field (order after `stockConsumptionService`): `private final FeedFormulaService feedFormulaService;`.
 3. At the very top of `record(...)`, before `getUnit`, add the xor guard:
 
