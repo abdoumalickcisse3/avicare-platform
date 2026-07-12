@@ -41,6 +41,7 @@ export const inventoryCatalogApi = baseApi.injectEndpoints({
       invalidatesTags: [
         { type: "InventoryCatalog", id: "articles" },
         { type: "InventoryCatalog", id: "all" },
+        { type: "InventoryCatalog", id: "platform-formulas" },
       ],
     }),
     updateArticle: build.mutation<
@@ -55,6 +56,7 @@ export const inventoryCatalogApi = baseApi.injectEndpoints({
       invalidatesTags: [
         { type: "InventoryCatalog", id: "articles" },
         { type: "InventoryCatalog", id: "all" },
+        { type: "InventoryCatalog", id: "platform-formulas" },
       ],
     }),
     deleteArticle: build.mutation<void, { farmId: number; key: string }>({
@@ -65,6 +67,7 @@ export const inventoryCatalogApi = baseApi.injectEndpoints({
       invalidatesTags: [
         { type: "InventoryCatalog", id: "articles" },
         { type: "InventoryCatalog", id: "all" },
+        { type: "InventoryCatalog", id: "platform-formulas" },
       ],
     }),
   }),

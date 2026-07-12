@@ -56,4 +56,21 @@ describe("ArticleDialog", () => {
       },
     });
   });
+
+  it("rejects creating an article whose slugified key already exists", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <ArticleDialog open onClose={vi.fn()} farmId={1} existingKeys={["melange-maison"]} />,
+    );
+
+    await user.type(screen.getByLabelText("Libellé"), "Mélange Maison");
+    await user.click(screen.getByRole("combobox", { name: "Sous-catégorie" }));
+    await user.click(await screen.findByRole("option", { name: "Aliment" }));
+
+    await user.click(screen.getByRole("button", { name: /Enregistrer/i }));
+
+    expect(await screen.findByText("Un article avec ce nom existe déjà")).toBeInTheDocument();
+    expect(lastMethod).toBe("");
+    expect(lastBody).toBeNull();
+  });
 });
