@@ -1,5 +1,6 @@
 package com.avicare.livestock.inventory;
 
+import com.avicare.common.api.exception.BusinessRuleException;
 import com.avicare.common.api.exception.NotFoundException;
 import com.avicare.common.api.exception.ValidationException;
 import com.avicare.livestock.domain.ArticleSource;
@@ -61,6 +62,27 @@ public class FeedFormulaService {
         .filter(p -> p.key().equals(key))
         .findFirst()
         .orElseThrow(() -> NotFoundException.of("PlatformFeedFormula", key));
+  }
+
+  /**
+   * Ingredients of a platform (by {@code formulaKey}) OR farm (by {@code formulaId}) formula.
+   * Exactly one identifier must be non-null. Used at daily entry to decompose feed into per-
+   * ingredient stock movements (Décision D20 révisée).
+   */
+  @Transactional(readOnly = true)
+  public List<FormulaIngredient> resolveIngredients(
+      Long farmId, String formulaKey, Long formulaId) {
+    if (formulaKey != null) {
+      return getPlatformFormula(farmId, formulaKey).ingredients();
+    }
+    if (formulaId != null) {
+      return feedFormulaRepository
+          .findByFarmIdAndIdAndActiveTrue(farmId, formulaId)
+          .orElseThrow(() -> NotFoundException.of("FeedFormula", formulaId))
+          .getIngredients();
+    }
+    throw new BusinessRuleException(
+        "FEED_FORMULA_REFERENCE_REQUIRED", "Aucune formule référencée (ni clé ni identifiant).");
   }
 
   @Transactional(readOnly = true)
