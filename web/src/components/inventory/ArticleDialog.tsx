@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -28,7 +28,7 @@ const schema = z.object({
   label: z.string().min(1, "Ce champ est requis"),
   subcategory: z.enum(["FEED", "CONSUMABLE", "EQUIPMENT", "PRODUCT"]),
   unit: z.string().optional(),
-  price: z.string().regex(/^\d*$/, "Montant entier").optional().or(z.literal("")),
+  price: z.string().regex(/^\d*$/, "Montant entier").optional(),
 });
 type FormValues = z.infer<typeof schema>;
 
@@ -51,9 +51,9 @@ export function ArticleDialog({ open, onClose, farmId, article }: Props) {
     defaultValues: { label: "", subcategory: "FEED", unit: "", price: "" },
   });
 
-  // Edge-trigger reset on open (fresh fields per opening; prefilled in edit mode).
+  const wasOpen = useRef(false);
   useEffect(() => {
-    if (open) {
+    if (open && !wasOpen.current) {
       reset({
         label: article?.label ?? "",
         subcategory: (article?.subcategory as FormValues["subcategory"]) ?? "FEED",
@@ -61,6 +61,7 @@ export function ArticleDialog({ open, onClose, farmId, article }: Props) {
         price: article?.typicalUnitPriceXof != null ? String(article.typicalUnitPriceXof) : "",
       });
     }
+    wasOpen.current = open;
   }, [open, article, reset]);
 
   const onSubmit = async (values: FormValues) => {
