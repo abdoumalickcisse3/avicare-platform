@@ -52,6 +52,14 @@ export const ARTICLE_SOURCE_LABELS: Record<ArticleSource, string> = {
   PRODUCTION: "Production",
 };
 
+/** FR labels for inventory article subcategories. */
+export const INVENTORY_SUBCATEGORY_LABELS: Record<string, string> = {
+  FEED: "Aliment",
+  CONSUMABLE: "Consommable",
+  EQUIPMENT: "Équipement",
+  PRODUCT: "Produit",
+};
+
 interface BadgeMeta {
   label: string;
   bg: string;
