@@ -95,3 +95,17 @@ export function humanizeKey(key: string): string {
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
 }
+
+/** Administration routes for custom vaccines/treatments (stable key → FR label). */
+export const HEALTH_ROUTE_LABELS: Record<string, string> = {
+  drinking_water: "Eau de boisson",
+  injectable: "Injectable",
+  ocular: "Oculo-nasal (goutte)",
+  spray: "Nébulisation / spray",
+  wing_web: "Piqûre au jabot d'aile",
+  oral: "Oral",
+};
+
+export function routeLabel(key: string): string {
+  return HEALTH_ROUTE_LABELS[key] ?? key;
+}

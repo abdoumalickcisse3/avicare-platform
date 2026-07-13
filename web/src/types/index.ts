@@ -386,6 +386,7 @@ export interface Vaccine {
   activeStrain: boolean;
   usage: string;
   wave: string;
+  custom: boolean;
 }
 
 /** Platform treatment catalog entry (mirrors backend TreatmentDto). */
@@ -398,6 +399,7 @@ export interface Treatment {
   withdrawalDaysEggs: number | null;
   routes: string[];
   wave: string;
+  custom: boolean;
 }
 
 /** Platform vaccination program (mirrors backend VaccinationProgramDto). */

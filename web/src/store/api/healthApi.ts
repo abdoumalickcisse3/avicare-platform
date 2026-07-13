@@ -63,6 +63,68 @@ export const healthApi = baseApi.injectEndpoints({
       transformResponse: (r: ApiEnvelope<VaccinationProgram[]>) => r.data,
       providesTags: [{ type: "HealthCatalog", id: "programs" }],
     }),
+    createVaccine: build.mutation<
+      Vaccine,
+      { farmId: number; key: string; value: Record<string, unknown> }
+    >({
+      query: ({ farmId, key, value }) => ({
+        url: `${base(farmId)}/catalog/vaccines`,
+        method: "POST",
+        body: { key, value },
+      }),
+      transformResponse: (r: ApiEnvelope<Vaccine>) => r.data,
+      invalidatesTags: [{ type: "HealthCatalog", id: "vaccines" }],
+    }),
+    updateVaccine: build.mutation<
+      Vaccine,
+      { farmId: number; key: string; value: Record<string, unknown> }
+    >({
+      query: ({ farmId, key, value }) => ({
+        url: `${base(farmId)}/catalog/vaccines`,
+        method: "POST",
+        body: { key, value },
+      }),
+      transformResponse: (r: ApiEnvelope<Vaccine>) => r.data,
+      invalidatesTags: [{ type: "HealthCatalog", id: "vaccines" }],
+    }),
+    deleteVaccine: build.mutation<void, { farmId: number; key: string }>({
+      query: ({ farmId, key }) => ({
+        url: `${base(farmId)}/catalog/vaccines/${key}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: [{ type: "HealthCatalog", id: "vaccines" }],
+    }),
+    createTreatmentCatalog: build.mutation<
+      Treatment,
+      { farmId: number; key: string; value: Record<string, unknown> }
+    >({
+      query: ({ farmId, key, value }) => ({
+        url: `${base(farmId)}/catalog/treatments`,
+        method: "POST",
+        body: { key, value },
+      }),
+      transformResponse: (r: ApiEnvelope<Treatment>) => r.data,
+      invalidatesTags: [{ type: "HealthCatalog", id: "treatments" }],
+    }),
+    updateTreatmentCatalog: build.mutation<
+      Treatment,
+      { farmId: number; key: string; value: Record<string, unknown> }
+    >({
+      query: ({ farmId, key, value }) => ({
+        url: `${base(farmId)}/catalog/treatments`,
+        method: "POST",
+        body: { key, value },
+      }),
+      transformResponse: (r: ApiEnvelope<Treatment>) => r.data,
+      invalidatesTags: [{ type: "HealthCatalog", id: "treatments" }],
+    }),
+    deleteTreatmentCatalog: build.mutation<void, { farmId: number; key: string }>({
+      query: ({ farmId, key }) => ({
+        url: `${base(farmId)}/catalog/treatments/${key}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: [{ type: "HealthCatalog", id: "treatments" }],
+    }),
 
     /* --- Vaccinations -------------------------------------------------- */
     getVaccinations: build.query<
@@ -330,6 +392,12 @@ export const {
   useGetTreatmentCatalogQuery,
   useGetProgramsQuery,
   useGetProgramsByBreedQuery,
+  useCreateVaccineMutation,
+  useUpdateVaccineMutation,
+  useDeleteVaccineMutation,
+  useCreateTreatmentCatalogMutation,
+  useUpdateTreatmentCatalogMutation,
+  useDeleteTreatmentCatalogMutation,
   useGetVaccinationsQuery,
   useRecordVaccinationMutation,
   useDeleteVaccinationMutation,
