@@ -31,15 +31,17 @@ import { BatchStatusChip } from "@/components/poultry/BatchStatusChip";
 import { HealthTab } from "@/components/health/HealthTab";
 import { LayerOverviewTab } from "./LayerOverviewTab";
 import { LayerCollectionsTab } from "./LayerCollectionsTab";
+import { LayerDailyRecordsTab } from "./LayerDailyRecordsTab";
 import { LayerFlockTab } from "./LayerFlockTab";
 import { CloseDayButton } from "./CloseDayButton";
 import { EggCollectionDialog } from "./EggCollectionDialog";
 
-type TabKey = "overview" | "collections" | "layers" | "health";
+type TabKey = "overview" | "collections" | "records" | "layers" | "health";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "overview", label: "Vue d'ensemble" },
   { key: "collections", label: "Collectes" },
+  { key: "records", label: "Suivi journalier" },
   { key: "layers", label: "Pondeuses" },
   { key: "health", label: "Sanitaire" },
 ];
@@ -206,6 +208,7 @@ export function LayerUnitDetailView({ unitId }: { unitId: number }) {
       {tab === "collections" && (
         <LayerCollectionsTab farmId={farmId as number} unit={unit} />
       )}
+      {tab === "records" && <LayerDailyRecordsTab farmId={farmId as number} unit={unit} />}
       {tab === "layers" && <LayerFlockTab farmId={farmId as number} unit={unit} />}
       {tab === "health" && (
         <HealthTab
