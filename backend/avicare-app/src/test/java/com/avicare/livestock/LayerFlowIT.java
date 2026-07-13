@@ -142,6 +142,38 @@ class LayerFlowIT {
   }
 
   @Test
+  void layerOnlyFarm_canUseDailyRecordsEndpoint_withoutBroilerModule() throws Exception {
+    // Regression: PoultryDailyRecordController is shared by broiler batches and layer flocks, so
+    // it must accept EITHER poultry module rather than requiring module.poultry.broiler only.
+    signupAndAccess("owner@layerdaily.io", "password123", "Owner3");
+    String owner = login("owner@layerdaily.io", "password123");
+    long farmId = createFarm(owner, "Ferme Ponte Daily");
+    owner = login("owner@layerdaily.io", "password123");
+    enableLayerModule(owner, farmId); // module.poultry.layer only, module.poultry.broiler untouched
+    long unitId = seedLayerUnit(farmId, 800);
+
+    String base = "/api/v1/farms/" + farmId + "/poultry-batches/" + unitId + "/daily-records";
+
+    mockMvc
+        .perform(
+            post(base)
+                .header("Authorization", "Bearer " + owner)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"recordDate\":\""
+                        + DAY
+                        + "\",\"mortalityCount\":2,\"feedKg\":50,"
+                        + "\"waterL\":100,\"observations\":\"RAS\"}"))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.data.mortalityCount").value(2));
+
+    mockMvc
+        .perform(get(base).header("Authorization", "Bearer " + owner))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.length()").value(1));
+  }
+
+  @Test
   void veterinarian_cannotRecordCollection_butCanRead() throws Exception {
     signupAndAccess("o2@layer.io", "password123", "Owner2");
     String owner = login("o2@layer.io", "password123");
