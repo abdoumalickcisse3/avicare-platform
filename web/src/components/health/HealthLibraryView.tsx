@@ -26,6 +26,8 @@ import { Pencil, Plus, Power, Stethoscope } from "lucide-react";
 import { useHealthGating } from "@/hooks/useHealthGating";
 import {
   useDeactivateVeterinarianMutation,
+  useDeleteVaccineMutation,
+  useDeleteTreatmentCatalogMutation,
   useGetProgramsQuery,
   useGetTreatmentCatalogQuery,
   useGetVaccinesQuery,
@@ -33,11 +35,14 @@ import {
 } from "@/store/api/healthApi";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { apiErrorMessage } from "@/lib/apiError";
-import { ageLabel, humanizeKey } from "@/lib/health";
+import { ageLabel, humanizeKey, routeLabel } from "@/lib/health";
 import { colors } from "@/theme/tokens";
+import { useFarmRole, canManageCatalog } from "@/hooks/useFarmRole";
 import { AdvancedLockCard } from "./AdvancedLockCard";
+import { VaccineLibraryDialog } from "./VaccineLibraryDialog";
+import { TreatmentLibraryDialog } from "./TreatmentLibraryDialog";
 import { VeterinarianDialog } from "./VeterinarianDialog";
-import type { Veterinarian } from "@/types";
+import type { Veterinarian, Vaccine, Treatment } from "@/types";
 
 type TabKey = "vaccines" | "treatments" | "programs" | "vets";
 
@@ -47,7 +52,9 @@ const READ_ONLY_NOTE =
 const headCellSx = { fontWeight: 600 } as const;
 
 export function HealthLibraryView() {
-  const { farmId, hasFarm, hasHealth, hasAdvanced } = useHealthGating();
+  const { farmId, hasFarm, hasHealth, hasBasic, hasAdvanced } = useHealthGating();
+  const role = useFarmRole(farmId);
+  const canManage = canManageCatalog(role);
   const [tab, setTab] = useState<TabKey>("vaccines");
 
   return (
@@ -87,10 +94,12 @@ export function HealthLibraryView() {
           </Tabs>
 
           <Box sx={{ p: { xs: 2, md: 2.5 } }}>
-            {tab === "vaccines" && <VaccinesTab farmId={farmId} enabled={hasFarm} />}
+            {tab === "vaccines" && (
+              <VaccinesTab farmId={farmId} enabled={hasFarm} canManage={canManage && hasBasic} />
+            )}
             {tab === "treatments" &&
               (hasAdvanced ? (
-                <TreatmentsTab farmId={farmId} enabled={hasFarm} />
+                <TreatmentsTab farmId={farmId} enabled={hasFarm} canManage={canManage && hasAdvanced} />
               ) : (
                 <AdvancedLockCard
                   farmId={farmId}
@@ -126,17 +135,48 @@ function LoadingRows() {
   );
 }
 
-function VaccinesTab({ farmId, enabled }: { farmId?: number; enabled: boolean }) {
+function VaccinesTab({
+  farmId,
+  enabled,
+  canManage,
+}: {
+  farmId?: number;
+  enabled: boolean;
+  canManage: boolean;
+}) {
+  const { showToast } = useToast();
   const { data = [], isLoading } = useGetVaccinesQuery(
     { farmId: farmId as number },
     { skip: !enabled || !farmId },
   );
+  const [deleteVaccine] = useDeleteVaccineMutation();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<Vaccine | null>(null);
+  const existingKeys = data.map((v) => v.key);
+
+  const openCreate = () => {
+    setEditing(null);
+    setDialogOpen(true);
+  };
+  const onDelete = async (key: string) => {
+    try {
+      await deleteVaccine({ farmId: farmId as number, key }).unwrap();
+      showToast("Vaccin supprimé.", "success");
+    } catch (err) {
+      showToast(apiErrorMessage(err), "error");
+    }
+  };
+
   if (isLoading) return <LoadingRows />;
   return (
     <>
-      <Alert severity="info" sx={{ mb: 2 }}>
-        {READ_ONLY_NOTE}
-      </Alert>
+      {canManage && (
+        <Stack direction="row" sx={{ justifyContent: "flex-end", mb: 2 }}>
+          <Button variant="contained" color="secondary" startIcon={<Plus size={16} />} onClick={openCreate}>
+            Nouveau vaccin
+          </Button>
+        </Stack>
+      )}
       <TableContainer>
         <Table size="small">
           <TableHead>
@@ -144,64 +184,159 @@ function VaccinesTab({ farmId, enabled }: { farmId?: number; enabled: boolean })
               <TableCell sx={headCellSx}>Vaccin</TableCell>
               <TableCell sx={headCellSx}>Maladie ciblée</TableCell>
               <TableCell sx={headCellSx}>Voie</TableCell>
-              <TableCell sx={headCellSx}>Type</TableCell>
+              <TableCell sx={headCellSx} align="right">
+                Actions
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {data.map((v) => (
               <TableRow key={v.key} hover>
-                <TableCell sx={{ fontWeight: 600 }}>{v.label}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>
+                  {v.label}
+                  {v.custom && (
+                    <Chip size="small" label="Perso" sx={{ ml: 1, bgcolor: colors.primary[50], color: colors.primary[700] }} />
+                  )}
+                </TableCell>
                 <TableCell>{humanizeKey(v.disease)}</TableCell>
                 <TableCell>
-                  {v.route && <Chip size="small" label={v.route} sx={{ bgcolor: colors.neutral[100] }} />}
+                  {v.route && <Chip size="small" label={routeLabel(v.route)} sx={{ bgcolor: colors.neutral[100] }} />}
                 </TableCell>
-                <TableCell>{v.activeStrain ? "Souche active" : "Inactivé"}</TableCell>
+                <TableCell align="right">
+                  {v.custom && canManage && (
+                    <>
+                      <IconButton
+                        size="small"
+                        aria-label="Modifier"
+                        onClick={() => {
+                          setEditing(v);
+                          setDialogOpen(true);
+                        }}
+                      >
+                        <Pencil size={16} />
+                      </IconButton>
+                      <IconButton size="small" aria-label="Supprimer" onClick={() => onDelete(v.key)}>
+                        <Power size={16} />
+                      </IconButton>
+                    </>
+                  )}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </TableContainer>
+      <VaccineLibraryDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        farmId={farmId as number}
+        vaccine={editing ?? undefined}
+        existingKeys={existingKeys}
+      />
     </>
   );
 }
 
-function TreatmentsTab({ farmId, enabled }: { farmId?: number; enabled: boolean }) {
+function TreatmentsTab({
+  farmId,
+  enabled,
+  canManage,
+}: {
+  farmId?: number;
+  enabled: boolean;
+  canManage: boolean;
+}) {
+  const { showToast } = useToast();
   const { data = [], isLoading } = useGetTreatmentCatalogQuery(
     { farmId: farmId as number },
     { skip: !enabled || !farmId },
   );
+  const [deleteTreatment] = useDeleteTreatmentCatalogMutation();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<Treatment | null>(null);
+  const existingKeys = data.map((t) => t.key);
+
+  const openCreate = () => {
+    setEditing(null);
+    setDialogOpen(true);
+  };
+  const onDelete = async (key: string) => {
+    try {
+      await deleteTreatment({ farmId: farmId as number, key }).unwrap();
+      showToast("Traitement supprimé.", "success");
+    } catch (err) {
+      showToast(apiErrorMessage(err), "error");
+    }
+  };
+
   if (isLoading) return <LoadingRows />;
   return (
     <>
-      <Alert severity="info" sx={{ mb: 2 }}>
-        {READ_ONLY_NOTE}
-      </Alert>
+      {canManage && (
+        <Stack direction="row" sx={{ justifyContent: "flex-end", mb: 2 }}>
+          <Button variant="contained" color="secondary" startIcon={<Plus size={16} />} onClick={openCreate}>
+            Nouveau traitement
+          </Button>
+        </Stack>
+      )}
       <TableContainer>
         <Table size="small">
           <TableHead>
             <TableRow>
               <TableCell sx={headCellSx}>Traitement</TableCell>
               <TableCell sx={headCellSx}>Molécule</TableCell>
-              <TableCell sx={headCellSx}>Classe</TableCell>
               <TableCell sx={headCellSx} align="right">
                 Délai œufs / viande
+              </TableCell>
+              <TableCell sx={headCellSx} align="right">
+                Actions
               </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {data.map((t) => (
               <TableRow key={t.key} hover>
-                <TableCell sx={{ fontWeight: 600 }}>{t.label}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>
+                  {t.label}
+                  {t.custom && (
+                    <Chip size="small" label="Perso" sx={{ ml: 1, bgcolor: colors.primary[50], color: colors.primary[700] }} />
+                  )}
+                </TableCell>
                 <TableCell>{humanizeKey(t.molecule)}</TableCell>
-                <TableCell>{humanizeKey(t.drugClass)}</TableCell>
                 <TableCell align="right" sx={{ fontFamily: "var(--font-mono)" }}>
                   {t.withdrawalDaysEggs ?? "?"} j / {t.withdrawalDaysMeat ?? "?"} j
+                </TableCell>
+                <TableCell align="right">
+                  {t.custom && canManage && (
+                    <>
+                      <IconButton
+                        size="small"
+                        aria-label="Modifier"
+                        onClick={() => {
+                          setEditing(t);
+                          setDialogOpen(true);
+                        }}
+                      >
+                        <Pencil size={16} />
+                      </IconButton>
+                      <IconButton size="small" aria-label="Supprimer" onClick={() => onDelete(t.key)}>
+                        <Power size={16} />
+                      </IconButton>
+                    </>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </TableContainer>
+      <TreatmentLibraryDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        farmId={farmId as number}
+        treatment={editing ?? undefined}
+        existingKeys={existingKeys}
+      />
     </>
   );
 }
