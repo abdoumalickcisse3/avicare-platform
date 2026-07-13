@@ -27,4 +27,10 @@ public interface ParametersFacade {
 
   /** Upsert a farm-level setting (layer 2). Value is a JSON object (wrap scalars/arrays). */
   void setFarmSetting(Long farmId, String key, Map<String, Object> value);
+
+  /** Upsert a farm-level catalog entry (custom or override); returns the effective view. */
+  CatalogEntryInfo override(Long farmId, String category, String key, Map<String, Object> value);
+
+  /** Remove/disable a farm-level catalog entry so it no longer appears in {@link #listForFarm}. */
+  void delete(Long farmId, String category, String key);
 }

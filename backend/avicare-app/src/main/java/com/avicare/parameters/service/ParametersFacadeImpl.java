@@ -46,4 +46,17 @@ public class ParametersFacadeImpl implements ParametersFacade {
   public void setFarmSetting(Long farmId, String key, Map<String, Object> value) {
     farmSettingService.setFarmSetting(farmId, key, value);
   }
+
+  @Override
+  public CatalogEntryInfo override(
+      Long farmId, String category, String key, Map<String, Object> value) {
+    var item = catalogService.override(farmId, category, key, value);
+    return new CatalogEntryInfo(
+        item.getCategory(), item.getKey(), item.getValue(), item.getCatalogItemId() == null);
+  }
+
+  @Override
+  public void delete(Long farmId, String category, String key) {
+    catalogService.disable(farmId, category, key);
+  }
 }
