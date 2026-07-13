@@ -23,11 +23,11 @@ import { Skull, X } from "lucide-react";
 import { useCreateDailyRecordMutation } from "@/store/api/poultryBatchesApi";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { useInventoryGating } from "@/hooks/useInventoryGating";
-import { StockConsumptionSection } from "@/components/inventory/StockConsumptionSection";
+import { FeedSourceSection } from "@/components/inventory/FeedSourceSection";
 import { apiErrorMessage } from "@/lib/apiError";
 import { formatNumber } from "@/lib/format";
 import { colors } from "@/theme/tokens";
-import type { StockConsumption } from "@/types";
+import type { FeedFormulaRef, StockConsumption } from "@/types";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -81,6 +81,7 @@ export function DailyRecordDialog({
   const { hasInventory } = useInventoryGating();
   const [createRecord, { isLoading }] = useCreateDailyRecordMutation();
   const [consumption, setConsumption] = useState<StockConsumption | null>(null);
+  const [formula, setFormula] = useState<FeedFormulaRef | null>(null);
 
   const { control, handleSubmit, reset } = useForm<RecordForm>({
     resolver: zodResolver(schema),
@@ -107,6 +108,7 @@ export function DailyRecordDialog({
           waterL: numField(values.waterL),
           observations: values.observations || undefined,
           feedConsumption: consumption ?? undefined,
+          feedFormula: formula ?? undefined,
         },
       }).unwrap();
       showToast(
@@ -255,12 +257,13 @@ export function DailyRecordDialog({
             />
 
             {hasInventory && (
-              <StockConsumptionSection
+              <FeedSourceSection
                 farmId={farmId}
                 open={open}
-                onChange={setConsumption}
-                sourceFilter="INVENTORY"
-                label="Décrémenter l'aliment du stock"
+                onChange={(fc, ff) => {
+                  setConsumption(fc);
+                  setFormula(ff);
+                }}
               />
             )}
           </Stack>
