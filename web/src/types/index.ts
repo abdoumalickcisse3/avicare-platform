@@ -218,6 +218,8 @@ export interface DailyRecordInput {
   observations?: string;
   /** Optional D18 stock coupling — draws feed from stock as an OUT movement. */
   feedConsumption?: StockConsumption;
+  /** Optional D20-révisée coupling — decomposes a formula into per-ingredient OUT movements. */
+  feedFormula?: FeedFormulaRef;
 }
 
 /** A weighing sample (mirrors backend WeighingSampleResponse). */
@@ -851,6 +853,14 @@ export interface StockConsumption {
   articleKey: string;
   articleSource: ArticleSource;
   quantity: number;
+  notes?: string;
+}
+
+/** Reference to a feed formula at daily entry — exactly one of key (platform) / id (farm). */
+export interface FeedFormulaRef {
+  formulaKey?: string;
+  formulaId?: number;
+  totalKg: number;
   notes?: string;
 }
 
