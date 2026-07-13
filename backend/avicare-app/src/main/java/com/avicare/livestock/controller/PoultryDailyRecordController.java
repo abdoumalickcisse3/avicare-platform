@@ -21,18 +21,33 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Daily record endpoints for a broiler batch (Sprint B1-3). Same farm-access + feature gate as
- * {@link PoultryBatchController}; recording (upsert) needs an operational role.
+ * Daily record endpoints shared by broiler batches and layer flocks (Sprint B1-3, extended for
+ * layer daily tracking). Same permission/role requirements as {@link PoultryBatchController}, but
+ * gated behind EITHER poultry module ({@code module.poultry.broiler} or {@code
+ * module.poultry.layer}) since a {@code batchId} may reference either species; recording (upsert)
+ * needs an operational role.
  */
 @RestController
 @RequestMapping("/api/v1/farms/{farmId}/poultry-batches/{batchId}/daily-records")
 @RequiredArgsConstructor
 public class PoultryDailyRecordController {
 
+  private static final String FEATURE_ANY =
+      "(@features.isEnabled(#farmId, 'module.poultry.broiler') "
+          + "or @features.isEnabled(#farmId, 'module.poultry.layer'))";
+  static final String READ =
+      "@farmAccess.hasPermission(#farmId, 'poultry:read') and " + FEATURE_ANY;
+  static final String WRITE =
+      "@farmAccess.hasRole(#farmId, "
+          + "T(com.avicare.common.security.principal.FarmRole).OWNER, "
+          + "T(com.avicare.common.security.principal.FarmRole).MANAGER, "
+          + "T(com.avicare.common.security.principal.FarmRole).FARMER) and "
+          + FEATURE_ANY;
+
   private final DailyRecordService dailyRecordService;
 
   @GetMapping
-  @PreAuthorize(PoultryBatchController.READ)
+  @PreAuthorize(READ)
   public ApiResponse<List<DailyRecordResponse>> list(
       @PathVariable Long farmId, @PathVariable Long batchId) {
     return ApiResponse.of(
@@ -43,7 +58,7 @@ public class PoultryDailyRecordController {
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  @PreAuthorize(PoultryBatchController.WRITE)
+  @PreAuthorize(WRITE)
   public ApiResponse<DailyRecordResponse> record(
       @PathVariable Long farmId,
       @PathVariable Long batchId,
