@@ -42,8 +42,8 @@ public class InventoryCatalogService {
         .toList();
   }
 
-  public List<InventoryCatalogItemDto> listMedicationArticles() {
-    return healthCatalogService.listTreatments().stream()
+  public List<InventoryCatalogItemDto> listMedicationArticles(Long farmId) {
+    return healthCatalogService.listTreatments(farmId).stream()
         .map(
             t ->
                 new InventoryCatalogItemDto(
@@ -59,7 +59,8 @@ public class InventoryCatalogService {
 
   /** The full list of stockable articles: inventory items ∪ medications. */
   public List<InventoryCatalogItemDto> listAllAvailableArticles(Long farmId) {
-    return Stream.concat(listInventoryArticles(farmId).stream(), listMedicationArticles().stream())
+    return Stream.concat(
+            listInventoryArticles(farmId).stream(), listMedicationArticles(farmId).stream())
         .toList();
   }
 

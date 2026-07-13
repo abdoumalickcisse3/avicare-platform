@@ -2,6 +2,7 @@ package com.avicare.livestock.health;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.avicare.common.api.exception.NotFoundException;
@@ -19,6 +20,8 @@ import org.mockito.Mockito;
  */
 class HealthCatalogServiceTest {
 
+  private static final Long FARM = 1L;
+
   private ParametersFacade facade;
   private HealthCatalogService service;
 
@@ -34,7 +37,7 @@ class HealthCatalogServiceTest {
 
   @Test
   void parsesVaccineFields() {
-    when(facade.listPlatform("vaccines"))
+    when(facade.listForFarm(FARM, "vaccines"))
         .thenReturn(
             List.of(
                 entry(
@@ -47,7 +50,7 @@ class HealthCatalogServiceTest {
                         "usage", "DAY_OLD",
                         "wave", "V1"))));
 
-    VaccineDto v = service.listVaccines().get(0);
+    VaccineDto v = service.listVaccines(FARM).get(0);
     assertThat(v.key()).isEqualTo("marek_hvt");
     assertThat(v.disease()).isEqualTo("Marek");
     assertThat(v.route()).isEqualTo("INJECTION");
@@ -57,7 +60,7 @@ class HealthCatalogServiceTest {
 
   @Test
   void parsesTreatmentFieldsAndRoutes() {
-    when(facade.listPlatform("treatments"))
+    when(facade.listForFarm(FARM, "treatments"))
         .thenReturn(
             List.of(
                 entry(
@@ -76,11 +79,49 @@ class HealthCatalogServiceTest {
                         "routes",
                         List.of("WATER")))));
 
-    TreatmentDto t = service.listTreatments().get(0);
+    TreatmentDto t = service.listTreatments(FARM).get(0);
     assertThat(t.drugClass()).isEqualTo("ANTIBIOTIC");
     assertThat(t.withdrawalDaysMeat()).isEqualTo(10);
     assertThat(t.withdrawalDaysEggs()).isEqualTo(14);
     assertThat(t.routes()).containsExactly("WATER");
+  }
+
+  @Test
+  void listVaccinesMergesPlatformAndCustomWithFlag() {
+    when(facade.listForFarm(FARM, "vaccines"))
+        .thenReturn(
+            List.of(
+                new CatalogEntryInfo("vaccines", "newcastle", Map.of("label", "Newcastle"), false),
+                new CatalogEntryInfo(
+                    "vaccines", "nc-fermier", Map.of("label", "NC fermier"), true)));
+
+    List<VaccineDto> out = service.listVaccines(FARM);
+
+    assertThat(out)
+        .extracting(VaccineDto::key, VaccineDto::custom)
+        .containsExactly(
+            org.assertj.core.groups.Tuple.tuple("newcastle", false),
+            org.assertj.core.groups.Tuple.tuple("nc-fermier", true));
+  }
+
+  @Test
+  void saveVaccineDelegatesToFacadeAndRemaps() {
+    Map<String, Object> value = Map.of("label", "NC fermier", "disease", "newcastle");
+    when(facade.override(FARM, "vaccines", "nc-fermier", value))
+        .thenReturn(new CatalogEntryInfo("vaccines", "nc-fermier", value, true));
+
+    VaccineDto out = service.saveVaccine(FARM, "nc-fermier", value);
+
+    assertThat(out.key()).isEqualTo("nc-fermier");
+    assertThat(out.label()).isEqualTo("NC fermier");
+    assertThat(out.disease()).isEqualTo("newcastle");
+    assertThat(out.custom()).isTrue();
+  }
+
+  @Test
+  void deleteTreatmentDelegates() {
+    service.deleteTreatment(FARM, "amox-locale");
+    verify(facade).delete(FARM, "treatments", "amox-locale");
   }
 
   @Test

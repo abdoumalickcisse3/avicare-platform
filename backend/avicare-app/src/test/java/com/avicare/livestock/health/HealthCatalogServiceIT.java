@@ -43,17 +43,19 @@ class HealthCatalogServiceIT {
 
   @Autowired private HealthCatalogService service;
 
+  private static final Long FARM_ID = 1L;
+
   @Test
   void listsTheV1Library() {
-    assertThat(service.listVaccines()).hasSize(10);
-    assertThat(service.listTreatments()).hasSize(6);
+    assertThat(service.listVaccines(FARM_ID)).hasSize(10);
+    assertThat(service.listTreatments(FARM_ID)).hasSize(6);
     assertThat(service.listVaccinationPrograms()).hasSize(4);
   }
 
   @Test
   void vaccineAndTreatmentFieldsAreParsed() {
     VaccineDto marek =
-        service.listVaccines().stream()
+        service.listVaccines(FARM_ID).stream()
             .filter(v -> v.key().equals("marek_hvt"))
             .findFirst()
             .orElseThrow();
@@ -62,7 +64,7 @@ class HealthCatalogServiceIT {
     assertThat(marek.usage()).isEqualTo("DAY_OLD");
 
     TreatmentDto enro =
-        service.listTreatments().stream()
+        service.listTreatments(FARM_ID).stream()
             .filter(t -> t.key().equals("enrofloxacin_10"))
             .findFirst()
             .orElseThrow();

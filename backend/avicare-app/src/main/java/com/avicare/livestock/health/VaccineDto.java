@@ -11,4 +11,5 @@ public record VaccineDto(
     String route,
     boolean activeStrain,
     String usage,
-    String wave) {}
+    String wave,
+    boolean custom) {}
