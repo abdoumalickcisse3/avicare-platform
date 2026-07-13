@@ -1,14 +1,19 @@
 package com.avicare.livestock.poultry;
 
+import com.avicare.common.api.exception.BusinessRuleException;
 import com.avicare.livestock.domain.DailyRecord;
+import com.avicare.livestock.domain.FormulaIngredient;
 import com.avicare.livestock.domain.LifecycleEvent;
 import com.avicare.livestock.domain.ProductionUnit;
 import com.avicare.livestock.inventory.ConsumptionSource;
+import com.avicare.livestock.inventory.FeedFormulaService;
+import com.avicare.livestock.inventory.StockConsumption;
 import com.avicare.livestock.inventory.StockConsumptionService;
 import com.avicare.livestock.repository.DailyRecordRepository;
 import com.avicare.livestock.repository.LifecycleEventRepository;
 import com.avicare.livestock.service.LivestockService;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -39,9 +44,16 @@ public class DailyRecordService {
   private final LifecycleEventRepository lifecycleEventRepository;
   private final LivestockService livestockService;
   private final StockConsumptionService stockConsumptionService;
+  private final FeedFormulaService feedFormulaService;
 
   @Transactional
   public DailyRecord record(Long unitId, DailyRecordCommand cmd, Long userId) {
+    if (cmd.feedConsumption() != null && cmd.feedFormula() != null) {
+      throw new BusinessRuleException(
+          "DAILY_RECORD_FEED_SOURCE_CONFLICT",
+          "Un seul mode d'aliment autorisé : article OU formule, pas les deux.");
+    }
+
     ProductionUnit unit = livestockService.getUnit(unitId); // 404 if the unit does not exist
 
     DailyRecord rec =
@@ -98,9 +110,38 @@ public class DailyRecordService {
           cmd.feedConsumption(),
           ConsumptionSource.dailyRecord(unitId, saved.getId()),
           userId);
+    } else if (cmd.feedFormula() != null) {
+      applyFormula(unit.getFarmId(), unitId, saved.getId(), cmd.feedFormula(), userId);
     }
 
     return saved;
+  }
+
+  /**
+   * Décision D20 révisée: decompose a feed formula into one OUT movement per ingredient, each
+   * {@code totalKg × percentage / 100} kg. Runs inside {@link #record}'s transaction (atomic).
+   */
+  private void applyFormula(
+      Long farmId, Long unitId, Long recordId, FormulaConsumption ff, Long userId) {
+    if (ff.totalKg() == null || ff.totalKg().signum() <= 0) {
+      throw new BusinessRuleException(
+          "FEED_FORMULA_QUANTITY", "La quantité totale d'aliment doit être supérieure à 0.");
+    }
+    List<FormulaIngredient> ingredients =
+        feedFormulaService.resolveIngredients(farmId, ff.formulaKey(), ff.formulaId());
+    for (FormulaIngredient ing : ingredients) {
+      BigDecimal qty =
+          ff.totalKg()
+              .multiply(ing.percentage())
+              .divide(BigDecimal.valueOf(100), 3, RoundingMode.HALF_UP);
+      if (qty.signum() > 0) {
+        stockConsumptionService.applyConsumption(
+            farmId,
+            new StockConsumption(ing.articleKey(), ing.articleSource(), qty, ff.notes()),
+            ConsumptionSource.dailyRecord(unitId, recordId),
+            userId);
+      }
+    }
   }
 
   @Transactional(readOnly = true)

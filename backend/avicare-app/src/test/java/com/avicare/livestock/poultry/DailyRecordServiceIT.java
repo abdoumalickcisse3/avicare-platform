@@ -90,7 +90,7 @@ class DailyRecordServiceIT {
   }
 
   private DailyRecordCommand mortality(int count) {
-    return new DailyRecordCommand(DAY, count, BigDecimal.ZERO, BigDecimal.ZERO, null, null);
+    return new DailyRecordCommand(DAY, count, BigDecimal.ZERO, BigDecimal.ZERO, null, null, null);
   }
 
   @Test

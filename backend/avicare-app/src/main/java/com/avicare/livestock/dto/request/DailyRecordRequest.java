@@ -19,4 +19,5 @@ public record DailyRecordRequest(
     @PositiveOrZero BigDecimal feedKg,
     @PositiveOrZero BigDecimal waterL,
     @Size(max = 2000) String observations,
-    @Valid StockConsumptionRequest feedConsumption) {}
+    @Valid StockConsumptionRequest feedConsumption,
+    @Valid FeedFormulaRequest feedFormula) {}

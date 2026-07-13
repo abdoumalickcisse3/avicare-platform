@@ -118,7 +118,7 @@ class GrowthAnalysisServiceIT {
     // 3000 kg feed up to DAY; live weight = 2.0 kg * 1000 = 2000 kg → FCR = 1.5
     dailyRecordService.record(
         batchId,
-        new DailyRecordCommand(DAY, 0, new BigDecimal("3000"), BigDecimal.ZERO, null, null),
+        new DailyRecordCommand(DAY, 0, new BigDecimal("3000"), BigDecimal.ZERO, null, null, null),
         userId);
 
     growthAnalysisService.recordWeighing(

@@ -98,7 +98,8 @@ class CrossContextCouplingIT {
                 BigDecimal.ZERO,
                 null,
                 new StockConsumption(
-                    "feed_starter_broiler", ArticleSource.INVENTORY, new BigDecimal("50"), "lot")),
+                    "feed_starter_broiler", ArticleSource.INVENTORY, new BigDecimal("50"), "lot"),
+                null),
             1L);
 
     // stock auto-created then decremented to -50 (D19: negative allowed)
@@ -136,7 +137,8 @@ class CrossContextCouplingIT {
                             "feed_starter_broiler",
                             ArticleSource.INVENTORY,
                             new BigDecimal("50"),
-                            null)),
+                            null),
+                        null),
                     1L))
         .isInstanceOf(BusinessRuleException.class);
 
@@ -153,7 +155,7 @@ class CrossContextCouplingIT {
     dailyRecordService.record(
         unitId,
         new DailyRecordCommand(
-            LocalDate.now(), 0, new BigDecimal("50"), BigDecimal.ZERO, null, null),
+            LocalDate.now(), 0, new BigDecimal("50"), BigDecimal.ZERO, null, null, null),
         1L);
 
     assertThat(stockMovementService.listForProductionUnit(unitId)).isEmpty();
@@ -176,7 +178,8 @@ class CrossContextCouplingIT {
                         BigDecimal.ZERO,
                         null,
                         new StockConsumption(
-                            "nope", ArticleSource.INVENTORY, new BigDecimal("10"), null)),
+                            "nope", ArticleSource.INVENTORY, new BigDecimal("10"), null),
+                        null),
                     1L))
         .isInstanceOf(NotFoundException.class);
 
@@ -295,7 +298,8 @@ class CrossContextCouplingIT {
             BigDecimal.ZERO,
             null,
             new StockConsumption(
-                "feed_starter_broiler", ArticleSource.INVENTORY, new BigDecimal(qty), null)),
+                "feed_starter_broiler", ArticleSource.INVENTORY, new BigDecimal(qty), null),
+            null),
         1L);
   }
 

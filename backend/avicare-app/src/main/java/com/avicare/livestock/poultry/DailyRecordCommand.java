@@ -15,4 +15,5 @@ public record DailyRecordCommand(
     BigDecimal feedKg,
     BigDecimal waterL,
     String observations,
-    StockConsumption feedConsumption) {}
+    StockConsumption feedConsumption,
+    FormulaConsumption feedFormula) {}
