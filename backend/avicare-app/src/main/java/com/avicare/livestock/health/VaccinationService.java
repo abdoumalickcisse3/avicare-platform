@@ -44,7 +44,7 @@ public class VaccinationService {
     ProductionUnit unit = livestockService.getUnit(unitId); // 404 if missing
 
     boolean known =
-        healthCatalogService.listVaccines().stream()
+        healthCatalogService.listVaccines(unit.getFarmId()).stream()
             .anyMatch(v -> v.key().equals(cmd.vaccineKey()));
     if (!known) {
       throw new ValidationException(

@@ -3,6 +3,7 @@ package com.avicare.livestock.health;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
 import com.avicare.common.api.exception.ValidationException;
@@ -59,7 +60,7 @@ class TreatmentExecutedServiceTest {
   }
 
   private void catalogHasAmoxicillin() {
-    when(healthCatalogService.listTreatments())
+    when(healthCatalogService.listTreatments(anyLong()))
         .thenReturn(
             List.of(
                 new TreatmentDto(
@@ -70,7 +71,8 @@ class TreatmentExecutedServiceTest {
                     7,
                     9,
                     List.of("WATER"),
-                    "V1")));
+                    "V1",
+                    false)));
   }
 
   private TreatmentCommand cmd(String key, Long vetId) {
@@ -107,7 +109,7 @@ class TreatmentExecutedServiceTest {
   @Test
   void unknownTreatment_throws() {
     when(livestockService.getUnit(9L)).thenReturn(unit(5));
-    when(healthCatalogService.listTreatments()).thenReturn(List.of());
+    when(healthCatalogService.listTreatments(anyLong())).thenReturn(List.of());
     assertThatThrownBy(() -> service.record(9L, cmd("nope", null), 1L))
         .isInstanceOf(ValidationException.class);
   }

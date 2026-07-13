@@ -56,7 +56,7 @@ public class StockItemService {
       Long farmId, ArticleSource source, String articleKey) {
     List<InventoryCatalogItemDto> catalog =
         source == ArticleSource.TREATMENT
-            ? inventoryCatalogService.listMedicationArticles()
+            ? inventoryCatalogService.listMedicationArticles(farmId)
             : inventoryCatalogService.listInventoryArticles(farmId);
     return catalog.stream()
         .filter(c -> c.articleKey().equals(articleKey))

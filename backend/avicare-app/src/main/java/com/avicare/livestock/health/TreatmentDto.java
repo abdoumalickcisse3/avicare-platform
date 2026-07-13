@@ -14,4 +14,5 @@ public record TreatmentDto(
     Integer withdrawalDaysMeat,
     Integer withdrawalDaysEggs,
     List<String> routes,
-    String wave) {}
+    String wave,
+    boolean custom) {}

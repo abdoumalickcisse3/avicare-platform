@@ -27,16 +27,36 @@ public class HealthCatalogService {
 
   private final ParametersFacade parametersFacade;
 
-  public List<VaccineDto> listVaccines() {
-    return parametersFacade.listPlatform(CAT_VACCINES).stream()
+  public List<VaccineDto> listVaccines(Long farmId) {
+    return parametersFacade.listForFarm(farmId, CAT_VACCINES).stream()
         .map(HealthCatalogService::toVaccine)
         .toList();
   }
 
-  public List<TreatmentDto> listTreatments() {
-    return parametersFacade.listPlatform(CAT_TREATMENTS).stream()
+  public List<TreatmentDto> listTreatments(Long farmId) {
+    return parametersFacade.listForFarm(farmId, CAT_TREATMENTS).stream()
         .map(HealthCatalogService::toTreatment)
         .toList();
+  }
+
+  @Transactional
+  public VaccineDto saveVaccine(Long farmId, String key, Map<String, Object> value) {
+    return toVaccine(parametersFacade.override(farmId, CAT_VACCINES, key, value));
+  }
+
+  @Transactional
+  public void deleteVaccine(Long farmId, String key) {
+    parametersFacade.delete(farmId, CAT_VACCINES, key);
+  }
+
+  @Transactional
+  public TreatmentDto saveTreatment(Long farmId, String key, Map<String, Object> value) {
+    return toTreatment(parametersFacade.override(farmId, CAT_TREATMENTS, key, value));
+  }
+
+  @Transactional
+  public void deleteTreatment(Long farmId, String key) {
+    parametersFacade.delete(farmId, CAT_TREATMENTS, key);
   }
 
   public List<VaccinationProgramDto> listVaccinationPrograms() {
@@ -73,7 +93,8 @@ public class HealthCatalogService {
         str(v, "route"),
         bool(v, "active_strain"),
         str(v, "usage"),
-        str(v, "wave"));
+        str(v, "wave"),
+        e.custom());
   }
 
   private static TreatmentDto toTreatment(CatalogEntryInfo e) {
@@ -86,7 +107,8 @@ public class HealthCatalogService {
         intg(v, "withdrawal_days_meat"),
         intg(v, "withdrawal_days_eggs"),
         strList(v, "routes"),
-        str(v, "wave"));
+        str(v, "wave"),
+        e.custom());
   }
 
   private static VaccinationProgramDto toProgram(CatalogEntryInfo e) {

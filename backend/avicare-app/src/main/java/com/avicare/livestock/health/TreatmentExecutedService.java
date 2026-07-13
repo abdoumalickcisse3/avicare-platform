@@ -46,7 +46,7 @@ public class TreatmentExecutedService {
     ProductionUnit unit = livestockService.getUnit(unitId); // 404 if missing
 
     TreatmentDto treatment =
-        healthCatalogService.listTreatments().stream()
+        healthCatalogService.listTreatments(unit.getFarmId()).stream()
             .filter(t -> t.key().equals(cmd.treatmentKey()))
             .findFirst()
             .orElseThrow(

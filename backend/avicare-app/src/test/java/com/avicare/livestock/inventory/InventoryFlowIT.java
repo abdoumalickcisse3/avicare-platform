@@ -62,7 +62,7 @@ class InventoryFlowIT {
   @Test
   void catalog_unifiesInventoryItemsAndMedications() {
     List<InventoryCatalogItemDto> inventory = inventoryCatalogService.listInventoryArticles(1L);
-    List<InventoryCatalogItemDto> medications = inventoryCatalogService.listMedicationArticles();
+    List<InventoryCatalogItemDto> medications = inventoryCatalogService.listMedicationArticles(1L);
 
     assertThat(inventory).hasSize(17);
     assertThat(inventory).allMatch(a -> a.articleSource() == ArticleSource.INVENTORY);
