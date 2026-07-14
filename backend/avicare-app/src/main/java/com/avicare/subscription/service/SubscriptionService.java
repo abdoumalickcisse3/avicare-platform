@@ -116,36 +116,47 @@ public class SubscriptionService {
         (String) v.get("wave"));
   }
 
-  /** Return the farm's subscription, creating a TRIAL one on first access. */
+  /**
+   * Return the farm's subscription, creating a TRIAL one on first access, and ensure it carries
+   * every V1 module (free-pilot top-up, see {@link #ensureAllV1Modules}).
+   */
   @Transactional
   public Subscription getOrCreate(Long farmId) {
-    return subscriptionRepository
-        .findByFarmId(farmId)
-        .orElseGet(
-            () -> {
-              Subscription sub = new Subscription();
-              sub.setFarmId(farmId);
-              sub.setStatus(SubscriptionStatus.TRIAL);
-              Subscription saved = subscriptionRepository.save(sub);
-              provisionV1Modules(saved.getId());
-              return saved;
-            });
+    Subscription subscription =
+        subscriptionRepository
+            .findByFarmId(farmId)
+            .orElseGet(
+                () -> {
+                  Subscription sub = new Subscription();
+                  sub.setFarmId(farmId);
+                  sub.setStatus(SubscriptionStatus.TRIAL);
+                  return subscriptionRepository.save(sub);
+                });
+    ensureAllV1Modules(subscription);
+    return subscription;
   }
 
   /**
-   * Free-pilot provisioning (ADR-009): a brand-new farm starts with every V1-wave module active, so
-   * the whole product is usable without any subscription management. The V1 set is derived from the
-   * {@code modules} catalog ({@code value.wave == "V1"}) — no hardcoded list that could drift.
-   * Reversible lever for future monetization: restrict this set.
+   * Free-pilot provisioning (ADR-009): ensure the farm's subscription carries every V1-wave module,
+   * inserting only those missing. Self-healing top-up — covers a brand-new farm, a pre-existing
+   * empty subscription (created before provisioning) and any partial one; idempotent (no writes
+   * when already complete). The V1 set is derived from the {@code modules} catalog ({@code
+   * value.wave == "V1"}) — no hardcoded list that could drift. Reversible lever for future
+   * monetization: restrict this set (and drop the top-up).
    */
-  private void provisionV1Modules(Long subscriptionId) {
+  private void ensureAllV1Modules(Subscription subscription) {
+    Set<String> existing =
+        subscriptionModuleRepository.findBySubscriptionId(subscription.getId()).stream()
+            .map(SubscriptionModule::getModuleKey)
+            .collect(Collectors.toSet());
     parametersFacade.listPlatform("modules").stream()
-        .filter(e -> "V1".equals(e.value().get("wave")))
+        .filter(e -> WAVE_V1.equals(e.value().get("wave")))
         .map(CatalogEntryInfo::key)
+        .filter(moduleKey -> !existing.contains(moduleKey))
         .forEach(
             moduleKey -> {
               SubscriptionModule module = new SubscriptionModule();
-              module.setSubscriptionId(subscriptionId);
+              module.setSubscriptionId(subscription.getId());
               module.setModuleKey(moduleKey);
               module.setMode(FeatureMode.HARD);
               module.setExpiresAt(null);
