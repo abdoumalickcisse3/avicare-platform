@@ -92,17 +92,15 @@ class SubscriptionServiceProvisioningTest {
   }
 
   @Test
-  void existingPartialSubscriptionIsToppedUp() {
-    // Reproduces the farm-25 bug: a subscription created empty/partial before provisioning must be
-    // healed on next access — only the MISSING V1 modules are inserted, never re-adding existing
-    // ones.
+  void existingEmptySubscriptionIsProvisioned() {
+    // Reproduces the farm-25 bug: a subscription created EMPTY before provisioning existed must be
+    // healed on next access — every V1 module is activated.
     Subscription existing = new Subscription();
     existing.setId(200L);
     existing.setFarmId(FARM);
     existing.setStatus(SubscriptionStatus.TRIAL);
     when(subscriptionRepository.findByFarmId(FARM)).thenReturn(Optional.of(existing));
-    when(subscriptionModuleRepository.findBySubscriptionId(200L))
-        .thenReturn(List.of(moduleRow("module.poultry.broiler"))); // already has broiler
+    when(subscriptionModuleRepository.findBySubscriptionId(200L)).thenReturn(List.of()); // empty
     when(parametersFacade.listPlatform("modules"))
         .thenReturn(
             List.of(
@@ -114,23 +112,24 @@ class SubscriptionServiceProvisioningTest {
 
     assertThat(sub).isSameAs(existing);
     ArgumentCaptor<SubscriptionModule> cap = ArgumentCaptor.forClass(SubscriptionModule.class);
-    verify(subscriptionModuleRepository, times(1)).save(cap.capture());
-    assertThat(cap.getValue().getModuleKey()).isEqualTo("module.inventory");
-    assertThat(cap.getValue().getSubscriptionId()).isEqualTo(200L);
-    assertThat(cap.getValue().getMode()).isEqualTo(FeatureMode.HARD);
+    verify(subscriptionModuleRepository, times(2)).save(cap.capture());
+    assertThat(cap.getAllValues())
+        .extracting(SubscriptionModule::getModuleKey)
+        .containsExactlyInAnyOrder("module.poultry.broiler", "module.inventory");
+    assertThat(cap.getAllValues())
+        .allSatisfy(m -> assertThat(m.getSubscriptionId()).isEqualTo(200L));
   }
 
   @Test
-  void completeSubscriptionGetsNoInserts() {
+  void existingNonEmptySubscriptionIsUnchanged() {
+    // A curated set (e.g. a plan applied via the dormant self-serve) is left untouched — no re-add.
     Subscription existing = new Subscription();
     existing.setId(300L);
     existing.setFarmId(FARM);
     existing.setStatus(SubscriptionStatus.TRIAL);
     when(subscriptionRepository.findByFarmId(FARM)).thenReturn(Optional.of(existing));
     when(subscriptionModuleRepository.findBySubscriptionId(300L))
-        .thenReturn(List.of(moduleRow("module.poultry.broiler"), moduleRow("module.inventory")));
-    when(parametersFacade.listPlatform("modules"))
-        .thenReturn(List.of(mod("module.poultry.broiler", "V1"), mod("module.inventory", "V1")));
+        .thenReturn(List.of(moduleRow("module.poultry.broiler"))); // partial, but non-empty
 
     service.getOrCreate(FARM);
 
