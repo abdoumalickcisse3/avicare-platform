@@ -125,7 +125,7 @@ export default function SignupPage() {
         value: { completed: true },
       }).unwrap();
 
-      router.replace("/dashboard");
+      router.replace("/onboarding");
     } catch (err) {
       setServerError(apiErrorMessage(err));
     } finally {

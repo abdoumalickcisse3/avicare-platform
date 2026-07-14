@@ -73,13 +73,13 @@ describe("SignupPage (single-step)", () => {
     expect(m.signup).not.toHaveBeenCalled();
   });
 
-  it("creates the account and farm without a plan step, then redirects to the dashboard", async () => {
+  it("creates the account and farm without a plan step, then redirects to onboarding", async () => {
     const user = userEvent.setup();
     renderWithProviders(<SignupPage />);
     await fillForm(user);
     await user.click(screen.getByRole("button", { name: /créer mon compte/i }));
 
-    await waitFor(() => expect(m.replace).toHaveBeenCalledWith("/dashboard"));
+    await waitFor(() => expect(m.replace).toHaveBeenCalledWith("/onboarding"));
     expect(m.signup).toHaveBeenCalledTimes(1);
     expect(m.createFarm).toHaveBeenCalledWith({ name: "Ferme Test", location: undefined });
     expect(m.refresh).toHaveBeenCalled();
