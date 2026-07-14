@@ -55,7 +55,7 @@ export function AdvancedLockCard({
       <Stack direction="row" spacing={1.5} sx={{ mt: 0.5 }}>
         <Button
           component={NextLink}
-          href={farmId ? `/fermes/${farmId}?tab=subscription` : "/fermes"}
+          href={farmId ? `/fermes/${farmId}` : "/fermes"}
           variant="contained"
           color="secondary"
           startIcon={<Sparkles size={18} />}
