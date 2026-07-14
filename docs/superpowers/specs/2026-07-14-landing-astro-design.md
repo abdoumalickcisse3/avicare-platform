@@ -30,8 +30,8 @@ séparé de l'app Next.js. Cible double (éleveurs + partenaires B2B2C), pilote 
   responsive, lazy).
 - **Emplacement** : `landing/` à la racine du monorepo (indépendant de `web/`). Build statique
   déployable sur le même VPS (Caddy sert `landing/dist` sur le domaine racine, app sur `app.`).
-- **Fonts** auto-hébergées en **woff2**, `font-display: swap`, préchargées. Pas de Google Fonts runtime
-  (perf + RGPD).
+- **Fonts** (doc 10) : **Outfit** (400/500/600/700) + **JetBrains Mono** (500), auto-hébergées en
+  **woff2**, `font-display: swap`, préchargées (subset latin). Pas de Google Fonts runtime (perf + RGPD).
 - **Composants réutilisables** (`.astro`) : `Header`, `Footer`, `Hero`, `SectionHeading`, `FeatureCard`,
   `StepCard`, `PricingCard`, `FaqAccordion` (îlot minimal), `Cta`, `TestimonialCard`, `Kpi` (îlot
   count-up), `SeoHead`.
@@ -40,15 +40,29 @@ séparé de l'app Next.js. Cible double (éleveurs + partenaires B2B2C), pilote 
 
 ## Design system
 
-- **Palette** : primary vert AviCare (`#3D8B3D` main ; foncés `#245524`/`#1B3F1B`/`#122B12` ; clairs
-  `#F0F7F0`/`#DCEEDC`), **accent orange Sénégal** `#F8961E` (CTA/soulignés), neutres chauds fond
-  `#FAFAF7`, texte `#1A1A17`. (Repris de `web/src/theme/tokens.ts`.)
-- **Typographie** (2 rôles, auto-hébergées) :
-  - Display : **Fraunces** (variable, humaniste chaleureuse à léger caractère) pour les titres —
-    poids 500–600, `opsz` élevé. Alternative sans si perf : **Bricolage Grotesque**.
-  - Corps/UI : **Inter** (ou **Geist**) — lisible, pro, chiffres tabulaires pour les KPI.
-  - Échelle fluide `clamp()` : h1 `clamp(2.2rem, 6vw, 4rem)`, h2 `clamp(1.6rem, 4vw, 2.6rem)`, corps
-    `1.0625rem/1.7`.
+> **Réf. de marque : `docs/10-design-system.md`** (source de vérité tokens + voix + workflow Stitch).
+> Le site vitrine réutilise **exactement** les tokens doc 10 (Tailwind config = mapping direct de la
+> palette/espacements/radii/ombres du doc 10) pour rester cohérent avec l'app.
+
+**Prototypage Stitch (workflow doc 10 §8).** Avant/pendant le build, générer les maquettes des pages
+clés (accueil/hero, fonctionnalités, tarifs) dans le projet Stitch **« Avicare Design System »** (réf.
+mémoire `stitch_design_reference`) comme **source visuelle**. Stitch produit du **Tailwind** — ici
+c'est un **avantage** (le site EST en Tailwind), contrairement à l'app MUI : on peut reprendre
+directement structure + classes, en corrigeant les couleurs/typo vers les tokens doc 10.
+
+- **Palette (doc 10, verbatim)** : primary vert (`#3D8B3D` main ; foncés `#2E6B2E`/`#245524`/`#1B3F1B`/
+  `#122B12` ; clairs `#F0F7F0`/`#DCEEDC`), **accent orange Sénégal** (`#F8961E` main ; `#E67E0A` pour
+  texte-sur-blanc lisible), **neutres « stone » chauds** (fond `#FAFAF9` neutral-50, texte principal
+  `#292524` neutral-800, secondaire `#78716C`, bordures `#E7E5E4`). CTA primaire = **orange** (règle
+  doc 10 : l'orange = ACTION). **1 seul CTA primaire par écran.**
+- **Rayons / ombres (doc 10)** : boutons 8px, cards **12px**, hero/sections 24px ; ombres subtiles
+  (`shadow-sm/md/lg` doc 10), jamais agressives ; focus ring `0 0 0 3px primary-100`.
+- **Icônes** : **Lucide** (doc 10), stroke 1.75, `currentColor`.
+- **Typographie — alignée doc 10 (marque)** : **Outfit** (display + UI, auto-hébergée woff2) en
+  poids 400/500/600/**700** pour les titres ; **JetBrains Mono** pour les **chiffres KPI**
+  (`tabular-nums`). Pas de Fraunces/Inter (déviation marque écartée). Échelle fluide `clamp()` calquée
+  sur l'échelle doc 10 : hero `clamp(2.25rem, 6vw, 3.25rem)`/700, h2 `clamp(1.6rem, 4vw, 2.4rem)`/600,
+  corps `body-lg` 1rem/1.5 (line-height 1.5 = lisibilité Sénégal, règle doc 10).
 - **Signature** : composant `Kpi` — grand nombre (chiffres tabulaires) qui **compte de 0 à la valeur**
   au scroll-into-view (`IntersectionObserver`, respecte `prefers-reduced-motion`). Utilisé dans le hero
   (cockpit) et la barre de preuves.
@@ -57,7 +71,9 @@ séparé de l'app Next.js. Cible double (éleveurs + partenaires B2B2C), pilote 
 - **Mobile-first** : type fluide, cibles ≥ 44px, **barre CTA collante en bas** (mobile) avec
   « Commencer gratuitement », grilles 1-col → multi-col, aucune largeur fixe, pas de scroll horizontal.
 - **Accessibilité** : contrastes AA, focus visibles, landmarks sémantiques, `alt` sur images, nav
-  clavier sur l'accordéon FAQ.
+  clavier sur l'accordéon FAQ. **Règle contraste CTA (doc 10 §9)** : orange `#F8961E` sur blanc =
+  2,9:1 (échoue AA) → boutons CTA = **texte blanc sur fond orange** ; orange en *texte* sur blanc =
+  `#E67E0A` (accent-500).
 
 ## Sitemap (13 pages)
 
