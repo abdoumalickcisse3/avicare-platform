@@ -56,28 +56,21 @@ immédiatement **tous les modules disponibles en vague V1** via `enableModule(..
 > Effet : toute ferme, quelle que soit sa voie de création, a tous les modules V1 dès le premier
 > accès à `GET /subscription`. Plus besoin que le frontend appelle `applyPlan`.
 
-### Retrait des endpoints & code self-serve
+### Endpoints backend — approche **lean** (aucun retrait)
 
-**Supprimer (controllers/endpoints injoignables = fonctionnalité retirée) :**
-- `SubscriptionPlanController` (liste des plans/bundles).
-- `ChangeRequestController` (change-requests côté ferme : create/submit/list).
-- `AdminChangeRequestController` (admin approve/reject).
-- L'endpoint `POST /api/v1/farms/{farmId}/subscription/plan` (`applyPlan`) de `SubscriptionController`.
+Décision de périmètre (brainstorming) : on **ne supprime aucun endpoint/service backend**. La couche
+self-serve backend (`SubscriptionController.applyPlan`, `SubscriptionPlanController`,
+`ChangeRequestController`, `AdminChangeRequestController`, `ChangeRequestService`, `applyPlan`/
+`listPlans`) **reste dormante** — injoignable depuis l'expérience éleveur une fois le frontend retiré,
+et **cohérente avec la décision « garder le mécanisme pour la monétisation future »**. Motif : ces
+endpoints sont activés au setup par ~12 ITs (vérifiables **CI-only**, Docker local KO) ; les retirer
+imposerait un recâblage fragile pour un simple gain de propreté, sans valeur pilote.
 
-**Supprimer le code mort résultant :**
-- `ChangeRequestService` + entités/DTOs/repos propres au change-request workflow.
-- `SubscriptionService.applyPlan` + `listPlans` (morts une fois les endpoints partis) et les DTOs de
-  plan (`PlanResponse`, requêtes apply-plan).
-
-**Garder :**
-- `SubscriptionService` cœur (`getOrCreate`, `enableModule`, `disableModule`, `isModuleEnabled`,
-  `listModules`), la table `subscription_modules`, `SubscriptionFacade`, `FeatureChecker`, le
-  flag/garde-fou ADR-004.
-- `SubscriptionController` **GET `/subscription`** (lu par `useActiveModules`) + **GET/POST/DELETE
-  `/subscription/modules`** (contrôle admin per-farm — « piloté admin »).
-
-> Migrations **immuables** : la table `subscription_change_requests` (V2) reste dans le schéma,
-> simplement inutilisée après retrait du code (Hibernate `validate` tolère une table sans entité).
+- **Seul changement backend = le provisioning complet dans `getOrCreate`** (ci-dessus).
+- Les ITs qui appellent `applyPlan`/`enableModule` au setup **continuent de fonctionner** (activer un
+  module déjà actif est idempotent) — aucun recâblage requis.
+- `SubscriptionController` GET `/subscription` + GET/POST/DELETE `/subscription/modules` restent (le
+  GET est lu par `useActiveModules`). `FeatureChecker`/gating/garde-fou ADR-004 inchangés.
 
 ## Frontend
 
@@ -106,12 +99,12 @@ immédiatement **tous les modules disponibles en vague V1** via `enableModule(..
 ## Tests
 
 - **Backend** :
-  - `SubscriptionService.getOrCreate` : une **nouvelle** ferme obtient tous les modules V1 actifs ;
-    un abonnement existant n'est pas re-provisionné.
+  - `SubscriptionService.getOrCreate` : une **nouvelle** ferme obtient tous les modules V1 actifs
+    (12) ; un abonnement **existant** n'est **pas** re-provisionné (idempotence).
   - `isModuleEnabled` renvoie true pour chaque module V1 d'une ferme neuve.
-  - Suites à ajuster : `FeatureGatingIT` (le flux applyPlan disparaît → les fermes sont déjà toutes
-    actives), les ITs `*FlowIT` qui appelaient `applyPlan`/activaient des modules au setup (les
-    fermes naissent complètes), et suppression des tests des controllers retirés.
+  - Approche lean → **aucun IT à recâbler/supprimer** (les endpoints restent). Vérifier que les ITs
+    existants passent toujours en CI (le provisioning n'active que des modules ; les activations de
+    setup deviennent redondantes mais idempotentes).
 - **Frontend** :
   - `signup` : ne choisit plus de plan, crée la ferme et poursuit (adapter/retirer l'assertion de
     l'étape 2).
