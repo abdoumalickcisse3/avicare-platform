@@ -1,5 +1,6 @@
 package com.avicare.livestock;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -68,6 +69,7 @@ class HealthFlowIT {
     long farmId = createFarm(owner, "Ferme Santé");
     owner = login("owner@health.io", "password123");
     enableModule(owner, farmId, "module.health.basic");
+    disableModule(owner, farmId, "module.health.advanced");
     long unitId = seedUnit(farmId, "cobb_500", LocalDate.now().minusDays(7));
     String base = "/api/v1/farms/" + farmId + "/health";
 
@@ -268,6 +270,14 @@ class HealthFlowIT {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"moduleKey\":\"" + moduleKey + "\",\"mode\":\"HARD\"}"))
         .andExpect(status().isCreated());
+  }
+
+  private void disableModule(String access, long farmId, String moduleKey) throws Exception {
+    mockMvc
+        .perform(
+            delete("/api/v1/farms/" + farmId + "/subscription/modules/" + moduleKey)
+                .header("Authorization", "Bearer " + access))
+        .andExpect(status().isNoContent());
   }
 
   private long createFarm(String access, String name) throws Exception {
