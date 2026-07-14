@@ -126,7 +126,30 @@ public class SubscriptionService {
               Subscription sub = new Subscription();
               sub.setFarmId(farmId);
               sub.setStatus(SubscriptionStatus.TRIAL);
-              return subscriptionRepository.save(sub);
+              Subscription saved = subscriptionRepository.save(sub);
+              provisionV1Modules(saved.getId());
+              return saved;
+            });
+  }
+
+  /**
+   * Free-pilot provisioning (ADR-009): a brand-new farm starts with every V1-wave module active, so
+   * the whole product is usable without any subscription management. The V1 set is derived from the
+   * {@code modules} catalog ({@code value.wave == "V1"}) — no hardcoded list that could drift.
+   * Reversible lever for future monetization: restrict this set.
+   */
+  private void provisionV1Modules(Long subscriptionId) {
+    parametersFacade.listPlatform("modules").stream()
+        .filter(e -> "V1".equals(e.value().get("wave")))
+        .map(CatalogEntryInfo::key)
+        .forEach(
+            moduleKey -> {
+              SubscriptionModule module = new SubscriptionModule();
+              module.setSubscriptionId(subscriptionId);
+              module.setModuleKey(moduleKey);
+              module.setMode(FeatureMode.HARD);
+              module.setExpiresAt(null);
+              subscriptionModuleRepository.save(module);
             });
   }
 
