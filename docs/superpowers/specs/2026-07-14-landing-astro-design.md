@@ -44,11 +44,19 @@ séparé de l'app Next.js. Cible double (éleveurs + partenaires B2B2C), pilote 
 > Le site vitrine réutilise **exactement** les tokens doc 10 (Tailwind config = mapping direct de la
 > palette/espacements/radii/ombres du doc 10) pour rester cohérent avec l'app.
 
-**Prototypage Stitch (workflow doc 10 §8).** Avant/pendant le build, générer les maquettes des pages
-clés (accueil/hero, fonctionnalités, tarifs) dans le projet Stitch **« Avicare Design System »** (réf.
-mémoire `stitch_design_reference`) comme **source visuelle**. Stitch produit du **Tailwind** — ici
-c'est un **avantage** (le site EST en Tailwind), contrairement à l'app MUI : on peut reprendre
-directement structure + classes, en corrigeant les couleurs/typo vers les tokens doc 10.
+**Prototypage Stitch (workflow doc 10 §8) — FAIT pour l'accueil.**
+- Projet Stitch : **« Avicare Design System »** (`projects/2827477240241166880`).
+- Design system dédié généré : **« Terre & Données »** = `assets/d715f7dd8eae4b148596cc01563772d2`
+  (tokens verbatim doc 10 : Outfit + JetBrains Mono, `#3D8B3D`/`#F8961E`/`#FAFAF9`/`#292524`, radii
+  8/12px, CTA orange strictement réservé, ombres ambiantes subtiles). **Réutiliser ce design system**
+  pour générer les autres pages afin de garantir la cohérence.
+- Maquette accueil générée : screen `projects/2827477240241166880/screens/8b2bf2bb8c824219878a087dd0344d94`
+  (« Accueil - AviCare (Terre & Données) ») — **source visuelle + HTML/Tailwind de référence** pour la
+  home Astro. Stitch produit du **Tailwind** → ici c'est un **avantage** (le site EST en Tailwind) : on
+  reprend structure + classes, on branche le vrai copy (déjà rédigé ci-dessous) et on remplace les
+  visuels par `astro:assets`. Récupérer le HTML/screenshot via `download_assets`/`get_screen` au build.
+- Pages suivantes (fonctionnalités, tarifs, partenaires) : générables en Stitch avec le même design
+  system si besoin d'un repère visuel ; sinon, décliner directement les composants de la home.
 
 - **Palette (doc 10, verbatim)** : primary vert (`#3D8B3D` main ; foncés `#2E6B2E`/`#245524`/`#1B3F1B`/
   `#122B12` ; clairs `#F0F7F0`/`#DCEEDC`), **accent orange Sénégal** (`#F8961E` main ; `#E67E0A` pour
