@@ -12,7 +12,6 @@ const m = vi.hoisted(() => ({
     unwrap: () => Promise.resolve({ accessToken: "a2", refreshToken: "r2", expiresIn: 900 }),
   })),
   createFarm: vi.fn(() => ({ unwrap: () => Promise.resolve({ id: 1 }) })),
-  applyPlan: vi.fn(() => ({ unwrap: () => Promise.resolve({}) })),
   upsert: vi.fn(() => ({ unwrap: () => Promise.resolve({}) })),
 }));
 
@@ -25,12 +24,6 @@ vi.mock("@/store/api/authApi", () => ({
 }));
 vi.mock("@/store/api/farmsApi", () => ({
   useCreateFarmMutation: () => [m.createFarm, {}],
-}));
-// The page no longer calls the subscription API. This mock exists solely so
-// the "no plan call" assertions below have a spy to check against.
-vi.mock("@/store/api/subscriptionApi", () => ({
-  useGetPlansQuery: () => ({ data: [] }),
-  useApplyPlanMutation: () => [m.applyPlan, {}],
 }));
 vi.mock("@/store/api/accountSettingsApi", () => ({
   ONBOARDING_SETTING_KEY: "onboarding_completed",
@@ -87,8 +80,6 @@ describe("SignupPage (single-step)", () => {
       key: "onboarding_completed",
       value: { completed: true },
     });
-    // The backend auto-provisions all V1 modules — no plan is applied.
-    expect(m.applyPlan).not.toHaveBeenCalled();
   });
 
   it("shows an error and does not redirect when signup fails", async () => {
@@ -103,7 +94,6 @@ describe("SignupPage (single-step)", () => {
     expect(await screen.findByText("Email déjà utilisé")).toBeInTheDocument();
     expect(m.replace).not.toHaveBeenCalled();
     expect(m.createFarm).not.toHaveBeenCalled();
-    expect(m.applyPlan).not.toHaveBeenCalled();
   });
 
   it("redirects to the dashboard if already authenticated", () => {

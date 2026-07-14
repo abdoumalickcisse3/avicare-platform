@@ -38,7 +38,6 @@ const PAGE_TITLES: { prefix: string; label: string; parent?: string }[] = [
   { prefix: "/stocks/formules", label: "Formules", parent: "Stocks" },
   { prefix: "/stocks", label: "Vue d'ensemble", parent: "Stocks" },
   { prefix: "/reglages", label: "Réglages" },
-  { prefix: "/abonnement", label: "Abonnement" },
 ];
 
 const MENU_LABEL_SX = {

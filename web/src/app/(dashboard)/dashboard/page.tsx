@@ -14,7 +14,6 @@ import { useGetDashboardQuery } from "@/store/api/dashboardApi";
 import { useAppDispatch } from "@/store/hooks";
 import { setCurrentUser } from "@/store/slices/authSlice";
 import { useSelectedFarm } from "@/hooks/useSelectedFarm";
-import { TrialBanner } from "@/components/dashboard/TrialBanner";
 import { HeroKpiRow } from "@/components/dashboard/HeroKpiRow";
 import { PeriodSelector } from "@/components/dashboard/PeriodSelector";
 import { CommercialSection } from "@/components/dashboard/CommercialSection";
@@ -73,8 +72,6 @@ export default function DashboardPage() {
 
   return (
     <Stack spacing={4}>
-      <TrialBanner />
-
       {/* Welcome heading */}
       <Box>
         {profileLoading ? (
