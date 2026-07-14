@@ -1,6 +1,7 @@
 package com.avicare.livestock.inventory;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -316,6 +317,7 @@ class InventoryApiIT {
     long farmId = createFarm(owner, "Ferme Alpha");
     owner = relogin("inv-alpha");
     enableModule(owner, farmId, "module.health.basic"); // health on, inventory OFF
+    disableModule(owner, farmId, "module.inventory");
     long unitId = seedUnit(farmId);
     String base = "/api/v1/farms/" + farmId + "/health";
 
@@ -448,5 +450,13 @@ class InventoryApiIT {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"moduleKey\":\"" + moduleKey + "\",\"mode\":\"HARD\"}"))
         .andExpect(status().isCreated());
+  }
+
+  private void disableModule(String token, long farmId, String moduleKey) throws Exception {
+    mockMvc
+        .perform(
+            delete("/api/v1/farms/" + farmId + "/subscription/modules/" + moduleKey)
+                .header("Authorization", "Bearer " + token))
+        .andExpect(status().isNoContent());
   }
 }
