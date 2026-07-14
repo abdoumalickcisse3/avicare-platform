@@ -99,7 +99,7 @@ describe("Sidebar module filtering", () => {
     expect(screen.queryByText("Œufs")).not.toBeInTheDocument();
     expect(screen.getByText(/activez un module/i)).toBeInTheDocument();
     const cta = screen.getByRole("link", { name: /activer des modules/i });
-    expect(cta).toHaveAttribute("href", "/fermes/1?tab=subscription");
+    expect(cta).toHaveAttribute("href", "/fermes/1");
   });
 
   it("shows skeletons while loading", () => {

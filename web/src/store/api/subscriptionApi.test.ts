@@ -22,23 +22,12 @@ function mockFetch() {
 describe("subscriptionApi", () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  it("getPlans hits the public plans endpoint", async () => {
+  it("getSubscription hits the farm subscription endpoint", async () => {
     const fetchMock = mockFetch();
     const store = makeStore();
-    await store.dispatch(subscriptionApi.endpoints.getPlans.initiate());
+    await store.dispatch(subscriptionApi.endpoints.getSubscription.initiate(7));
     expect(called(fetchMock.mock.calls[0]?.[0]).url).toContain(
-      "/api/v1/subscription/plans",
+      "/api/v1/farms/7/subscription",
     );
-  });
-
-  it("applyPlan posts the plan key to the farm subscription", async () => {
-    const fetchMock = mockFetch();
-    const store = makeStore();
-    await store.dispatch(
-      subscriptionApi.endpoints.applyPlan.initiate({ farmId: 7, planKey: "pro_volaille" }),
-    );
-    const { url, method } = called(fetchMock.mock.calls[0]?.[0]);
-    expect(url).toContain("/api/v1/farms/7/subscription/plan");
-    expect(method).toBe("POST");
   });
 });

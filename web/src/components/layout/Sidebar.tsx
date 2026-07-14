@@ -21,7 +21,6 @@ import {
   ChevronDown,
   ChevronRight,
   ClipboardList,
-  CreditCard,
   Drumstick,
   Egg,
   FileText,
@@ -81,7 +80,7 @@ interface Section {
  * Stocks — gated by the selected farm's active modules (Décision 5) and, for
  * Élevage, by its production focus (Décision 17). Groups are multi-open; the
  * group owning the current route stays open. Leaves (Tableau de bord, Fermes,
- * Abonnement, Réglages) are always rendered.
+ * Réglages) are always rendered.
  */
 const NAV: Section[] = [
   {
@@ -167,7 +166,6 @@ const NAV: Section[] = [
           { label: "Salaires", href: "/finance/salaires", icon: Users },
         ],
       },
-      { kind: "leaf", label: "Abonnement", href: "/abonnement", icon: CreditCard, enabled: false },
       {
         kind: "leaf",
         label: "Réglages",
@@ -304,7 +302,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           </Typography>
           <Button
             component={Link}
-            href={hasFarm ? `/fermes/${farmId}?tab=subscription` : "/fermes"}
+            href={hasFarm ? `/fermes/${farmId}` : "/fermes"}
             onClick={onNavigate}
             size="small"
             variant="outlined"

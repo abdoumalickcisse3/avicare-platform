@@ -32,12 +32,11 @@ import { useToast } from "@/components/feedback/ToastProvider";
 import { colors } from "@/theme/tokens";
 import { CreateFarmDialog } from "./CreateFarmDialog";
 import { FarmTeamTab } from "./FarmTeamTab";
-import { FarmSubscriptionTab } from "./FarmSubscriptionTab";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
-type TabKey = "overview" | "team" | "subscription" | "settings";
+type TabKey = "overview" | "team" | "settings";
 
-const TAB_KEYS: TabKey[] = ["overview", "team", "subscription", "settings"];
+const TAB_KEYS: TabKey[] = ["overview", "team", "settings"];
 
 const pct = (v: number | null | undefined) =>
   v != null ? `${v.toFixed(1)} %` : "n/d";
@@ -194,7 +193,6 @@ export function FarmDetailView({ farmId }: { farmId: number }) {
       >
         <Tab label="Vue d'ensemble" value="overview" />
         <Tab label="Équipe" value="team" />
-        <Tab label="Abonnement" value="subscription" />
         <Tab label="Paramètres" value="settings" />
       </Tabs>
 
@@ -251,8 +249,6 @@ export function FarmDetailView({ farmId }: { farmId: number }) {
       )}
 
       {tab === "team" && <FarmTeamTab farmId={farmId} />}
-
-      {tab === "subscription" && <FarmSubscriptionTab farmId={farmId} />}
 
       {tab === "settings" && (
         <Placeholder>Paramètres de la ferme — à venir.</Placeholder>
