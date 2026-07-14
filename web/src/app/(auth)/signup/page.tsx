@@ -10,23 +10,14 @@ import {
   Alert,
   Box,
   Button,
-  Card,
   CircularProgress,
   Divider,
   Stack,
-  Step,
-  StepLabel,
-  Stepper,
   TextField,
   Typography,
 } from "@mui/material";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { useSignupMutation } from "@/store/api/authApi";
 import { useCreateFarmMutation } from "@/store/api/farmsApi";
-import {
-  useApplyPlanMutation,
-  useGetPlansQuery,
-} from "@/store/api/subscriptionApi";
 import {
   ONBOARDING_SETTING_KEY,
   useUpsertSettingMutation,
@@ -37,16 +28,6 @@ import { hasAccessToken } from "@/lib/auth";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useRefreshSession } from "@/hooks/useRefreshSession";
 import { PasswordField } from "@/components/forms/PasswordField";
-import {
-  CUSTOM_BUNDLE_EMAIL,
-  moduleLabel,
-  planPriceLabel,
-} from "@/constants/bundles";
-import {
-  DEV_BYPASS_BUNDLE_KEY,
-  isFeatureGatingDisabled,
-} from "@/lib/featureGating";
-import { colors } from "@/theme/tokens";
 
 const signupSchema = z
   .object({
@@ -73,16 +54,8 @@ export default function SignupPage() {
 
   const [signup] = useSignupMutation();
   const [createFarm] = useCreateFarmMutation();
-  const [applyPlan] = useApplyPlanMutation();
   const [upsertSetting] = useUpsertSettingMutation();
-  const { data: plans } = useGetPlansQuery();
 
-  // Dev-only: skip the plan step and auto-activate a full bundle (ADR-004).
-  const gatingDisabled = isFeatureGatingDisabled();
-
-  const [step, setStep] = useState<1 | 2>(1);
-  const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const [bundleError, setBundleError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -113,25 +86,13 @@ export default function SignupPage() {
     },
   });
 
-  const goToStep2 = async () => {
+  const onSubmit = async () => {
     const valid = await trigger();
     if (!valid) return;
-    // Dev bypass: no plan to choose — create straight away with a full bundle.
-    if (gatingDisabled) {
-      await handleCreate(DEV_BYPASS_BUNDLE_KEY);
-      return;
-    }
-    setStep(2);
+    await handleCreate();
   };
 
-  const handleCreate = async (keyOverride?: string) => {
-    const key = keyOverride ?? selectedKey;
-    if (!key) {
-      setBundleError(true);
-      return;
-    }
-    const isCustom = plans?.find((p) => p.key === key)?.custom ?? false;
-
+  const handleCreate = async () => {
     const v = getValues();
     setServerError(null);
     setSubmitting(true);
@@ -147,8 +108,9 @@ export default function SignupPage() {
         dispatch(setTokens(tokens));
         orch.current.signedUp = true;
       }
-      // b. Farm (once) — signup does not create one. Refresh so the token
-      // carries the new OWNER membership before the owner-only module calls.
+      // b. Farm (once) — signup does not create one. The farm is auto-provisioned
+      // server-side with all V1 modules. Refresh so the token carries the new
+      // OWNER membership.
       if (!orch.current.farmId) {
         const farm = await createFarm({
           name: v.farmName.trim(),
@@ -157,26 +119,13 @@ export default function SignupPage() {
         orch.current.farmId = farm.id;
         await refreshSession();
       }
-      const farmId = orch.current.farmId;
-      // c. Apply the plan — the backend resolves its modules and activates them
-      // (skipped for the custom/quote plan, which has no instant activation).
-      if (!isCustom) {
-        await applyPlan({ farmId, planKey: key }).unwrap();
-      }
-      // d. Mark onboarding (account + plan) done.
+      // c. Mark onboarding (account + farm) done.
       await upsertSetting({
         key: ONBOARDING_SETTING_KEY,
         value: { completed: true },
       }).unwrap();
 
-      if (isCustom) {
-        window.location.assign(
-          `mailto:${CUSTOM_BUNDLE_EMAIL}?subject=${encodeURIComponent(
-            "Demande de plan sur mesure — AviCare",
-          )}`,
-        );
-      }
-      router.replace("/onboarding");
+      router.replace("/dashboard");
     } catch (err) {
       setServerError(apiErrorMessage(err));
     } finally {
@@ -195,192 +144,84 @@ export default function SignupPage() {
         </Typography>
       </Box>
 
-      {!gatingDisabled && (
-        <Stepper activeStep={step - 1} alternativeLabel>
-          <Step>
-            <StepLabel>Vos informations</StepLabel>
-          </Step>
-          <Step>
-            <StepLabel>Votre formule</StepLabel>
-          </Step>
-        </Stepper>
-      )}
-
       {serverError && <Alert severity="error">{serverError}</Alert>}
 
-      {/* Step 1 — identity + farm (kept mounted; shouldUnregister:false) */}
-      <Box sx={{ display: step === 1 ? "block" : "none" }}>
-        <Stack spacing={2.5}>
-          <Box sx={{ display: "flex", gap: 2, flexDirection: { xs: "column", sm: "row" } }}>
-            <Controller
-              name="firstName"
-              control={control}
-              render={({ field, fieldState }) => (
-                <TextField {...field} label="Prénom" autoComplete="given-name" fullWidth error={!!fieldState.error} helperText={fieldState.error?.message} />
-              )}
-            />
-            <Controller
-              name="lastName"
-              control={control}
-              render={({ field, fieldState }) => (
-                <TextField {...field} label="Nom" autoComplete="family-name" fullWidth error={!!fieldState.error} helperText={fieldState.error?.message} />
-              )}
-            />
-          </Box>
+      <Stack spacing={2.5}>
+        <Box sx={{ display: "flex", gap: 2, flexDirection: { xs: "column", sm: "row" } }}>
           <Controller
-            name="email"
+            name="firstName"
             control={control}
             render={({ field, fieldState }) => (
-              <TextField {...field} label="Adresse e-mail" type="email" autoComplete="email" fullWidth error={!!fieldState.error} helperText={fieldState.error?.message} />
+              <TextField {...field} label="Prénom" autoComplete="given-name" fullWidth error={!!fieldState.error} helperText={fieldState.error?.message} />
             )}
           />
           <Controller
-            name="phone"
+            name="lastName"
             control={control}
             render={({ field, fieldState }) => (
-              <TextField {...field} label="Téléphone (optionnel)" type="tel" autoComplete="tel" fullWidth error={!!fieldState.error} helperText={fieldState.error?.message} />
+              <TextField {...field} label="Nom" autoComplete="family-name" fullWidth error={!!fieldState.error} helperText={fieldState.error?.message} />
             )}
           />
-          <Controller
-            name="password"
-            control={control}
-            render={({ field, fieldState }) => (
-              <PasswordField {...field} label="Mot de passe" autoComplete="new-password" fullWidth error={!!fieldState.error} helperText={fieldState.error?.message ?? "8 caractères minimum"} />
-            )}
-          />
-          <Controller
-            name="confirmPassword"
-            control={control}
-            render={({ field, fieldState }) => (
-              <PasswordField {...field} label="Confirmation" autoComplete="new-password" fullWidth error={!!fieldState.error} helperText={fieldState.error?.message} />
-            )}
-          />
-
-          <Divider>Votre ferme</Divider>
-
-          <Controller
-            name="farmName"
-            control={control}
-            render={({ field, fieldState }) => (
-              <TextField {...field} label="Nom de la ferme" placeholder="Ex : Ferme Avicole du Saloum" fullWidth error={!!fieldState.error} helperText={fieldState.error?.message} />
-            )}
-          />
-          <Controller
-            name="location"
-            control={control}
-            render={({ field, fieldState }) => (
-              <TextField {...field} label="Localisation (optionnel)" placeholder="Ex : Thiès, Sénégal" fullWidth error={!!fieldState.error} helperText={fieldState.error?.message} />
-            )}
-          />
-
-          <Button
-            variant="contained"
-            color="primary"
-            size="large"
-            fullWidth
-            disabled={submitting}
-            endIcon={
-              gatingDisabled ? (
-                submitting ? (
-                  <CircularProgress size={18} color="inherit" />
-                ) : null
-              ) : (
-                <ArrowRight size={18} />
-              )
-            }
-            onClick={goToStep2}
-            sx={{ height: 48 }}
-          >
-            {gatingDisabled ? "Créer mon compte" : "Continuer"}
-          </Button>
-        </Stack>
-      </Box>
-
-      {/* Step 2 — bundle choice */}
-      {step === 2 && (
-        <Stack spacing={2.5}>
-          <Typography variant="body2" color="text.secondary">
-            Choisissez la formule adaptée à votre exploitation.
-          </Typography>
-
-          <Stack spacing={1.5}>
-            {(plans ?? []).map((p) => {
-              const selected = selectedKey === p.key;
-              const features = p.custom
-                ? ["Sur devis · à la carte"]
-                : p.modules.map(moduleLabel);
-              return (
-                <Card
-                  key={p.key}
-                  onClick={() => {
-                    setSelectedKey(p.key);
-                    setBundleError(false);
-                  }}
-                  role="radio"
-                  aria-checked={selected}
-                  tabIndex={0}
-                  sx={{
-                    p: 2,
-                    cursor: "pointer",
-                    borderColor: selected ? colors.primary[500] : colors.neutral[200],
-                    borderWidth: selected ? 2 : 1,
-                    bgcolor: selected ? colors.primary[50] : colors.neutral[0],
-                    ...(p.recommended && !selected
-                      ? { borderColor: colors.primary[300] }
-                      : {}),
-                  }}
-                >
-                  <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "baseline" }}>
-                    <Typography sx={{ fontWeight: 700 }}>{p.label}</Typography>
-                    <Typography sx={{ fontWeight: 700, color: colors.primary[700] }}>
-                      {planPriceLabel(p.priceXof)}
-                    </Typography>
-                  </Stack>
-                  <Stack spacing={0.5} sx={{ mt: 1 }}>
-                    {features.map((f) => (
-                      <Stack key={f} direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                        <Box sx={{ color: colors.success.main, display: "flex" }}>
-                          <Check size={14} />
-                        </Box>
-                        <Typography variant="body2">{f}</Typography>
-                      </Stack>
-                    ))}
-                  </Stack>
-                </Card>
-              );
-            })}
-          </Stack>
-          {bundleError && (
-            <Typography variant="body2" color="error">
-              Veuillez sélectionner une formule.
-            </Typography>
+        </Box>
+        <Controller
+          name="email"
+          control={control}
+          render={({ field, fieldState }) => (
+            <TextField {...field} label="Adresse e-mail" type="email" autoComplete="email" fullWidth error={!!fieldState.error} helperText={fieldState.error?.message} />
           )}
+        />
+        <Controller
+          name="phone"
+          control={control}
+          render={({ field, fieldState }) => (
+            <TextField {...field} label="Téléphone (optionnel)" type="tel" autoComplete="tel" fullWidth error={!!fieldState.error} helperText={fieldState.error?.message} />
+          )}
+        />
+        <Controller
+          name="password"
+          control={control}
+          render={({ field, fieldState }) => (
+            <PasswordField {...field} label="Mot de passe" autoComplete="new-password" fullWidth error={!!fieldState.error} helperText={fieldState.error?.message ?? "8 caractères minimum"} />
+          )}
+        />
+        <Controller
+          name="confirmPassword"
+          control={control}
+          render={({ field, fieldState }) => (
+            <PasswordField {...field} label="Confirmation" autoComplete="new-password" fullWidth error={!!fieldState.error} helperText={fieldState.error?.message} />
+          )}
+        />
 
-          <Stack direction="row" spacing={1.5}>
-            <Button
-              variant="text"
-              color="inherit"
-              startIcon={<ArrowLeft size={18} />}
-              disabled={submitting}
-              onClick={() => setStep(1)}
-            >
-              Retour
-            </Button>
-            <Button
-              variant="contained"
-              color="primary"
-              size="large"
-              fullWidth
-              disabled={submitting}
-              startIcon={submitting ? <CircularProgress size={18} color="inherit" /> : null}
-              onClick={() => handleCreate()}
-              sx={{ height: 48 }}
-            >
-              Créer mon compte
-            </Button>
-          </Stack>
-        </Stack>
-      )}
+        <Divider>Votre ferme</Divider>
+
+        <Controller
+          name="farmName"
+          control={control}
+          render={({ field, fieldState }) => (
+            <TextField {...field} label="Nom de la ferme" placeholder="Ex : Ferme Avicole du Saloum" fullWidth error={!!fieldState.error} helperText={fieldState.error?.message} />
+          )}
+        />
+        <Controller
+          name="location"
+          control={control}
+          render={({ field, fieldState }) => (
+            <TextField {...field} label="Localisation (optionnel)" placeholder="Ex : Thiès, Sénégal" fullWidth error={!!fieldState.error} helperText={fieldState.error?.message} />
+          )}
+        />
+
+        <Button
+          variant="contained"
+          color="primary"
+          size="large"
+          fullWidth
+          disabled={submitting}
+          endIcon={submitting ? <CircularProgress size={18} color="inherit" /> : null}
+          onClick={onSubmit}
+          sx={{ height: 48 }}
+        >
+          Créer mon compte
+        </Button>
+      </Stack>
 
       <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center" }}>
         Déjà inscrit ?{" "}
