@@ -62,33 +62,42 @@ describe("Sidebar module filtering", () => {
     expect(screen.getByText("Réglages")).toBeInTheDocument();
   });
 
-  it("shows the broiler item and hides Œufs when only broiler is active", () => {
+  it("shows the broiler item and hides Œufs when only broiler is active", async () => {
+    const user = userEvent.setup();
     mockModules(["module.poultry.broiler"]);
     renderWithProviders(<Sidebar />);
-    expect(screen.getByText("Poulets de chair")).toBeInTheDocument();
+    // Groups are collapsed by default (no active route here) — expand Élevage first.
+    await user.click(screen.getByText("Élevage"));
+    expect(await screen.findByText("Poulets de chair")).toBeInTheDocument();
     expect(screen.queryByText("Œufs")).not.toBeInTheDocument();
   });
 
-  it("shows Œufs and hides the broiler item when only layer is active", () => {
+  it("shows Œufs and hides the broiler item when only layer is active", async () => {
+    const user = userEvent.setup();
     mockModules(["module.poultry.layer"]);
     renderWithProviders(<Sidebar />);
-    expect(screen.getByText("Œufs")).toBeInTheDocument();
+    await user.click(screen.getByText("Élevage"));
+    expect(await screen.findByText("Œufs")).toBeInTheDocument();
     expect(screen.queryByText("Poulets de chair")).not.toBeInTheDocument();
   });
 
-  it("shows everything when both modules are active", () => {
+  it("shows everything when both modules are active", async () => {
+    const user = userEvent.setup();
     mockModules(["module.poultry.broiler", "module.poultry.layer"]);
     renderWithProviders(<Sidebar />);
-    expect(screen.getByText("Poulets de chair")).toBeInTheDocument();
+    await user.click(screen.getByText("Élevage"));
+    expect(await screen.findByText("Poulets de chair")).toBeInTheDocument();
     expect(screen.getByText("Œufs")).toBeInTheDocument();
   });
 
-  it("further filters by the current farm's production focus", () => {
+  it("further filters by the current farm's production focus", async () => {
+    const user = userEvent.setup();
     // Both modules active, but the farm is broiler-only → Œufs hidden.
     mockModules(["module.poultry.broiler", "module.poultry.layer"]);
     mockFocus(["broiler"]);
     renderWithProviders(<Sidebar />);
-    expect(screen.getByText("Poulets de chair")).toBeInTheDocument();
+    await user.click(screen.getByText("Élevage"));
+    expect(await screen.findByText("Poulets de chair")).toBeInTheDocument();
     expect(screen.queryByText("Œufs")).not.toBeInTheDocument();
   });
 
@@ -109,23 +118,28 @@ describe("Sidebar module filtering", () => {
     expect(screen.queryByText("Poulets de chair")).not.toBeInTheDocument();
   });
 
-  it("collapses a group's children when its header is clicked", async () => {
+  it("keeps a group collapsed by default and expands it when its header is clicked", async () => {
     const user = userEvent.setup();
     mockModules(["module.poultry.broiler"]);
     renderWithProviders(<Sidebar />);
-    expect(screen.getByText("Poulets de chair")).toBeInTheDocument(); // open by default
+    // Collapsed by default: the child is not mounted until the group is opened.
+    expect(screen.queryByText("Poulets de chair")).not.toBeInTheDocument();
     await user.click(screen.getByText("Élevage"));
-    // Collapse unmounts children after its exit transition (async in jsdom).
+    expect(await screen.findByText("Poulets de chair")).toBeInTheDocument();
+    // Clicking again collapses it (children unmount after the exit transition).
+    await user.click(screen.getByText("Élevage"));
     await waitFor(() =>
       expect(screen.queryByText("Poulets de chair")).not.toBeInTheDocument(),
     );
   });
 
-  it("renders the Stocks group with its children when inventory is active", () => {
+  it("renders the Stocks group with its children when inventory is active", async () => {
+    const user = userEvent.setup();
     mockModules(["module.inventory"]);
     renderWithProviders(<Sidebar />);
     expect(screen.getByText("Stocks")).toBeInTheDocument();
-    expect(screen.getByText("Bons d'achat")).toBeInTheDocument();
+    await user.click(screen.getByText("Stocks"));
+    expect(await screen.findByText("Bons d'achat")).toBeInTheDocument();
     expect(screen.getByText("Formules")).toBeInTheDocument();
   });
 
@@ -135,10 +149,12 @@ describe("Sidebar module filtering", () => {
     expect(screen.queryByText("Stocks")).not.toBeInTheDocument();
   });
 
-  it("commercial group shows 4 leaves (no Livraisons/Paiements/Vue d'ensemble)", () => {
+  it("commercial group shows 4 leaves (no Livraisons/Paiements/Vue d'ensemble)", async () => {
+    const user = userEvent.setup();
     mockModules(["module.commercial.basic"]);
     renderWithProviders(<Sidebar />);
-    expect(screen.getByText("Clients")).toBeInTheDocument();
+    await user.click(screen.getByText("Commercial"));
+    expect(await screen.findByText("Clients")).toBeInTheDocument();
     expect(screen.getByText("Commandes")).toBeInTheDocument();
     expect(screen.getByText("Ventes")).toBeInTheDocument();
     expect(screen.getByText("Factures")).toBeInTheDocument();
@@ -181,12 +197,14 @@ describe("Sidebar permission gating", () => {
     expect(screen.queryByText("Stocks")).not.toBeInTheDocument();
   });
 
-  it("shows the Finance group with its children when module.finance is active and finance:read is granted", () => {
+  it("shows the Finance group with its children when module.finance is active and finance:read is granted", async () => {
+    const user = userEvent.setup();
     mockModules(["module.finance"]);
     mockPerms(["finance:read"]);
     renderWithProviders(<Sidebar />);
     expect(screen.getByText("Finance")).toBeInTheDocument();
-    expect(screen.getByText("Dépenses")).toBeInTheDocument();
+    await user.click(screen.getByText("Finance"));
+    expect(await screen.findByText("Dépenses")).toBeInTheDocument();
     expect(screen.getByText("Analytique")).toBeInTheDocument();
   });
 
