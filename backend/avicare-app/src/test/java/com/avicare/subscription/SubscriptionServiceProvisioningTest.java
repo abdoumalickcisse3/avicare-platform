@@ -48,6 +48,13 @@ class SubscriptionServiceProvisioningTest {
     return new CatalogEntryInfo("modules", key, Map.of("label", key, "wave", wave), false);
   }
 
+  private static SubscriptionModule moduleRow(String key) {
+    SubscriptionModule m = new SubscriptionModule();
+    m.setModuleKey(key);
+    m.setMode(FeatureMode.HARD);
+    return m;
+  }
+
   @Test
   void newFarmGetsAllV1ModulesActive() {
     when(subscriptionRepository.findByFarmId(FARM)).thenReturn(Optional.empty());
@@ -58,6 +65,7 @@ class SubscriptionServiceProvisioningTest {
               s.setId(100L);
               return s;
             });
+    when(subscriptionModuleRepository.findBySubscriptionId(100L)).thenReturn(List.of());
     when(parametersFacade.listPlatform("modules"))
         .thenReturn(
             List.of(
@@ -84,16 +92,48 @@ class SubscriptionServiceProvisioningTest {
   }
 
   @Test
-  void existingFarmIsNotReprovisioned() {
+  void existingPartialSubscriptionIsToppedUp() {
+    // Reproduces the farm-25 bug: a subscription created empty/partial before provisioning must be
+    // healed on next access — only the MISSING V1 modules are inserted, never re-adding existing
+    // ones.
     Subscription existing = new Subscription();
     existing.setId(200L);
     existing.setFarmId(FARM);
     existing.setStatus(SubscriptionStatus.TRIAL);
     when(subscriptionRepository.findByFarmId(FARM)).thenReturn(Optional.of(existing));
+    when(subscriptionModuleRepository.findBySubscriptionId(200L))
+        .thenReturn(List.of(moduleRow("module.poultry.broiler"))); // already has broiler
+    when(parametersFacade.listPlatform("modules"))
+        .thenReturn(
+            List.of(
+                mod("module.poultry.broiler", "V1"),
+                mod("module.inventory", "V1"),
+                mod("module.cattle.beef", "V3")));
 
     Subscription sub = service.getOrCreate(FARM);
 
     assertThat(sub).isSameAs(existing);
+    ArgumentCaptor<SubscriptionModule> cap = ArgumentCaptor.forClass(SubscriptionModule.class);
+    verify(subscriptionModuleRepository, times(1)).save(cap.capture());
+    assertThat(cap.getValue().getModuleKey()).isEqualTo("module.inventory");
+    assertThat(cap.getValue().getSubscriptionId()).isEqualTo(200L);
+    assertThat(cap.getValue().getMode()).isEqualTo(FeatureMode.HARD);
+  }
+
+  @Test
+  void completeSubscriptionGetsNoInserts() {
+    Subscription existing = new Subscription();
+    existing.setId(300L);
+    existing.setFarmId(FARM);
+    existing.setStatus(SubscriptionStatus.TRIAL);
+    when(subscriptionRepository.findByFarmId(FARM)).thenReturn(Optional.of(existing));
+    when(subscriptionModuleRepository.findBySubscriptionId(300L))
+        .thenReturn(List.of(moduleRow("module.poultry.broiler"), moduleRow("module.inventory")));
+    when(parametersFacade.listPlatform("modules"))
+        .thenReturn(List.of(mod("module.poultry.broiler", "V1"), mod("module.inventory", "V1")));
+
+    service.getOrCreate(FARM);
+
     verify(subscriptionModuleRepository, never()).save(any());
   }
 }
