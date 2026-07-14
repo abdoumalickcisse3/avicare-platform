@@ -121,6 +121,12 @@ production_units (table parente — colonnes communes)
 
 ## 7. Modèle commercial — Modules vendus à la carte
 
+> **Amendement 2026-07-14 (ADR-009)** : le self-serve d'abonnement est retiré de l'expérience pour
+> le pilote — **gratuit, tous modules V1 actifs**. Le mécanisme de gating et le catalogue de modules
+> restent (dormants) ; la monétisation (thèse **B2B2C canal** primaire + mobile money par cycle
+> secondaire) est différée. Les décisions D13-D16 restent la référence du mécanisme, pas de la
+> commercialisation courante. Cf. `docs/decisions/009-remove-self-serve-subscription.md`.
+
 ### Distinction fondamentale
 
 - **Bounded context** = unité de code (DDD)
