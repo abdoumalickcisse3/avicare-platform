@@ -215,7 +215,7 @@ function InventoryLocked({ farmId }: { farmId?: number }) {
       {farmId && (
         <Button
           component={Link}
-          href={`/fermes/${farmId}?tab=subscription`}
+          href={`/fermes/${farmId}`}
           variant="contained"
           color="primary"
         >

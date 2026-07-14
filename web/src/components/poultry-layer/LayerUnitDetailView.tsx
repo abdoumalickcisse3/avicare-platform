@@ -68,7 +68,7 @@ function FeatureLock({ farmId, hasFarm }: { farmId?: number; hasFarm: boolean })
       {hasFarm && (
         <Button
           component={Link}
-          href={`/fermes/${farmId}?tab=subscription`}
+          href={`/fermes/${farmId}`}
           variant="contained"
           color="primary"
         >

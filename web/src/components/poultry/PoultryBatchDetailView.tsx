@@ -82,7 +82,7 @@ export function PoultryBatchDetailView({ batchId }: { batchId: number }) {
         {hasFarm && (
           <Button
             component={Link}
-            href={`/fermes/${farmId}?tab=subscription`}
+            href={`/fermes/${farmId}`}
             variant="contained"
             color="primary"
           >

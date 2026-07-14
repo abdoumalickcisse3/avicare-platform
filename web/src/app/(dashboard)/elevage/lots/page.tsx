@@ -165,7 +165,7 @@ export default function PoultryBatchesPage() {
           {hasFarm && (
             <Button
               component={Link}
-              href={`/fermes/${farmId}?tab=subscription`}
+              href={`/fermes/${farmId}`}
               variant="contained"
               color="primary"
             >
