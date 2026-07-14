@@ -137,22 +137,22 @@ public class SubscriptionService {
   }
 
   /**
-   * Free-pilot provisioning (ADR-009): ensure the farm's subscription carries every V1-wave module,
-   * inserting only those missing. Self-healing top-up — covers a brand-new farm, a pre-existing
-   * empty subscription (created before provisioning) and any partial one; idempotent (no writes
-   * when already complete). The V1 set is derived from the {@code modules} catalog ({@code
-   * value.wave == "V1"}) — no hardcoded list that could drift. Reversible lever for future
-   * monetization: restrict this set (and drop the top-up).
+   * Free-pilot provisioning (ADR-009): when the farm's subscription has <b>no</b> modules yet,
+   * activate every V1-wave module so the whole product is usable without any subscription
+   * management. Runs on a brand-new farm (created empty) and self-heals a pre-existing empty
+   * subscription (e.g. one created before provisioning existed — the farm-25 case). A subscription
+   * that already carries a curated set is left untouched, so {@code applyPlan} (dormant self-serve)
+   * still resolves to its plan's subset. The V1 set is derived from the {@code modules} catalog
+   * ({@code value.wave == "V1"}) — no hardcoded list that could drift. Reversible lever for future
+   * monetization: drop this provisioning.
    */
   private void ensureAllV1Modules(Subscription subscription) {
-    Set<String> existing =
-        subscriptionModuleRepository.findBySubscriptionId(subscription.getId()).stream()
-            .map(SubscriptionModule::getModuleKey)
-            .collect(Collectors.toSet());
+    if (!subscriptionModuleRepository.findBySubscriptionId(subscription.getId()).isEmpty()) {
+      return; // already has modules — respect the current set
+    }
     parametersFacade.listPlatform("modules").stream()
         .filter(e -> WAVE_V1.equals(e.value().get("wave")))
         .map(CatalogEntryInfo::key)
-        .filter(moduleKey -> !existing.contains(moduleKey))
         .forEach(
             moduleKey -> {
               SubscriptionModule module = new SubscriptionModule();
