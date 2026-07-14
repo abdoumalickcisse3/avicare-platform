@@ -198,8 +198,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { isModuleActive, isLoading, farmId, hasFarm } = useActiveModules();
   const { can } = useFarmPermissions(farmId);
   const { focus } = useCurrentFarmFocus();
-  // Groups are open by default (discoverability); track the ones the user closes.
-  const [collapsedKeys, setCollapsedKeys] = useState<Set<string>>(new Set());
+  // Only the group of the active route is open by default; track the ones the user opens.
+  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
 
   // The single deepest nav href that prefixes the current route — avoids both
   // "/stocks" and "/stocks/articles" lighting up at once.
@@ -213,8 +213,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     (!c.requiredPermission || can(c.requiredPermission)) &&
     (!c.focusToken || focus.length === 0 || focus.includes(c.focusToken));
 
-  const toggleCollapsed = (key: string) =>
-    setCollapsedKeys((prev) => {
+  const toggleExpanded = (key: string) =>
+    setExpandedKeys((prev) => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
       else next.add(key);
@@ -318,13 +318,13 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     const hasActiveChild = visible.some((c) => c.href === bestMatch);
     // Open by default; the active group is always open; otherwise respect the
     // user's explicit collapse.
-    const open = hasActiveChild || !collapsedKeys.has(group.key);
+    const open = hasActiveChild || expandedKeys.has(group.key);
     const Icon = group.icon;
 
     return (
       <Box key={group.key}>
         <ListItemButton
-          onClick={() => toggleCollapsed(group.key)}
+          onClick={() => toggleExpanded(group.key)}
           sx={{
             borderRadius: 2,
             mb: 0.25,
