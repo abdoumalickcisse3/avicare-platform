@@ -56,9 +56,9 @@ séparé de l'app Next.js. Cible double (éleveurs + partenaires B2B2C), pilote 
 
 ## Design system
 
-> **Réf. de marque : `docs/10-design-system.md`** (source de vérité tokens + voix + workflow Stitch).
-> Le site vitrine réutilise **exactement** les tokens doc 10 (Tailwind config = mapping direct de la
-> palette/espacements/radii/ombres du doc 10) pour rester cohérent avec l'app.
+> **Réf. de marque : `docs/10-design-system.md`** (source de vérité tokens + voix).
+> Le site vitrine réutilise **exactement** les tokens doc 10, déclarés en **custom properties CSS**
+> (`:root`) reprises du prototype validé, pour rester cohérent avec l'app.
 
 **Prototypage — historique.** Une maquette a été générée dans Stitch (projet « Avicare Design System »,
 `projects/2827477240241166880`) : **écartée par le client** (rendu « SaaS corporate » générique). La
