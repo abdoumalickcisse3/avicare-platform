@@ -162,11 +162,11 @@ const maxLot = Math.max(...revenuParLot.map((d) => d.value));
     flex-wrap: wrap;
     gap: 6px;
   }
-  .mk-tile-l {
+  .mk-finance .mk-tile-l {
     font-size: 11px;
     color: var(--ink-soft);
   }
-  .mk-tile-v {
+  .mk-finance .mk-tile-v {
     margin-top: 3px;
     font-family: var(--mono);
     font-weight: 600;
@@ -174,19 +174,19 @@ const maxLot = Math.max(...revenuParLot.map((d) => d.value));
     color: var(--ink);
     font-variant-numeric: tabular-nums;
   }
-  .mk-v-green {
+  .mk-finance .mk-v-green {
     color: var(--earth-700);
   }
-  .mk-unit {
+  .mk-finance .mk-unit {
     font-size: 0.62em;
     font-weight: 500;
     color: var(--ink-faint);
   }
-  .mk-tile-pct {
+  .mk-finance .mk-tile-pct {
     font-family: var(--mono);
     font-weight: 600;
     font-size: 0.9rem;
-    color: var(--leaf);
+    color: var(--earth-700);
     background: var(--paper);
     border-radius: 999px;
     padding: 2px 10px;
@@ -204,30 +204,30 @@ const maxLot = Math.max(...revenuParLot.map((d) => d.value));
     border-radius: 12px;
     padding: 12px 14px;
   }
-  .mk-block-title {
+  .mk-finance .mk-block-title {
     font-size: 11.5px;
     font-weight: 600;
     color: var(--ink-soft);
     margin-bottom: 8px;
   }
-  .mk-bar-row {
+  .mk-finance .mk-bar-row {
     margin-top: 10px;
   }
-  .mk-bar-row:first-child {
+  .mk-finance .mk-bar-row:first-child {
     margin-top: 0;
   }
-  .mk-bar-label {
+  .mk-finance .mk-bar-label {
     display: block;
     font-size: 10.5px;
     color: var(--ink-soft);
     margin-bottom: 4px;
   }
-  .mk-bar-meter {
+  .mk-finance .mk-bar-meter {
     display: flex;
     align-items: center;
     gap: 8px;
   }
-  .mk-bar-track {
+  .mk-finance .mk-bar-track {
     flex: 1;
     min-width: 0;
     background: var(--line-soft);
@@ -235,22 +235,22 @@ const maxLot = Math.max(...revenuParLot.map((d) => d.value));
     height: 8px;
     overflow: hidden;
   }
-  .mk-bar-fill {
+  .mk-finance .mk-bar-fill {
     height: 100%;
     border-radius: 999px;
     width: 0;
     transition: width 1s ease;
   }
-  .mk-fill-green {
+  .mk-finance .mk-fill-green {
     background: var(--leaf);
   }
-  .mk-fill-sun {
+  .mk-finance .mk-fill-sun {
     background: var(--sun);
   }
-  .reveal.in .mk-bar-fill.draw {
+  .reveal.in .mk-finance .mk-bar-fill.draw {
     width: var(--pct);
   }
-  .mk-bar-value {
+  .mk-finance .mk-bar-value {
     flex: none;
     font-family: var(--mono);
     font-size: 10.5px;
@@ -262,7 +262,7 @@ const maxLot = Math.max(...revenuParLot.map((d) => d.value));
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .mk-bar-fill {
+    .mk-finance .mk-bar-fill {
       width: var(--pct);
       transition: none;
     }
