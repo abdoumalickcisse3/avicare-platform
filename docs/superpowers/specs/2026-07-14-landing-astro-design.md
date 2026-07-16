@@ -41,7 +41,7 @@ séparé de l'app Next.js. Cible double (éleveurs + partenaires B2B2C), pilote 
 
 ## Stack technique & architecture
 
-- **Astro 5** (`output: "static"`), intégrations : `@astrojs/sitemap`,
+- **Astro 7** (`output: "static"`), intégrations : `@astrojs/sitemap`,
   `@astrojs/partytown` (analytics différé, optionnel). Images via `astro:assets` (AVIF/WebP,
   responsive, lazy).
 - **Emplacement** : `landing/` à la racine du monorepo (indépendant de `web/`). Build statique
