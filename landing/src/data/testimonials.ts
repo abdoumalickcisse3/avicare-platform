@@ -17,8 +17,8 @@ export const testimonials: Testimonial[] = [
     role: "Éleveur de chair · Thiès",
   },
   {
-    big: "1 275 F",
-    quote: "Je sais enfin combien me coûte un kilo de poulet.",
+    big: "228 k F",
+    quote: "Je sais enfin si ma ferme gagne de l'argent, sans attendre la fin de la saison.",
     initials: "AF",
     name: "Awa F.",
     role: "Éleveuse · Niayes",
