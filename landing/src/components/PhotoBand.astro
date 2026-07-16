@@ -1,0 +1,88 @@
+---
+// Bande photo pleine largeur (`.band`). Le prototype pose la photo en
+// `background-image` CSS ; ici on utilise <Image> (astro:assets, WebP
+// optimisé) en position absolue + un calque de dégradé par-dessus, pour
+// garder l'optimisation d'image tout en reproduisant le même rendu
+// visuel (mêmes couleurs de dégradé, mêmes valeurs).
+import { Image } from "astro:assets";
+import equipements from "../assets/equipements-ferme.jpg";
+
+export interface Props {
+  eyebrow: string;
+  title: string;
+  description: string;
+}
+
+const { eyebrow, title, description } = Astro.props;
+---
+
+<section class="band reveal">
+  <Image
+    src={equipements}
+    alt="Équipements d'un poulailler en Afrique de l'Ouest"
+    width={1920}
+    height={1080}
+    class="band-img"
+  />
+  <div class="band-overlay"></div>
+  <div class="inner">
+    <div class="eyebrow">{eyebrow}</div>
+    <h2>{title}</h2>
+    <p>{description}</p>
+  </div>
+</section>
+
+<style is:global>
+  .band {
+    position: relative;
+    overflow: hidden;
+    min-height: 340px;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    color: #fff;
+    margin: 0;
+    max-width: none;
+    border-radius: 0;
+    padding: 76px 24px;
+    background-color: var(--earth);
+  }
+  .band-img {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .band-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(rgba(18, 43, 18, 0.62), rgba(14, 36, 14, 0.8));
+  }
+  .band .inner {
+    position: relative;
+    z-index: 2;
+    max-width: 640px;
+  }
+  .band .eyebrow {
+    color: var(--leaf-300);
+  }
+  .band h2 {
+    color: #fff;
+    font-size: clamp(1.6rem, 3.3vw, 2.3rem);
+    margin-top: 12px;
+  }
+  .band p {
+    color: #cfe3c6;
+    margin-top: 14px;
+    font-size: 1.05rem;
+  }
+
+  @media (max-width: 920px) {
+    .band {
+      padding: 60px 20px;
+    }
+  }
+</style>

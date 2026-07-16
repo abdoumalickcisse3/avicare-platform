@@ -1,0 +1,72 @@
+---
+// Reveal-on-scroll + KPI count-up — the only client-side JS this site
+// ships. Ported verbatim (logic and timings unchanged) from the
+// prototype's inline <script> block: the `.reveal` IntersectionObserver,
+// the fmt()/animate() count-up easing, and the `watch()` zone observer
+// that triggers count-up once a `.cluster`/`.stats`/`.ahero` block
+// scrolls into view. The prototype's hash-router is intentionally not
+// ported — Astro provides real routes/pages instead.
+//
+// Rendered once from Base.astro so every page gets it exactly once.
+---
+
+<script>
+  (function () {
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    const revealObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("in");
+            revealObserver.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.08 },
+    );
+    document.querySelectorAll(".reveal").forEach((el) => revealObserver.observe(el));
+
+    function fmt(value: number, dec: number): string {
+      return dec ? value.toFixed(dec).replace(".", ",") : Math.round(value).toLocaleString("fr-FR");
+    }
+
+    function animate(el: HTMLElement): void {
+      const target = parseFloat(el.dataset.count || "0");
+      const dec = parseInt(el.dataset.dec || "0", 10);
+      if (reduceMotion) {
+        el.textContent = fmt(target, dec);
+        return;
+      }
+      let start: number | null = null;
+      const dur = 1300;
+      function tick(t: number) {
+        if (start === null) start = t;
+        const p = Math.min((t - start) / dur, 1);
+        const e = 1 - Math.pow(1 - p, 3);
+        el.textContent = fmt(target * e, dec);
+        if (p < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    }
+
+    function watch(zone: HTMLElement): void {
+      if (zone.dataset.watched) return;
+      zone.dataset.watched = "1";
+      const zoneObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.querySelectorAll<HTMLElement>("[data-num]").forEach(animate);
+              zoneObserver.disconnect();
+            }
+          });
+        },
+        { threshold: 0.35 },
+      );
+      zoneObserver.observe(zone);
+    }
+
+    document.querySelectorAll<HTMLElement>(".cluster,.stats,.ahero").forEach(watch);
+  })();
+</script>

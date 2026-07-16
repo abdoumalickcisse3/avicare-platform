@@ -1,0 +1,34 @@
+---
+// CTA final (panel-dark) — réutilisé par toutes les pages avec un
+// titre/sous-titre différent. Ported verbatim from the prototype's
+// `.final` block.
+export interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+const signupUrl = import.meta.env.PUBLIC_APP_SIGNUP_URL || "#";
+---
+
+<section class="panel panel-dark final reveal">
+  <h2>{title}</h2>
+  <p>{description}</p>
+  <a class="btn btn-cta btn-lg" href={signupUrl}>Commencer gratuitement</a>
+</section>
+
+<style is:global>
+  .final {
+    text-align: center;
+  }
+  .final h2 {
+    font-size: clamp(1.8rem, 3.6vw, 2.6rem);
+    color: #fff;
+  }
+  .final p {
+    color: #cfe3c6;
+    margin: 14px auto 26px;
+    max-width: 44ch;
+    font-size: 1.05rem;
+  }
+</style>

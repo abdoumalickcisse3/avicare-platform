@@ -1,0 +1,47 @@
+---
+// Carte étape de la section "Comment ça marche" (`.step`). `description`
+// passe par set:html (espaces insécables verbatim du prototype).
+export interface Props {
+  number: string;
+  title: string;
+  description: string;
+}
+
+const { number, title, description } = Astro.props;
+---
+
+<div class="step">
+  <div class="num">{number}</div>
+  <h3>{title}</h3>
+  <p set:html={description} />
+</div>
+
+<style is:global>
+  .step {
+    padding: 26px 22px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+  }
+  .step .num {
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 13px;
+    color: #fff;
+    background: var(--earth-800);
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+  }
+  .step h3 {
+    font-size: 1.08rem;
+    margin-top: 16px;
+  }
+  .step p {
+    margin-top: 9px;
+    color: var(--ink-soft);
+    font-size: 14.5px;
+  }
+</style>

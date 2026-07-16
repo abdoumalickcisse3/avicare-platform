@@ -1,0 +1,113 @@
+---
+// Carte plan tarifaire (`.plan`). Ported verbatim from the prototype's
+// `.plans` block. `badge` peut surcharger `plan.badge` (voir data/plans.ts).
+import type { Plan } from "../data/plans";
+
+export interface Props {
+  plan: Plan;
+  href: string;
+  badge?: string;
+}
+
+const { plan, href, badge } = Astro.props;
+const badgeLabel = badge ?? plan.badge;
+---
+
+<div class:list={["plan", { pop: plan.popular }]}>
+  {plan.popular && badgeLabel && <span class="badge">{badgeLabel}</span>}
+  <div class="pn">{plan.name}</div>
+  <div class="pp">
+    {plan.price}
+    {plan.priceSuffix && <small> {plan.priceSuffix}</small>}
+  </div>
+  <div class="pd">{plan.description}</div>
+  <ul>
+    {
+      plan.features.map((feature) => (
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+            <path d="M20 6 9 17l-5-5" />
+          </svg>
+          {feature}
+        </li>
+      ))
+    }
+  </ul>
+  <a class={`btn btn-${plan.ctaVariant}`} href={href}>Commencer gratuitement</a>
+</div>
+
+<style is:global>
+  .plan {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    padding: 26px;
+    display: flex;
+    flex-direction: column;
+  }
+  .plan.pop {
+    background: var(--paper);
+    border-color: var(--leaf);
+    box-shadow: 0 24px 44px -28px rgba(61, 139, 61, 0.55);
+    position: relative;
+  }
+  .plan.pop .badge {
+    position: absolute;
+    top: -11px;
+    left: 26px;
+    background: var(--leaf);
+    color: #fff;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 5px 11px;
+    border-radius: 999px;
+  }
+  .plan .pn {
+    font-weight: 700;
+    font-size: 1.08rem;
+  }
+  .plan .pp {
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 1.8rem;
+    margin-top: 5px;
+    letter-spacing: -0.02em;
+  }
+  .plan .pp small {
+    font-size: 0.4em;
+    color: var(--ink-faint);
+    font-weight: 500;
+  }
+  .plan .pd {
+    color: var(--ink-soft);
+    font-size: 14px;
+    margin-top: 2px;
+  }
+  .plan ul {
+    list-style: none;
+    margin: 15px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    flex: 1;
+  }
+  .plan li {
+    display: flex;
+    gap: 8px;
+    font-size: 14px;
+  }
+  .plan li svg {
+    width: 16px;
+    height: 16px;
+    color: var(--leaf);
+    flex: none;
+    margin-top: 3px;
+  }
+  .plan .btn {
+    margin-top: 18px;
+    justify-content: center;
+  }
+</style>

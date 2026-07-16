@@ -1,17 +1,350 @@
 ---
+// Page d'accueil — ordre des sections identique au prototype
+// (docs/superpowers/specs/assets/landing-prototype.html, #p-home) :
+// Hero, Problème, StatsBand, Solution, PhotoBand, Comment ça marche,
+// Parcours (DualPath), Témoignages, Tarifs, Faq, FinalCta.
 import Base from "../layouts/Base.astro";
+import Highlight from "../components/Highlight.astro";
+import Hero from "../components/Hero.astro";
+import StatsBand from "../components/StatsBand.astro";
+import SectionHead from "../components/SectionHead.astro";
+import FeatureCard from "../components/FeatureCard.astro";
+import PhotoBand from "../components/PhotoBand.astro";
+import StepCard from "../components/StepCard.astro";
+import DualPath from "../components/DualPath.astro";
+import TestimonialCard from "../components/TestimonialCard.astro";
+import PricingCard from "../components/PricingCard.astro";
+import Faq from "../components/Faq.astro";
+import FinalCta from "../components/FinalCta.astro";
+import { testimonials } from "../data/testimonials";
+import { plans } from "../data/plans";
+import { faq } from "../data/faq";
 
-// Placeholder home page — Task 1 only builds the shared layout shell
-// (tokens, header, footer). The real Home page content is built by a
-// later task.
+const signupUrl = import.meta.env.PUBLIC_APP_SIGNUP_URL || "#";
+
+const title = "AviCare — Le logiciel de gestion d'élevage avicole en Afrique de l'Ouest";
+const description =
+  "Suivez vos bandes, vos coûts et vos ventes sur une seule plateforme. Réduisez la mortalité, maîtrisez le coût de l'aliment, connaissez votre marge. Gratuit pendant le pilote.";
+
+const siteUrl = Astro.site ? Astro.site.toString().replace(/\/$/, "") : "https://avicare.app";
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      name: "AviCare Platform",
+      url: siteUrl,
+      logo: `${siteUrl}/logo/logo.png`,
+      description: "Logiciel de gestion d'élevage avicole pensé au Sénégal, pour l'Afrique de l'Ouest.",
+    },
+    {
+      "@type": "SoftwareApplication",
+      name: "AviCare",
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web",
+      description,
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "XOF",
+        description: "Gratuit pendant la phase pilote.",
+      },
+    },
+    {
+      "@type": "FAQPage",
+      mainEntity: faq.map((item) => ({
+        "@type": "Question",
+        name: item.question,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: item.answer.replace(/<[^>]+>/g, ""),
+        },
+      })),
+    },
+  ],
+};
 ---
 
-<Base
-  title="AviCare — Votre élevage, enfin sous contrôle"
-  description="Suivez vos bandes, vos coûts et vos ventes sur une seule plateforme pensée pour l'Afrique de l'Ouest. Réduisez la mortalité, maîtrisez le coût de l'aliment, connaissez votre marge. Gratuit pendant le pilote."
->
-  <div class="wrap" style="padding:80px 24px">
-    <p class="eyebrow">AviCare</p>
-    <h1>Votre élevage, enfin sous contrôle.</h1>
-  </div>
+<Base title={title} description={description} jsonLd={jsonLd}>
+  <Hero />
+
+  <section class="panel panel-stone reveal">
+    <SectionHead
+      eyebrow="Le problème"
+      lead="Les mortalités qu'on ne compte pas. L'aliment dont on ignore le vrai coût. Les ventes notées sur un cahier, les dettes clients qu'on oublie. À la fin de la bande, une seule question reste sans réponse&nbsp;: est-ce que j'ai gagné de l'argent&nbsp;?"
+    >
+      Gérer un élevage de tête, ça coûte cher — <Highlight>sans qu'on le voie</Highlight>.
+    </SectionHead>
+    <div class="pain">
+      <div class="c">
+        <div class="n">01</div>
+        <h3>Mortalité subie</h3>
+        <p>
+          On la constate à la vente, jamais avant. Aucune tendance, aucune alerte, aucune leçon
+          pour la bande suivante.
+        </p>
+      </div>
+      <div class="c">
+        <div class="n">02</div>
+        <h3>Coût au kg inconnu</h3>
+        <p set:html="Combien vous coûte réellement un kilo de poulet&nbsp;? Sans le suivi de l'aliment, c'est une devinette." />
+      </div>
+      <div class="c">
+        <div class="n">03</div>
+        <h3>Marge invisible</h3>
+        <p set:html="Des ventes, des dépenses, des dettes — mais nulle part le chiffre qui compte&nbsp;: ce qui reste dans votre poche." />
+      </div>
+    </div>
+  </section>
+
+  <StatsBand />
+
+  <section id="solution" class="panel reveal">
+    <SectionHead
+      eyebrow="La solution"
+      lead="AviCare relie l'élevage, le sanitaire, les stocks, les ventes et les finances — pour que chaque saisie du quotidien devienne une décision éclairée."
+    >
+      Une seule plateforme, <Highlight>du poussin à la marge</Highlight>.
+    </SectionHead>
+    <div class="feat">
+      <FeatureCard
+        title="Élevage"
+        description="Suivez chaque bande au jour le jour&nbsp;: effectif, mortalité, aliment, pesées. Chair et pondeuses."
+        miniLabel="Effectif réconcilié"
+        miniValue="auto"
+      >
+        <Fragment slot="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
+            <path d="M4 20c0-4 3-7 7-7 1.5 0 2.8.5 3.8 1.3"></path>
+            <path d="M14 8a3 3 0 1 0-.1 0Z"></path>
+            <path d="M17 6c2 0 3 1.5 3 3.5 0 3-2.4 5.5-6 5.5"></path>
+          </svg>
+        </Fragment>
+      </FeatureCard>
+      <FeatureCard
+        title="Sanitaire"
+        description="Vaccins, traitements, calendrier vaccinal par souche et délais d'attente viande &amp; œufs maîtrisés."
+        miniLabel="Prochaine vaccination"
+        miniValue="J-3"
+      >
+        <Fragment slot="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+            <path d="M4.8 12.5 9 8.3a3 3 0 0 1 4.2 0l1.5 1.5"></path>
+            <path d="m14 4 6 6"></path>
+            <path d="m18 8-8.5 8.5a3 3 0 0 1-4.2 0 3 3 0 0 1 0-4.2Z"></path>
+          </svg>
+        </Fragment>
+      </FeatureCard>
+      <FeatureCard
+        title="Stocks"
+        description="Aliment, formules décomposées à la saisie, bons d'achat et alertes de rupture — sans surprise."
+        miniLabel="Aliment démarrage"
+        miniValue="12 sacs"
+      >
+        <Fragment slot="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round">
+            <path d="m3.3 7 8.7 5 8.7-5"></path>
+            <path d="M12 12v9"></path>
+            <path d="m3 7 9-4 9 4v10l-9 4-9-4Z"></path>
+          </svg>
+        </Fragment>
+      </FeatureCard>
+      <FeatureCard
+        title="Ventes"
+        description="Clients &amp; compte-courant, commandes, factures et encours — votre commerce enfin en ordre."
+        miniLabel="Encours clients"
+        miniValue="3 alertes"
+      >
+        <Fragment slot="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4Z"></path>
+            <path d="M4 6h16"></path>
+            <path d="M8 10a4 4 0 0 0 8 0"></path>
+          </svg>
+        </Fragment>
+      </FeatureCard>
+      <FeatureCard
+        title="Finance"
+        description="Dépenses, marge par bande et compte de résultat — en temps réel, pas à la fin de l'année."
+        miniLabel="Marge / bande"
+        miniValue="+18%"
+      >
+        <Fragment slot="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3v18h18"></path>
+            <path d="m7 15 3-4 3 2 5-7"></path>
+          </svg>
+        </Fragment>
+      </FeatureCard>
+      <div class="fcard wide">
+        <div>
+          <h3>Tout est relié.</h3>
+          <p style="flex:none;margin-top:8px">
+            Une pesée nourrit la courbe de croissance. Un sac d'aliment sorti nourrit le coût de
+            revient. Une vente nourrit la marge. Vous saisissez une fois — AviCare calcule le
+            reste.
+          </p>
+        </div>
+        <a class="btn btn-ghost" href="/fonctionnalites">Explorer les fonctionnalités →</a>
+      </div>
+    </div>
+  </section>
+
+  <PhotoBand
+    eyebrow="Sur le terrain"
+    title="Le vrai travail est au poulailler. Pas dans un cahier."
+    description="AviCare tient les chiffres pendant que vous tenez l'élevage. Chaque geste du quotidien devient une donnée qui vous rapporte."
+  />
+
+  <section id="comment" class="panel panel-tint reveal">
+    <SectionHead center eyebrow="Comment ça marche">Trois gestes. Le reste se calcule tout seul.</SectionHead>
+    <div class="steps">
+      <StepCard
+        number="01"
+        title="Créez votre ferme"
+        description="En 2 minutes, sans carte bancaire. Vous êtes prêt à saisir votre première bande."
+      />
+      <StepCard
+        number="02"
+        title="Saisissez au quotidien"
+        description="Mortalité, aliment, ventes&nbsp;: quelques secondes par jour, depuis votre téléphone."
+      />
+      <StepCard
+        number="03"
+        title="Pilotez vos marges"
+        description="AviCare calcule le reste&nbsp;: coût au kg, marge par bande, alertes. Vous décidez."
+      />
+    </div>
+  </section>
+
+  <section id="parcours" class="panel panel-stone reveal">
+    <SectionHead eyebrow="Pour qui">Deux façons de gagner avec AviCare.</SectionHead>
+    <DualPath />
+  </section>
+
+  <section class="panel reveal">
+    <SectionHead eyebrow="Ils l'utilisent">
+      La marge, <Highlight>ça se voit venir</Highlight>.
+    </SectionHead>
+    <div class="quotes">
+      {testimonials.map((t) => <TestimonialCard {...t} />)}
+    </div>
+    <p class="note">* Témoignages illustratifs — à remplacer par de vrais retours du pilote.</p>
+  </section>
+
+  <section id="tarifs" class="panel panel-tint reveal">
+    <SectionHead center eyebrow="Tarifs">
+      Gratuit maintenant. Simple ensuite.
+      <Fragment slot="extra">
+        <div class="price-banner">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <path d="M20 6 9 17l-5-5"></path>
+          </svg>Gratuit pendant la phase pilote — sans carte bancaire
+        </div>
+      </Fragment>
+    </SectionHead>
+    <div class="plans">
+      {plans.map((plan) => <PricingCard plan={plan} href={signupUrl} />)}
+    </div>
+  </section>
+
+  <Faq />
+
+  <FinalCta
+    title="Arrêtez de piloter à l'aveugle."
+    description="Rejoignez le pilote gratuit et voyez, dès la première bande, où part votre argent."
+  />
 </Base>
+
+<style is:global>
+  /* ---- pains (Problème) ---- */
+  .pain {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 40px;
+  }
+  .pain .c {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 24px;
+  }
+  .pain .n {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink-faint);
+    letter-spacing: 0.1em;
+  }
+  .pain h3 {
+    font-size: 1.12rem;
+    margin-top: 10px;
+  }
+  .pain p {
+    margin-top: 9px;
+    color: var(--ink-soft);
+    font-size: 15px;
+  }
+
+  /* ---- feat grid (Solution) ---- */
+  .feat {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 40px;
+  }
+
+  /* ---- steps grid (Comment ça marche) ---- */
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 40px;
+  }
+
+  /* ---- quotes grid (Témoignages) ---- */
+  .quotes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 40px;
+  }
+  .quotes + .note {
+    margin-top: 18px;
+    font-size: 12.5px;
+    color: var(--ink-faint);
+    font-family: var(--mono);
+  }
+
+  /* ---- pricing (Tarifs) ---- */
+  .price-banner {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    background: var(--leaf-050);
+    border: 1px solid var(--leaf-100);
+    color: var(--earth-600);
+    border-radius: 999px;
+    padding: 8px 16px;
+    font-size: 13.5px;
+    font-weight: 600;
+    margin-top: 14px;
+  }
+  .plans {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 38px;
+  }
+
+  @media (max-width: 920px) {
+    .pain,
+    .feat,
+    .steps,
+    .quotes,
+    .plans {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

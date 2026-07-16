@@ -1,0 +1,24 @@
+---
+// En-tête de section réutilisable (`.sec-head`) — eyebrow + h2 + lead
+// optionnel + slot "extra" pour un élément additionnel (ex. le bandeau
+// prix de la section Tarifs). Le titre passe par le slot par défaut
+// pour pouvoir y composer <Highlight>.
+//
+// `lead` est rendu via set:html : la copy du prototype utilise des
+// espaces insécables (`&nbsp;`) avant `:`/`?` (typographie française) —
+// nécessaires pour ne pas casser la ligne juste avant la ponctuation.
+export interface Props {
+  eyebrow: string;
+  center?: boolean;
+  lead?: string;
+}
+
+const { eyebrow, center = false, lead } = Astro.props;
+---
+
+<div class:list={["sec-head", { center }]}>
+  <div class="eyebrow">{eyebrow}</div>
+  <h2><slot /></h2>
+  {lead && <p class="lead" set:html={lead} />}
+  <slot name="extra" />
+</div>

@@ -1,0 +1,23 @@
+---
+// Compteur animé (îlot) — le chiffre s'anime au scroll (voir
+// CountUp.astro, seul script JS du site). Utilisé dans le cockpit du
+// hero, la bande de stats, et par les pages ultérieures (repères
+// "À propos", etc).
+//
+// prefix/suffix sont du texte simple, sans habillage (voir prototype :
+// "3.2%", "40+", "+18%"...). Quand un habillage spécifique est requis
+// (ex. les <small>F </small> du cockpit), le composant appelant écrit
+// ce balisage lui-même autour de <Kpi /> plutôt que de passer par ces
+// props — la structure diffère trop d'un contexte à l'autre pour être
+// généralisée sans trahir le CSS du prototype.
+export interface Props {
+  count: number;
+  dec?: number;
+  prefix?: string;
+  suffix?: string;
+}
+
+const { count, dec, prefix, suffix } = Astro.props;
+---
+
+{prefix}<span data-num data-count={count} data-dec={dec}>0</span>{suffix}
