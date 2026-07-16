@@ -1,0 +1,58 @@
+---
+// Bandeau de stats sur fond sombre — 4 chiffres animés via <Kpi>.
+// Ported verbatim from the prototype's `.stats` block.
+import Kpi from "./Kpi.astro";
+---
+
+<section class="panel panel-dark reveal">
+  <div class="stats">
+    <div class="stat">
+      <div class="v"><Kpi count={45} /><span class="u"> j</span></div>
+      <div class="l">Un cycle chair suivi jour par jour</div>
+    </div>
+    <div class="stat">
+      <div class="v"><Kpi count={5} /><span class="u"> min</span></div>
+      <div class="l">De saisie par jour, sur téléphone</div>
+    </div>
+    <div class="stat">
+      <div class="v"><Kpi count={5} /><span class="u"> modules</span></div>
+      <div class="l">Élevage, sanitaire, stocks, ventes, finance</div>
+    </div>
+    <div class="stat">
+      <div class="v"><Kpi count={100} /><span class="u"> %</span></div>
+      <div class="l">Vos données restent les vôtres</div>
+    </div>
+  </div>
+</section>
+
+<style is:global>
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    text-align: center;
+  }
+  .stat .v {
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: clamp(1.7rem, 3vw, 2.3rem);
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat .v .u {
+    color: var(--sun);
+    font-size: 0.6em;
+  }
+  .stat .l {
+    margin-top: 6px;
+    font-size: 13.5px;
+    color: #a9c6a0;
+  }
+
+  @media (max-width: 920px) {
+    .stats {
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+  }
+</style>

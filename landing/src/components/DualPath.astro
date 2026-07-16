@@ -1,0 +1,88 @@
+---
+// Double parcours ("Pour qui") — carte éleveur (fond vert, CTA orange
+// vers l'inscription) + carte partenaire (fond blanc, CTA dark vers
+// mailto:PUBLIC_PARTNER_EMAIL). Ported verbatim from the prototype's
+// `.dual` block.
+const signupUrl = import.meta.env.PUBLIC_APP_SIGNUP_URL || "#";
+const partnerEmail = import.meta.env.PUBLIC_PARTNER_EMAIL || "hello@avicare.app";
+---
+
+<div class="dual">
+  <div class="path eleveur">
+    <div class="tag">Vous êtes éleveur</div>
+    <h3>Reprenez le contrôle de vos bandes et de vos marges.</h3>
+    <p>
+      Le suivi complet de votre élevage, du poussin à la vente, dans votre poche. Gratuit pendant
+      le pilote, sans carte bancaire.
+    </p>
+    <div><a class="btn btn-cta" href={signupUrl}>Commencer gratuitement</a></div>
+  </div>
+  <div class="path partner">
+    <div class="tag">Vous êtes coopérative / provendier</div>
+    <h3>Équipez votre réseau d'éleveurs. Fidélisez-les.</h3>
+    <p>
+      Offrez à vos éleveurs un outil qui leur fait gagner de l'argent — et gardez-les dans votre
+      réseau. Tarif réseau, accompagnement dédié.
+    </p>
+    <div><a class="btn btn-dark" href={`mailto:${partnerEmail}`}>Devenir partenaire →</a></div>
+  </div>
+</div>
+
+<style is:global>
+  .dual {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-top: 40px;
+  }
+  .path {
+    border-radius: 22px;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-height: 250px;
+  }
+  .path.eleveur {
+    background: linear-gradient(160deg, var(--earth-800), var(--earth));
+    color: #eaf3e4;
+  }
+  .path.partner {
+    background: var(--paper);
+    border: 1px solid var(--line);
+  }
+  .path .tag {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .path.eleveur .tag {
+    color: var(--leaf-300);
+  }
+  .path.partner .tag {
+    color: var(--leaf);
+  }
+  .path h3 {
+    font-size: 1.35rem;
+  }
+  .path.eleveur h3 {
+    color: #fff;
+  }
+  .path p {
+    font-size: 15px;
+    flex: 1;
+  }
+  .path.eleveur p {
+    color: #cfe3c6;
+  }
+  .path.partner p {
+    color: var(--ink-soft);
+  }
+
+  @media (max-width: 920px) {
+    .dual {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

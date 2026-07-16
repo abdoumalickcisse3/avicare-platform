@@ -1,0 +1,74 @@
+---
+// Carte témoignage ("gros chiffre" + citation + auteur). Ported
+// verbatim from the prototype's `.quote` block.
+export interface Props {
+  big: string;
+  quote: string;
+  initials: string;
+  name: string;
+  role: string;
+}
+
+const { big, quote, initials, name, role } = Astro.props;
+---
+
+<div class="quote">
+  <div class="big">{big}</div>
+  <p class="q">{quote}</p>
+  <div class="who">
+    <div class="av">{initials}</div>
+    <div>
+      <div class="nm">{name}</div>
+      <div class="rl">{role}</div>
+    </div>
+  </div>
+</div>
+
+<style is:global>
+  .quote {
+    background: var(--stone);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .quote .big {
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 2rem;
+    color: var(--leaf);
+    line-height: 1;
+  }
+  .quote .q {
+    font-size: 1rem;
+    line-height: 1.5;
+    flex: 1;
+  }
+  .quote .who {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+  }
+  .quote .av {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--leaf-100);
+    color: var(--earth-700);
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    font-size: 14px;
+  }
+  .quote .nm {
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .quote .rl {
+    font-size: 12px;
+    color: var(--ink-faint);
+    font-family: var(--mono);
+  }
+</style>

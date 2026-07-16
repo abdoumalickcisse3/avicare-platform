@@ -1,0 +1,66 @@
+---
+// FAQ de l'accueil — <details class="qa"> natifs, zéro JS. Ported
+// verbatim from the prototype's `.faq` block.
+import SectionHead from "./SectionHead.astro";
+import { faq } from "../data/faq";
+---
+
+<section id="faq" class="panel panel-stone reveal">
+  <SectionHead center eyebrow="Questions fréquentes">Tout ce que les éleveurs nous demandent.</SectionHead>
+  <div class="faq">
+    {
+      faq.map((item) => (
+        <details class="qa" open={item.open}>
+          <summary>{item.question}</summary>
+          <p set:html={item.answer} />
+        </details>
+      ))
+    }
+  </div>
+</section>
+
+<style is:global>
+  .faq {
+    max-width: 760px;
+    margin: 36px auto 0;
+  }
+  .qa {
+    border-bottom: 1px solid var(--line);
+  }
+  .qa summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 18px 0;
+    font-weight: 600;
+    font-size: 1.02rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+  }
+  .qa summary::-webkit-details-marker {
+    display: none;
+  }
+  .qa summary::after {
+    content: "+";
+    font-family: var(--mono);
+    color: var(--leaf);
+    font-size: 1.3rem;
+    flex: none;
+    transition: transform 0.2s;
+  }
+  .qa[open] summary::after {
+    content: "–";
+  }
+  .qa summary:focus-visible {
+    outline: 3px solid var(--leaf-100);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+  .qa p {
+    padding: 0 0 18px;
+    color: var(--ink-soft);
+    font-size: 15px;
+    max-width: 66ch;
+  }
+</style>

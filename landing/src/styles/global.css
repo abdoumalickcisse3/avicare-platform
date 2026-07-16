@@ -155,6 +155,70 @@ a {
   transform: none;
 }
 
+/*
+ * Panel system — ported verbatim from the prototype. This is the
+ * recurring full-bleed section device used by every content section
+ * across the whole site (Home + later pages): border-radius:0,
+ * max-width:none, background spans the viewport, inner content is
+ * centered at --wrap via `.panel > *`. Per the plan's explicit
+ * constraint, content sections never use the floating rounded-panel
+ * look — only the header nav island does.
+ */
+.panel {
+  background: var(--paper);
+  padding: 84px 24px;
+  margin: 0;
+  max-width: none;
+  border: 0;
+  border-radius: 0;
+}
+.panel > * {
+  max-width: var(--wrap);
+  margin-left: auto;
+  margin-right: auto;
+}
+.panel-stone {
+  background: var(--stone);
+  border-top: 1px solid var(--line-soft);
+}
+.panel-tint {
+  background: linear-gradient(180deg, var(--leaf-050), var(--stone));
+  border-top: 1px solid var(--leaf-100);
+}
+.panel-dark {
+  background:
+    radial-gradient(120% 140% at 85% 0%, rgba(248, 150, 30, 0.16), transparent 55%),
+    linear-gradient(160deg, var(--earth-800) 0%, var(--earth) 100%);
+  border: 0;
+  color: #eaf3e4;
+  padding: 72px 24px;
+}
+.sec-head {
+  max-width: 620px;
+}
+.sec-head.center {
+  margin: 0 auto;
+  text-align: center;
+}
+.sec-head h2 {
+  font-size: clamp(1.75rem, 3.4vw, 2.5rem);
+  margin-top: 14px;
+}
+.sec-head .lead {
+  margin-top: 16px;
+  color: var(--ink-soft);
+  font-size: 1.08rem;
+}
+.panel-dark .sec-head .lead {
+  color: #cfe3c6;
+}
+
+@media (max-width: 920px) {
+  .panel {
+    padding: 56px 20px;
+  }
+}
+
 @media (max-width: 920px) {
   /* room for the fixed mobile CTA bar (see MobileCta.astro) */
   body {

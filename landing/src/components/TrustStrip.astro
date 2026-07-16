@@ -1,0 +1,68 @@
+---
+// Bandeau de confiance — rendu à l'intérieur du hero (fond vert), sous
+// le hero-grid. Ported verbatim from the prototype's `.trust` block.
+// Note: the prototype declares `.trust` twice (base rule, then a
+// `margin-top` override) — merged here into the single final value.
+---
+
+<div class="trust">
+  <span class="anchor">Pensé au Sénégal · pour l'Afrique de l'Ouest</span>
+  <span class="it">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="7" y="2" width="10" height="20" rx="2"></rect>
+      <path d="M11 18h2"></path>
+    </svg>Mobile-first
+  </span>
+  <span class="it">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <path d="M4 12h16M4 6h16M4 18h16"></path>
+    </svg>Chair et pondeuses
+  </span>
+  <span class="it">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="11" width="18" height="10" rx="2"></rect>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+    </svg>Vos données vous appartiennent
+  </span>
+  <span class="it">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <path d="M2 12a10 10 0 0 1 20 0"></path>
+      <path d="M6 12a6 6 0 0 1 12 0"></path>
+      <circle cx="12" cy="12" r="1.6" fill="currentColor"></circle>
+    </svg>Petit forfait data
+  </span>
+</div>
+
+<style is:global>
+  .trust {
+    max-width: var(--wrap);
+    margin: 46px auto 0;
+    padding: 0 24px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 30px;
+    justify-content: center;
+  }
+  .trust .anchor {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--leaf-300);
+  }
+  .trust .it {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #cfe3c6;
+  }
+  .trust .it svg {
+    width: 15px;
+    height: 15px;
+    color: var(--sun);
+    flex: none;
+  }
+</style>
