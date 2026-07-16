@@ -23,13 +23,13 @@ import Kpi from "./Kpi.astro";
       <div class="trend">▼ sous le seuil 5%</div>
     </div>
     <div class="kpi hl-k">
-      <div class="lab">Marge nette / bande</div>
+      <div class="lab">Revenu du lot</div>
       <div class="val"><small>F </small><Kpi count={612} /><small> k</small></div>
       <div class="trend" style="color:var(--sun-600)">▲ +18% vs J-1</div>
     </div>
     <div class="kpi">
-      <div class="lab">Coût de revient</div>
-      <div class="val"><small>F/</small><Kpi count={1275} /><small> kg</small></div>
+      <div class="lab">Indice de consommation</div>
+      <div class="val"><Kpi count={1.85} dec={2} /></div>
       <div class="trend">aliment maîtrisé</div>
     </div>
     <div class="spark">

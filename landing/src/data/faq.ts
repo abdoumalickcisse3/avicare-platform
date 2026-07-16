@@ -28,7 +28,7 @@ export const faq: FaqItem[] = [
   {
     question: "Comment AviCare calcule ma marge ?",
     answer:
-      "En reliant vos ventes (factures encaissées), vos dépenses (achats, aliment sorti du stock, salaires, vétérinaire) et vos bandes. Résultat : marge par bande et coût de revient au kilo, en temps réel.",
+      "En reliant vos ventes (factures encaissées), vos dépenses (achats, aliment sorti du stock, salaires, vétérinaire) et vos bandes. Résultat : marge de la ferme et revenu par lot, en temps réel.",
   },
   {
     question: "Mes données m'appartiennent-elles ?",
