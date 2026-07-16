@@ -1,0 +1,74 @@
+/*
+ * Design tokens — ported verbatim from the approved prototype
+ * (docs/superpowers/specs/assets/landing-prototype.html, :root block).
+ * Do not change these values without updating the prototype reference too.
+ *
+ * --disp / --mono point to self-hosted files (Outfit, JetBrains Mono)
+ * instead of the prototype's system-font fallback stacks — no external
+ * font CDN. The prototype's --logo/--logo-d/--ph-* background-image
+ * vars are intentionally not carried over: Header/Footer render the
+ * logo via astro:assets <Image>, and photo bands (hero/about, later
+ * tasks) will do the same rather than CSS background-image vars.
+ */
+
+@font-face {
+  font-family: "Outfit";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/outfit-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Outfit";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/outfit-500.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Outfit";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../fonts/outfit-600.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Outfit";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../fonts/outfit-700.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/jetbrains-mono-500.woff2") format("woff2");
+}
+
+:root {
+  --earth: #122b12;
+  --earth-800: #1b3f1b;
+  --earth-700: #245524;
+  --earth-600: #2e6b2e;
+  --leaf: #3d8b3d;
+  --leaf-300: #8bc68b;
+  --leaf-100: #dceedc;
+  --leaf-050: #f0f7f0;
+  --sun: #f8961e;
+  --sun-600: #e67e0a;
+  --sun-050: #fff4e6;
+  --stone: #f6f5f2;
+  --paper: #ffffff;
+  --ink: #292524;
+  --ink-soft: #6b655f;
+  --ink-faint: #94908b;
+  --line: #e7e5e4;
+  --line-soft: #efedea;
+  --disp:
+    "Outfit", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system,
+    sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --wrap: 1180px;
+}

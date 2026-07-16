@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://avicare.app/sitemap-index.xml

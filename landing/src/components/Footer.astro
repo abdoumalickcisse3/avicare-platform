@@ -1,0 +1,106 @@
+---
+import { Image } from "astro:assets";
+import logoDark from "../assets/logo-dark.png";
+
+const partnerEmail = import.meta.env.PUBLIC_PARTNER_EMAIL || "hello@avicare.app";
+const year = new Date().getFullYear();
+---
+
+<footer>
+  <div class="wrap">
+    <div class="fgrid">
+      <div>
+        <a href="/" aria-label="AviCare Platform — accueil">
+          <Image src={logoDark} alt="AviCare Platform" width={150} height={36} class="logo-d" />
+        </a>
+        <p class="about">
+          La gestion d'élevage avicole pensée pour l'Afrique de l'Ouest — du poussin à la marge.
+        </p>
+      </div>
+      <div class="fcol">
+        <h4>Produit</h4>
+        <a href="/fonctionnalites">Fonctionnalités</a>
+        <a href="/tarifs">Tarifs</a>
+        <a href="/#parcours">Partenaires</a>
+        <a href={import.meta.env.PUBLIC_APP_SIGNUP_URL || "#"}>Se connecter</a>
+      </div>
+      <div class="fcol">
+        <h4>Entreprise</h4>
+        <a href="/a-propos">À propos</a>
+        <a href={`mailto:${partnerEmail}`}>Contact</a>
+        <a href="/faq">Ressources</a>
+      </div>
+      <div class="fcol">
+        <h4>Légal</h4>
+        <a href="/mentions-legales">Mentions légales</a>
+        <a href="/confidentialite">Confidentialité</a>
+      </div>
+    </div>
+    <div class="fbot">
+      <span>© {year} AviCare Platform · Dakar, Sénégal</span>
+      <span>hello@avicare.app</span>
+    </div>
+  </div>
+</footer>
+
+<style>
+  footer {
+    background: var(--earth);
+    color: #b7cbb0;
+    padding: 56px 0 30px;
+    margin-top: 0;
+  }
+  .fgrid {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr 1fr 1fr;
+    gap: 32px;
+  }
+  :global(.logo-d) {
+    height: 36px;
+    width: 150px;
+    display: block;
+    object-fit: contain;
+    object-position: left center;
+  }
+  footer .about {
+    margin-top: 14px;
+    font-size: 13.5px;
+    color: #8fa588;
+    max-width: 34ch;
+  }
+  .fcol h4 {
+    color: #eaf3e4;
+    font-size: 12px;
+    font-family: var(--mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin: 0 0 12px;
+  }
+  .fcol a {
+    display: block;
+    color: #b7cbb0;
+    font-size: 14px;
+    padding: 5px 0;
+  }
+  .fcol a:hover {
+    color: #fff;
+  }
+  .fbot {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 36px;
+    padding-top: 20px;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 12.5px;
+    color: #8fa588;
+    font-family: var(--mono);
+  }
+
+  @media (max-width: 920px) {
+    .fgrid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
