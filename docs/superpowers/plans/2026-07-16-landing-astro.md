@@ -4,9 +4,9 @@
 
 **Goal:** Livrer le site vitrine AviCare en Astro (SSG, français, SEO/perf), fidèle au prototype visuel validé, dans `landing/`.
 
-**Architecture:** Astro 5 en `output: "static"`, **CSS natif à tokens** (pas de Tailwind), zéro JS hors deux micro-îlots (compteurs KPI, reveals). Le **prototype validé** `docs/superpowers/specs/assets/landing-prototype.html` est la **source de vérité visuelle** : on en extrait les tokens + le CSS des composants, et on découpe en composants `.astro` réutilisés par toutes les pages. Le copy est déjà rédigé dans le spec.
+**Architecture:** Astro 7 en `output: "static"`, **CSS natif à tokens** (pas de Tailwind), zéro JS hors deux micro-îlots (compteurs KPI, reveals). Le **prototype validé** `docs/superpowers/specs/assets/landing-prototype.html` est la **source de vérité visuelle** : on en extrait les tokens + le CSS des composants, et on découpe en composants `.astro` réutilisés par toutes les pages. Le copy est déjà rédigé dans le spec.
 
-**Tech Stack:** Astro 5, `@astrojs/sitemap`, `astro:assets`, fonts auto-hébergées (Outfit, JetBrains Mono), CSS custom properties.
+**Tech Stack:** Astro 7, `@astrojs/sitemap`, `astro:assets`, fonts auto-hébergées (Outfit, JetBrains Mono), CSS custom properties.
 
 ## Global Constraints
 
