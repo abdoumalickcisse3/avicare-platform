@@ -3,7 +3,7 @@
 // element on the site (client explicitly rejected floating panels for
 // content sections; the nav island is the exception, per prototype).
 import { Image } from "astro:assets";
-import logo from "../assets/logo.png";
+import logo from "../assets/logo.svg";
 
 const signupUrl = import.meta.env.PUBLIC_APP_SIGNUP_URL || "#";
 
@@ -18,7 +18,7 @@ const navLinks = [
 <header>
   <div class="wrap nav">
     <a href="/" aria-label="AviCare Platform — accueil" class="logo-link">
-      <Image src={logo} alt="AviCare Platform" width={150} height={38} class="logo-img" />
+      <Image src={logo} alt="AviCare Platform" width={150} height={150} class="logo-img" />
     </a>
 
     <nav class="nav-links" aria-label="Navigation principale">
