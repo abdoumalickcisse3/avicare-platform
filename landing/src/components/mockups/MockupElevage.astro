@@ -137,7 +137,7 @@ const yTicks = [0, 700, 1400, 2100, 2800];
     font-size: 11.5px;
     color: var(--ink-faint);
   }
-  .mk-badge {
+  .mk-elevage .mk-badge {
     font-family: var(--mono);
     font-size: 10px;
     font-weight: 600;
@@ -146,7 +146,7 @@ const yTicks = [0, 700, 1400, 2100, 2800];
     padding: 3px 9px;
     white-space: nowrap;
   }
-  .mk-badge-ok {
+  .mk-elevage .mk-badge-ok {
     background: var(--leaf-100);
     color: var(--earth-700);
   }
@@ -219,7 +219,7 @@ const yTicks = [0, 700, 1400, 2100, 2800];
     color: #cfe3c6;
     margin-top: 3px;
   }
-  .mk-badge-target {
+  .mk-elevage .mk-badge-target {
     background: rgba(255, 255, 255, 0.16);
     color: #fff;
     flex: none;
@@ -236,75 +236,75 @@ const yTicks = [0, 700, 1400, 2100, 2800];
     color: var(--ink-soft);
     margin-bottom: 4px;
   }
-  .mk-curve {
+  .mk-elevage .mk-curve {
     width: 100%;
     height: auto;
     display: block;
     overflow: visible;
   }
-  .mk-gridline {
+  .mk-elevage .mk-gridline {
     stroke: var(--line);
     stroke-width: 1;
   }
-  .mk-today-line {
+  .mk-elevage .mk-today-line {
     stroke: var(--line);
     stroke-width: 1;
     stroke-dasharray: 3 3;
   }
-  .mk-axis-label {
+  .mk-elevage .mk-axis-label {
     font-family: var(--mono);
     font-size: 10px;
     fill: var(--ink-faint);
   }
-  .mk-line {
+  .mk-elevage .mk-line {
     fill: none;
     stroke-linecap: round;
     stroke-linejoin: round;
   }
-  .mk-line-objective {
+  .mk-elevage .mk-line-objective {
     stroke: var(--ink-faint);
     stroke-width: 2;
     stroke-dasharray: 4 4;
   }
-  .mk-line-real {
+  .mk-elevage .mk-line-real {
     stroke: var(--leaf);
     stroke-width: 2.5;
   }
-  .mk-line.draw {
+  .mk-elevage .mk-line.draw {
     stroke-dasharray: 1000;
     stroke-dashoffset: 1000;
     transition: stroke-dashoffset 1.3s ease;
   }
-  .reveal.in .mk-line.draw {
+  .reveal.in .mk-elevage .mk-line.draw {
     stroke-dashoffset: 0;
   }
-  .mk-legend {
+  .mk-elevage .mk-legend {
     display: flex;
     gap: 16px;
     margin-top: 6px;
     font-size: 11px;
     color: var(--ink-soft);
   }
-  .mk-legend span {
+  .mk-elevage .mk-legend span {
     display: inline-flex;
     align-items: center;
     gap: 6px;
   }
-  .mk-swatch {
+  .mk-elevage .mk-swatch {
     width: 12px;
     height: 2.5px;
     border-radius: 2px;
     display: inline-block;
   }
-  .mk-swatch-real {
+  .mk-elevage .mk-swatch-real {
     background: var(--leaf);
   }
-  .mk-swatch-objective {
+  .mk-elevage .mk-swatch-objective {
     background: var(--ink-faint);
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .mk-line.draw {
+    .mk-elevage .mk-line.draw {
       stroke-dashoffset: 0;
       transition: none;
     }
