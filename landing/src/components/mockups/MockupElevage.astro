@@ -1,0 +1,312 @@
+---
+// Recréation HTML/CSS de la fiche lot (pas une capture d'écran) — valeurs
+// figées par docs/superpowers/specs/assets/landing-module-mockups.md §1.
+// Seuls les paliers de l'axe Y (0/700/1400/2100/2800 g) et les valeurs de
+// la table (871, 31/42, 56 g/j, 1.68, 26 juil. 2026, J-10) sont des
+// chiffres du spec — verbatim, non inventés. La forme de la courbe entre
+// les paliers est une interpolation visuelle (aucun palier intermédiaire
+// n'étant fourni), calculée ici pour que la courbe "réel" (J0→J31,
+// 42→1750 g) reste collée à la courbe "objectif" et légèrement au-dessus
+// en fin de tracé, comme demandé par le spec.
+//
+// IC (FCR) rendu "1,68" (virgule) plutôt que "1.68" (point) du tableau
+// spec, pour rester cohérent avec la convention décimale française
+// utilisée partout ailleurs sur le site (ex. "3,2 %", "18,4 %") — même
+// valeur, même chiffre, séparateur normalisé.
+import Kpi from "../Kpi.astro";
+
+const W = 320;
+const H = 180;
+const PAD_L = 8;
+const PAD_R = 8;
+const PLOT_X0 = 34;
+const PLOT_X1 = W - PAD_R;
+const PLOT_Y0 = 12; // top (2800g)
+const PLOT_Y1 = 150; // bottom (0g)
+const MAX_G = 2800;
+const MAX_DAY = 42;
+const TODAY = 31;
+
+function x(day: number): number {
+  return PLOT_X0 + (day / MAX_DAY) * (PLOT_X1 - PLOT_X0);
+}
+function y(grams: number): number {
+  return PLOT_Y1 - (Math.min(grams, MAX_G) / MAX_G) * (PLOT_Y1 - PLOT_Y0);
+}
+
+// objectif souche : courbe de puissance calée pour passer par J42 = 2800 g
+const P = 1.644;
+function objective(day: number): number {
+  return MAX_G * Math.pow(day / MAX_DAY, P);
+}
+// réel : même forme, mise à l'échelle pour finir à 1750 g en J31 (légèrement
+// au-dessus de l'objectif au même jour, ~1699 g)
+const REAL_SCALE = 1750 / objective(TODAY);
+function real(day: number): number {
+  return objective(day) * REAL_SCALE;
+}
+
+const objPoints = Array.from({ length: MAX_DAY + 1 }, (_, d) => `${x(d)},${y(objective(d))}`).join(" ");
+const realPoints = Array.from({ length: TODAY + 1 }, (_, d) => `${x(d)},${y(real(d))}`).join(" ");
+
+const yTicks = [0, 700, 1400, 2100, 2800];
+---
+
+<div class="mk-elevage cluster">
+  <div class="mk-head">
+    <div class="mk-name">Cobb 500 #2 <span class="mk-badge mk-badge-ok">Actif</span></div>
+    <div class="mk-sub">Cobb 500 · Jour 31 · 871 sujets</div>
+  </div>
+
+  <div class="mk-tiles">
+    <div class="mk-tile">
+      <div class="mk-tile-l">Effectif actuel</div>
+      <div class="mk-tile-v"><Kpi count={871} /><span class="mk-unit"> sujets</span></div>
+    </div>
+    <div class="mk-tile">
+      <div class="mk-tile-l">Progression (jour)</div>
+      <div class="mk-tile-v"><Kpi count={31} /><span class="mk-unit"> / 42</span></div>
+    </div>
+    <div class="mk-tile">
+      <div class="mk-tile-l">GMQ (vs objectif)</div>
+      <div class="mk-tile-v"><Kpi count={56} /><span class="mk-unit"> g/j</span></div>
+    </div>
+    <div class="mk-tile">
+      <div class="mk-tile-l">IC (FCR)</div>
+      <div class="mk-tile-v"><Kpi count={1.68} dec={2} /></div>
+    </div>
+  </div>
+
+  <div class="mk-prevision">
+    <div class="mk-prev-eyebrow">Prévision</div>
+    <div class="mk-prev-row">
+      <div>
+        <div class="mk-prev-label">Maturité estimée</div>
+        <div class="mk-prev-date">26 juil. 2026</div>
+        <div class="mk-prev-days">Jours restants : <Kpi count={10} /></div>
+      </div>
+      <span class="mk-badge mk-badge-target">Dans l'objectif</span>
+    </div>
+  </div>
+
+  <div class="mk-chart">
+    <div class="mk-chart-title">Poids moyen (g) réel vs objectif souche</div>
+    <svg viewBox={`0 0 ${W} ${H}`} class="mk-curve" role="img" aria-label="Courbe de poids réel comparée à l'objectif de la souche, du jour 0 au jour 31 sur 42">
+      {
+        yTicks.map((v) => (
+          <g>
+            <line x1={PLOT_X0} y1={y(v)} x2={PLOT_X1} y2={y(v)} class="mk-gridline" />
+            <text x={PLOT_X0 - 6} y={y(v) + 3} class="mk-axis-label" text-anchor="end">
+              {v}
+            </text>
+          </g>
+        ))
+      }
+      <line x1={x(TODAY)} y1={PLOT_Y0} x2={x(TODAY)} y2={PLOT_Y1} class="mk-today-line" />
+      <text x={x(TODAY)} y={PLOT_Y1 + 14} class="mk-axis-label" text-anchor="middle">J31</text>
+      <text x={PLOT_X0} y={PLOT_Y1 + 14} class="mk-axis-label" text-anchor="start">J0</text>
+      <text x={PLOT_X1} y={PLOT_Y1 + 14} class="mk-axis-label" text-anchor="end">J42</text>
+      <polyline points={objPoints} class="mk-line mk-line-objective" />
+      <polyline points={realPoints} class="mk-line mk-line-real draw" pathLength="1000" />
+    </svg>
+    <div class="mk-legend">
+      <span><i class="mk-swatch mk-swatch-real"></i>Poids réel</span>
+      <span><i class="mk-swatch mk-swatch-objective"></i>Objectif souche</span>
+    </div>
+  </div>
+</div>
+
+<style is:global>
+  .mk-elevage {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .mk-elevage .mk-name {
+    font-weight: 700;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .mk-elevage .mk-sub {
+    margin-top: 3px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink-faint);
+  }
+  .mk-badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    border-radius: 999px;
+    padding: 3px 9px;
+    white-space: nowrap;
+  }
+  .mk-badge-ok {
+    background: var(--leaf-100);
+    color: var(--earth-700);
+  }
+  .mk-elevage .mk-tiles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .mk-elevage .mk-tile {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 10px 12px;
+  }
+  .mk-elevage .mk-tile-l {
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+  .mk-elevage .mk-tile-v {
+    margin-top: 3px;
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .mk-elevage .mk-unit {
+    font-size: 0.62em;
+    font-weight: 500;
+    color: var(--ink-faint);
+  }
+
+  .mk-elevage .mk-prevision {
+    background:
+      radial-gradient(120% 140% at 85% 0%, rgba(248, 150, 30, 0.14), transparent 55%),
+      linear-gradient(160deg, var(--earth-800) 0%, var(--earth) 100%);
+    border-radius: 14px;
+    padding: 14px 16px;
+    color: #fff;
+  }
+  .mk-elevage .mk-prev-eyebrow {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--leaf-300);
+  }
+  .mk-elevage .mk-prev-row {
+    margin-top: 6px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .mk-elevage .mk-prev-label {
+    font-size: 12px;
+    color: #cfe3c6;
+  }
+  .mk-elevage .mk-prev-date {
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 1rem;
+    margin-top: 2px;
+  }
+  .mk-elevage .mk-prev-days {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: #cfe3c6;
+    margin-top: 3px;
+  }
+  .mk-badge-target {
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+    flex: none;
+  }
+
+  .mk-elevage .mk-chart {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 12px 12px 10px;
+  }
+  .mk-elevage .mk-chart-title {
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    margin-bottom: 4px;
+  }
+  .mk-curve {
+    width: 100%;
+    height: auto;
+    display: block;
+    overflow: visible;
+  }
+  .mk-gridline {
+    stroke: var(--line);
+    stroke-width: 1;
+  }
+  .mk-today-line {
+    stroke: var(--line);
+    stroke-width: 1;
+    stroke-dasharray: 3 3;
+  }
+  .mk-axis-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    fill: var(--ink-faint);
+  }
+  .mk-line {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .mk-line-objective {
+    stroke: var(--ink-faint);
+    stroke-width: 2;
+    stroke-dasharray: 4 4;
+  }
+  .mk-line-real {
+    stroke: var(--leaf);
+    stroke-width: 2.5;
+  }
+  .mk-line.draw {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    transition: stroke-dashoffset 1.3s ease;
+  }
+  .reveal.in .mk-line.draw {
+    stroke-dashoffset: 0;
+  }
+  .mk-legend {
+    display: flex;
+    gap: 16px;
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+  .mk-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .mk-swatch {
+    width: 12px;
+    height: 2.5px;
+    border-radius: 2px;
+    display: inline-block;
+  }
+  .mk-swatch-real {
+    background: var(--leaf);
+  }
+  .mk-swatch-objective {
+    background: var(--ink-faint);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mk-line.draw {
+      stroke-dashoffset: 0;
+      transition: none;
+    }
+  }
+</style>

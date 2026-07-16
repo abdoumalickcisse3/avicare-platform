@@ -1,22 +1,23 @@
 ---
 // Sous-page module (`/fonctionnalites/{slug}`) — gabarit commun aux 5
 // modules, généré par getStaticPaths() depuis data/modules.ts (source
-// unique). Le prototype de référence ne détaille que le hub
-// (#p-fonctionnalites) ; il n'existe pas de sous-page "Integration
-// Details" à porter verbatim. Le gabarit reprend donc les briques déjà
-// approuvées ailleurs dans le prototype/le design system :
-//   - .phero (pill + H1 + lead) — identique à celui du hub, sans le
-//     double-CTA (une seule page = un seul CTA, apporté par FinalCta).
-//   - blocs "capacité → bénéfice" alternés (zig-zag texte / visuel) — mise
-//     en page nouvelle (pas de markup prototype pour ça), avec un visuel
-//     décoratif (icône du module) en lieu de vraie capture produit :
-//     conforme à doc 2026-07-14 § "Images à fournir" ("captures produit …
-//     en attendant : placeholders … pour ne pas bloquer le build").
-//   - encadré "Ce que ça vous évite" (3 puces) — nouveau, fond clair
-//     (--leaf-050), donc hors du périmètre de l'audit contraste (texte
-//     sombre sur fond clair).
+// unique, copy VERBATIM validée — voir data/modules.ts en-tête).
+//
+// Un seul bloc "capacité → bénéfice" par module reçoit la recréation
+// HTML/CSS animée de l'UI réelle (mockup, valeurs figées par
+// docs/superpowers/specs/assets/landing-module-mockups.md) : celui dont le
+// contenu recoupe le plus le mockup figé pour ce module. Finance en reçoit
+// deux (compte de résultat + revenu par lot) car le mockup couvre les deux
+// blocs 2 et 3 du copy. Les autres blocs gardent l'icône décorative (pas
+// de nouveau chiffre inventé, conforme à la règle "ne pas inventer de
+// nombre").
 import Base from "../../layouts/Base.astro";
 import FinalCta from "../../components/FinalCta.astro";
+import MockupElevage from "../../components/mockups/MockupElevage.astro";
+import MockupSanitaire from "../../components/mockups/MockupSanitaire.astro";
+import MockupStocks from "../../components/mockups/MockupStocks.astro";
+import MockupVentes from "../../components/mockups/MockupVentes.astro";
+import MockupFinance from "../../components/mockups/MockupFinance.astro";
 import { MODULES, type Module } from "../../data/modules";
 
 export async function getStaticPaths() {
@@ -28,9 +29,14 @@ const { module: mod } = Astro.props;
 
 const siteUrl = Astro.site ? Astro.site.toString().replace(/\/$/, "") : "https://avicare.app";
 
-// Icônes copiées verbatim des cartes `.mod` du prototype — même tracé que
-// sur la grille du hub, réutilisé ici comme visuel décoratif des blocs
-// capacité (aria-hidden, purement illustratif).
+// Emphase `**mot**` du copy source (data/modules.ts) → <strong>, mots
+// inchangés (voir en-tête de data/modules.ts).
+function mdBold(s: string): string {
+  return s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+}
+
+// Icônes copiées verbatim des cartes `.mod` du prototype — visuel
+// décoratif des blocs capacité qui n'ont pas de mockup dédié.
 const icons: Record<string, string> = {
   elevage:
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20c0-4 3-7 7-7 1.5 0 2.8.5 3.8 1.3"/><path d="M14 8a3 3 0 1 0-.1 0Z"/><path d="M17 6c2 0 3 1.5 3 3.5 0 3-2.4 5.5-6 5.5"/></svg>',
@@ -67,18 +73,37 @@ const jsonLd = {
   <section class="panel reveal">
     <div class="caps">
       {
-        mod.capabilities.map((cap, i) => (
-          <div class:list={["cap", { rev: i % 2 === 1 }]}>
-            <div class="cap-text">
-              <div class="eyebrow">Capacité {String(i + 1).padStart(2, "0")}</div>
-              <h3>{cap.title}</h3>
-              <p>{cap.body}</p>
+        mod.capabilities.map((cap, i) => {
+          const isMock =
+            (mod.slug === "elevage" && i === 1) ||
+            (mod.slug === "sanitaire" && i === 0) ||
+            (mod.slug === "stocks" && i === 1) ||
+            (mod.slug === "ventes" && i === 0) ||
+            (mod.slug === "finance" && (i === 1 || i === 2));
+          return (
+            <div class:list={["cap", { rev: i % 2 === 1, "has-mock": isMock }]}>
+              <div class="cap-text">
+                <div class="eyebrow">Capacité {String(i + 1).padStart(2, "0")}</div>
+                <h3>{cap.title}</h3>
+                <p set:html={mdBold(cap.body)} />
+              </div>
+              {isMock ? (
+                <div class="cap-visual mk">
+                  {mod.slug === "elevage" && <MockupElevage />}
+                  {mod.slug === "sanitaire" && <MockupSanitaire />}
+                  {mod.slug === "stocks" && <MockupStocks />}
+                  {mod.slug === "ventes" && <MockupVentes />}
+                  {mod.slug === "finance" && i === 1 && <MockupFinance variant="full" />}
+                  {mod.slug === "finance" && i === 2 && <MockupFinance variant="revenuParLot" />}
+                </div>
+              ) : (
+                <div class="cap-visual" role="img" aria-label={`Aperçu de l'écran ${cap.title} dans AviCare`}>
+                  <span class="cap-ic" set:html={icons[mod.slug]} />
+                </div>
+              )}
             </div>
-            <div class="cap-visual" role="img" aria-label={`Aperçu de l'écran ${cap.title} dans AviCare`}>
-              <span class="cap-ic" set:html={icons[mod.slug]} />
-            </div>
-          </div>
-        ))
+          );
+        })
       }
     </div>
 
@@ -120,6 +145,12 @@ const jsonLd = {
   .cap.rev {
     grid-template-columns: 0.9fr 1.1fr;
   }
+  .cap.has-mock {
+    grid-template-columns: 0.85fr 1.15fr;
+  }
+  .cap.has-mock.rev {
+    grid-template-columns: 1.15fr 0.85fr;
+  }
   .cap .cap-text {
     order: 1;
   }
@@ -141,6 +172,10 @@ const jsonLd = {
     color: var(--ink-soft);
     font-size: 1.02rem;
   }
+  .cap-text p strong {
+    color: var(--ink);
+    font-weight: 700;
+  }
   .cap-visual {
     aspect-ratio: 4 / 3;
     border-radius: 22px;
@@ -159,6 +194,12 @@ const jsonLd = {
   .cap-visual .cap-ic svg {
     width: 100%;
     height: 100%;
+  }
+  .cap-visual.mk {
+    aspect-ratio: auto;
+    background: var(--stone);
+    padding: 18px;
+    display: block;
   }
 
   .avoid-box {
@@ -196,7 +237,9 @@ const jsonLd = {
       gap: 40px;
     }
     .cap,
-    .cap.rev {
+    .cap.rev,
+    .cap.has-mock,
+    .cap.has-mock.rev {
       grid-template-columns: 1fr;
     }
     .cap .cap-text,

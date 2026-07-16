@@ -1,0 +1,229 @@
+---
+// Recréation HTML/CSS de la fiche client (pas une capture d'écran) —
+// valeurs figées par docs/superpowers/specs/assets/landing-module-mockups.md
+// §4. Client fictif (le spec impose explicitement de ne pas afficher de
+// PII réelle ni de numéro/e-mail). Les libellés ORD-/F-/P- sont ceux du
+// spec ; le mot entre parenthèses (Commande/Facture/Paiement) est déduit
+// sans ambiguïté du préfixe et du copy validé ("commandes ... factures ...
+// paiements"), pas une donnée nouvelle.
+import Kpi from "../Kpi.astro";
+
+const encours = 145000;
+const limite = 500000;
+const pct = Math.round((encours / limite) * 100); // 29 %
+
+const history = [
+  { ref: "ORD-2026-014", kind: "Commande", date: "12 juil. 2026", amount: 85000 },
+  { ref: "F-2026-011", kind: "Facture", date: "10 juil. 2026", amount: 145000 },
+  { ref: "P-2026-009", kind: "Paiement", date: "05 juil. 2026", amount: 60000 },
+  { ref: "F-2026-008", kind: "Facture", date: "03 juil. 2026", amount: 60000 },
+];
+---
+
+<div class="mk-ventes cluster">
+  <div class="mk-head">
+    <div class="mk-name">Fatou Ndiaye</div>
+    <div class="mk-badges">
+      <span class="mk-badge">Particulier</span>
+      <span class="mk-badge mk-badge-ok">Actif</span>
+    </div>
+    <div class="mk-contact">Thiès</div>
+  </div>
+
+  <div class="mk-encours">
+    <div class="mk-encours-l">Encours actuel</div>
+    <div class="mk-encours-v">
+      <Kpi count={encours} /> <span class="mk-unit">F CFA</span>
+    </div>
+    <div class="mk-track">
+      <div class="mk-fill draw" style={`--pct:${pct}%`}></div>
+    </div>
+    <div class="mk-encours-caption">
+      <Kpi count={pct} suffix="%" /> de la limite de 500 000 F CFA
+    </div>
+  </div>
+
+  <div class="mk-history">
+    <div class="mk-history-title">Historique commercial</div>
+    <ul>
+      {
+        history.map((h) => (
+          <li>
+            <div class="mk-h-l">
+              <span class="mk-h-ref">{h.ref}</span>
+              <span class="mk-h-kind">{h.kind}</span>
+            </div>
+            <span class="mk-h-date">{h.date}</span>
+            <span class="mk-h-amount">
+              <Kpi count={h.amount} /> <span class="mk-unit">F CFA</span>
+            </span>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</div>
+
+<style is:global>
+  .mk-ventes {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .mk-ventes .mk-name {
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .mk-ventes .mk-badges {
+    margin-top: 6px;
+    display: flex;
+    gap: 6px;
+  }
+  .mk-ventes .mk-badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    border-radius: 999px;
+    padding: 3px 9px;
+    background: var(--line-soft);
+    color: var(--ink-soft);
+  }
+  .mk-ventes .mk-badge-ok {
+    background: var(--leaf-100);
+    color: var(--earth-700);
+  }
+  .mk-ventes .mk-contact {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--ink-faint);
+  }
+
+  .mk-ventes .mk-encours {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px 16px;
+  }
+  .mk-encours-l {
+    font-size: 11.5px;
+    color: var(--ink-soft);
+  }
+  .mk-encours-v {
+    margin-top: 4px;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .mk-encours .mk-unit {
+    font-size: 0.55em;
+    font-weight: 500;
+    color: var(--ink-faint);
+  }
+  .mk-track {
+    margin-top: 10px;
+    background: var(--line-soft);
+    border-radius: 999px;
+    height: 8px;
+    overflow: hidden;
+  }
+  .mk-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--sun);
+    width: 0;
+    transition: width 1s ease;
+  }
+  .reveal.in .mk-fill.draw {
+    width: var(--pct);
+  }
+  .mk-encours-caption {
+    margin-top: 8px;
+    font-size: 11.5px;
+    color: var(--ink-faint);
+  }
+
+  .mk-ventes .mk-history {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 12px 14px;
+  }
+  .mk-history-title {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+  }
+  .mk-ventes ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .mk-ventes li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    column-gap: 8px;
+    padding: 9px 0;
+    border-top: 1px solid var(--line-soft);
+  }
+  .mk-ventes li:first-child {
+    padding-top: 0;
+    border-top: 0;
+  }
+  .mk-h-l {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 6px;
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+  }
+  .mk-h-ref {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .mk-h-kind {
+    font-size: 10.5px;
+    color: var(--ink-faint);
+  }
+  .mk-h-date {
+    grid-column: 1;
+    grid-row: 2;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-faint);
+    margin-top: 2px;
+  }
+  .mk-h-amount {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 12.5px;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  .mk-h-amount .mk-unit {
+    font-size: 0.75em;
+    font-weight: 500;
+    color: var(--ink-faint);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mk-fill {
+      width: var(--pct);
+      transition: none;
+    }
+  }
+</style>
