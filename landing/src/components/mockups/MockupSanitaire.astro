@@ -9,12 +9,12 @@ const tiles = [
   { label: "Vaccins en attente", value: 3, note: "Doses en retard", accent: "red" },
   { label: "Traitements actifs", value: 0, note: "Aucun", accent: "blue" },
   { label: "Délais d'attente", value: "—", note: "Aucun délai", accent: "orange" },
-  { label: "Prochaine visite véto", value: "—", note: "Aucun suivi", accent: "violet" },
+  { label: "Prochaine visite véto", value: "—", note: "Aucun suivi", accent: "green" },
 ];
 
 const history = [
   { title: "Vaccin Newcastle Clone30 en retard", lot: "Lot Mbour", delay: "2 j de retard", date: "14 juil. 2026" },
-  { title: "Vaccin Gumboro 228E en retard", lot: "Mbalo", delay: "3 j de retard", date: "13 juil. 2026" },
+  { title: "Vaccin Gumboro 228e en retard", lot: "Mbalo", delay: "3 j de retard", date: "13 juil. 2026" },
   { title: "Vaccin Gumboro D78 en retard", lot: "Lot Mbour", delay: "9 j de retard", date: "07 juil. 2026" },
 ];
 ---
@@ -83,8 +83,8 @@ const history = [
   .mk-sanitaire .mk-accent-orange {
     border-left-color: var(--sun-600);
   }
-  .mk-sanitaire .mk-accent-violet {
-    border-left-color: #7c6fbd;
+  .mk-sanitaire .mk-accent-green {
+    border-left-color: var(--leaf);
   }
   .mk-sanitaire .mk-tile-l {
     font-size: 11px;
@@ -132,37 +132,37 @@ const history = [
     padding-top: 0;
     border-top: 0;
   }
-  .mk-h-main {
+  .mk-sanitaire .mk-h-main {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
     align-items: baseline;
     gap: 4px 10px;
   }
-  .mk-h-title {
+  .mk-sanitaire .mk-h-title {
     font-size: 12.5px;
     font-weight: 600;
     color: var(--ink);
     min-width: 0;
   }
-  .mk-h-date {
+  .mk-sanitaire .mk-h-date {
     font-family: var(--mono);
     font-size: 10px;
     color: var(--ink-faint);
     flex: none;
   }
-  .mk-h-meta {
+  .mk-sanitaire .mk-h-meta {
     margin-top: 3px;
     display: flex;
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
   }
-  .mk-h-lot {
+  .mk-sanitaire .mk-h-lot {
     font-size: 11.5px;
     color: var(--ink-soft);
   }
-  .mk-h-delay {
+  .mk-sanitaire .mk-h-delay {
     font-family: var(--mono);
     font-size: 10px;
     font-weight: 600;
