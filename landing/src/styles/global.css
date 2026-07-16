@@ -1,0 +1,177 @@
+/*
+ * Base CSS — ported verbatim from the approved prototype
+ * (docs/superpowers/specs/assets/landing-prototype.html): reset,
+ * body/h1-h3/p/a, .wrap, .eyebrow, .btn variants, .hl (marker
+ * highlight), .reveal, and the mobile / reduced-motion behaviour tied
+ * to these base elements. Values are unchanged from the prototype.
+ *
+ * Section-specific styles (hero, panels, cards, pricing, faq, etc.)
+ * are out of scope for this task and will be added, page by page, by
+ * later tasks. Header/.nav, footer and the mobile CTA bar are scoped
+ * in their own components (Header.astro / Footer.astro /
+ * MobileCta.astro).
+ */
+
+* {
+  box-sizing: border-box;
+}
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+body {
+  margin: 0;
+  background: var(--stone);
+  color: var(--ink);
+  font-family: var(--disp);
+  font-size: 17px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+h1,
+h2,
+h3 {
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+  margin: 0;
+}
+p {
+  margin: 0;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+.wrap {
+  max-width: var(--wrap);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--leaf);
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  font-weight: 600;
+  font-size: 15.5px;
+  border-radius: 999px;
+  padding: 13px 24px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s,
+    background 0.15s,
+    border-color 0.15s;
+}
+.btn:focus-visible {
+  outline: 3px solid var(--leaf-100);
+  outline-offset: 2px;
+}
+.btn-cta {
+  background: var(--sun);
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(120, 60, 0, 0.25);
+}
+.btn-cta:hover {
+  background: var(--sun-600);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px -10px rgba(230, 126, 10, 0.7);
+}
+.btn-dark {
+  background: var(--earth-800);
+  color: #fff;
+}
+.btn-dark:hover {
+  background: var(--earth);
+  transform: translateY(-1px);
+}
+.btn-ghost {
+  background: var(--paper);
+  color: var(--earth-700);
+  border-color: var(--line);
+}
+.btn-ghost:hover {
+  border-color: var(--leaf);
+  color: var(--leaf);
+}
+.btn-onearth {
+  background: rgba(255, 255, 255, 0.08);
+  color: #eaf3e4;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+.btn-onearth:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+.btn-lg {
+  padding: 15px 28px;
+  font-size: 16px;
+}
+
+/* marker scribble (signature device, orange) */
+.hl {
+  position: relative;
+  white-space: nowrap;
+  z-index: 0;
+}
+.hl svg {
+  position: absolute;
+  left: -2%;
+  right: -2%;
+  bottom: -0.14em;
+  width: 104%;
+  height: 0.5em;
+  z-index: -1;
+  overflow: visible;
+}
+.hl svg path {
+  stroke: var(--sun);
+  stroke-width: 11;
+  stroke-linecap: round;
+  fill: none;
+  opacity: 0.92;
+}
+
+/* scroll-reveal utility (activated by an IntersectionObserver on pages that use it) */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s ease;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+
+@media (max-width: 920px) {
+  /* room for the fixed mobile CTA bar (see MobileCta.astro) */
+  body {
+    padding-bottom: 74px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
