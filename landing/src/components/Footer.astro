@@ -1,6 +1,6 @@
 ---
 import { Image } from "astro:assets";
-import logoDark from "../assets/logo-dark.png";
+import logoDark from "../assets/logo-dark.svg";
 
 const partnerEmail = import.meta.env.PUBLIC_PARTNER_EMAIL || "hello@avicare.app";
 const year = new Date().getFullYear();
@@ -11,7 +11,7 @@ const year = new Date().getFullYear();
     <div class="fgrid">
       <div>
         <a href="/" aria-label="AviCare Platform — accueil">
-          <Image src={logoDark} alt="AviCare Platform" width={150} height={36} class="logo-d" />
+          <Image src={logoDark} alt="AviCare Platform" width={500} height={250} class="logo-d" />
         </a>
         <p class="about">
           La gestion d'élevage avicole pensée pour l'Afrique de l'Ouest — du poussin à la marge.
