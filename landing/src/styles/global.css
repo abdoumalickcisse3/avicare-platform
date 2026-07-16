@@ -213,9 +213,75 @@ a {
   color: #cfe3c6;
 }
 
+/*
+ * Centered page hero (`.phero`) — the sub-page hero used by every page
+ * other than Home (prototype comment: "centered page hero
+ * (Integration/Pricing refs)"). Reused verbatim by the Fonctionnalités hub
+ * and its 5 module sub-pages, so it lives here rather than being
+ * duplicated per page. `.pill` is the small eyebrow-style badge shown
+ * above the H1 (e.g. "Fonctionnalités" on the hub, the module name on a
+ * sub-page). Colors (#EAF3E4 base text, #CFE3C6 sub, leaf-300 pill) match
+ * the already-audited dark-panel palette from Hero.astro/FinalCta.astro —
+ * same background gradient, same contrast ratios (~10-13:1 for `.sub`,
+ * ≥7.5:1 for the leaf-300 pill text, both AA-safe).
+ */
+.phero {
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+  color: #eaf3e4;
+  margin-top: -92px;
+  padding: 132px 24px 72px;
+  background:
+    radial-gradient(140% 90% at 50% -20%, rgba(61, 139, 61, 0.5), transparent 58%),
+    linear-gradient(165deg, var(--earth) 0%, var(--earth-800) 62%, #0e240e 100%);
+}
+.phero .inner {
+  max-width: 760px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--leaf-300);
+  border-radius: 999px;
+  padding: 7px 15px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.phero h1 {
+  color: #fff;
+  font-size: clamp(2.1rem, 4.4vw, 3.3rem);
+  margin-top: 18px;
+}
+.phero .sub {
+  color: #cfe3c6;
+  margin: 18px auto 0;
+  max-width: 52ch;
+  font-size: 1.08rem;
+}
+.phero .cta {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 28px;
+}
+
 @media (max-width: 920px) {
   .panel {
     padding: 56px 20px;
+  }
+  .phero {
+    margin-top: -86px;
+    padding: 114px 20px 58px;
   }
 }
 

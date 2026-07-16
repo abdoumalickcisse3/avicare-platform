@@ -1,0 +1,240 @@
+---
+// Hub Fonctionnalités — d'après la page `#p-fonctionnalites` du prototype
+// (docs/superpowers/specs/assets/landing-prototype.html, lignes 664-731) :
+// .phero centré (pill + H1 avec <Highlight> + sous-titre + 2 CTA), section
+// "5 modules, un seul flux" (grille .mods de ModuleCard, Élevage en
+// feat-mod), section "Couverture" (grille bordée .cov, 12 items),
+// PhotoBand, FinalCta.
+//
+// La grille .mods ne porte que les 5 modules qui ont une sous-page dédiée
+// (MODULES, source unique) — c'est un écart volontaire vis-à-vis du
+// prototype, qui affiche une 6e carte "Tableau de bord" sans sous-page.
+// Le titre de section du prototype ("5 modules, un seul flux") et le
+// contrat de données du brief ("MODULES: Module[] = 5 modules") s'accordent
+// déjà sur le chiffre 5 ; voir task-3-report.md pour le détail.
+import Base from "../../layouts/Base.astro";
+import Highlight from "../../components/Highlight.astro";
+import SectionHead from "../../components/SectionHead.astro";
+import ModuleCard from "../../components/ModuleCard.astro";
+import PhotoBand from "../../components/PhotoBand.astro";
+import FinalCta from "../../components/FinalCta.astro";
+import { MODULES } from "../../data/modules";
+
+const signupUrl = import.meta.env.PUBLIC_APP_SIGNUP_URL || "#";
+
+const title = "Fonctionnalités — Tout l'élevage avicole, d'un seul endroit | AviCare";
+const description =
+  "Cinq modules qui se parlent : élevage, sanitaire, stocks, ventes et finance. Vous saisissez une fois au poulailler, AviCare en tire vos coûts et votre marge.";
+
+// Icônes copiées verbatim des cartes `.mod` du prototype (mêmes tracés que
+// les FeatureCard de l'accueil, un module = une icône fixe, pas stockée
+// dans modules.ts).
+const icons: Record<string, string> = {
+  elevage:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 20c0-4 3-7 7-7 1.5 0 2.8.5 3.8 1.3"/><path d="M14 8a3 3 0 1 0-.1 0Z"/><path d="M17 6c2 0 3 1.5 3 3.5 0 3-2.4 5.5-6 5.5"/></svg>',
+  sanitaire:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4.8 12.5 9 8.3a3 3 0 0 1 4.2 0l1.5 1.5"/><path d="m14 4 6 6"/><path d="m18 8-8.5 8.5a3 3 0 0 1-4.2 0 3 3 0 0 1 0-4.2Z"/></svg>',
+  stocks:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 12v9"/><path d="m3 7 9-4 9 4v10l-9 4-9-4Z"/></svg>',
+  ventes:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4Z"/><path d="M4 6h16"/><path d="M8 10a4 4 0 0 0 8 0"/></svg>',
+  finance:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 15 3-4 3 2 5-7"/></svg>',
+};
+
+const coverage = [
+  "Poulets de chair",
+  "Pondeuses",
+  "Vaccins",
+  "Traitements",
+  "Calendrier vaccinal",
+  "Délais d'attente",
+  "Aliment & formules",
+  "Bons d'achat",
+  "Fournisseurs",
+  "Clients & encours",
+  "Factures",
+  "Marge par bande",
+];
+---
+
+<Base title={title} description={description}>
+  <section class="phero">
+    <div class="inner">
+      <span class="pill">Fonctionnalités</span>
+      <h1>Tout l'élevage, <Highlight>d'un seul endroit</Highlight>.</h1>
+      <p class="sub">
+        Cinq modules qui se parlent. Vous saisissez une fois au poulailler — AviCare en tire vos
+        coûts, vos alertes et votre marge.
+      </p>
+      <div class="cta">
+        <a class="btn btn-cta btn-lg" href={signupUrl}>Commencer gratuitement</a>
+        <a class="btn btn-onearth btn-lg" href="/tarifs">Voir les tarifs</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel reveal">
+    <SectionHead
+      eyebrow="Les modules"
+      lead="Activés dès votre inscription, gratuits pendant le pilote. Chacun nourrit les autres."
+    >
+      5 modules, un seul flux.
+    </SectionHead>
+    <div class="mods">
+      {
+        MODULES.map((m) => (
+          <ModuleCard name={m.name} tag={m.tag} teaser={m.teaser} slug={m.slug} featured={m.slug === "elevage"}>
+            <Fragment slot="icon" set:html={icons[m.slug]} />
+          </ModuleCard>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="panel panel-stone reveal">
+    <div class="split">
+      <div class="sec-head" style="max-width:none">
+        <div class="eyebrow">Couverture</div>
+        <h2>Ce qui est couvert, du poussin à la facture.</h2>
+        <p class="lead">
+          Pas besoin d'un tableur à côté&nbsp;: le quotidien complet d'un élevage avicole tient
+          dans AviCare.
+        </p>
+      </div>
+      <div class="rate">
+        <div class="avs">
+          <span>MD</span><span>AF</span><span>SC</span><span>+9</span>
+        </div>
+        <div>
+          <div style="font-weight:600;font-size:14.5px">Fermes pilotes</div>
+          <div style="font-family:var(--mono);font-size:12.5px;color:var(--ink-faint)">Sénégal · 2026</div>
+        </div>
+      </div>
+    </div>
+    <div class="cov">
+      {
+        coverage.map((item) => (
+          <div>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+              <path d="M20 6 9 17l-5-5" />
+            </svg>
+            {item}
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <PhotoBand
+    eyebrow="Sur le terrain"
+    title="Le vrai travail est au poulailler. Pas dans un cahier."
+    description="AviCare tient les chiffres pendant que vous tenez l'élevage."
+  />
+
+  <FinalCta
+    title="Essayez sur votre prochaine bande."
+    description="Tous les modules, gratuits pendant le pilote. Sans carte bancaire."
+  />
+</Base>
+
+<style is:global>
+  /* ---- module grid (Integration ref) ---- */
+  .mods {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 40px;
+  }
+
+  /* ---- covered grid (logo-grid device) ---- */
+  .cov {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    overflow: hidden;
+    margin-top: 32px;
+    background: var(--paper);
+  }
+  .cov div {
+    padding: 20px 16px;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink-soft);
+  }
+  .cov div svg {
+    width: 16px;
+    height: 16px;
+    color: var(--leaf);
+    flex: none;
+  }
+  .cov div:nth-child(4n) {
+    border-right: 0;
+  }
+  .cov div:nth-last-child(-n + 4) {
+    border-bottom: 0;
+  }
+
+  .split {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 36px;
+    align-items: center;
+  }
+  .split .rate {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    justify-content: flex-end;
+  }
+  .avs {
+    display: flex;
+  }
+  .avs span {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--leaf-100);
+    color: var(--earth-700);
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    font-size: 12.5px;
+    border: 2px solid var(--paper);
+    margin-left: -10px;
+  }
+  .avs span:first-child {
+    margin-left: 0;
+  }
+
+  @media (max-width: 920px) {
+    .mods,
+    .split {
+      grid-template-columns: 1fr;
+    }
+    .cov {
+      grid-template-columns: 1fr 1fr;
+    }
+    .cov div:nth-child(4n) {
+      border-right: 1px solid var(--line);
+    }
+    .cov div:nth-child(2n) {
+      border-right: 0;
+    }
+    .cov div:nth-last-child(-n + 4) {
+      border-bottom: 1px solid var(--line);
+    }
+    .cov div:nth-last-child(-n + 2) {
+      border-bottom: 0;
+    }
+    .split .rate {
+      justify-content: flex-start;
+    }
+  }
+</style>
