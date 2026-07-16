@@ -31,6 +31,15 @@ const { title, description, canonical, jsonLd } = Astro.props;
     <link rel="preload" as="font" type="font/woff2" href={outfit700} crossorigin />
 
     <SeoHead title={title} description={description} canonical={canonical} jsonLd={jsonLd} />
+
+    <noscript>
+      <style>
+        .reveal {
+          opacity: 1;
+          transform: none;
+        }
+      </style>
+    </noscript>
   </head>
   <body>
     <Header />
