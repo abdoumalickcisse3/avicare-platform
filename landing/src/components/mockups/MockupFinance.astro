@@ -1,0 +1,270 @@
+---
+// Recréation HTML/CSS de l'analytique ferme (pas une capture d'écran) —
+// valeurs figées par docs/superpowers/specs/assets/landing-module-mockups.md
+// §5. Marge affichée avec son taux (18,4 %) : dérivé arithmétiquement des
+// deux totaux du spec (228 000 / 1 240 000), cohérent avec la note du
+// tableau source ("18,4 %, réaliste") — pas un chiffre ajouté.
+//
+// `variant="full"` (bloc "Compte de résultat") montre le tableau complet ;
+// `variant="revenuParLot"` (bloc "Ce que rapporte chaque lot") n'affiche
+// que la liste "Revenu par lot", pour illustrer ce capacité-là sans
+// dupliquer tout le tableau de bord.
+import Kpi from "../Kpi.astro";
+
+export interface Props {
+  variant?: "full" | "revenuParLot";
+}
+const { variant = "full" } = Astro.props;
+
+const revenus = 1240000;
+const depenses = 1012000;
+const marge = 228000;
+const margePct = Math.round((marge / revenus) * 1000) / 10; // 18.4
+
+const revenuDetail = [
+  { label: "Ventes directes", value: 495000 },
+  { label: "Commandes payées", value: 745000 },
+];
+
+const depensesCategories = [
+  { label: "Aliment", value: 742000 },
+  { label: "Poussins", value: 180000 },
+  { label: "Vétérinaire / médicaments", value: 45000 },
+  { label: "Matériel", value: 45000 },
+];
+const maxDepense = Math.max(...depensesCategories.map((d) => d.value));
+
+const revenuParLot = [
+  { label: "Cobb 500 #2", value: 745000 },
+  { label: "Bâtiment 1 – Lot 12", value: 495000 },
+];
+const maxLot = Math.max(...revenuParLot.map((d) => d.value));
+---
+
+{
+  variant === "full" ? (
+    <div class="mk-finance cluster">
+      <div class="mk-title">Analytique</div>
+
+      <div class="mk-tiles">
+        <div class="mk-tile">
+          <div class="mk-tile-l">Total revenus</div>
+          <div class="mk-tile-v">
+            <Kpi count={revenus} /> <span class="mk-unit">F CFA</span>
+          </div>
+        </div>
+        <div class="mk-tile">
+          <div class="mk-tile-l">Total dépenses</div>
+          <div class="mk-tile-v">
+            <Kpi count={depenses} /> <span class="mk-unit">F CFA</span>
+          </div>
+        </div>
+        <div class="mk-tile mk-tile-margin">
+          <div class="mk-tile-l">Marge</div>
+          <div class="mk-tile-v mk-v-green">
+            <Kpi count={marge} /> <span class="mk-unit">F CFA</span>
+          </div>
+          <div class="mk-tile-pct">
+            <Kpi count={margePct} dec={1} suffix=" %" />
+          </div>
+        </div>
+      </div>
+
+      <div class="mk-block">
+        <div class="mk-block-title">Détail du revenu</div>
+        <div class="mk-bars">
+          {revenuDetail.map((r) => (
+            <div class="mk-bar-row">
+              <span class="mk-bar-label">{r.label}</span>
+              <div class="mk-bar-meter">
+                <div class="mk-bar-track">
+                  <div class="mk-bar-fill draw mk-fill-green" style={`--pct:${Math.round((r.value / revenus) * 100)}%`} />
+                </div>
+                <span class="mk-bar-value">
+                  <Kpi count={r.value} />
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div class="mk-block">
+        <div class="mk-block-title">Dépenses par catégorie</div>
+        <div class="mk-bars">
+          {depensesCategories.map((d) => (
+            <div class="mk-bar-row">
+              <span class="mk-bar-label">{d.label}</span>
+              <div class="mk-bar-meter">
+                <div class="mk-bar-track">
+                  <div class="mk-bar-fill draw mk-fill-sun" style={`--pct:${Math.round((d.value / maxDepense) * 100)}%`} />
+                </div>
+                <span class="mk-bar-value">
+                  <Kpi count={d.value} />
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  ) : (
+    <div class="mk-finance mk-finance-lot cluster">
+      <div class="mk-block-title">Revenu par lot</div>
+      <div class="mk-bars">
+        {revenuParLot.map((l) => (
+          <div class="mk-bar-row">
+            <span class="mk-bar-label">{l.label}</span>
+            <div class="mk-bar-meter">
+              <div class="mk-bar-track">
+                <div class="mk-bar-fill draw mk-fill-green" style={`--pct:${Math.round((l.value / maxLot) * 100)}%`} />
+              </div>
+              <span class="mk-bar-value">
+                <Kpi count={l.value} />
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+<style is:global>
+  .mk-finance {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .mk-finance .mk-title {
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .mk-finance .mk-tiles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .mk-finance .mk-tile {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 10px 12px;
+  }
+  .mk-finance .mk-tile-margin {
+    grid-column: 1 / -1;
+    background: var(--leaf-050);
+    border-color: var(--leaf-100);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .mk-tile-l {
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+  .mk-tile-v {
+    margin-top: 3px;
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .mk-v-green {
+    color: var(--earth-700);
+  }
+  .mk-unit {
+    font-size: 0.62em;
+    font-weight: 500;
+    color: var(--ink-faint);
+  }
+  .mk-tile-pct {
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--leaf);
+    background: var(--paper);
+    border-radius: 999px;
+    padding: 2px 10px;
+  }
+
+  .mk-finance .mk-block {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 14px;
+  }
+  .mk-finance.mk-finance-lot {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 14px;
+  }
+  .mk-block-title {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+  }
+  .mk-bar-row {
+    margin-top: 10px;
+  }
+  .mk-bar-row:first-child {
+    margin-top: 0;
+  }
+  .mk-bar-label {
+    display: block;
+    font-size: 10.5px;
+    color: var(--ink-soft);
+    margin-bottom: 4px;
+  }
+  .mk-bar-meter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .mk-bar-track {
+    flex: 1;
+    min-width: 0;
+    background: var(--line-soft);
+    border-radius: 999px;
+    height: 8px;
+    overflow: hidden;
+  }
+  .mk-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    width: 0;
+    transition: width 1s ease;
+  }
+  .mk-fill-green {
+    background: var(--leaf);
+  }
+  .mk-fill-sun {
+    background: var(--sun);
+  }
+  .reveal.in .mk-bar-fill.draw {
+    width: var(--pct);
+  }
+  .mk-bar-value {
+    flex: none;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--ink);
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mk-bar-fill {
+      width: var(--pct);
+      transition: none;
+    }
+  }
+</style>
