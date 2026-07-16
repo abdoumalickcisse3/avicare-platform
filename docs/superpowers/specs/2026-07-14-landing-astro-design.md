@@ -7,8 +7,12 @@ séparé de l'app Next.js. Cible double (éleveurs + partenaires B2B2C), pilote 
 
 ## Décisions verrouillées (brainstorming)
 
-- **Stack : Astro en SSG** + **Tailwind** (palette AviCare), dans `landing/` (monorepo). Zéro JS sauf
-  un îlot pour l'animation des KPI. Langue **français**.
+- **Stack : Astro en SSG**, dans `landing/` (monorepo). Zéro JS sauf de petits îlots (compteurs KPI,
+  routeur non requis en Astro, accordéon FAQ en `<details>` natif). Langue **français**.
+- **Styling : CSS natif à tokens** (custom properties), repris **tel quel du prototype validé** —
+  **pas de Tailwind** (déviation assumée vs. la note initiale) : le prototype est écrit en CSS
+  artisanal approuvé ; le porter en Tailwind ajouterait du travail et un risque de dérive visuelle.
+  Astro gère nativement les styles scopés par composant + une feuille globale de tokens.
 - **Double cible équilibrée** : hero unifié, puis un bloc « double parcours » (Éleveur / Coopérative-
   Provendier) avec promesse + CTA propres à chacun. Évite la dilution en isolant chaque parcours.
 - **CTA principal = « Commencer gratuitement » → inscription de l'app** (URL placeholder
@@ -17,15 +21,27 @@ séparé de l'app Next.js. Cible double (éleveurs + partenaires B2B2C), pilote 
 - **Tarifs** : bandeau « Gratuit pendant la phase pilote » + plans **indicatifs à venir** basés sur les
   bundles doc 00 §7 : Starter Volaille 15 000 F/mois, Pro Volaille 25 000 F/mois, Ferme Complète
   45 000 F/mois, Sur mesure (coops). Marqués « indicatif, à venir ».
-- **Direction créative « Terre & Données »** : chaleur agricole ouest-africaine × rigueur produit.
-  Signature = **hero = vrai cockpit produit** avec KPI qui s'animent en comptant (pas d'illustration
-  stock). Cohérent avec doc 10 (chaleureux, sérieux, local ; réf. Vercel, pas Bootstrap).
-- **Images** : fournies par le client **après création du projet** → placeholders en attendant. Les
-  captures produit sont générées depuis l'app réelle.
+- **Direction visuelle : VALIDÉE via prototype** (2026-07-16) →
+  **`docs/superpowers/specs/assets/landing-prototype.html`** = **source de vérité visuelle**.
+  Le build Astro doit reproduire ce prototype (structure, tokens, composants, micro-interactions).
+  - **Structure** reprise des maquettes Figma fournies par le client (`~/Desktop/*.png`) :
+    `Home` → Accueil, **`Integration` → Fonctionnalités**, `Pricing` → Tarifs, `About us` → À propos
+    (`Integration Details` → gabarit des sous-pages fonctionnalités, à décliner).
+  - **Recolorée aux tokens de marque AviCare** (doc 10) : vert/orange, jamais le violet/lime du template.
+  - Devices signature : **menu = île arrondie flottante** (verre dépoli) ; **sections pleine largeur**
+    à fonds alternés (blanc / stone / bandes vert foncé / bande photo) — **surtout pas** de sections
+    en panneaux flottants (explicitement rejeté par le client) ; **surlignage marqueur orange** tracé
+    à la main sur un mot clé des titres ; hero **vert immersif** + cockpit KPI animés + **chips
+    flottantes** ; **bande stats** vert foncé ; témoignages à **gros chiffre** ; FAQ accordéon ;
+    CTA final vert foncé ; **vrai logo AviCare** (foncé au header, clair au footer).
+- **Images** : fournies par le client, présentes dans `web/public/images/` → à copier dans
+  `landing/src/assets/` (`eleveur-poulets` = hero À propos, `equipements-ferme` = bande, `eleveur` =
+  bloc vision). Logo depuis `web/public/logo/{logo,logo-dark}.png`. Captures produit générées depuis
+  l'app réelle si besoin.
 
 ## Stack technique & architecture
 
-- **Astro 5** (`output: "static"`), intégrations : `@astrojs/tailwind`, `@astrojs/sitemap`,
+- **Astro 5** (`output: "static"`), intégrations : `@astrojs/sitemap`,
   `@astrojs/partytown` (analytics différé, optionnel). Images via `astro:assets` (AVIF/WebP,
   responsive, lazy).
 - **Emplacement** : `landing/` à la racine du monorepo (indépendant de `web/`). Build statique
@@ -44,19 +60,11 @@ séparé de l'app Next.js. Cible double (éleveurs + partenaires B2B2C), pilote 
 > Le site vitrine réutilise **exactement** les tokens doc 10 (Tailwind config = mapping direct de la
 > palette/espacements/radii/ombres du doc 10) pour rester cohérent avec l'app.
 
-**Prototypage Stitch (workflow doc 10 §8) — FAIT pour l'accueil.**
-- Projet Stitch : **« Avicare Design System »** (`projects/2827477240241166880`).
-- Design system dédié généré : **« Terre & Données »** = `assets/d715f7dd8eae4b148596cc01563772d2`
-  (tokens verbatim doc 10 : Outfit + JetBrains Mono, `#3D8B3D`/`#F8961E`/`#FAFAF9`/`#292524`, radii
-  8/12px, CTA orange strictement réservé, ombres ambiantes subtiles). **Réutiliser ce design system**
-  pour générer les autres pages afin de garantir la cohérence.
-- Maquette accueil générée : screen `projects/2827477240241166880/screens/8b2bf2bb8c824219878a087dd0344d94`
-  (« Accueil - AviCare (Terre & Données) ») — **source visuelle + HTML/Tailwind de référence** pour la
-  home Astro. Stitch produit du **Tailwind** → ici c'est un **avantage** (le site EST en Tailwind) : on
-  reprend structure + classes, on branche le vrai copy (déjà rédigé ci-dessous) et on remplace les
-  visuels par `astro:assets`. Récupérer le HTML/screenshot via `download_assets`/`get_screen` au build.
-- Pages suivantes (fonctionnalités, tarifs, partenaires) : générables en Stitch avec le même design
-  system si besoin d'un repère visuel ; sinon, décliner directement les composants de la home.
+**Prototypage — historique.** Une maquette a été générée dans Stitch (projet « Avicare Design System »,
+`projects/2827477240241166880`) : **écartée par le client** (rendu « SaaS corporate » générique). La
+direction retenue est le **prototype validé** (`assets/landing-prototype.html`), construit sur mesure
+d'après les maquettes Figma du client et recoloré aux tokens doc 10. Stitch reste utilisable comme
+repère visuel, mais **ne dicte pas** le design du site.
 
 - **Palette (doc 10, verbatim)** : primary vert (`#3D8B3D` main ; foncés `#2E6B2E`/`#245524`/`#1B3F1B`/
   `#122B12` ; clairs `#F0F7F0`/`#DCEEDC`), **accent orange Sénégal** (`#F8961E` main ; `#E67E0A` pour
