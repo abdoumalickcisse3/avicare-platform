@@ -32,7 +32,6 @@ import Base from "../layouts/Base.astro";
 import Highlight from "../components/Highlight.astro";
 import Kpi from "../components/Kpi.astro";
 import FinalCta from "../components/FinalCta.astro";
-import eleveurPoulets from "../assets/eleveur-poulets.webp";
 import eleveur from "../assets/eleveur.jpg";
 
 const signupUrl = import.meta.env.PUBLIC_APP_SIGNUP_URL || "#";
@@ -61,7 +60,7 @@ const description =
         </div>
       </div>
       <div class="aphoto f1">
-        <Image src={eleveurPoulets} alt="Éleveur nourrissant ses poulets" width={600} height={900} class="aphoto-img" />
+        <Image src={eleveur} alt="Éleveur devant son poulailler ouvert" width={600} height={400} class="aphoto-img" />
         <div class="astat s1">
           <div class="l">Bandes suivies</div>
           <div class="v"><Kpi count={40} suffix="+" /></div>
