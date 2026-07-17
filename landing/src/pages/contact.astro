@@ -184,8 +184,11 @@ const description =
     color: var(--ink);
     word-break: break-word;
   }
-  .chan-soon {
-    opacity: 0.62;
+  /* Pas d'opacity sur la carte entière : elle composite le texte avec le fond
+     et fait tomber --ink-soft de 5.75:1 à ~2.61:1 (échec AA). L'état "à venir"
+     passe par l'icône estompée + le libellé, le texte reste pleinement lisible. */
+  .chan-soon .ic {
+    opacity: 0.55;
   }
   .chan-soon .v {
     font-weight: 500;
