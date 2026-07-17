@@ -1,12 +1,11 @@
-import { PrintableInvoice } from "@/components/commercial/PrintableInvoice";
+import { InvoicePdfView } from "@/components/commercial/InvoicePdfView";
 
 /**
- * Printable invoice route. In Next 16 `params` is a Promise; we await it in this
- * server component and pass the id to the client component, which triggers
- * window.print() once the data has loaded.
+ * Invoice PDF route. In Next 16 `params` is a Promise; we await it in this
+ * server component and pass the id to the client view, which generates a real
+ * PDF (react-pdf) — no browser print headers/footers, no app chrome.
  *
- * Open in a new tab from InvoiceDetailView → "Imprimer / PDF".
- * The user then selects "Enregistrer en PDF" from the browser print dialog.
+ * Opened in a new tab from InvoiceDetailView → "Imprimer / PDF".
  */
 export default async function InvoicePrintPage({
   params,
@@ -14,5 +13,5 @@ export default async function InvoicePrintPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <PrintableInvoice invoiceId={Number(id)} />;
+  return <InvoicePdfView invoiceId={Number(id)} />;
 }
