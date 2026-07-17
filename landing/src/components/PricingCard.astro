@@ -1,24 +1,42 @@
 ---
 // Carte plan tarifaire (`.plan`). Ported verbatim from the prototype's
 // `.plans` block. `badge` peut surcharger `plan.badge` (voir data/plans.ts).
+//
+// `contactHref` est le lien du CTA pour les plans `contactCta` (ex. "Sur
+// mesure" → mailto vers le canal partenaire) ; à défaut, le CTA pointe
+// sur `href` (signup). Le badge n'est plus conditionné à `plan.popular` :
+// un plan non "recommandé" peut aussi porter une étiquette neutre (ex.
+// "Indicatif · à venir") — seule la mise en avant verte (.pop) reste
+// réservée au plan recommandé.
 import type { Plan } from "../data/plans";
 
 export interface Props {
   plan: Plan;
   href: string;
+  contactHref?: string;
   badge?: string;
 }
 
-const { plan, href, badge } = Astro.props;
+const { plan, href, contactHref, badge } = Astro.props;
 const badgeLabel = badge ?? plan.badge;
+const ctaHref = plan.contactCta && contactHref ? contactHref : href;
+const ctaLabel = plan.ctaLabel ?? "Commencer gratuitement";
 ---
 
 <div class:list={["plan", { pop: plan.popular }]}>
-  {plan.popular && badgeLabel && <span class="badge">{badgeLabel}</span>}
+  {badgeLabel && <span class="badge">{badgeLabel}</span>}
   <div class="pn">{plan.name}</div>
   <div class="pp">
-    {plan.price}
-    {plan.priceSuffix && <small> {plan.priceSuffix}</small>}
+    {
+      plan.priceLabel ? (
+        <span class="pp-label">{plan.priceLabel}</span>
+      ) : (
+        <>
+          {plan.price}
+          {plan.priceSuffix && <small> {plan.priceSuffix}</small>}
+        </>
+      )
+    }
   </div>
   <div class="pd">{plan.description}</div>
   <ul>
@@ -33,7 +51,7 @@ const badgeLabel = badge ?? plan.badge;
       ))
     }
   </ul>
-  <a class={`btn btn-${plan.ctaVariant}`} href={href}>Commencer gratuitement</a>
+  <a class={`btn btn-${plan.ctaVariant}`} href={ctaHref}>{ctaLabel}</a>
 </div>
 
 <style is:global>
@@ -44,25 +62,31 @@ const badgeLabel = badge ?? plan.badge;
     padding: 26px;
     display: flex;
     flex-direction: column;
+    position: relative;
   }
   .plan.pop {
     background: var(--paper);
     border-color: var(--leaf);
     box-shadow: 0 24px 44px -28px rgba(61, 139, 61, 0.55);
-    position: relative;
   }
-  .plan.pop .badge {
+  .plan .badge {
     position: absolute;
     top: -11px;
     left: 26px;
-    background: var(--leaf);
-    color: #fff;
+    background: var(--stone);
+    color: var(--ink-soft);
+    border: 1px solid var(--line);
     font-family: var(--mono);
     font-size: 10.5px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     padding: 5px 11px;
     border-radius: 999px;
+  }
+  .plan.pop .badge {
+    background: var(--leaf);
+    color: #fff;
+    border-color: transparent;
   }
   .plan .pn {
     font-weight: 700;
@@ -74,11 +98,21 @@ const badgeLabel = badge ?? plan.badge;
     font-size: 1.8rem;
     margin-top: 5px;
     letter-spacing: -0.02em;
+    min-height: 1.2em;
+    display: flex;
+    align-items: center;
   }
   .plan .pp small {
     font-size: 0.4em;
     color: var(--ink-faint);
     font-weight: 500;
+  }
+  .plan .pp-label {
+    font-family: var(--disp);
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: var(--earth-700);
+    letter-spacing: normal;
   }
   .plan .pd {
     color: var(--ink-soft);

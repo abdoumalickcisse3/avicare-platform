@@ -22,6 +22,10 @@ import { faq } from "../data/faq";
 import logo from "../assets/logo.png";
 
 const signupUrl = import.meta.env.PUBLIC_APP_SIGNUP_URL || "#";
+// La 4e carte "Sur mesure" (contact partenaire, sans signup) est propre
+// à /tarifs (doc de design §8) : le bandeau pilote de l'accueil garde
+// ses 3 cartes chiffrées et son CTA de signup unique.
+const homePlans = plans.filter((plan) => !plan.contactCta);
 
 const title = "AviCare — Le logiciel de gestion d'élevage avicole en Afrique de l'Ouest";
 const description =
@@ -250,7 +254,7 @@ const jsonLd = {
       </Fragment>
     </SectionHead>
     <div class="plans">
-      {plans.map((plan) => <PricingCard plan={plan} href={signupUrl} />)}
+      {homePlans.map((plan) => <PricingCard plan={plan} href={signupUrl} />)}
     </div>
   </section>
 
