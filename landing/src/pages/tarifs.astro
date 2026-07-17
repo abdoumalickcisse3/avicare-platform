@@ -28,6 +28,24 @@
 //   Le comparatif reste à 3 colonnes (Découverte/Pro Volaille/Ferme
 //   Complète) : "Sur mesure" est une offre négociée, pas une grille de
 //   fonctionnalités fixe.
+// - Task 7 fix 3/4 (carte ↔ comparatif) : la carte Découverte disait
+//   "Toutes les fonctionnalités V1" + "Ventes & finances", alors que le
+//   comparatif marque Finance/Analytique/Sanitaire avancé ✗ pour
+//   Découverte — contradiction sur un même écran. Résolu en alignant la
+//   carte (indicatif *futur*, post-pilote) sur ce que dit déjà le
+//   comparatif, plutôt que l'inverse : Découverte décrit maintenant
+//   "Élevage, sanitaire de base, stocks & ventes" (sans finance/marge,
+//   sans sanitaire avancé). La réalité *pilote actuel* (tous les modules
+//   actifs pour toutes les fermes) reste portée par le hero + la
+//   fine-note sous le tableau — les deux registres (pilote maintenant vs
+//   grille indicative plus tard) ne se mélangent plus.
+//   Par la même occasion, "Sanitaire avancé (traitements, délais)" —
+//   argument phare de Pro Volaille (voir sa description dans
+//   data/plans.ts : "Sanitaire avancé & délais") — passe de ✓ partout à
+//   ✗ pour Découverte / ✓ pour Pro Volaille et Ferme Complète : Ferme
+//   Complète hérite de "Tout Pro Volaille" (déjà son propre libellé), ce
+//   qui borne la déduction à la structure d'héritage déjà actée dans
+//   data/plans.ts plutôt qu'à une politique commerciale inventée.
 import Base from "../layouts/Base.astro";
 import Highlight from "../components/Highlight.astro";
 import SectionHead from "../components/SectionHead.astro";
@@ -53,7 +71,7 @@ const compareColumns: [string, string, string] = ["Découverte", "Pro Volaille",
 const compareRows: CompareRow[] = [
   { feature: "Élevage — chair & pondeuses", values: [true, true, true] },
   { feature: "Sanitaire de base (vaccins)", values: [true, true, true] },
-  { feature: "Sanitaire avancé (traitements, délais)", values: [true, true, true] },
+  { feature: "Sanitaire avancé (traitements, délais)", values: [false, true, true] },
   { feature: "Stocks & formules d'aliment", values: [true, true, true] },
   { feature: "Ventes, factures & encours", values: [true, true, true] },
   { feature: "Finance & marge de la ferme", values: [false, false, true] },
