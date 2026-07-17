@@ -6,6 +6,7 @@ import { CatalogEntryDialog } from "./CatalogEntryDialog";
 import { getCategoryConfig } from "@/constants/catalogCategories";
 
 const LOTS = getCategoryConfig("lots")!;
+const STOCK = getCategoryConfig("stock")!;
 
 function respond(data: unknown) {
   return Promise.resolve(
@@ -65,4 +66,24 @@ describe("CatalogEntryDialog", () => {
       value: { label: "Ross 308 Plus", type: "broiler", species: "poultry", extra: "keepme" },
     });
   });
+
+  it("stores a number field as a number, not a string", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <CatalogEntryDialog open onClose={vi.fn()} config={STOCK} farmId={1} />,
+    );
+    await user.type(screen.getByLabelText("Nom de l'article"), "Mais local");
+    await user.click(screen.getByRole("combobox", { name: "Type" }));
+    await user.click(await screen.findByRole("option", { name: "Aliment" }));
+    await user.type(screen.getByLabelText(/Unit\u00e9/), "kg");
+    await user.type(screen.getByLabelText(/Prix indicatif/), "320");
+    await user.click(screen.getByRole("button", { name: /Enregistrer/i }));
+
+    await waitFor(() => expect(lastBody).not.toBeNull());
+    const value = (lastBody as { value: Record<string, unknown> }).value;
+    expect(value).toMatchObject({ label: "Mais local", subcategory: "FEED", unit: "kg" });
+    // The crux: the price is a number, not the string "320".
+    expect(value.typical_unit_price_xof).toBe(320);
+  });
+
 });

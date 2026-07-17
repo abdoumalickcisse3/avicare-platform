@@ -11,6 +11,14 @@ describe("catalogCategories", () => {
   it("maps comptabilite to expense_categories", () => {
     expect(getCategoryConfig("comptabilite")?.backendCategory).toBe("expense_categories");
   });
+  it("maps stock to inventory_items with a number field for the indicative price", () => {
+    const cfg = getCategoryConfig("stock");
+    expect(cfg?.backendCategory).toBe("inventory_items");
+    expect(cfg?.fields.some((f) => f.name === "subcategory" && f.type === "select")).toBe(true);
+    expect(
+      cfg?.fields.some((f) => f.name === "typical_unit_price_xof" && f.type === "number"),
+    ).toBe(true);
+  });
   it("returns undefined for an unconfigured slug", () => {
     expect(getCategoryConfig("ventes")).toBeUndefined();
   });

@@ -48,10 +48,27 @@ export function CatalogEntryDialog({ open, onClose, config, farmId, entry }: Pro
     () =>
       z.object(
         Object.fromEntries(
-          editable.map((f) => [
-            f.name,
-            f.required ? z.string().min(1, "Ce champ est requis") : z.string().optional(),
-          ]),
+          editable.map((f) => {
+            if (f.type === "number") {
+              // Held as a string in the form; validated numeric, coerced to a
+              // number on submit.
+              const numeric = (v: string | undefined) =>
+                v === undefined || v === "" || !Number.isNaN(Number(v));
+              return [
+                f.name,
+                f.required
+                  ? z
+                      .string()
+                      .min(1, "Ce champ est requis")
+                      .refine((v) => !Number.isNaN(Number(v)), "Entrez un nombre valide")
+                  : z.string().optional().refine(numeric, "Entrez un nombre valide"),
+              ];
+            }
+            return [
+              f.name,
+              f.required ? z.string().min(1, "Ce champ est requis") : z.string().optional(),
+            ];
+          }),
         ),
       ),
     [editable],
@@ -60,7 +77,10 @@ export function CatalogEntryDialog({ open, onClose, config, farmId, entry }: Pro
 
   const defaults: FormValues = useMemo(() => {
     const out: FormValues = {};
-    for (const f of editable) out[f.name] = (entry?.value?.[f.name] as string | undefined) ?? "";
+    for (const f of editable) {
+      const raw = entry?.value?.[f.name];
+      out[f.name] = raw == null ? "" : String(raw);
+    }
     return out;
   }, [editable, entry]);
 
@@ -81,7 +101,15 @@ export function CatalogEntryDialog({ open, onClose, config, farmId, entry }: Pro
     const consts = Object.fromEntries(
       config.fields.filter((f) => f.const !== undefined).map((f) => [f.name, f.const as string]),
     );
-    const value = { ...(entry?.value ?? {}), ...values, ...consts };
+    // Number fields are stored as numbers (not the form's string); an empty
+    // optional number is dropped from the value.
+    const coerced: Record<string, unknown> = {};
+    for (const f of editable) {
+      const raw = values[f.name];
+      coerced[f.name] =
+        f.type === "number" ? (raw === undefined || raw === "" ? undefined : Number(raw)) : raw;
+    }
+    const value = { ...(entry?.value ?? {}), ...coerced, ...consts };
     const key = entry?.key ?? slugify(String(values[config.labelField] ?? ""));
     try {
       await override({ farmId, category: config.backendCategory, key, value }).unwrap();
@@ -118,6 +146,7 @@ export function CatalogEntryDialog({ open, onClose, config, farmId, entry }: Pro
                   <TextField
                     {...field}
                     select={f.type === "select"}
+                    type={f.type === "number" ? "number" : "text"}
                     label={f.label}
                     fullWidth
                     error={!!fieldState.error}
