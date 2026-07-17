@@ -1,7 +1,14 @@
 // Plans tarifaires — copy verbatim du prototype (§ pricing). Réutilisé
-// par l'accueil (bandeau pilote) et par la future page /tarifs, qui
-// pourra surcharger le libellé du badge (ex. "Recommandé" au lieu de
+// par l'accueil (bandeau pilote) et par la page /tarifs, qui peut
+// surcharger le libellé du badge (ex. "Recommandé" au lieu de
 // "Le plus complet volaille") via la prop `badge` de PricingCard.
+//
+// La 4e carte "Sur mesure" (doc de design §8) n'a pas de prix chiffré ni
+// de CTA de signup — `priceLabel` remplace le prix mono par un texte
+// (rendu en Outfit, pas en JetBrains Mono, puisque ce n'est pas un
+// nombre) et `contactCta` route son CTA vers le canal partenaire
+// (mailto) au lieu du flux d'inscription. L'accueil filtre cette carte
+// (voir index.astro) pour garder son bandeau pilote à 3 colonnes.
 export interface Plan {
   name: string;
   price: string;
@@ -11,6 +18,12 @@ export interface Plan {
   ctaVariant: "ghost" | "cta";
   popular?: boolean;
   badge?: string;
+  /** Remplace `price`/`priceSuffix` par un libellé texte (plans sans prix chiffré). */
+  priceLabel?: string;
+  /** Surcharge le texte du CTA (par défaut "Commencer gratuitement"). */
+  ctaLabel?: string;
+  /** CTA vers le canal de contact partenaire (mailto) plutôt que le signup. */
+  contactCta?: boolean;
 }
 
 export const plans: Plan[] = [
@@ -38,5 +51,16 @@ export const plans: Plan[] = [
     description: "Tous les modules, 10 fermes, finance complète.",
     features: ["Tout Pro Volaille", "Finance & analytique", "Jusqu'à 10 fermes"],
     ctaVariant: "ghost",
+  },
+  {
+    name: "Sur mesure",
+    price: "",
+    priceLabel: "Coopératives & gros réseaux",
+    description: "Tarif réseau, accompagnement.",
+    features: ["Tout Ferme Complète", "Accompagnement pour votre réseau", "Tarif calculé selon vos fermes"],
+    ctaVariant: "ghost",
+    ctaLabel: "Nous contacter",
+    contactCta: true,
+    badge: "Indicatif · à venir",
   },
 ];

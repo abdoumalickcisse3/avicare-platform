@@ -1,26 +1,33 @@
 ---
 // Page Tarifs — d'après `#p-tarifs` du prototype
 // (docs/superpowers/specs/assets/landing-prototype.html, lignes 734-803) :
-// .phero centré, bandeau pilote + 3 PricingCard (Pro Volaille en `pop`,
-// badge surchargé "Recommandé"), CompareTable, témoignages (données
-// partagées avec l'accueil, déjà assainies — voir data/testimonials.ts),
-// FAQ tarifs (propre à cette page, distincte de la FAQ accueil), FinalCta.
+// .phero centré, bandeau pilote + 4 PricingCard (Pro Volaille en `pop`,
+// badge surchargé "Recommandé" ; Sur mesure en 4e carte, badge neutre
+// "Indicatif · à venir"), CompareTable, témoignages (données partagées
+// avec l'accueil, déjà assainies — voir data/testimonials.ts), FAQ
+// tarifs (propre à cette page, distincte de la FAQ accueil), FinalCta.
 //
 // Écarts volontaires vis-à-vis du texte du brief/doc de design :
 // - Prix : le brief mentionne "15 000 / 25 000 / 45 000 F", repris de la
 //   note de brainstorming initiale (§ Décisions verrouillées, doc de
 //   design ligne 21-23 : "Starter Volaille 15 000 F/mois"). Le prototype
 //   validé le 2026-07-16 (source de vérité visuelle) et data/plans.ts
-//   (déjà construits en Task 2) n'ont que 3 plans : Découverte (Gratuit),
-//   Pro Volaille (25 000), Ferme Complète (45 000) — pas de palier à
-//   15 000, pas de 4e carte "Sur mesure". On suit le prototype + la
-//   donnée déjà en place plutôt que la note de brainstorming obsolète ;
-//   le volet "coopérative / sur mesure" reste couvert par la FAQ
-//   ci-dessous et par /partenaires.
+//   (déjà construits en Task 2) n'ont que 3 paliers chiffrés : Découverte
+//   (Gratuit), Pro Volaille (25 000), Ferme Complète (45 000) — pas de
+//   palier à 15 000. On suit le prototype + la donnée déjà en place
+//   plutôt que la note de brainstorming obsolète.
+// - 4e carte "Sur mesure" : ajoutée en Task 4 pour combler l'écart avec
+//   le doc de design §8 (le prototype HTML n'en avait pas). Son CTA
+//   "Nous contacter" route vers le canal partenaire (mailto via
+//   `PUBLIC_PARTNER_EMAIL`, même mécanisme que /partenaires) plutôt que
+//   vers le signup — voir `contactCta`/`priceLabel` dans data/plans.ts.
 // - Comparatif : la ligne "Finance & marge par bande" du prototype est
 //   renommée "Finance & marge de la ferme" — la marge n'est calculée
 //   qu'au niveau ferme, jamais par lot (seul le revenu existe par lot).
 //   Voir data/modules.ts pour la même règle déjà appliquée en Task 3.
+//   Le comparatif reste à 3 colonnes (Découverte/Pro Volaille/Ferme
+//   Complète) : "Sur mesure" est une offre négociée, pas une grille de
+//   fonctionnalités fixe.
 import Base from "../layouts/Base.astro";
 import Highlight from "../components/Highlight.astro";
 import SectionHead from "../components/SectionHead.astro";
@@ -35,6 +42,8 @@ import type { FaqItem } from "../data/faq";
 import type { CompareRow } from "../components/CompareTable.astro";
 
 const signupUrl = import.meta.env.PUBLIC_APP_SIGNUP_URL || "#";
+const partnerEmail = import.meta.env.PUBLIC_PARTNER_EMAIL || "hello@avicare.app";
+const contactHref = `mailto:${partnerEmail}`;
 
 const title = "Tarifs — Gratuit pendant le pilote | AviCare";
 const description =
@@ -119,7 +128,16 @@ const jsonLd = {
       </div>
     </div>
     <div class="plans">
-      {plans.map((plan) => <PricingCard plan={plan} href={signupUrl} badge="Recommandé" />)}
+      {
+        plans.map((plan) => (
+          <PricingCard
+            plan={plan}
+            href={signupUrl}
+            contactHref={contactHref}
+            badge={plan.popular ? "Recommandé" : undefined}
+          />
+        ))
+      }
     </div>
   </section>
 
@@ -172,7 +190,7 @@ const jsonLd = {
   }
   .plans {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 16px;
     margin-top: 38px;
   }
@@ -198,8 +216,20 @@ const jsonLd = {
     font-family: var(--mono);
   }
 
+  /* 4 cards need an extra step vs. the site's usual 3-col/1-col grids
+     (.quotes below): 2 columns on tablet before stacking, so cards never
+     get too narrow to stay legible. */
+  @media (max-width: 1080px) {
+    .plans {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 640px) {
+    .plans {
+      grid-template-columns: 1fr;
+    }
+  }
   @media (max-width: 920px) {
-    .plans,
     .quotes {
       grid-template-columns: 1fr;
     }
