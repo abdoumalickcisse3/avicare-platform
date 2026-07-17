@@ -205,6 +205,23 @@ a {
   margin: 0 auto;
   text-align: center;
 }
+/* Desktop : `.panel > *` donne à chaque enfant `margin:auto` pour le centrer
+   au --wrap. Sur un `.sec-head` non centré large de 620px, ce margin:auto
+   centrait le bloc titre dans la fenêtre (bord à 410px) alors que le contenu
+   de section (`.feat`, pleine largeur du wrap) s'aligne à 130px — d'où un
+   titre décalé de 280px vers la droite. On rend le bloc pleine largeur pour
+   qu'il s'aligne à gauche avec le contenu, et on ne borne que la largeur du
+   texte à l'intérieur. Mobile intact : sous 920px la largeur du texte est de
+   toute façon contrainte par la fenêtre. */
+@media (min-width: 921px) {
+  .sec-head:not(.center) {
+    max-width: var(--wrap);
+  }
+  .sec-head:not(.center) h2,
+  .sec-head:not(.center) .lead {
+    max-width: 620px;
+  }
+}
 .sec-head h2 {
   font-size: clamp(1.75rem, 3.4vw, 2.5rem);
   margin-top: 14px;
