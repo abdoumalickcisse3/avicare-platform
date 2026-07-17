@@ -1,0 +1,136 @@
+---
+// Tableau comparatif des plans (`.cmp`) — Ported from the prototype's
+// `#p-tarifs` comparison block (`.cmp-head` + `.cmp-row`), with two
+// deliberate deviations from the verbatim prototype CSS:
+//
+// 1. Contrast fix: the prototype colors the "✓" glyph and the
+//    highlighted column header with `var(--leaf)` (text/bg + white
+//    text respectively) — both resolve to ~4.24:1 on white, which
+//    fails WCAG AA (4.5:1) for this normal-size text. We use
+//    `var(--earth-700)` instead (8.7:1), the same fix already applied
+//    elsewhere on this site for "leaf-as-text-on-white" (see
+//    tokens.css / global.css comments). The "✗" glyph similarly swaps
+//    `--ink-faint` (3.17:1, fails) for `--ink-soft` (5.75:1, passes).
+//    Decorative (non-text) icons keep `--leaf`, unchanged.
+// 2. Mobile safety: the prototype's own mobile behavior is to shrink
+//    font-size/padding at the 4-column grid, which does not guarantee
+//    no horizontal overflow at 375px for longer feature labels. Instead
+//    this component wraps the grid in its own `overflow-x:auto` scroll
+//    container (`.cmp` + a `.cmp-inner` with a min-width) — consistent
+//    with the site-wide rule that wide/tabular content scrolls inside
+//    its own box rather than the page.
+export interface CompareRow {
+  feature: string;
+  values: [boolean, boolean, boolean];
+}
+
+export interface Props {
+  columns: [string, string, string];
+  highlight: number;
+  rows: CompareRow[];
+}
+
+const { columns, highlight, rows } = Astro.props;
+---
+
+<div class="cmp">
+  <div class="cmp-inner">
+    <div class="cmp-head">
+      <div />
+      {columns.map((col, i) => <div class={i === highlight ? "hi" : ""}>{col}</div>)}
+    </div>
+    {
+      rows.map((row) => (
+        <div class="cmp-row">
+          <span class="f">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+              <path d="M20 6 9 17l-5-5" />
+            </svg>
+            {row.feature}
+          </span>
+          {row.values.map((v) => <span class="m">{v ? <span class="y">✓</span> : <span class="n">✗</span>}</span>)}
+        </div>
+      ))
+    }
+  </div>
+</div>
+
+<style is:global>
+  .cmp {
+    margin-top: 36px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+  }
+  .cmp-inner {
+    min-width: 640px;
+  }
+  .cmp-head > div,
+  .cmp-row {
+    scroll-snap-align: start;
+  }
+  .cmp-head {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .cmp-head div {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13.5px;
+    font-weight: 600;
+    justify-content: center;
+    padding: 9px;
+    border-radius: 999px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+  }
+  .cmp-head div:first-child {
+    justify-content: flex-start;
+    padding-left: 18px;
+    background: transparent;
+    border: 0;
+  }
+  .cmp-head div.hi {
+    background: var(--earth-700);
+    color: #fff;
+    border-color: var(--earth-700);
+  }
+  .cmp-row {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr 1fr 1fr;
+    gap: 10px;
+    align-items: center;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 11px 18px;
+    margin-bottom: 9px;
+  }
+  .cmp-row .f {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 14.5px;
+  }
+  .cmp-row .f svg {
+    width: 15px;
+    height: 15px;
+    color: var(--leaf);
+    flex: none;
+  }
+  .cmp-row .m {
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 15px;
+  }
+  .cmp-row .y {
+    color: var(--earth-700);
+    font-weight: 700;
+  }
+  .cmp-row .n {
+    color: var(--ink-soft);
+  }
+</style>

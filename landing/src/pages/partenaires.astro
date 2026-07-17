@@ -1,0 +1,148 @@
+---
+// Page Partenaires (B2B2C) — cette page n'existe pas dans le prototype
+// HTML (validé avant que /partenaires ne soit dans le périmètre) ; la
+// copy provient du spec de design (§9) et du brief de la Task 4.
+// Structure : `.phero` (réutilisé du système de sections centrées),
+// 3 bénéfices partenaire en `FeatureCard`, 3 étapes B2B2C en `StepCard`
+// (copy non fournie verbatim par le spec — rédigée pour rester cohérente
+// avec le ton déjà établi ailleurs, ex. DualPath.astro "tarif réseau,
+// accompagnement dédié"), `FinalCta` (réutilisé tel quel, CTA générique
+// "Commencer gratuitement" — le CTA "Devenir partenaire" → mailto vit
+// dans le phero, qui est l'action principale de cette page).
+//
+// Le 3e bénéfice ("vue agrégée de la santé du réseau") est explicitement
+// marqué "à venir" dans le spec — on ne le présente jamais comme déjà
+// livré (règle "claims discipline" du brief).
+import Base from "../layouts/Base.astro";
+import Highlight from "../components/Highlight.astro";
+import SectionHead from "../components/SectionHead.astro";
+import FeatureCard from "../components/FeatureCard.astro";
+import StepCard from "../components/StepCard.astro";
+import FinalCta from "../components/FinalCta.astro";
+
+const partnerEmail = import.meta.env.PUBLIC_PARTNER_EMAIL || "hello@avicare.app";
+
+const title = "Partenaires — Équipez votre réseau d'éleveurs | AviCare";
+const description =
+  "Coopératives, provendiers, couvoirs : offrez à vos éleveurs un outil qui leur fait gagner de l'argent — et gardez-les dans votre réseau.";
+---
+
+<Base title={title} description={description}>
+  <section class="phero">
+    <div class="inner">
+      <span class="pill">Partenaires</span>
+      <h1>
+        Équipez votre réseau d'éleveurs. <Highlight>Fidélisez-les</Highlight>.
+      </h1>
+      <p class="sub">
+        Coopératives, provendiers, couvoirs&nbsp;: offrez à vos éleveurs un outil qui leur fait
+        gagner de l'argent — et gardez-les dans votre réseau.
+      </p>
+      <div class="cta">
+        <a class="btn btn-cta btn-lg" href={`mailto:${partnerEmail}`}>Devenir partenaire</a>
+        <a class="btn btn-onearth btn-lg" href="/fonctionnalites">Voir les fonctionnalités</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel reveal">
+    <SectionHead
+      eyebrow="Pourquoi nous rejoindre"
+      lead="Un éleveur qui gagne de l'argent avec AviCare est un éleveur qui reste dans votre réseau."
+    >
+      Trois raisons d'équiper votre réseau.
+    </SectionHead>
+    <div class="feat">
+      <FeatureCard
+        title="Éleveurs plus performants = plus fidèles"
+        description="Un outil qui leur fait gagner de l'argent, c'est un outil qu'ils gardent&nbsp;: moins de raisons d'aller voir ailleurs."
+        miniLabel="Impact"
+        miniValue="Fidélisation"
+      >
+        <Fragment slot="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"></path>
+            <circle cx="10" cy="7" r="4"></circle>
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </Fragment>
+      </FeatureCard>
+      <FeatureCard
+        title="Vos ventes d'intrants suivent"
+        description="Aliment, vaccins, traitements&nbsp;: un éleveur qui pilote mieux achète mieux — et davantage, via votre réseau."
+        miniLabel="Impact"
+        miniValue="Ventes réseau"
+      >
+        <Fragment slot="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round">
+            <path d="m3.3 7 8.7 5 8.7-5"></path>
+            <path d="M12 12v9"></path>
+            <path d="m3 7 9-4 9 4v10l-9 4-9-4Z"></path>
+          </svg>
+        </Fragment>
+      </FeatureCard>
+      <FeatureCard
+        title="Une vue agrégée de la santé de votre réseau"
+        description="Un tableau de bord consolidé de vos éleveurs équipés, pour piloter tout votre réseau d'un coup d'œil — à venir."
+        miniLabel="Statut"
+        miniValue="À venir"
+      >
+        <Fragment slot="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3v18h18"></path>
+            <path d="m7 15 3-4 3 2 5-7"></path>
+          </svg>
+        </Fragment>
+      </FeatureCard>
+    </div>
+  </section>
+
+  <section class="panel panel-stone reveal">
+    <SectionHead center eyebrow="Comment ça marche">Trois étapes pour équiper votre réseau.</SectionHead>
+    <div class="steps">
+      <StepCard
+        number="01"
+        title="Prenez contact"
+        description="Écrivez-nous&nbsp;: on discute de votre réseau, de son échelle et de vos besoins."
+      />
+      <StepCard
+        number="02"
+        title="On construit l'offre ensemble"
+        description="Tarif réseau et accompagnement pour équiper vos éleveurs, adaptés à votre coopérative."
+      />
+      <StepCard
+        number="03"
+        title="Vos éleveurs démarrent"
+        description="Chaque éleveur reprend le contrôle de ses bandes et de ses marges — et reste dans votre réseau."
+      />
+    </div>
+  </section>
+
+  <FinalCta
+    title="Arrêtez de piloter à l'aveugle."
+    description="Rejoignez le pilote gratuit et voyez, dès la première bande, où part votre argent."
+  />
+</Base>
+
+<style is:global>
+  .feat {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 40px;
+  }
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 40px;
+  }
+
+  @media (max-width: 920px) {
+    .feat,
+    .steps {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

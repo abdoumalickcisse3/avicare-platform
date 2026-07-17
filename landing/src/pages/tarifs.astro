@@ -1,0 +1,207 @@
+---
+// Page Tarifs — d'après `#p-tarifs` du prototype
+// (docs/superpowers/specs/assets/landing-prototype.html, lignes 734-803) :
+// .phero centré, bandeau pilote + 3 PricingCard (Pro Volaille en `pop`,
+// badge surchargé "Recommandé"), CompareTable, témoignages (données
+// partagées avec l'accueil, déjà assainies — voir data/testimonials.ts),
+// FAQ tarifs (propre à cette page, distincte de la FAQ accueil), FinalCta.
+//
+// Écarts volontaires vis-à-vis du texte du brief/doc de design :
+// - Prix : le brief mentionne "15 000 / 25 000 / 45 000 F", repris de la
+//   note de brainstorming initiale (§ Décisions verrouillées, doc de
+//   design ligne 21-23 : "Starter Volaille 15 000 F/mois"). Le prototype
+//   validé le 2026-07-16 (source de vérité visuelle) et data/plans.ts
+//   (déjà construits en Task 2) n'ont que 3 plans : Découverte (Gratuit),
+//   Pro Volaille (25 000), Ferme Complète (45 000) — pas de palier à
+//   15 000, pas de 4e carte "Sur mesure". On suit le prototype + la
+//   donnée déjà en place plutôt que la note de brainstorming obsolète ;
+//   le volet "coopérative / sur mesure" reste couvert par la FAQ
+//   ci-dessous et par /partenaires.
+// - Comparatif : la ligne "Finance & marge par bande" du prototype est
+//   renommée "Finance & marge de la ferme" — la marge n'est calculée
+//   qu'au niveau ferme, jamais par lot (seul le revenu existe par lot).
+//   Voir data/modules.ts pour la même règle déjà appliquée en Task 3.
+import Base from "../layouts/Base.astro";
+import Highlight from "../components/Highlight.astro";
+import SectionHead from "../components/SectionHead.astro";
+import PricingCard from "../components/PricingCard.astro";
+import CompareTable from "../components/CompareTable.astro";
+import TestimonialCard from "../components/TestimonialCard.astro";
+import Faq from "../components/Faq.astro";
+import FinalCta from "../components/FinalCta.astro";
+import { plans } from "../data/plans";
+import { testimonials } from "../data/testimonials";
+import type { FaqItem } from "../data/faq";
+import type { CompareRow } from "../components/CompareTable.astro";
+
+const signupUrl = import.meta.env.PUBLIC_APP_SIGNUP_URL || "#";
+
+const title = "Tarifs — Gratuit pendant le pilote | AviCare";
+const description =
+  "Toutes les fonctionnalités sont gratuites pendant la phase pilote, sans carte bancaire. Les tarifs ci-dessous sont indicatifs et n'entreront en vigueur que plus tard.";
+
+const compareColumns: [string, string, string] = ["Découverte", "Pro Volaille", "Ferme Complète"];
+const compareRows: CompareRow[] = [
+  { feature: "Élevage — chair & pondeuses", values: [true, true, true] },
+  { feature: "Sanitaire de base (vaccins)", values: [true, true, true] },
+  { feature: "Sanitaire avancé (traitements, délais)", values: [true, true, true] },
+  { feature: "Stocks & formules d'aliment", values: [true, true, true] },
+  { feature: "Ventes, factures & encours", values: [true, true, true] },
+  { feature: "Finance & marge de la ferme", values: [false, false, true] },
+  { feature: "Analytique avancée", values: [false, false, true] },
+  { feature: "Plusieurs fermes", values: [false, true, true] },
+  { feature: "Support en français", values: [true, true, true] },
+];
+
+const tarifsFaq: FaqItem[] = [
+  {
+    question: "Pourquoi c'est gratuit maintenant ?",
+    answer:
+      "Parce que notre priorité est que le produit vous fasse gagner de l'argent, avant de vous en demander. Pendant le pilote, tout est ouvert&nbsp;: on apprend avec vous.",
+    open: true,
+  },
+  {
+    question: "Que se passe-t-il après le pilote ?",
+    answer:
+      "Vous serez prévenu bien à l'avance, avec les tarifs définitifs. Aucun prélèvement surprise&nbsp;: il n'y a même pas de carte bancaire enregistrée.",
+  },
+  {
+    question: "Je suis une coopérative, comment ça marche ?",
+    answer:
+      "Nous proposons un tarif réseau et un accompagnement pour équiper vos éleveurs. Écrivez-nous — on construit l'offre avec vous.",
+  },
+  {
+    question: "Puis-je changer de plan plus tard ?",
+    answer: "Oui, à tout moment. Vos données restent les vôtres et suivent votre ferme.",
+  },
+];
+
+const siteUrl = Astro.site ? Astro.site.toString().replace(/\/$/, "") : "https://avicare.app";
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: tarifsFaq.map((item) => ({
+    "@type": "Question",
+    name: item.question,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: item.answer.replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " "),
+    },
+  })),
+};
+---
+
+<Base title={title} description={description} jsonLd={jsonLd}>
+  <section class="phero">
+    <div class="inner">
+      <span class="pill">Tarifs</span>
+      <h1>
+        Gratuit maintenant. <Highlight>Simple ensuite</Highlight>.
+      </h1>
+      <p class="sub">
+        Toutes les fonctionnalités sont gratuites pendant la phase pilote, sans carte bancaire. Les
+        tarifs ci-dessous sont indicatifs et n'entreront en vigueur que plus tard.
+      </p>
+      <div class="cta">
+        <a class="btn btn-cta btn-lg" href={signupUrl}>Commencer gratuitement</a>
+        <a class="btn btn-onearth btn-lg" href="/fonctionnalites">Voir les fonctionnalités</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel reveal">
+    <div class="sec-head center">
+      <div class="price-banner">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+          <path d="M20 6 9 17l-5-5"></path>
+        </svg>Gratuit pendant la phase pilote — sans carte bancaire
+      </div>
+    </div>
+    <div class="plans">
+      {plans.map((plan) => <PricingCard plan={plan} href={signupUrl} badge="Recommandé" />)}
+    </div>
+  </section>
+
+  <section class="panel panel-stone reveal">
+    <SectionHead eyebrow="Comparatif">Ce que contient chaque plan.</SectionHead>
+    <CompareTable columns={compareColumns} highlight={1} rows={compareRows} />
+    <p class="fine-note">
+      * Pendant le pilote, <b>tous les modules sont actifs pour toutes les fermes</b>, quel que soit
+      le plan.
+    </p>
+  </section>
+
+  <section class="panel reveal">
+    <SectionHead eyebrow="Ils l'utilisent">
+      La marge, <Highlight>ça se voit venir</Highlight>.
+    </SectionHead>
+    <div class="quotes">
+      {testimonials.map((t) => <TestimonialCard {...t} />)}
+    </div>
+    <p class="note">* Témoignages illustratifs — à remplacer par de vrais retours du pilote.</p>
+  </section>
+
+  <Faq
+    id="faq-tarifs"
+    eyebrow="Questions fréquentes"
+    title="Tarifs — ce qu'on nous demande."
+    items={tarifsFaq}
+  />
+
+  <FinalCta
+    title="Commencez pendant que c'est gratuit."
+    description="Le pilote ne durera pas éternellement — vos données, elles, restent."
+  />
+</Base>
+
+<style is:global>
+  /* ---- pricing (Tarifs) ---- */
+  .price-banner {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    background: var(--leaf-050);
+    border: 1px solid var(--leaf-100);
+    color: var(--earth-600);
+    border-radius: 999px;
+    padding: 8px 16px;
+    font-size: 13.5px;
+    font-weight: 600;
+    margin-top: 14px;
+  }
+  .plans {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 38px;
+  }
+  .fine-note {
+    margin-top: 16px;
+    font-size: 12.5px;
+    color: var(--ink-faint);
+    font-family: var(--mono);
+    max-width: none;
+  }
+
+  /* ---- quotes grid (Témoignages) ---- */
+  .quotes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 40px;
+  }
+  .quotes + .note {
+    margin-top: 18px;
+    font-size: 12.5px;
+    color: var(--ink-faint);
+    font-family: var(--mono);
+  }
+
+  @media (max-width: 920px) {
+    .plans,
+    .quotes {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

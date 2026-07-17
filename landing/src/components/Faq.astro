@@ -1,15 +1,32 @@
 ---
-// FAQ de l'accueil — <details class="qa"> natifs, zéro JS. Ported
-// verbatim from the prototype's `.faq` block.
+// FAQ — <details class="qa"> natifs, zéro JS. Ported verbatim from the
+// prototype's `.faq` block. Defaults reproduce the accueil FAQ exactly
+// (id="faq", data/faq.ts) ; d'autres pages (ex. /tarifs) peuvent passer
+// leur propre id/eyebrow/title/items pour une FAQ à portée différente,
+// sans dupliquer ce composant.
 import SectionHead from "./SectionHead.astro";
-import { faq } from "../data/faq";
+import { faq as homeFaq, type FaqItem } from "../data/faq";
+
+export interface Props {
+  id?: string;
+  eyebrow?: string;
+  title?: string;
+  items?: FaqItem[];
+}
+
+const {
+  id = "faq",
+  eyebrow = "Questions fréquentes",
+  title = "Tout ce que les éleveurs nous demandent.",
+  items = homeFaq,
+} = Astro.props;
 ---
 
-<section id="faq" class="panel panel-stone reveal">
-  <SectionHead center eyebrow="Questions fréquentes">Tout ce que les éleveurs nous demandent.</SectionHead>
+<section id={id} class="panel panel-stone reveal">
+  <SectionHead center eyebrow={eyebrow}>{title}</SectionHead>
   <div class="faq">
     {
-      faq.map((item) => (
+      items.map((item) => (
         <details class="qa" open={item.open}>
           <summary>{item.question}</summary>
           <p set:html={item.answer} />
