@@ -11,7 +11,7 @@ const year = new Date().getFullYear();
     <div class="fgrid">
       <div>
         <a href="/" aria-label="AviCare Platform — accueil">
-          <Image src={logoDark} alt="AviCare Platform" width={500} height={250} class="logo-d" />
+          <Image src={logoDark} alt="AviCare Platform" width={500} height={173} class="logo-d" />
         </a>
         <p class="about">
           La gestion d'élevage avicole pensée pour l'Afrique de l'Ouest — du poussin à la marge.
@@ -55,12 +55,12 @@ const year = new Date().getFullYear();
     grid-template-columns: 1.6fr 1fr 1fr 1fr;
     gap: 32px;
   }
+  /* Idem header : hauteur pilotée, largeur libre. Le footer n'a pas de
+     contrainte de hauteur, le logo peut donc respirer davantage. */
   :global(.logo-d) {
-    height: 36px;
-    width: 150px;
+    height: 80px;
+    width: auto;
     display: block;
-    object-fit: contain;
-    object-position: left center;
   }
   footer .about {
     margin-top: 14px;

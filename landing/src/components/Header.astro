@@ -18,7 +18,17 @@ const navLinks = [
 <header>
   <div class="wrap nav">
     <a href="/" aria-label="AviCare Platform — accueil" class="logo-link">
-      <Image src={logo} alt="AviCare Platform" width={150} height={150} class="logo-img" />
+      {/* Au-dessus de la ligne de flottaison sur toutes les pages : lazy retarderait
+          le LCP. eager + priorité haute pour qu'il parte dans la 1re salve. */}
+      <Image
+        src={logo}
+        alt="AviCare Platform"
+        width={150}
+        height={52}
+        class="logo-img"
+        loading="eager"
+        fetchpriority="high"
+      />
     </a>
 
     <nav class="nav-links" aria-label="Navigation principale">
@@ -81,12 +91,13 @@ const navLinks = [
     display: block;
     line-height: 0;
   }
+  /* Hauteur pilotée, largeur libre : le ratio natif du logo (2.89:1) est ainsi
+     respecté sans déformation ni vide à droite. L'îlot fait 64px de haut avec
+     10px de padding vertical → 44px utiles ; 42px laisse une marge d'air. */
   :global(.logo-img) {
-    height: 38px;
-    width: 150px;
+    height: 42px;
+    width: auto;
     display: block;
-    object-fit: contain;
-    object-position: left center;
   }
   .nav-links {
     display: flex;
