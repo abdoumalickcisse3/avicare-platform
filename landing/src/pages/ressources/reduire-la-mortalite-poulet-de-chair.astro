@@ -1,0 +1,308 @@
+---
+// Article graine — d'après le doc de design §13 : ~800-1000 mots FR,
+// H2/H3, conseils concrets (démarrage, température, densité, eau,
+// vaccination, suivi quotidien), CTA vers l'app. JSON-LD Article +
+// BreadcrumbList.
+//
+// Contenu 100% rédigé pour cette Task 5 (le spec ne fournit qu'un
+// skeleton de sujets, pas de texte). Les repères techniques (°C,
+// densité au m², calendrier vaccinal) sont des pratiques d'élevage
+// avicole généralistes, pas des chiffres AviCare inventés. Les mentions
+// du produit restent strictement dans le périmètre réel (voir "claims
+// discipline" du brief) : le "suivi quotidien" et le "calendrier
+// vaccinal" existent et sont décrits tels quels (affichés, jamais
+// bloquants) — aucune mention de calcul au kilo, de marge par lot, de
+// paiement en ligne ou d'espèce autre que la volaille.
+import { Image } from "astro:assets";
+import Base from "../../layouts/Base.astro";
+import FinalCta from "../../components/FinalCta.astro";
+import eleveurPoulets from "../../assets/eleveur-poulets.webp";
+
+const signupUrl = import.meta.env.PUBLIC_APP_SIGNUP_URL || "#";
+const siteUrl = Astro.site ? Astro.site.toString().replace(/\/$/, "") : "https://avicare.app";
+
+const title = "Réduire la mortalité de vos poulets de chair : le guide complet | AviCare";
+const description =
+  "Démarrage des poussins, température, densité, eau, vaccination, suivi quotidien : les gestes concrets qui font baisser la mortalité, bande après bande.";
+const publishDate = "2026-07-17";
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Article",
+      headline: "Réduire la mortalité de vos poulets de chair : le guide complet",
+      description,
+      datePublished: publishDate,
+      dateModified: publishDate,
+      author: { "@type": "Organization", name: "AviCare Platform" },
+      publisher: { "@type": "Organization", name: "AviCare Platform" },
+      mainEntityOfPage: `${siteUrl}/ressources/reduire-la-mortalite-poulet-de-chair`,
+    },
+    {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Ressources", item: `${siteUrl}/ressources` },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: "Réduire la mortalité de vos poulets de chair",
+          item: `${siteUrl}/ressources/reduire-la-mortalite-poulet-de-chair`,
+        },
+      ],
+    },
+  ],
+};
+---
+
+<Base title={title} description={description} jsonLd={jsonLd}>
+  <section class="art-head reveal">
+    <div class="wrap art-head-in">
+      <nav class="crumbs" aria-label="Fil d'Ariane">
+        <a href="/ressources">Ressources</a>
+        <span aria-hidden="true">/</span>
+        <span>Poulet de chair</span>
+      </nav>
+      <span class="res-tag">Poulet de chair</span>
+      <h1>Réduire la mortalité de vos poulets de chair&nbsp;: le guide complet</h1>
+      <p class="art-meta">
+        <span>Guides éleveurs</span><span aria-hidden="true">·</span><span>8 min de lecture</span>
+      </p>
+    </div>
+  </section>
+
+  <section class="panel reveal">
+    <div class="art-body">
+      <Image
+        src={eleveurPoulets}
+        alt="Éleveur nourrissant ses poulets de chair au poulailler"
+        width={900}
+        height={600}
+        class="art-img"
+      />
+
+      <p class="lead">
+        La mortalité n'est presque jamais une fatalité&nbsp;: elle vient, dans la grande majorité
+        des cas, de quelques gestes ratés au mauvais moment — démarrage bâclé, température mal
+        réglée, eau qui manque, vaccin oublié. Voici ce qui, concrètement, fait la différence
+        d'une bande à l'autre.
+      </p>
+
+      <h2>1. Bien réussir le démarrage des poussins</h2>
+      <p>
+        Les 72 premières heures pèsent plus que le reste du lot réuni&nbsp;: un poussin mal
+        démarré ne rattrape jamais complètement son retard, et c'est là que se joue une bonne
+        partie de la mortalité précoce.
+      </p>
+      <h3>Avant l'arrivée</h3>
+      <p>
+        Nettoyez et désinfectez le poulailler, changez la litière, et préchauffez la zone de
+        démarrage au moins deux heures avant l'arrivée des poussins. Vérifiez que les
+        abreuvoirs et mangeoires sont en place et propres&nbsp;: un poussin qui arrive dans un
+        bâtiment froid ou sans eau prête perd un temps qu'il ne rattrape pas.
+      </p>
+      <h3>Les trois premiers jours</h3>
+      <p>
+        Comptez et pesez un échantillon à l'arrivée, surveillez le comportement (des poussins
+        qui se regroupent en tas signalent souvent un froid ; qui s'éloignent de la source de
+        chaleur en cherchent la fraîcheur). Un démarrage réussi se voit&nbsp;: jabots pleins,
+        poussins actifs et bien répartis dans le bâtiment.
+      </p>
+
+      <h2>2. Maîtriser la température du poulailler</h2>
+      <p>
+        La température est la première cause évitable de mortalité en poulet de chair, surtout
+        en première semaine.
+      </p>
+      <h3>Semaine 1&nbsp;: la chaleur qui sauve</h3>
+      <p>
+        Visez environ 32-33&nbsp;°C au niveau des poussins dès leur arrivée. En dessous, ils se
+        regroupent et s'écrasent&nbsp;; au-dessus, ils s'éloignent de la source de chaleur et
+        boivent moins.
+      </p>
+      <h3>Ajuster ensuite, sans brusquer</h3>
+      <p>
+        Réduisez progressivement d'environ 2 à 3&nbsp;°C par semaine jusqu'à atteindre la
+        température ambiante vers 3-4 semaines. Un changement brutal — un vent frais mal
+        anticipé, une bâche mal fermée le soir — suffit à déclencher un coup de froid sur tout
+        un lot.
+      </p>
+
+      <h2>3. Respecter la densité d'élevage</h2>
+      <p>
+        Trop de poulets sur trop peu d'espace, c'est plus de stress, plus de compétition pour
+        l'eau et l'aliment, une litière qui s'humidifie plus vite — et donc plus de maladies
+        respiratoires et digestives. Adaptez la densité à votre ventilation réelle&nbsp;: un
+        bâtiment mal ventilé supporte beaucoup moins de poulets au m² qu'un bâtiment ouvert et
+        bien aéré. En cas de doute, mieux vaut une bande un peu moins dense mais qui arrive
+        entière à la vente.
+      </p>
+      <h3>Repères pratiques</h3>
+      <p>
+        À titre indicatif, on démarre souvent autour de 10 à 12 poussins au m², pour finir vers
+        30-34&nbsp;kg de poids vif au m² en fin de bande — ces chiffres varient selon votre
+        bâtiment, votre climat et votre système de ventilation, ils ne remplacent pas votre
+        propre expérience du terrain.
+      </p>
+      <h3>Litière et ventilation</h3>
+      <p>
+        Une litière humide ou qui sent fort l'ammoniac est un signal d'alerte&nbsp;: elle
+        irrite les voies respiratoires et favorise les maladies de pattes. Retournez-la
+        régulièrement, remplacez les zones détrempées près des abreuvoirs, et assurez une
+        circulation d'air suffisante sans créer de courant d'air froid direct sur les poulets.
+      </p>
+
+      <h2>4. Garantir l'accès à l'eau, en continu</h2>
+      <p>
+        Un poulet de chair boit environ deux fois plus qu'il ne mange&nbsp;: une coupure d'eau
+        de quelques heures, même courte, ralentit la croissance et fragilise tout le lot pour
+        les jours suivants. Vérifiez le débit et la propreté des abreuvoirs au moins deux fois
+        par jour, et davantage pendant les périodes chaudes. Une eau sale ou tiède est bue en
+        moins grande quantité&nbsp;: c'est un facteur de mortalité aussi réel qu'invisible tant
+        qu'on ne le mesure pas. Évitez aussi les écarts brusques de température de l'eau
+        (une eau glacée en pleine chaleur, ou stagnante en plein soleil) qui découragent les
+        poulets de boire au moment où ils en ont le plus besoin.
+      </p>
+
+      <h2>5. Suivre le calendrier vaccinal</h2>
+      <p>
+        Un retard de quelques jours sur un rappel de vaccin peut suffire à exposer tout un lot
+        à une maladie évitable. Tenez un calendrier vaccinal par bande, avec les rappels
+        prévus dès l'arrivée des poussins&nbsp;: c'est l'un des gestes les moins coûteux et les
+        plus rentables de tout l'élevage. AviCare affiche ce calendrier et les délais d'attente
+        après traitement directement sur chaque lot&nbsp;: à vous de vérifier et d'agir au bon
+        moment, l'information ne remplace jamais votre vigilance.
+      </p>
+
+      <h2>6. Suivre chaque jour, pas seulement à la fin du lot</h2>
+      <p>
+        La plupart des éleveurs ne découvrent un problème qu'en comptant les pertes à la fin de
+        la bande — bien trop tard pour agir. Un relevé quotidien simple (mortalité, aliment
+        distribué, consommation d'eau) permet de repérer une dérive dès le deuxième ou
+        troisième jour anormal, avant qu'elle ne devienne une hécatombe. C'est exactement ce que
+        couvre le suivi journalier d'AviCare&nbsp;: quelques secondes de saisie par jour, depuis
+        votre téléphone, pour transformer des signaux faibles en décision à temps plutôt qu'en
+        constat après coup.
+      </p>
+      <h3>Les signaux à ne pas laisser passer</h3>
+      <p>
+        Une mortalité qui double d'un jour à l'autre, une consommation d'eau ou d'aliment qui
+        chute sans raison apparente, des poulets amorphes regroupés dans un coin&nbsp;: chacun
+        de ces signaux, pris isolément, semble mineur. Notés jour après jour et comparés au
+        reste du lot, ils deviennent une alerte claire — largement avant que la situation ne
+        devienne difficile à rattraper.
+      </p>
+
+      <p class="art-cta-line">
+        Envie de garder ces repères sous la main, bande après bande&nbsp;? Ouvrez un compte
+        AviCare et commencez la saisie dès votre prochain lot de poussins.
+      </p>
+      <a class="btn btn-cta btn-lg" href={signupUrl}>Commencer gratuitement</a>
+    </div>
+  </section>
+
+  <FinalCta
+    title="Un guide de plus, une bande en meilleure santé."
+    description="Suivi quotidien, calendrier vaccinal, alertes de stock : tout au même endroit."
+  />
+</Base>
+
+<style is:global>
+  .art-head {
+    background: var(--stone);
+    border-top: 1px solid var(--line-soft);
+    border-bottom: 1px solid var(--line);
+    padding: 40px 24px 44px;
+    margin: 0;
+    max-width: none;
+    border-radius: 0;
+  }
+  .art-head-in {
+    max-width: 760px;
+  }
+  .crumbs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-bottom: 16px;
+  }
+  .crumbs a {
+    color: var(--earth-700);
+    font-weight: 600;
+  }
+  .crumbs a:hover {
+    text-decoration: underline;
+  }
+  .art-head .res-tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--earth-700);
+    background: var(--leaf-050);
+    border-radius: 999px;
+    padding: 5px 12px;
+    margin-bottom: 14px;
+  }
+  .art-head h1 {
+    font-size: clamp(1.8rem, 3.8vw, 2.6rem);
+  }
+  .art-meta {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--ink-soft);
+  }
+
+  .art-body {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .art-img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 3 / 2;
+    object-fit: cover;
+    border-radius: 18px;
+    margin-bottom: 32px;
+  }
+  .art-body .lead {
+    font-size: 1.1rem;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+  }
+  .art-body h2 {
+    font-size: 1.5rem;
+    margin-top: 40px;
+  }
+  .art-body h3 {
+    font-size: 1.1rem;
+    margin-top: 24px;
+  }
+  .art-body p {
+    margin-top: 14px;
+    color: var(--ink);
+    font-size: 1.02rem;
+    line-height: 1.7;
+  }
+  .art-cta-line {
+    margin-top: 40px;
+    font-weight: 600;
+    font-size: 1.08rem;
+  }
+  .art-body .btn {
+    margin-top: 18px;
+  }
+
+  @media (max-width: 920px) {
+    .art-head {
+      padding: 32px 20px 36px;
+    }
+  }
+</style>
