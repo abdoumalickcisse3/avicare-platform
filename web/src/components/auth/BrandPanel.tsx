@@ -7,6 +7,8 @@ interface BrandPanelProps {
   tagline?: ReactNode;
   /** Short supporting line under the tagline. */
   caption?: ReactNode;
+  /** Background photo behind the Senegal green→yellow gradient overlay. */
+  image?: string;
 }
 
 /**
@@ -25,7 +27,14 @@ export function BrandPanel({
     </>
   ),
   caption = "Pilotez vos bandes, vos coûts et vos performances depuis une seule plateforme pensée pour l'Afrique de l'Ouest.",
+  image = "/images/image-eleveur.jpg",
 }: BrandPanelProps) {
+  // Photo de fond + dégradé Sénégal (vert → jaune/orange) en surimpression
+  // semi-transparente. Le vert reste dominant en haut (logo, titre) pour garder
+  // le texte blanc lisible ; la chaleur orangée n'arrive qu'en bas. Couleurs via
+  // tokens (doc 10) ; jamais de valeur en dur.
+  const overlay = `linear-gradient(157deg, ${colors.primary[900]}E6 0%, ${colors.primary[700]}D9 45%, ${colors.primary[500]}B3 72%, ${colors.accent[400]}99 100%)`;
+
   return (
     <Box
       sx={{
@@ -35,7 +44,10 @@ export function BrandPanel({
         width: "50%",
         p: 6,
         color: colors.neutral[0],
-        background: `linear-gradient(160deg, ${colors.primary[800]} 0%, ${colors.primary[500]} 100%)`,
+        backgroundImage: `${overlay}, url(${image})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
       }}
     >
       <Box
