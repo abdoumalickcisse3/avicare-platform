@@ -16,7 +16,7 @@
 import { Image } from "astro:assets";
 import Base from "../../layouts/Base.astro";
 import FinalCta from "../../components/FinalCta.astro";
-import eleveurPoulets from "../../assets/eleveur-poulets.webp";
+import eleveur from "../../assets/eleveur.jpg";
 
 const signupUrl = import.meta.env.PUBLIC_APP_SIGNUP_URL || "#";
 const siteUrl = Astro.site ? Astro.site.toString().replace(/\/$/, "") : "https://avicare.app";
@@ -33,7 +33,7 @@ const jsonLd = {
       "@type": "Article",
       headline: "Réduire la mortalité de vos poulets de chair : le guide complet",
       description,
-      image: `${siteUrl}${eleveurPoulets.src}`,
+      image: `${siteUrl}${eleveur.src}`,
       datePublished: publishDate,
       dateModified: publishDate,
       author: { "@type": "Organization", name: "AviCare Platform" },
@@ -56,7 +56,7 @@ const jsonLd = {
 };
 ---
 
-<Base title={title} description={description} jsonLd={jsonLd} image={`${siteUrl}${eleveurPoulets.src}`}>
+<Base title={title} description={description} jsonLd={jsonLd} image={`${siteUrl}${eleveur.src}`}>
   <section class="art-head reveal">
     <div class="wrap art-head-in">
       <nav class="crumbs" aria-label="Fil d'Ariane">
@@ -75,10 +75,10 @@ const jsonLd = {
   <section class="panel reveal">
     <div class="art-body">
       <Image
-        src={eleveurPoulets}
-        alt="Éleveur nourrissant ses poulets de chair au poulailler"
-        width={900}
-        height={600}
+        src={eleveur}
+        alt="Éleveur devant son poulailler ouvert"
+        width={600}
+        height={400}
         class="art-img"
       />
 
