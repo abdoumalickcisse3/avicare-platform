@@ -1,0 +1,152 @@
+---
+// Hub Ressources — d'après le doc de design §13 : grille d'articles
+// (1 carte au lancement, "structure prête" pour en publier d'autres).
+// H1/sub non fournis verbatim par le spec : copy rédigée pour cette
+// Task 5, sobre, sans promesse ("le vrai moteur SEO" reste une note
+// interne du spec, pas une phrase à afficher sur la page publique).
+import Base from "../../layouts/Base.astro";
+import Highlight from "../../components/Highlight.astro";
+import FinalCta from "../../components/FinalCta.astro";
+
+const title = "Ressources — Guides pour éleveurs avicoles | AviCare";
+const description =
+  "Des conseils concrets pour votre élevage de volaille : démarrage, température, densité, vaccination, suivi quotidien.";
+
+// Un seul article au lancement — le tableau porte déjà la forme
+// nécessaire pour en ajouter d'autres sans changer la mise en page.
+const articles = [
+  {
+    slug: "reduire-la-mortalite-poulet-de-chair",
+    category: "Poulet de chair",
+    title: "Réduire la mortalité de vos poulets de chair : le guide complet",
+    teaser:
+      "Démarrage, température, densité, eau, vaccination, suivi quotidien : les gestes concrets qui font baisser la mortalité, bande après bande.",
+    readTime: "8 min de lecture",
+  },
+];
+---
+
+<Base title={title} description={description}>
+  <section class="phero">
+    <div class="inner">
+      <span class="pill">Ressources</span>
+      <h1>
+        Des conseils concrets, <Highlight>pas du blabla</Highlight>.
+      </h1>
+      <p class="sub">
+        Des guides pratiques pour l'éleveur avicole ouest-africain&nbsp;: ce qui marche sur le
+        terrain, pas de la théorie générique.
+      </p>
+    </div>
+  </section>
+
+  <section class="panel reveal">
+    <div class="res-grid">
+      {
+        articles.map((article) => (
+          <a class="res-card" href={`/ressources/${article.slug}`}>
+            <span class="res-tag">{article.category}</span>
+            <h2>{article.title}</h2>
+            <p>{article.teaser}</p>
+            <div class="res-sep" />
+            <div class="res-meta">
+              <span>{article.readTime}</span>
+              <span class="res-go">
+                Lire l'article <span aria-hidden="true">›</span>
+              </span>
+            </div>
+          </a>
+        ))
+      }
+      <div class="res-card res-soon" aria-hidden="true">
+        <span class="res-tag">Bientôt</span>
+        <h2>D'autres guides arrivent</h2>
+        <p>
+          Aliment, ventes, finance de la ferme&nbsp;: d'autres articles pratiques sont en
+          préparation.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <FinalCta
+    title="Mettez ces conseils en pratique, dès aujourd'hui."
+    description="Suivez votre prochaine bande sur AviCare — gratuit pendant le pilote."
+  />
+</Base>
+
+<style is:global>
+  .res-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-top: 8px;
+  }
+  .res-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 26px;
+    display: flex;
+    flex-direction: column;
+    transition:
+      transform 0.18s,
+      box-shadow 0.18s,
+      border-color 0.18s;
+  }
+  a.res-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 18px 34px -22px rgba(41, 37, 36, 0.35);
+    border-color: var(--leaf-300);
+  }
+  .res-tag {
+    align-self: flex-start;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--earth-700);
+    background: var(--leaf-050);
+    border-radius: 999px;
+    padding: 5px 12px;
+  }
+  .res-card h2 {
+    font-size: 1.25rem;
+    margin-top: 16px;
+  }
+  .res-card p {
+    color: var(--ink-soft);
+    font-size: 14.5px;
+    margin-top: 12px;
+    flex: 1;
+  }
+  .res-sep {
+    border-top: 1px dashed var(--line);
+    margin: 18px 0 14px;
+  }
+  .res-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .res-go {
+    font-weight: 600;
+    color: var(--earth-700);
+  }
+  .res-soon {
+    background: var(--stone);
+    justify-content: center;
+  }
+  .res-soon .res-tag {
+    background: var(--paper);
+    color: var(--ink-soft);
+  }
+
+  @media (max-width: 920px) {
+    .res-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

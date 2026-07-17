@@ -1,0 +1,66 @@
+---
+// Page FAQ — .phero centré (réutilisé tel quel, comme /a-propos,
+// /tarifs, /fonctionnalites) + le composant Faq (accordéon <details>,
+// zéro JS) chargé avec `faqFull` (data/faq.ts, les 9 questions du doc
+// de design §12 avec réponses complètes) + FinalCta.
+//
+// H1/sub non fournis verbatim par le spec (§12 ne liste que les
+// questions) : copy rédigée pour cette Task 5, on-tone avec le reste
+// du site, sans réclamer une seule capacité qui n'existe pas côté
+// produit (voir data/faq.ts pour le détail des choix "claim-clean").
+import Base from "../layouts/Base.astro";
+import Highlight from "../components/Highlight.astro";
+import Faq from "../components/Faq.astro";
+import FinalCta from "../components/FinalCta.astro";
+import { faqFull } from "../data/faq";
+
+const signupUrl = import.meta.env.PUBLIC_APP_SIGNUP_URL || "#";
+
+const title = "FAQ — Vos questions sur AviCare | AviCare";
+const description =
+  "Gratuit pendant le pilote, mobile-first, marge de la ferme, plusieurs fermes possibles : les réponses aux questions que les éleveurs nous posent le plus souvent.";
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqFull.map((item) => ({
+    "@type": "Question",
+    name: item.question,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: item.answer.replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " "),
+    },
+  })),
+};
+---
+
+<Base title={title} description={description} jsonLd={jsonLd}>
+  <section class="phero">
+    <div class="inner">
+      <span class="pill">FAQ</span>
+      <h1>
+        Vos questions, <Highlight>nos réponses</Highlight>.
+      </h1>
+      <p class="sub">
+        Gratuité, connexion, pondeuses, marge, plusieurs fermes&nbsp;: ce que les éleveurs nous
+        demandent le plus avant de démarrer.
+      </p>
+      <div class="cta">
+        <a class="btn btn-cta btn-lg" href={signupUrl}>Commencer gratuitement</a>
+        <a class="btn btn-onearth btn-lg" href="/contact">Une autre question ?</a>
+      </div>
+    </div>
+  </section>
+
+  <Faq
+    id="faq-complete"
+    eyebrow="Questions fréquentes"
+    title="Tout ce que les éleveurs nous demandent."
+    items={faqFull}
+  />
+
+  <FinalCta
+    title="Prêt à essayer sur votre prochaine bande ?"
+    description="Gratuit pendant le pilote, sans carte bancaire. Créez votre compte en quelques minutes."
+  />
+</Base>

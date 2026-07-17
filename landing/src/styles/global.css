@@ -357,6 +357,50 @@ a {
   text-align: center;
 }
 
+/*
+ * Legal page prose (`.legal`) — Task 5, shared verbatim by
+ * /mentions-legales and /confidentialite (same gabarit, same reading
+ * column). Promoted here immediately rather than left duplicated
+ * across the two page files, per the Task 4 review lesson on drifting
+ * bare selectors (colliding `.mk-bar-row`, disagreeing `.fine-note`).
+ */
+.legal {
+  max-width: 720px;
+  margin: 0 auto;
+}
+.legal-notice {
+  background: var(--stone);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px 18px;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+.legal-notice code {
+  font-family: var(--mono);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-size: 12.5px;
+  color: var(--earth-700);
+}
+.legal h2 {
+  font-size: 1.35rem;
+  margin-top: 36px;
+}
+.legal p {
+  margin-top: 12px;
+  color: var(--ink);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+.legal a {
+  color: var(--earth-700);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 @media (max-width: 920px) {
   .panel {
     padding: 56px 20px;

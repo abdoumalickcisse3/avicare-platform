@@ -1,0 +1,290 @@
+---
+// Page Contact — d'après le doc de design §11 : H1 verbatim
+// (« Parlons de votre élevage. »), canaux (email PUBLIC_PARTNER_EMAIL,
+// téléphone PUBLIC_CONTACT_PHONE, WhatsApp marqué "bientôt" — hors
+// périmètre V1 du site), formulaire structuré (nom, téléphone,
+// "je suis : éleveur / coopérative / autre", message).
+//
+// Pas de backend V1 (doc de design "Hors périmètre") : le formulaire
+// est inerte, soumis via `action="mailto:...&form-data..."` avec
+// `enctype="text/plain"` — technique standard qui ouvre le client mail
+// de l'utilisateur avec les champs assemblés en corps de message, sans
+// jamais poster nulle part côté serveur. Une note visible sous le
+// formulaire l'explicite ("endpoint à brancher plus tard"), pour ne
+// jamais laisser croire à un envoi silencieux qui n'aboutit nulle part.
+//
+// Un seul CTA orange sur la page (règle "un CTA principal par écran") :
+// le bouton d'envoi du formulaire. Le phero ne porte donc pas son
+// propre bouton `.btn-cta` — les canaux (mailto/tel) juste en dessous
+// servent d'actions immédiates, en style neutre (`btn-dark`).
+import Base from "../layouts/Base.astro";
+import Highlight from "../components/Highlight.astro";
+import SectionHead from "../components/SectionHead.astro";
+
+const partnerEmail = import.meta.env.PUBLIC_PARTNER_EMAIL || "hello@avicare.app";
+const contactPhone = import.meta.env.PUBLIC_CONTACT_PHONE || "+221 XX XXX XX XX";
+const telHref = `tel:${contactPhone.replace(/[^+\d]/g, "")}`;
+const mailtoHref = `mailto:${partnerEmail}`;
+
+const title = "Contact — Parlons de votre élevage | AviCare";
+const description =
+  "Une question, un projet de coopérative, une envie de démarrer ? Écrivez-nous ou appelez — réponse en français, directement.";
+---
+
+<Base title={title} description={description}>
+  <section class="phero">
+    <div class="inner">
+      <span class="pill">Contact</span>
+      <h1>Parlons de votre élevage.</h1>
+      <p class="sub">
+        Une question, un projet de coopérative, une envie de démarrer&nbsp;? Écrivez-nous ou
+        appelez — on vous répond en français, directement.
+      </p>
+    </div>
+  </section>
+
+  <section class="panel reveal">
+    <SectionHead eyebrow="Nos canaux" center>Choisissez votre moyen le plus rapide.</SectionHead>
+    <div class="channels">
+      <a class="chan" href={mailtoHref}>
+        <div class="ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+            <path d="m3 7 9 6 9-6"></path>
+          </svg>
+        </div>
+        <div class="l">Email</div>
+        <div class="v">{partnerEmail}</div>
+      </a>
+      <a class="chan" href={telHref}>
+        <div class="ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.79.63 2.65a2 2 0 0 1-.45 2.11L8.09 9.68a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.11-.45c.86.3 1.75.51 2.65.63A2 2 0 0 1 22 16.92Z"></path>
+          </svg>
+        </div>
+        <div class="l">Téléphone</div>
+        <div class="v">{contactPhone}</div>
+      </a>
+      <div class="chan chan-soon" aria-disabled="true">
+        <div class="ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"></path>
+          </svg>
+        </div>
+        <div class="l">WhatsApp</div>
+        <div class="v">Bientôt disponible</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel panel-stone reveal">
+    <SectionHead
+      eyebrow="Écrivez-nous"
+      center
+      lead="Ce formulaire ouvre votre application mail avec le message déjà rempli&nbsp;: rien n'est envoyé automatiquement depuis cette page."
+    >
+      Un message, et on revient vers vous.
+    </SectionHead>
+
+    <form
+      class="cform"
+      action={mailtoHref}
+      method="post"
+      enctype="text/plain"
+    >
+      <div class="crow">
+        <label for="c-nom">Nom</label>
+        <input id="c-nom" name="Nom" type="text" autocomplete="name" required />
+      </div>
+      <div class="crow">
+        <label for="c-tel">Téléphone</label>
+        <input id="c-tel" name="Telephone" type="tel" autocomplete="tel" required />
+      </div>
+      <fieldset class="crow">
+        <legend>Je suis :</legend>
+        <div class="cradios">
+          <label class="cradio">
+            <input type="radio" name="Profil" value="Éleveur" checked />
+            <span>Éleveur</span>
+          </label>
+          <label class="cradio">
+            <input type="radio" name="Profil" value="Coopérative" />
+            <span>Coopérative</span>
+          </label>
+          <label class="cradio">
+            <input type="radio" name="Profil" value="Autre" />
+            <span>Autre</span>
+          </label>
+        </div>
+      </fieldset>
+      <div class="crow">
+        <label for="c-msg">Message</label>
+        <textarea id="c-msg" name="Message" rows="5" required></textarea>
+      </div>
+      <button class="btn btn-cta btn-lg" type="submit">Envoyer par email</button>
+      <p class="fine-note center">
+        Endpoint à brancher plus tard — pour l'instant, l'envoi ouvre votre client mail
+        (aucun serveur ne reçoit vos données depuis ce site).
+      </p>
+    </form>
+  </section>
+</Base>
+
+<style is:global>
+  /* ---- contact channels ---- */
+  .channels {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 36px;
+  }
+  .chan {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 44px;
+    transition:
+      transform 0.18s,
+      box-shadow 0.18s,
+      border-color 0.18s;
+  }
+  a.chan:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 18px 34px -22px rgba(41, 37, 36, 0.35);
+    border-color: var(--leaf-300);
+  }
+  .chan .ic {
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
+    background: var(--leaf-050);
+    color: var(--leaf);
+    display: grid;
+    place-items: center;
+    margin-bottom: 6px;
+  }
+  .chan .ic svg {
+    width: 20px;
+    height: 20px;
+  }
+  .chan .l {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .chan .v {
+    font-weight: 600;
+    font-size: 1.02rem;
+    color: var(--ink);
+    word-break: break-word;
+  }
+  .chan-soon {
+    opacity: 0.62;
+  }
+  .chan-soon .v {
+    font-weight: 500;
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+  }
+
+  /* ---- contact form ---- */
+  .cform {
+    max-width: 620px;
+    margin: 40px auto 0;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    padding: 32px;
+  }
+  .crow {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0 0 20px;
+    padding: 0;
+    border: 0;
+  }
+  .crow label,
+  .crow legend {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--ink);
+    padding: 0;
+  }
+  .crow input[type="text"],
+  .crow input[type="tel"],
+  .crow textarea {
+    font-family: var(--disp);
+    font-size: 15px;
+    color: var(--ink);
+    background: var(--stone);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 13px 14px;
+    min-height: 44px;
+    width: 100%;
+  }
+  .crow textarea {
+    resize: vertical;
+    min-height: 120px;
+  }
+  .crow input:focus-visible,
+  .crow textarea:focus-visible {
+    outline: 3px solid var(--leaf-100);
+    outline-offset: 1px;
+    border-color: var(--leaf);
+  }
+  .cradios {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .cradio {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--stone);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 10px 16px;
+    min-height: 44px;
+    cursor: pointer;
+  }
+  .cradio input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--leaf);
+    flex: none;
+  }
+  .cradio:has(input:checked) {
+    border-color: var(--leaf);
+    background: var(--leaf-050);
+  }
+  .cradio:has(input:focus-visible) {
+    outline: 3px solid var(--leaf-100);
+    outline-offset: 2px;
+  }
+  .cform .btn {
+    width: 100%;
+    justify-content: center;
+    margin-top: 4px;
+  }
+
+  @media (max-width: 920px) {
+    .channels {
+      grid-template-columns: 1fr;
+    }
+    .cform {
+      padding: 24px;
+    }
+  }
+</style>

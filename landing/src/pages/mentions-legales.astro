@@ -1,0 +1,114 @@
+---
+// Mentions légales — gabarit standard FR (éditeur, hébergeur, propriété
+// intellectuelle, responsabilité, droit applicable). Contenu placeholder
+// : accuracy > boilerplate (règle du brief). Tout ce qui ne peut être
+// fourni que par le porteur du projet (raison sociale, forme juridique,
+// capital, adresse, RCCM, hébergeur réel, directeur de publication) est
+// marqué par un jeton `{{PLACEHOLDER}}` explicite plutôt qu'inventé —
+// voir la liste complète dans task-5-report.md.
+import Base from "../layouts/Base.astro";
+
+const title = "Mentions légales | AviCare";
+const description = "Éditeur, hébergement et propriété intellectuelle du site AviCare.";
+const lastUpdated = "17 juillet 2026";
+const partnerEmail = import.meta.env.PUBLIC_PARTNER_EMAIL || "hello@avicare.app";
+---
+
+<Base title={title} description={description}>
+  <section class="phero">
+    <div class="inner">
+      <span class="pill">Légal</span>
+      <h1>Mentions légales</h1>
+      <p class="sub">Dernière mise à jour&nbsp;: {lastUpdated}</p>
+    </div>
+  </section>
+
+  <section class="panel reveal">
+    <div class="legal">
+      <p class="legal-notice">
+        Cette page est un gabarit à finaliser juridiquement. Chaque bloc
+        <code>&#123;&#123;PLACEHOLDER&#125;&#125;</code> doit être remplacé par une information exacte avant
+        toute mise en ligne publique définitive du site.
+      </p>
+
+      <h2>1. Éditeur du site</h2>
+      <p>
+        Le présent site est édité par <strong>{"{{RAISON_SOCIALE}}"}</strong>,
+        {" "}
+        <strong>{"{{FORME_JURIDIQUE}}"}</strong> au capital de <strong>{"{{CAPITAL_SOCIAL}}"}</strong>,
+        immatriculée au Registre du Commerce et du Crédit Mobilier (RCCM) sous le numéro
+        {" "}
+        <strong>{"{{RCCM}}"}</strong>, dont le siège social est situé
+        {" "}
+        <strong>{"{{ADRESSE_SIEGE}}"}</strong> ({"{{VILLE_PAYS}}"}).
+      </p>
+      <p>
+        Numéro d'identification fiscale (NINEA)&nbsp;: <strong>{"{{NINEA}}"}</strong>.
+      </p>
+      <p>
+        Directeur de la publication&nbsp;: <strong>{"{{DIRECTEUR_PUBLICATION}}"}</strong>.
+      </p>
+      <p>
+        Contact&nbsp;: <a href={`mailto:${partnerEmail}`}>
+          {partnerEmail}
+        </a>
+      </p>
+
+      <h2>2. Hébergement</h2>
+      <p>
+        Le site est hébergé par <strong>{"{{HEBERGEUR_NOM}}"}</strong>,
+        {" "}
+        <strong>{"{{HEBERGEUR_ADRESSE}}"}</strong>.
+      </p>
+      <p>
+        L'application AviCare (accessible depuis ce site via le lien « Commencer gratuitement »)
+        est hébergée séparément&nbsp;: <strong>{"{{HEBERGEUR_APPLICATIF}}"}</strong>.
+      </p>
+
+      <h2>3. Propriété intellectuelle</h2>
+      <p>
+        L'ensemble des éléments de ce site (textes, logo, mise en page, code) est la propriété
+        de {"{{RAISON_SOCIALE}}"}, sauf mention contraire, et est protégé par le droit de la
+        propriété intellectuelle. Toute reproduction, représentation ou adaptation, totale ou
+        partielle, sans autorisation écrite préalable est interdite.
+      </p>
+      <p>
+        « AviCare » et le logo associé sont des éléments distinctifs de {"{{RAISON_SOCIALE}}"}.
+      </p>
+
+      <h2>4. Responsabilité</h2>
+      <p>
+        Ce site vitrine présente le produit AviCare à titre d'information. Malgré le soin
+        apporté à sa mise à jour, des erreurs ou omissions peuvent subsister&nbsp;: en cas de
+        doute sur une information, contactez-nous avant toute décision. Les tarifs affichés sur
+        la page Tarifs sont indicatifs pendant la phase pilote et n'engagent pas de facturation
+        automatique.
+      </p>
+      <p>
+        Ce site peut contenir des liens vers des sites tiers. {"{{RAISON_SOCIALE}}"} n'exerce
+        aucun contrôle sur ces sites et décline toute responsabilité quant à leur contenu.
+      </p>
+
+      <h2>5. Droit applicable</h2>
+      <p>
+        Les présentes mentions légales sont soumises au droit
+        {" "}
+        <strong>{"{{DROIT_APPLICABLE}}"}</strong>. En cas de litige, et à défaut d'accord
+        amiable, les tribunaux <strong>{"{{JURIDICTION_COMPETENTE}}"}</strong> seront seuls
+        compétents.
+      </p>
+
+      <h2>6. Contact</h2>
+      <p>
+        Pour toute question relative à ces mentions légales, écrivez-nous depuis la{" "}
+        <a href="/contact">page Contact</a> ou à{" "}
+        <a href={`mailto:${partnerEmail}`}>
+          {partnerEmail}
+        </a>.
+      </p>
+    </div>
+  </section>
+</Base>
+
+<!-- .legal / .legal-notice mechanics now live in src/styles/global.css
+     (shared verbatim with /confidentialite — same gabarit). -->

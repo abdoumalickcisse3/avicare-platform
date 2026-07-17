@@ -1,0 +1,129 @@
+---
+// Politique de confidentialité — gabarit standard FR (responsable du
+// traitement, données collectées, finalités, base légale, conservation,
+// destinataires, droits, cookies). Contenu placeholder pour tout ce qui
+// engage juridiquement le porteur du projet (DPO, durées de
+// conservation précises, sous-traitants réels) — jetons `{{PLACEHOLDER}}`
+// explicites, jamais de valeur inventée. Voir la liste complète dans
+// task-5-report.md.
+//
+// État réel documenté honnêtement (règle "claims discipline") : pas
+// d'outil d'analyse d'audience actif à ce jour (le doc de design classe
+// ça "hors périmètre V1" — structure Partytown prête, clé plus tard),
+// le formulaire de contact est inerte (mailto, aucune donnée reçue par
+// un serveur depuis ce site).
+import Base from "../layouts/Base.astro";
+
+const title = "Politique de confidentialité | AviCare";
+const description = "Comment AviCare collecte, utilise et protège vos données personnelles.";
+const lastUpdated = "17 juillet 2026";
+const partnerEmail = import.meta.env.PUBLIC_PARTNER_EMAIL || "hello@avicare.app";
+---
+
+<Base title={title} description={description}>
+  <section class="phero">
+    <div class="inner">
+      <span class="pill">Légal</span>
+      <h1>Politique de confidentialité</h1>
+      <p class="sub">Dernière mise à jour&nbsp;: {lastUpdated}</p>
+    </div>
+  </section>
+
+  <section class="panel reveal">
+    <div class="legal">
+      <p class="legal-notice">
+        Cette page est un gabarit à finaliser juridiquement. Chaque bloc
+        <code>&#123;&#123;PLACEHOLDER&#125;&#125;</code> doit être remplacé par une information exacte
+        avant toute mise en ligne publique définitive du site.
+      </p>
+
+      <h2>1. Responsable du traitement</h2>
+      <p>
+        Le responsable du traitement des données décrites ici est <strong>{"{{RAISON_SOCIALE}}"}</strong>,
+        {" "}
+        <strong>{"{{ADRESSE_SIEGE}}"}</strong>. Pour toute question relative à vos données,
+        contactez <strong>{"{{CONTACT_DPO_OU_RESPONSABLE}}"}</strong> à{" "}
+        <a href={`mailto:${partnerEmail}`}>{partnerEmail}</a>.
+      </p>
+
+      <h2>2. Ce que nous collectons</h2>
+      <p>
+        Sur ce site vitrine&nbsp;: aucune création de compte, aucun cookie de mesure d'audience
+        déposé à ce jour. Si vous nous écrivez via la page Contact, le formulaire ouvre votre
+        propre client mail (aucune donnée n'est reçue par un serveur depuis cette page)&nbsp;;
+        les informations que vous choisissez d'envoyer par email (nom, téléphone, message) ne
+        sont alors traitées que dans le cadre de cet échange.
+      </p>
+      <p>
+        Dans l'application AviCare (accessible via « Commencer gratuitement »)&nbsp;: les
+        données de compte (nom, téléphone/email, mot de passe) et les données d'élevage que
+        vous saisissez vous-même (lots, ventes, stock, dépenses). Chaque ferme est isolée des
+        autres fermes de la plateforme.
+      </p>
+
+      <h2>3. Pourquoi nous les utilisons</h2>
+      <p>
+        Pour faire fonctionner votre compte et votre ferme sur AviCare, répondre à vos
+        demandes, et — si vous y consentez à l'avenir — pour vous informer de l'évolution du
+        produit. Nous ne revendons pas vos données et ne les partageons pas avec d'autres
+        éleveurs ou fermes.
+      </p>
+
+      <h2>4. Base légale et durée de conservation</h2>
+      <p>
+        Base légale&nbsp;: <strong>{"{{BASE_LEGALE}}"}</strong> (ex. exécution du contrat de
+        service, intérêt légitime, consentement selon le cas).
+      </p>
+      <p>
+        Durée de conservation&nbsp;: <strong>{"{{DUREE_CONSERVATION}}"}</strong>. Les données
+        d'un compte fermé sont <strong>{"{{MODALITES_SUPPRESSION}}"}</strong>.
+      </p>
+
+      <h2>5. Qui y a accès</h2>
+      <p>
+        Vos données sont hébergées chez <strong>{"{{HEBERGEUR_APPLICATIF}}"}</strong>. Elles
+        peuvent être accessibles à nos prestataires techniques strictement nécessaires au
+        fonctionnement du service (hébergement, sauvegarde) — liste complète&nbsp;:
+        {" "}
+        <strong>{"{{LISTE_SOUS_TRAITANTS}}"}</strong>. Nous ne vendons ni ne louons vos
+        données à des tiers à des fins commerciales.
+      </p>
+
+      <h2>6. Cookies et mesure d'audience</h2>
+      <p>
+        Ce site ne dépose, à ce jour, aucun cookie de mesure d'audience ni traceur publicitaire.
+        Si un outil d'analyse est activé à l'avenir, cette politique sera mise à jour avant sa
+        mise en service, avec le choix de le refuser lorsque la réglementation l'exige.
+      </p>
+
+      <h2>7. Vos droits</h2>
+      <p>
+        Conformément à la réglementation applicable sur la protection des données personnelles,
+        vous disposez d'un droit d'accès, de rectification, de suppression et d'opposition sur
+        vos données. Pour l'exercer, écrivez-nous depuis la <a href="/contact">page Contact</a>{" "}
+        ou à <a href={`mailto:${partnerEmail}`}>{partnerEmail}</a>. Vous pouvez également
+        adresser une réclamation à l'autorité compétente en matière de protection des données
+        personnelles de votre pays (au Sénégal&nbsp;: la Commission de protection des données
+        personnelles — CDP).
+      </p>
+
+      <h2>8. Sécurité</h2>
+      <p>
+        Nous prenons des mesures raisonnables pour protéger vos données (mots de passe
+        chiffrés, accès restreint par ferme et par rôle). Aucun système n'est toutefois
+        infaillible&nbsp;: en cas d'incident affectant vos données, nous vous en informerons
+        conformément à nos obligations légales.
+      </p>
+
+      <h2>9. Modifications de cette politique</h2>
+      <p>
+        Cette politique peut évoluer avec le produit. La date de dernière mise à jour figure en
+        haut de cette page&nbsp;; en cas de changement important, nous vous en informerons par
+        un moyen raisonnable.
+      </p>
+    </div>
+  </section>
+</Base>
+
+<!-- .legal / .legal-notice mechanics now live in src/styles/global.css
+     (shared verbatim with /mentions-legales — same gabarit). -->
