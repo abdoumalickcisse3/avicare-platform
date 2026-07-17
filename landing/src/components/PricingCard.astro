@@ -84,7 +84,9 @@ const ctaLabel = plan.ctaLabel ?? "Commencer gratuitement";
     border-radius: 999px;
   }
   .plan.pop .badge {
-    background: var(--leaf);
+    /* white on --leaf measures 4.23:1 — fails AA (4.5:1); --earth-700
+       is the darker, compliant swap (measured 8.75:1 for this pair). */
+    background: var(--earth-700);
     color: #fff;
     border-color: transparent;
   }
@@ -104,7 +106,7 @@ const ctaLabel = plan.ctaLabel ?? "Commencer gratuitement";
   }
   .plan .pp small {
     font-size: 0.4em;
-    color: var(--ink-faint);
+    color: var(--ink-soft);
     font-weight: 500;
   }
   .plan .pp-label {

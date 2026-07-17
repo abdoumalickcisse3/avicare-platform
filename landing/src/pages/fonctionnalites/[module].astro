@@ -84,7 +84,7 @@ const jsonLd = {
             <div class:list={["cap", { rev: i % 2 === 1, "has-mock": isMock }]}>
               <div class="cap-text">
                 <div class="eyebrow">Capacité {String(i + 1).padStart(2, "0")}</div>
-                <h3>{cap.title}</h3>
+                <h2>{cap.title}</h2>
                 <p set:html={mdBold(cap.body)} />
               </div>
               {isMock ? (
@@ -163,7 +163,7 @@ const jsonLd = {
   .cap.rev .cap-visual {
     order: 1;
   }
-  .cap-text h3 {
+  .cap-text h2 {
     font-size: 1.5rem;
     margin-top: 10px;
   }

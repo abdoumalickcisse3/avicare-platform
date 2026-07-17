@@ -55,7 +55,10 @@ a {
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--leaf);
+  /* --leaf on white/stone measures 4.23:1 — fails AA (4.5:1). --earth-700
+     (8.75:1) is the compliant swap; dark sections (Hero, PhotoBand) keep
+     their own --leaf-300 override below, which stays on light text. */
+  color: var(--earth-700);
 }
 .btn {
   display: inline-flex;
@@ -105,7 +108,7 @@ a {
 }
 .btn-ghost:hover {
   border-color: var(--leaf);
-  color: var(--leaf);
+  color: var(--earth-700);
 }
 .btn-onearth {
   background: rgba(255, 255, 255, 0.08);

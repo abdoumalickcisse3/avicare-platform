@@ -18,20 +18,20 @@ const year = new Date().getFullYear();
         </p>
       </div>
       <div class="fcol">
-        <h4>Produit</h4>
+        <h3>Produit</h3>
         <a href="/fonctionnalites">Fonctionnalités</a>
         <a href="/tarifs">Tarifs</a>
         <a href="/partenaires">Partenaires</a>
         <a href={import.meta.env.PUBLIC_APP_SIGNUP_URL || "#"}>Se connecter</a>
       </div>
       <div class="fcol">
-        <h4>Entreprise</h4>
+        <h3>Entreprise</h3>
         <a href="/a-propos">À propos</a>
         <a href={`mailto:${partnerEmail}`}>Contact</a>
         <a href="/ressources">Ressources</a>
       </div>
       <div class="fcol">
-        <h4>Légal</h4>
+        <h3>Légal</h3>
         <a href="/mentions-legales">Mentions légales</a>
         <a href="/confidentialite">Confidentialité</a>
       </div>
@@ -77,7 +77,9 @@ const year = new Date().getFullYear();
     margin: 0 0 12px;
   }
   .fcol a {
-    display: block;
+    display: flex;
+    align-items: center;
+    min-height: 44px;
     color: #b7cbb0;
     font-size: 14px;
     padding: 5px 0;

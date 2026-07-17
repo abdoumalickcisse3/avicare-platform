@@ -1,17 +1,34 @@
 ---
+// Default social-preview image: no dedicated OG artwork exists yet
+// (design doc §"SEO" explicitly allows "image OG par page — placeholder
+// générique en attendant les visuels"), so every page falls back to a
+// real, already-shot farm photo instead of a dangling /og-image.png.
+// getImage() resizes it to a proper 1200-wide OG/Twitter card as a JPEG
+// (safest format for social-preview crawlers) — this only runs once at
+// build time and the output is never linked from the page itself, so it
+// costs nothing in the on-page Lighthouse budget.
+import { getImage } from "astro:assets";
+import ogFallbackSource from "../assets/equipements-ferme.jpg";
+
 export interface Props {
   title: string;
   description: string;
   canonical?: string;
   jsonLd?: Record<string, unknown>;
+  /** Absolute URL to a page-specific social-preview image; falls back to a generic site photo. */
+  image?: string;
 }
 
-const { title, description, canonical, jsonLd } = Astro.props;
+const { title, description, canonical, jsonLd, image } = Astro.props;
 
 const resolvedCanonical =
   canonical ?? new URL(Astro.url.pathname, Astro.site).toString();
 
-const ogImage = new URL("/og-image.png", Astro.site).toString();
+let ogImage = image;
+if (!ogImage) {
+  const optimized = await getImage({ src: ogFallbackSource, width: 1200, format: "jpg" });
+  ogImage = new URL(optimized.src, Astro.site).toString();
+}
 ---
 
 <title>{title}</title>
