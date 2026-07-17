@@ -30,8 +30,8 @@ export const plans: Plan[] = [
   {
     name: "Découverte",
     price: "Gratuit",
-    description: "Toutes les fonctionnalités V1, 1 ferme.",
-    features: ["Élevage, sanitaire, stocks", "Ventes & finances", "Support en français"],
+    description: "Élevage, sanitaire de base, stocks & ventes, 1 ferme.",
+    features: ["Élevage, sanitaire de base, stocks", "Ventes, factures & encours", "Support en français"],
     ctaVariant: "ghost",
   },
   {
