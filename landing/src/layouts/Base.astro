@@ -14,9 +14,10 @@ export interface Props {
   description: string;
   canonical?: string;
   jsonLd?: Record<string, unknown>;
+  image?: string;
 }
 
-const { title, description, canonical, jsonLd } = Astro.props;
+const { title, description, canonical, jsonLd, image } = Astro.props;
 ---
 
 <!doctype html>
@@ -30,7 +31,7 @@ const { title, description, canonical, jsonLd } = Astro.props;
     <link rel="preload" as="font" type="font/woff2" href={outfit600} crossorigin />
     <link rel="preload" as="font" type="font/woff2" href={outfit700} crossorigin />
 
-    <SeoHead title={title} description={description} canonical={canonical} jsonLd={jsonLd} />
+    <SeoHead title={title} description={description} canonical={canonical} jsonLd={jsonLd} image={image} />
 
     <noscript>
       <style>

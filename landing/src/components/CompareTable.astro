@@ -33,7 +33,7 @@ export interface Props {
 const { columns, highlight, rows } = Astro.props;
 ---
 
-<div class="cmp">
+<div class="cmp" tabindex="0" role="region" aria-label="Comparatif des plans">
   <div class="cmp-inner">
     <div class="cmp-head">
       <div />
@@ -61,6 +61,11 @@ const { columns, highlight, rows } = Astro.props;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scroll-snap-type: x proximity;
+  }
+  .cmp:focus-visible {
+    outline: 3px solid var(--leaf-100);
+    outline-offset: 2px;
+    border-radius: 12px;
   }
   .cmp-inner {
     min-width: 640px;
