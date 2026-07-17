@@ -25,7 +25,7 @@ import Kpi from "./Kpi.astro";
     <div class="kpi hl-k">
       <div class="lab">Revenu du lot</div>
       <div class="val"><small>F </small><Kpi count={612} /><small> k</small></div>
-      <div class="trend" style="color:var(--sun-600)">▲ +18% vs J-1</div>
+      <div class="trend" style="color:#b45309">▲ +18% vs J-1</div>
     </div>
     <div class="kpi">
       <div class="lab">Indice de consommation</div>
@@ -71,9 +71,13 @@ import Kpi from "./Kpi.astro";
     border-bottom: 1px solid var(--line);
     margin-bottom: 14px;
   }
+  /* Couleur explicite obligatoire : le cockpit est une carte claire posée
+     DANS le hero sombre (color:#EAF3E4). Sans déclaration, le texte hérite
+     de cette couleur claire et devient invisible (1.14:1 mesuré). */
   .cockpit-top .t {
     font-weight: 700;
     font-size: 14.5px;
+    color: var(--ink);
   }
   .live {
     font-family: var(--mono);
@@ -126,15 +130,20 @@ import Kpi from "./Kpi.astro";
     text-transform: uppercase;
     color: var(--ink-soft);
   }
+  /* Idem : sans couleur explicite, la valeur héritait du #EAF3E4 du hero
+     sur une carte quasi blanche — 1.04:1, illisible. */
   .kpi .val {
     font-family: var(--mono);
     font-weight: 600;
     font-size: 1.5rem;
     margin-top: 5px;
     font-variant-numeric: tabular-nums;
+    color: var(--ink);
   }
+  /* --sun-600 sur blanc = 2.86:1, échoue même le seuil grand texte (3:1).
+     #b45309 (5.02:1) garde l'accent orange et rejoint le trend mortalité. */
   .kpi.hl-k .val {
-    color: var(--sun-600);
+    color: #b45309;
   }
   .kpi .val small {
     font-size: 0.5em;
