@@ -15,9 +15,13 @@ export interface Props {
   canonical?: string;
   jsonLd?: Record<string, unknown>;
   image?: string;
+  // Header opaque dès le chargement : pour les pages dont le haut n'est PAS
+  // un hero sombre (l'article Ressources a un fond clair). Défaut : header
+  // transparent au sommet puis glass au scroll.
+  solidHeader?: boolean;
 }
 
-const { title, description, canonical, jsonLd, image } = Astro.props;
+const { title, description, canonical, jsonLd, image, solidHeader = false } = Astro.props;
 ---
 
 <!doctype html>
@@ -43,7 +47,7 @@ const { title, description, canonical, jsonLd, image } = Astro.props;
     </noscript>
   </head>
   <body>
-    <Header />
+    <Header solid={solidHeader} />
     <main>
       <slot />
     </main>
