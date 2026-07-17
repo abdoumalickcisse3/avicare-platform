@@ -18,7 +18,7 @@ import {
 } from "@mui/material";
 import { Bell, Check, ChevronDown, HandCoins, LogOut, Menu as MenuIcon, Warehouse } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { clearAuth } from "@/store/slices/authSlice";
+import { logout } from "@/store/authActions";
 import { setSelectedFarmId } from "@/store/slices/uiSlice";
 import { useSelectedFarm } from "@/hooks/useSelectedFarm";
 import { useGetMyFarmsQuery } from "@/store/api/farmsApi";
@@ -79,7 +79,9 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
 
   const handleLogout = () => {
     setAccountAnchor(null);
-    dispatch(clearAuth());
+    // Clears tokens, the selected farm AND the RTK Query cache, so the next
+    // account never sees this one's data (the store survives client-side nav).
+    dispatch(logout());
     router.replace("/login");
   };
   const pickFarm = (id: number) => {
