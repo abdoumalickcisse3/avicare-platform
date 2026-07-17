@@ -242,6 +242,64 @@ class HealthFlowIT {
         .andExpect(status().isNotFound());
   }
 
+  /**
+   * The generic {@code /catalog/{category}} route reaches the same catalog_items as the gated
+   * health endpoints, so it must enforce the SAME {@code module.health.*} gate — otherwise an OWNER
+   * without the health module could read/write vaccines and treatments through it, bypassing the
+   * gate.
+   */
+  @Test
+  void genericCatalogRoute_cannotBypassHealthModuleGate() throws Exception {
+    signup("bypass@health.io", "password123", "Owner");
+    String owner = login("bypass@health.io", "password123");
+    long farmId = createFarm(owner, "Ferme Bypass");
+    owner = login("bypass@health.io", "password123");
+    // A fresh farm is auto-provisioned with the V1 modules; turn health OFF to test the gate.
+    disableModule(owner, farmId, "module.health.basic");
+    disableModule(owner, farmId, "module.health.advanced");
+    String catalog = "/api/v1/farms/" + farmId + "/catalog";
+    String vaccineBody = "{\"key\":\"vax_custom\",\"value\":{\"label\":\"Vaccin maison\"}}";
+    String treatmentBody = "{\"key\":\"trt_custom\",\"value\":{\"label\":\"Traitement maison\"}}";
+
+    // Health categories are gated: without the module, write AND read are forbidden.
+    mockMvc
+        .perform(
+            post(catalog + "/vaccines")
+                .header("Authorization", "Bearer " + owner)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(vaccineBody))
+        .andExpect(status().isForbidden());
+    mockMvc
+        .perform(
+            post(catalog + "/treatments")
+                .header("Authorization", "Bearer " + owner)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(treatmentBody))
+        .andExpect(status().isForbidden());
+    mockMvc
+        .perform(get(catalog + "/vaccines").header("Authorization", "Bearer " + owner))
+        .andExpect(status().isForbidden());
+
+    // A category with no module requirement is unaffected by the health gate.
+    mockMvc
+        .perform(
+            post(catalog + "/expense_categories")
+                .header("Authorization", "Bearer " + owner)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"key\":\"exp_custom\",\"value\":{\"label\":\"Divers\"}}"))
+        .andExpect(status().isCreated());
+
+    // Re-enable the module: the generic route now allows the health category again.
+    enableModule(owner, farmId, "module.health.basic");
+    mockMvc
+        .perform(
+            post(catalog + "/vaccines")
+                .header("Authorization", "Bearer " + owner)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(vaccineBody))
+        .andExpect(status().isCreated());
+  }
+
   // --- helpers --------------------------------------------------------
 
   private long seedUnit(long farmId, String breedCode, LocalDate startDate) {
