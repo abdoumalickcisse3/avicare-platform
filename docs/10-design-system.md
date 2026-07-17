@@ -270,7 +270,7 @@ AviCare Platform = **outil sérieux d'éleveur professionnel africain**, pas un 
 ┌─────────────────────────────────────────────────────────┐
 │  PRIMARY (CTA principal — orange)                       │
 │  bg: accent-400 → hover accent-500                      │
-│  text: white                                            │
+│  text: earth #122B12 (PAS blanc — cf. note ci-dessous)  │
 │  height: 40px (default), 32px (sm), 48px (lg)           │
 │  radius: 8px                                            │
 │  padding: 0 16px                                        │
@@ -518,7 +518,13 @@ export const avicareTheme = createTheme({
 - Texte normal : ratio ≥ 4.5:1
 - Texte large (≥18px) : ratio ≥ 3:1
 - Vérifier `neutral-500` sur `neutral-0` : 4.6:1 ✅
-- Vérifier `accent-400` (CTA orange) sur white : 2.9:1 ❌ → utiliser `accent-500` (#E67E0A) sur fond blanc, ou texte blanc sur `accent-400`
+- **CTA orange — ratios mesurés (2026-07-17)**. Les trois combinaisons naïves échouent :
+  - texte `accent-400` (#F8961E) sur fond blanc : **2.9:1** ❌
+  - texte **blanc** sur fond `accent-400` : **2.24:1** ❌ (c'est la pire des trois — l'orange est
+    une couleur claire, le blanc ne « corrige » rien)
+  - texte blanc sur `accent-500` (#E67E0A) : **2.86:1** ❌
+  → **Règle retenue** : fond `accent-400` + texte **`earth` #122B12** = **6.79:1** ✅ (AAA),
+  et **5.33:1** ✅ sur `accent-500` au survol. L'orange de marque reste inchangé.
 
 ### Focus states
 
