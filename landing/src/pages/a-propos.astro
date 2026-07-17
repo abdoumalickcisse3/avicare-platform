@@ -65,9 +65,13 @@ const description =
           <div class="l">Modules</div>
           <div class="v"><Kpi count={5} /></div>
         </div>
+        {/* Fait vérifiable et numérique : la V1 couvre deux productions
+            (chair + ponte). « Espèces » serait faux — chair et ponte sont
+            la même espèce. L'emplacement .v est en mono/tabular-nums,
+            donc réservé aux chiffres : pas de libellé texte ici. */}
         <div class="astat s2">
-          <div class="l">Phase</div>
-          <div class="v">Pilote gratuit</div>
+          <div class="l">Productions</div>
+          <div class="v"><Kpi count={2} /></div>
         </div>
       </div>
     </div>
