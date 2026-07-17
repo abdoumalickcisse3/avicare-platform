@@ -19,8 +19,9 @@ séparé de l'app Next.js. Cible double (éleveurs + partenaires B2B2C), pilote 
   `PUBLIC_APP_SIGNUP_URL`). CTA partenaire secondaire = « Devenir partenaire » → `mailto:` placeholder
   (`PUBLIC_PARTNER_EMAIL`), remplaçable par WhatsApp plus tard.
 - **Tarifs** : bandeau « Gratuit pendant la phase pilote » + plans **indicatifs à venir** basés sur les
-  bundles doc 00 §7 : Starter Volaille 15 000 F/mois, Pro Volaille 25 000 F/mois, Ferme Complète
+  bundles doc 00 §7 : Découverte gratuit (pilote), Pro Volaille 25 000 F/mois, Ferme Complète
   45 000 F/mois, Sur mesure (coops). Marqués « indicatif, à venir ».
+  (Les tarifs font foi au §8 ci-dessous ; cette ligne n'en est qu'un résumé.)
 - **Direction visuelle : VALIDÉE via prototype** (2026-07-16) →
   **`docs/superpowers/specs/assets/landing-prototype.html`** = **source de vérité visuelle**.
   Le build Astro doit reproduire ce prototype (structure, tokens, composants, micro-interactions).
