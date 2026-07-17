@@ -4,6 +4,15 @@
 // content sections; the nav island is the exception, per prototype).
 import { Image } from "astro:assets";
 import logo from "../assets/logo.svg";
+import logoLight from "../assets/logo-dark.svg";
+
+// `solid` = header opaque (glass) dès le chargement, pour les pages dont le
+// haut n'est PAS un hero sombre (ex. l'article Ressources, fond clair). Par
+// défaut le header est transparent au sommet puis devient glass au scroll.
+interface Props {
+  solid?: boolean;
+}
+const { solid = false } = Astro.props;
 
 const signupUrl = import.meta.env.PUBLIC_APP_SIGNUP_URL || "#";
 
@@ -15,17 +24,28 @@ const navLinks = [
 ];
 ---
 
-<header>
+<header class:list={[{ solid }]} data-header>
   <div class="wrap nav">
     <a href="/" aria-label="AviCare Platform — accueil" class="logo-link">
-      {/* Au-dessus de la ligne de flottaison sur toutes les pages : lazy retarderait
-          le LCP. eager + priorité haute pour qu'il parte dans la 1re salve. */}
+      {/* Deux logos permutés par CSS selon l'état du header : le logo clair
+          (logo-dark) au sommet sur le hero sombre, le logo sombre une fois le
+          fond glass posé. eager + priorité haute : au-dessus de la ligne de
+          flottaison sur toutes les pages, lazy retarderait le LCP. */}
+      <Image
+        src={logoLight}
+        alt="AviCare Platform"
+        width={150}
+        height={52}
+        class="logo-img logo-on-dark"
+        loading="eager"
+        fetchpriority="high"
+      />
       <Image
         src={logo}
         alt="AviCare Platform"
         width={150}
         height={52}
-        class="logo-img"
+        class="logo-img logo-on-glass"
         loading="eager"
         fetchpriority="high"
       />
@@ -78,14 +98,41 @@ const navLinks = [
     margin: 0 auto;
     padding: 10px 12px 10px 20px;
     height: 64px;
+    border-radius: 999px;
+    /* État sommet : transparent, posé sur le hero sombre. Le fond glass et
+       l'ombre n'apparaissent qu'au scroll (header.scrolled) ou d'emblée sur
+       les pages à fond clair (header.solid). Transition douce des deux. */
+    background: transparent;
+    border: 1px solid transparent;
+    box-shadow: none;
+    transition:
+      background 0.25s ease,
+      border-color 0.25s ease,
+      box-shadow 0.25s ease;
+  }
+  header.scrolled .nav,
+  header.solid .nav {
     background: rgba(255, 255, 255, 0.88);
     -webkit-backdrop-filter: saturate(1.5) blur(14px);
     backdrop-filter: saturate(1.5) blur(14px);
-    border: 1px solid rgba(255, 255, 255, 0.7);
-    border-radius: 999px;
+    border-color: rgba(255, 255, 255, 0.7);
     box-shadow:
       0 14px 34px -16px rgba(18, 43, 18, 0.45),
       0 2px 6px -2px rgba(18, 43, 18, 0.12);
+  }
+  /* Permutation des logos : clair au sommet, sombre sur le glass. Double
+     classe (.logo-img.logo-*) pour battre la spécificité de `.logo-img`
+     qui pose display:block. */
+  :global(.logo-img.logo-on-glass) {
+    display: none;
+  }
+  header.scrolled :global(.logo-img.logo-on-dark),
+  header.solid :global(.logo-img.logo-on-dark) {
+    display: none;
+  }
+  header.scrolled :global(.logo-img.logo-on-glass),
+  header.solid :global(.logo-img.logo-on-glass) {
+    display: block;
   }
   .logo-link {
     display: block;
@@ -103,10 +150,20 @@ const navLinks = [
     display: flex;
     gap: 28px;
     font-size: 15px;
-    color: var(--ink-soft);
+    /* Sommet : texte clair sur le hero sombre. */
+    color: #cfe3c6;
     font-weight: 500;
+    transition: color 0.25s ease;
+  }
+  header.scrolled .nav-links,
+  header.solid .nav-links {
+    color: var(--ink-soft);
   }
   .nav-links a:hover {
+    color: #fff;
+  }
+  header.scrolled .nav-links a:hover,
+  header.solid .nav-links a:hover {
     color: var(--earth-700);
   }
   .nav-right {
@@ -117,6 +174,12 @@ const navLinks = [
   .nav-login {
     font-size: 15px;
     font-weight: 600;
+    /* Sommet : clair sur le hero sombre ; glass : vert foncé. */
+    color: #eaf3e4;
+    transition: color 0.25s ease;
+  }
+  header.scrolled .nav-login,
+  header.solid .nav-login {
     color: var(--earth-700);
   }
   .burger {
@@ -125,6 +188,12 @@ const navLinks = [
     border: 0;
     padding: 8px;
     cursor: pointer;
+    /* Sommet : clair sur le hero sombre ; glass : sombre. */
+    color: #eaf3e4;
+    transition: color 0.25s ease;
+  }
+  header.scrolled .burger,
+  header.solid .burger {
     color: var(--ink);
   }
 
@@ -180,6 +249,29 @@ const navLinks = [
 </style>
 
 <script>
+  // Header transparent au sommet → glass au scroll. `.solid` (pages à fond
+  // clair) est figé glass et n'est jamais touché ici. Seuil 100px, via
+  // requestAnimationFrame pour ne pas thrasher au scroll.
+  const header = document.querySelector<HTMLElement>("[data-header]");
+  if (header && !header.classList.contains("solid")) {
+    let ticking = false;
+    const sync = () => {
+      header.classList.toggle("scrolled", window.scrollY > 100);
+      ticking = false;
+    };
+    sync(); // état correct si la page charge déjà scrollée (ancre, refresh)
+    window.addEventListener(
+      "scroll",
+      () => {
+        if (!ticking) {
+          ticking = true;
+          requestAnimationFrame(sync);
+        }
+      },
+      { passive: true },
+    );
+  }
+
   const toggle = document.querySelector<HTMLButtonElement>("[data-menu-toggle]");
   const panel = document.querySelector<HTMLElement>("[data-menu-panel]");
 
