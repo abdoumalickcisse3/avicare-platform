@@ -1,7 +1,9 @@
 ---
-// CTA final (panel-dark) — réutilisé par toutes les pages avec un
-// titre/sous-titre différent. Ported verbatim from the prototype's
-// `.final` block.
+// CTA final — panneau vert arrondi FLOTTANT posé sur un fond doux.
+// Exception assumée (décision client 2026-07-17) : le reste du site est en
+// sections pleine largeur ; seul ce CTA de fin de page est un panneau arrondi
+// flottant, sur toutes les pages. Le wrapper reste full-bleed (fond stone),
+// la carte arrondie est centrée au --wrap à l'intérieur.
 export interface Props {
   title: string;
   description: string;
@@ -11,24 +13,48 @@ const { title, description } = Astro.props;
 const signupUrl = import.meta.env.PUBLIC_APP_SIGNUP_URL || "#";
 ---
 
-<section class="panel panel-dark final reveal">
-  <h2>{title}</h2>
-  <p>{description}</p>
-  <a class="btn btn-cta btn-lg" href={signupUrl}>Commencer gratuitement</a>
+<section class="panel final-wrap reveal">
+  <div class="final-card">
+    <h2>{title}</h2>
+    <p>{description}</p>
+    <a class="btn btn-cta btn-lg" href={signupUrl}>Commencer gratuitement</a>
+  </div>
 </section>
 
 <style is:global>
-  .final {
-    text-align: center;
+  .final-wrap {
+    background: var(--stone);
+    padding: 40px 24px 56px;
   }
-  .final h2 {
+  .final-card {
+    text-align: center;
+    border-radius: 28px;
+    padding: 72px 24px;
+    /* Même dégradé vert que .panel-dark, mais confiné à la carte. */
+    background:
+      radial-gradient(120% 140% at 85% 0%, rgba(248, 150, 30, 0.16), transparent 55%),
+      linear-gradient(160deg, var(--earth-800) 0%, var(--earth) 100%);
+    box-shadow:
+      0 30px 60px -24px rgba(18, 43, 18, 0.5),
+      0 4px 12px -6px rgba(18, 43, 18, 0.2);
+  }
+  .final-card h2 {
     font-size: clamp(1.8rem, 3.6vw, 2.6rem);
     color: #fff;
   }
-  .final p {
+  .final-card p {
     color: #cfe3c6;
     margin: 14px auto 26px;
     max-width: 44ch;
     font-size: 1.05rem;
+  }
+  @media (max-width: 640px) {
+    .final-wrap {
+      padding: 24px 16px 40px;
+    }
+    .final-card {
+      padding: 52px 20px;
+      border-radius: 22px;
+    }
   }
 </style>
