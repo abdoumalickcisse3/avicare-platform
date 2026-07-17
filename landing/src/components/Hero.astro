@@ -28,6 +28,7 @@ const signupUrl = import.meta.env.PUBLIC_APP_SIGNUP_URL || "#";
       <div class="microproof">
         <span class="dot"></span>Gratuit pendant le pilote · Sans carte bancaire · En français
       </div>
+      <a class="micro-link" href="/partenaires">Vous êtes coopérative / provendier&nbsp;?</a>
     </div>
 
     <div class="cluster">
@@ -124,6 +125,23 @@ const signupUrl = import.meta.env.PUBLIC_APP_SIGNUP_URL || "#";
     height: 5px;
     border-radius: 50%;
     background: var(--sun);
+  }
+  .micro-link {
+    display: inline-block;
+    margin-top: 14px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--leaf-300);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .micro-link:hover {
+    color: #fff;
+  }
+  .micro-link:focus-visible {
+    outline: 3px solid var(--leaf-100);
+    outline-offset: 3px;
+    border-radius: 4px;
   }
 
   /* floating product cluster */

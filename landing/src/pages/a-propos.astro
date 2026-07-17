@@ -1,0 +1,446 @@
+---
+// Page À propos — d'après `#p-a-propos` du prototype
+// (docs/superpowers/specs/assets/landing-prototype.html, lignes 805-873) :
+// hero asymétrique (`.ahero`, photo + 2 stats flottantes), "Notre vision"
+// (`.split` + `.vision`), panneau vert foncé "Nos convictions" (`.vals`),
+// tuiles de repères (`.tiles`, dont la tuile orange inclinée), FinalCta.
+//
+// Le hero de cette page NE réutilise PAS le composant Hero.astro (réservé
+// à l'accueil) ni sa classe `.hero` (scopée au bundle CSS de la page
+// d'accueil) : le fond dégradé sombre est reproduit ici sous une classe
+// dédiée (`.apage-hero`), avec la même recette de couleurs que `.hero` /
+// `.phero` (déjà auditée ailleurs sur le site : ~10-13:1 pour le texte
+// clair sur ce fond).
+//
+// Trois corrections de contraste délibérées par rapport au CSS verbatim
+// du prototype (calculées, pas devinées — voir task-4-report.md) :
+// 1. `.astat .v` n'a pas de couleur explicite dans le prototype : sur ce
+//    fond de page sombre, le texte de la valeur héritait de la couleur
+//    ambiante claire (#EAF3E4) — quasi invisible sur la carte quasi
+//    blanche de la stat flottante. On fixe `color:var(--ink)` en base.
+// 2. `.astat.s2 .v` colore ce chiffre en `--sun-600` sur un fond quasi
+//    blanc : ~2.86:1, échoue même le seuil "grand texte" (3:1). On utilise
+//    `--earth-700` (le "vert positif" recommandé) à la place : ~8.7:1.
+// 3. `.tile.hi` (tuile orange inclinée) : le prototype met du texte blanc
+//    sur `--sun` : ~2.24:1, échoue largement. Comme l'orange est réservé
+//    aux CTA (jamais à une tuile décorative) et doit rester AA, on garde
+//    le fond orange (élément visuel demandé par le brief) mais on passe
+//    le texte en `--earth-800` (~7.7:1) plutôt qu'en blanc.
+import { Image } from "astro:assets";
+import Base from "../layouts/Base.astro";
+import Highlight from "../components/Highlight.astro";
+import Kpi from "../components/Kpi.astro";
+import FinalCta from "../components/FinalCta.astro";
+import eleveurPoulets from "../assets/eleveur-poulets.webp";
+import eleveur from "../assets/eleveur.jpg";
+
+const signupUrl = import.meta.env.PUBLIC_APP_SIGNUP_URL || "#";
+
+const title = "À propos — Un logiciel d'élevage pensé au Sénégal | AviCare";
+const description =
+  "AviCare est né d'un constat simple : l'éleveur avicole ouest-africain travaille dur, mais pilote à l'aveugle. On a construit l'outil qui manquait — en français, sur téléphone, adapté au terrain.";
+---
+
+<Base title={title} description={description}>
+  <section class="apage-hero">
+    <div class="wrap ahero">
+      <div>
+        <span class="pill">Notre histoire</span>
+        <h1 style="margin-top:18px">
+          Pensé au Sénégal, <Highlight>pas importé</Highlight>.
+        </h1>
+        <p class="sub">
+          AviCare est né d'un constat simple&nbsp;: l'éleveur avicole ouest-africain travaille dur,
+          mais pilote à l'aveugle. On a construit l'outil qui manquait — en français, sur téléphone,
+          adapté au terrain.
+        </p>
+        <div class="hero-cta">
+          <a class="btn btn-cta btn-lg" href={signupUrl}>Commencer gratuitement</a>
+          <a class="btn btn-onearth btn-lg" href="/fonctionnalites">Voir le produit</a>
+        </div>
+      </div>
+      <div class="aphoto f1">
+        <Image src={eleveurPoulets} alt="Éleveur nourrissant ses poulets" width={600} height={900} class="aphoto-img" />
+        <div class="astat s1">
+          <div class="l">Bandes suivies</div>
+          <div class="v"><Kpi count={40} suffix="+" /></div>
+        </div>
+        <div class="astat s2">
+          <div class="l">Marge visible</div>
+          <div class="v"><Kpi count={18} prefix="+" suffix="%" /></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel reveal">
+    <div class="split">
+      <div class="sec-head" style="max-width:none">
+        <div class="eyebrow">Notre vision</div>
+        <h2>
+          Rendre chaque élevage <Highlight>rentable</Highlight>.
+        </h2>
+      </div>
+      <p class="lead" style="margin:0">
+        Nous ne croyons pas qu'il faille être une grande intégration pour connaître ses chiffres. La
+        donnée doit servir le petit éleveur d'abord — pas l'inverse.
+      </p>
+    </div>
+    <div class="vision">
+      <div>
+        <div class="badge">01</div>
+        <h3>
+          Nous avions la conviction que gérer un élevage devait être{" "}
+          <span class="dim">
+            aussi simple que de tenir son cahier — mais avec les chiffres justes au bout.
+          </span>
+        </h3>
+      </div>
+      <div class="aphoto f2">
+        <Image src={eleveur} alt="Éleveur au travail" width={600} height={400} class="aphoto-img" />
+      </div>
+    </div>
+  </section>
+
+  <section class="panel panel-dark reveal">
+    <div class="sec-head center">
+      <span class="pill">Nos convictions</span>
+      <h2 style="color:#fff">Ce qui guide chaque décision produit.</h2>
+    </div>
+    <div class="vals">
+      <div class="val">
+        <div class="ic">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9">
+            <path d="M12 21s-7-4.5-7-10a7 7 0 0 1 14 0c0 5.5-7 10-7 10Z"></path>
+            <circle cx="12" cy="11" r="2.5"></circle>
+          </svg>
+        </div>
+        <h3>Local</h3>
+        <p>
+          Conçu à Dakar, pour la réalité du terrain ouest-africain&nbsp;: français, mobile, petit
+          forfait data, pas de carte bancaire.
+        </p>
+      </div>
+      <div class="val">
+        <div class="ic">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+            <path d="M3 3v18h18"></path>
+            <path d="m7 15 3-4 3 2 5-7"></path>
+          </svg>
+        </div>
+        <h3>Concret</h3>
+        <p>
+          Pas de tableau de bord décoratif. Chaque écran répond à une question d'éleveur&nbsp;:
+          combien, quand, et est-ce que je gagne&nbsp;?
+        </p>
+      </div>
+      <div class="val">
+        <div class="ic">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9">
+            <rect x="3" y="11" width="18" height="10" rx="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </div>
+        <h3>Vos données vous appartiennent</h3>
+        <p>
+          Chaque ferme est isolée. Ce que vous saisissez reste à vous — on ne le revend pas, on ne le
+          prête pas.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel panel-stone reveal">
+    <div class="sec-head center">
+      <div class="eyebrow">Repères</div>
+      <h2>Où nous en sommes.</h2>
+    </div>
+    <div class="tiles">
+      <div class="tile">
+        <div class="ic">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v20M2 12h20"></path>
+          </svg>
+        </div>
+        <div class="l">Lancé en</div>
+        <div class="v">2026</div>
+      </div>
+      <div class="tile hi">
+        <div class="ic">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M20 6 9 17l-5-5"></path>
+          </svg>
+        </div>
+        <div class="l">Modules livrés</div>
+        {/* Static (not <Kpi>): the count-up trigger only watches
+        .cluster/.stats/.ahero zones (see CountUp.astro) — this tile
+        sits outside all three, so an animated counter here would stay
+        frozen at 0 forever instead of settling on the real value. */}
+        <div class="v">5 / 5</div>
+      </div>
+      <div class="tile">
+        <div class="ic">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 7v5l3 2"></path>
+          </svg>
+        </div>
+        <div class="l">Phase</div>
+        <div class="v">Pilote gratuit</div>
+      </div>
+    </div>
+    <p class="fine-note center">
+      * Photo d'équipe et repères réels à ajouter quand vous nous les fournirez.
+    </p>
+  </section>
+
+  <FinalCta
+    title="Construisons la suite avec vous."
+    description="Éleveur ou coopérative : le pilote est ouvert, gratuit, et vos retours façonnent le produit."
+  />
+</Base>
+
+<style is:global>
+  /* ---- asymmetric page hero (same dark recipe as .hero/.phero) ---- */
+  .apage-hero {
+    position: relative;
+    overflow: hidden;
+    color: #eaf3e4;
+    margin-top: -92px;
+    padding: 130px 24px 88px;
+    background:
+      radial-gradient(140% 90% at 82% -10%, rgba(61, 139, 61, 0.5), transparent 55%),
+      linear-gradient(165deg, var(--earth) 0%, var(--earth-800) 62%, #0e240e 100%);
+  }
+  .apage-hero .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--leaf-300);
+    border-radius: 999px;
+    padding: 7px 15px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .apage-hero h1 {
+    color: #fff;
+    font-size: clamp(2.1rem, 4.4vw, 3.3rem);
+  }
+  .apage-hero .sub {
+    color: #cfe3c6;
+    margin-top: 18px;
+    max-width: 46ch;
+    font-size: 1.08rem;
+  }
+  .apage-hero .hero-cta {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 28px;
+  }
+  .ahero {
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 48px;
+    align-items: center;
+  }
+  .aphoto {
+    position: relative;
+    border-radius: 22px;
+    overflow: hidden;
+    aspect-ratio: 4 / 3;
+    box-shadow: 0 40px 80px -34px rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: #0e240e;
+  }
+  .aphoto-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .astat {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.97);
+    border-radius: 14px;
+    padding: 11px 14px;
+    box-shadow: 0 20px 40px -18px rgba(0, 0, 0, 0.5);
+    min-width: 150px;
+  }
+  .astat .l {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .astat .v {
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 1.25rem;
+    margin-top: 3px;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+  .astat.s1 {
+    top: 16px;
+    left: -18px;
+  }
+  .astat.s2 {
+    bottom: 16px;
+    right: -16px;
+  }
+  .astat.s2 .v {
+    color: var(--earth-700);
+  }
+
+  /* ---- vision ---- */
+  .split {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 36px;
+    align-items: center;
+  }
+  .vision {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 36px;
+    align-items: center;
+    margin-top: 40px;
+  }
+  .vision .badge {
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--earth-700);
+    background: var(--leaf-100);
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+  }
+  .vision h3 {
+    font-size: clamp(1.3rem, 2.4vw, 1.8rem);
+    margin-top: 18px;
+    line-height: 1.25;
+  }
+  .vision h3 .dim {
+    color: var(--ink-faint);
+  }
+
+  /* ---- convictions (panel-dark) ---- */
+  .vals {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 36px;
+  }
+  .val {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 18px;
+    padding: 24px;
+  }
+  .val .ic {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: rgba(61, 139, 61, 0.25);
+    color: var(--leaf-300);
+    display: grid;
+    place-items: center;
+    margin-bottom: 14px;
+  }
+  .val h3 {
+    color: #fff;
+    font-size: 1.08rem;
+  }
+  .val p {
+    color: #cfe3c6;
+    font-size: 14.5px;
+    margin-top: 8px;
+  }
+
+  /* ---- repères (tiles) ---- */
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+    margin-top: 40px;
+  }
+  .tile {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    padding: 26px;
+    text-align: center;
+  }
+  .tile.hi {
+    background: var(--sun);
+    border-color: var(--sun);
+    color: var(--earth-800);
+    transform: rotate(-2.5deg);
+  }
+  .tile .ic {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: var(--leaf-050);
+    color: var(--leaf);
+    display: grid;
+    place-items: center;
+    margin: 0 auto 14px;
+  }
+  .tile.hi .ic {
+    background: rgba(18, 43, 18, 0.14);
+    color: var(--earth-800);
+  }
+  .tile .l {
+    font-size: 13.5px;
+    color: var(--ink-soft);
+  }
+  .tile.hi .l {
+    color: var(--earth-800);
+  }
+  .tile .v {
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 1.7rem;
+    margin-top: 5px;
+  }
+  .fine-note {
+    margin-top: 20px;
+    font-size: 12.5px;
+    color: var(--ink-faint);
+    font-family: var(--mono);
+  }
+  .fine-note.center {
+    text-align: center;
+  }
+
+  @media (max-width: 920px) {
+    .apage-hero {
+      margin-top: -86px;
+      padding: 114px 20px 64px;
+    }
+    .ahero,
+    .split,
+    .vision,
+    .vals,
+    .tiles {
+      grid-template-columns: 1fr;
+    }
+    .astat {
+      display: none;
+    }
+    .tile.hi {
+      transform: none;
+    }
+  }
+</style>
