@@ -296,62 +296,17 @@ const jsonLd = {
     font-size: 15px;
   }
 
-  /* ---- feat grid (Solution) ---- */
-  .feat {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    margin-top: 40px;
-  }
-
-  /* ---- steps grid (Comment ça marche) ---- */
-  .steps {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    margin-top: 40px;
-  }
-
-  /* ---- quotes grid (Témoignages) ---- */
-  .quotes {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    margin-top: 40px;
-  }
-  .quotes + .note {
-    margin-top: 18px;
-    font-size: 12.5px;
-    color: var(--ink-faint);
-    font-family: var(--mono);
-  }
-
-  /* ---- pricing (Tarifs) ---- */
-  .price-banner {
-    display: inline-flex;
-    align-items: center;
-    gap: 9px;
-    background: var(--leaf-050);
-    border: 1px solid var(--leaf-100);
-    color: var(--earth-600);
-    border-radius: 999px;
-    padding: 8px 16px;
-    font-size: 13.5px;
-    font-weight: 600;
-    margin-top: 14px;
-  }
+  /* ---- feat / steps / quotes / price-banner ----
+     Grid & type mechanics now live in src/styles/global.css (Fix 4 —
+     were duplicated verbatim across pages). .plans keeps only its column
+     count here: Home shows 3 plan cards (filters out "Sur mesure"), vs.
+     4 on /tarifs — a real per-page difference, not drift. */
   .plans {
-    display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    margin-top: 38px;
   }
 
   @media (max-width: 920px) {
     .pain,
-    .feat,
-    .steps,
-    .quotes,
     .plans {
       grid-template-columns: 1fr;
     }

@@ -181,12 +181,8 @@ const coverage = [
     border-bottom: 0;
   }
 
-  .split {
-    display: grid;
-    grid-template-columns: 1.15fr 0.85fr;
-    gap: 36px;
-    align-items: center;
-  }
+  /* .split grid mechanics now live in src/styles/global.css (Fix 4 —
+     duplicated verbatim across pages). */
   .split .rate {
     display: flex;
     align-items: center;
@@ -214,8 +210,7 @@ const coverage = [
   }
 
   @media (max-width: 920px) {
-    .mods,
-    .split {
+    .mods {
       grid-template-columns: 1fr;
     }
     .cov {
