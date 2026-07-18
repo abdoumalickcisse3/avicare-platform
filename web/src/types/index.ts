@@ -983,6 +983,7 @@ export interface Sale {
   status: SaleStatus;
   saleDate: string;
   paymentMethod: string | null;
+  salesChannelKey: string | null;
   totalXof: number;
   notes: string | null;
   items: SaleItem[];
@@ -1044,6 +1045,7 @@ export interface Order {
   deliveryAddress: string | null;
   deliveryNotes: string | null;
   expectedPaymentMethod: string | null;
+  salesChannelKey: string | null;
   expectedPaymentDueDate: string | null;
   totalXof: number;
   notes: string | null;

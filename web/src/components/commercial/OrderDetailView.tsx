@@ -35,6 +35,8 @@ import {
   useCreateInvoiceFromDeliveryMutation,
 } from "@/store/api/invoicesApi";
 import { useGetClientQuery } from "@/store/api/clientsApi";
+import { useGetCatalogQuery } from "@/store/api/catalogApi";
+import { channelLabel } from "@/lib/salesChannel";
 import { useCommercialGating } from "@/hooks/useCommercialGating";
 import { OrderStatusStepper } from "./OrderStatusStepper";
 import { DeliverOrderDialog } from "./DeliverOrderDialog";
@@ -71,6 +73,10 @@ export function OrderDetailView({ orderId }: { orderId: number }) {
     { farmId: farmId as number },
     { skip },
   );
+  const { data: channels } = useGetCatalogQuery(
+    { farmId: farmId as number, category: "sales_channels" },
+    { skip },
+  );
 
   // ── Mutations ─────────────────────────────────────────────────────────────
   const [confirm, { isLoading: confirming }] = useConfirmOrderMutation();
@@ -89,6 +95,7 @@ export function OrderDetailView({ orderId }: { orderId: number }) {
 
   // ── Derived state ─────────────────────────────────────────────────────────
   const meta = ORDER_STATUS_META[order.status];
+  const orderChannel = channelLabel(channels, order.salesChannelKey);
   const busy = confirming || starting || cancelling || invoicing;
 
   /** The delivery (DELIVERED status) that belongs to this order, if any. */
@@ -263,6 +270,7 @@ export function OrderDetailView({ orderId }: { orderId: number }) {
               </Box>
               {order.actualDeliveryDate && <Box>Livrée le : {formatDate(order.actualDeliveryDate)}</Box>}
               {order.deliveryAddress && <Box>Adresse : {order.deliveryAddress}</Box>}
+              {orderChannel && <Box>Circuit : {orderChannel}</Box>}
             </Stack>
           </CardContent>
         </Card>

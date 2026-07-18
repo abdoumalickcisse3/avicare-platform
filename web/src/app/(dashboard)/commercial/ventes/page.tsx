@@ -20,6 +20,8 @@ import {
 import { MoreVertical } from "lucide-react";
 import { useCancelSaleMutation, useGetSalesQuery } from "@/store/api/salesApi";
 import { useGetClientsQuery } from "@/store/api/clientsApi";
+import { useGetCatalogQuery } from "@/store/api/catalogApi";
+import { channelLabel } from "@/lib/salesChannel";
 import { useCommercialGating } from "@/hooks/useCommercialGating";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -45,6 +47,10 @@ export default function VentesPage() {
   const skip = !hasFarm || !hasCommercial;
   const { data: sales, isLoading } = useGetSalesQuery({ farmId: farmId as number }, { skip });
   const { data: clients } = useGetClientsQuery({ farmId: farmId as number }, { skip });
+  const { data: channels } = useGetCatalogQuery(
+    { farmId: farmId as number, category: "sales_channels" },
+    { skip },
+  );
   const [cancelSale] = useCancelSaleMutation();
 
   const [menuEl, setMenuEl] = useState<null | HTMLElement>(null);
@@ -54,6 +60,7 @@ export default function VentesPage() {
     const map = new Map((clients ?? []).map((c) => [c.id, c.displayName]));
     return (id: number | null) => (id == null ? "Comptant" : map.get(id) ?? `Client #${id}`);
   }, [clients]);
+
 
   if (hasFarm && !hasCommercial) {
     return <Alert severity="info">Activez le module Commercial pour enregistrer des ventes.</Alert>;
@@ -108,6 +115,7 @@ export default function VentesPage() {
                 <TableCell>N°</TableCell>
                 <TableCell>Date</TableCell>
                 <TableCell>Client</TableCell>
+                <TableCell>Circuit</TableCell>
                 <TableCell>Articles</TableCell>
                 <TableCell>Total</TableCell>
                 <TableCell>Statut</TableCell>
@@ -122,6 +130,7 @@ export default function VentesPage() {
                     <TableCell sx={mono}>{s.saleNumber}</TableCell>
                     <TableCell>{formatDate(s.saleDate)}</TableCell>
                     <TableCell>{clientName(s.clientId)}</TableCell>
+                    <TableCell>{channelLabel(channels, s.salesChannelKey) ?? "—"}</TableCell>
                     <TableCell>{articlesSummary(s)}</TableCell>
                     <TableCell sx={monoBold}>{formatCurrency(s.totalXof)}</TableCell>
                     <TableCell>
