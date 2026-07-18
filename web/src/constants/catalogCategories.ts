@@ -71,6 +71,14 @@ export const CATALOG_CATEGORIES: CategoryConfig[] = [
       { name: "typical_unit_price_xof", label: "Prix indicatif (F CFA)", type: "number" },
     ],
   },
+  {
+    slug: "ventes",
+    backendCategory: "sales_channels",
+    title: "Ventes",
+    description: "Circuits de distribution : détail, grossiste, restaurant, marché, coopérative.",
+    labelField: "label",
+    fields: [{ name: "label", label: "Nom du circuit", type: "text", required: true }],
+  },
 ];
 
 export function getCategoryConfig(slug: string): CategoryConfig | undefined {

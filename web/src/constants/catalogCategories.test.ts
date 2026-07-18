@@ -20,7 +20,12 @@ describe("catalogCategories", () => {
     ).toBe(true);
   });
   it("returns undefined for an unconfigured slug", () => {
-    expect(getCategoryConfig("ventes")).toBeUndefined();
+    expect(getCategoryConfig("inexistant")).toBeUndefined();
+  });
+  it("maps ventes to the sales_channels backend category", () => {
+    const cfg = getCategoryConfig("ventes");
+    expect(cfg?.backendCategory).toBe("sales_channels");
+    expect(cfg?.fields.some((f) => f.name === "label" && f.required)).toBe(true);
   });
   it("every config has a labelField present in its fields", () => {
     for (const c of CATALOG_CATEGORIES) {
