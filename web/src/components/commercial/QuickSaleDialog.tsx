@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { Egg, Drumstick, Minus, Plus, Trash2, X } from "lucide-react";
+import { useGetCatalogQuery } from "@/store/api/catalogApi";
 import { useGetClientsQuery } from "@/store/api/clientsApi";
 import { useCreateSaleMutation } from "@/store/api/salesApi";
 import { useToast } from "@/components/feedback/ToastProvider";
@@ -65,12 +66,17 @@ export function QuickSaleDialog({
 function QuickSaleBody({ onClose, farmId }: { onClose: () => void; farmId: number }) {
   const { showToast } = useToast();
   const { data: clients } = useGetClientsQuery({ farmId });
+  const { data: channels } = useGetCatalogQuery(
+    { farmId, category: "sales_channels" },
+    { skip: !farmId },
+  );
   const [createSale, { isLoading: saving }] = useCreateSaleMutation();
   const { broilerLots, eggsAvailable, loading } = useProductionAvailability(farmId);
 
   const [lines, setLines] = useState<Line[]>([]);
   const [clientId, setClientId] = useState<string>(WALK_IN);
   const [method, setMethod] = useState<PaymentMethod>("CASH");
+  const [channel, setChannel] = useState<string>("");
 
   const total = lines.reduce((s, l) => s + l.quantity * l.unitPriceXof, 0);
   const hasOverMax = lines.some((l) => l.max != null && l.quantity > l.max);
@@ -146,6 +152,7 @@ function QuickSaleBody({ onClose, farmId }: { onClose: () => void; farmId: numbe
         body: {
           clientId: clientId === WALK_IN ? null : Number(clientId),
           paymentMethod: method,
+          salesChannelKey: channel || undefined,
           lines: lines.map((l) => ({
             articleKey: l.articleKey,
             articleSource: l.articleSource,
@@ -381,6 +388,21 @@ function QuickSaleBody({ onClose, farmId }: { onClose: () => void; farmId: numbe
             </Button>
           ))}
         </Stack>
+        <TextField
+          select
+          size="small"
+          label="Circuit (optionnel)"
+          value={channel}
+          onChange={(e) => setChannel(e.target.value)}
+          sx={{ mb: 2, minWidth: 220 }}
+        >
+          <MenuItem value="">— Aucun —</MenuItem>
+          {(channels ?? []).map((c) => (
+            <MenuItem key={c.key} value={c.key}>
+              {String(c.value.label ?? c.key)}
+            </MenuItem>
+          ))}
+        </TextField>
         <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
           <Box sx={{ flex: 1 }}>
             <Typography variant="caption" color="text.secondary">
