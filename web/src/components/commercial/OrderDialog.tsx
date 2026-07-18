@@ -16,6 +16,7 @@ import {
   Typography,
 } from "@mui/material";
 import { Plus, Trash2, X } from "lucide-react";
+import { useGetCatalogQuery } from "@/store/api/catalogApi";
 import { useGetClientsQuery } from "@/store/api/clientsApi";
 import { useCreateOrderMutation } from "@/store/api/ordersApi";
 import { useToast } from "@/components/feedback/ToastProvider";
@@ -71,6 +72,10 @@ function OrderBody({
 }) {
   const { showToast } = useToast();
   const { data: clients } = useGetClientsQuery({ farmId });
+  const { data: channels } = useGetCatalogQuery(
+    { farmId, category: "sales_channels" },
+    { skip: !farmId },
+  );
   const [createOrder, { isLoading: saving }] = useCreateOrderMutation();
   const { broilerLots, eggsAvailable, loading } = useProductionAvailability(farmId);
 
@@ -80,6 +85,7 @@ function OrderBody({
   const [notes, setNotes] = useState("");
   const [lines, setLines] = useState<Line[]>([]);
   const [picker, setPicker] = useState("");
+  const [channel, setChannel] = useState<string>("");
 
   const total = lines.reduce((s, l) => s + l.quantity * l.unitPriceXof, 0);
   const hasOverMax = lines.some((l) => l.max != null && l.quantity > l.max);
@@ -156,6 +162,7 @@ function OrderBody({
           expectedDeliveryDate: expectedDate || undefined,
           deliveryAddress: address || undefined,
           notes: notes || undefined,
+          salesChannelKey: channel || undefined,
           lines: lines.map((l) => ({
             articleKey: l.articleKey,
             articleSource: l.articleSource,
@@ -215,6 +222,21 @@ function OrderBody({
               slotProps={{ inputLabel: { shrink: true } }}
             />
           </Stack>
+
+          <TextField
+            select
+            label="Circuit (optionnel)"
+            value={channel}
+            onChange={(e) => setChannel(e.target.value)}
+            fullWidth
+          >
+            <MenuItem value="">— Aucun —</MenuItem>
+            {(channels ?? []).map((c) => (
+              <MenuItem key={c.key} value={c.key}>
+                {String(c.value.label ?? c.key)}
+              </MenuItem>
+            ))}
+          </TextField>
 
           {/* Line editor */}
           <Box>

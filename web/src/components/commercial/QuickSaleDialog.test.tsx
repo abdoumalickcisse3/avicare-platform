@@ -56,6 +56,23 @@ const ARTICLES = [
   },
 ];
 
+const SALES_CHANNELS = [
+  { category: "sales_channels", key: "retail", value: { label: "Détail" }, custom: false },
+];
+
+const CREATED_SALE = {
+  id: 1,
+  farmId: 1,
+  saleNumber: "V-0001",
+  clientId: null,
+  status: "COMPLETED",
+  saleDate: "2026-07-18",
+  paymentMethod: "CASH",
+  totalXof: 0,
+  notes: null,
+  items: [],
+};
+
 function respond(data: unknown) {
   return Promise.resolve(
     new Response(JSON.stringify({ data }), {
@@ -65,17 +82,34 @@ function respond(data: unknown) {
   );
 }
 
+let lastBody: Record<string, unknown> | null = null;
+let lastMethod = "";
+
 function setupFetch() {
+  lastBody = null;
+  lastMethod = "";
   vi.stubGlobal(
     "fetch",
-    vi.fn((input: RequestInfo | URL) => {
+    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       // RTK Query passes a Request object; extract the URL string.
       const url = input instanceof Request ? input.url : String(input);
+      lastMethod = input instanceof Request ? input.method : (init?.method ?? "GET");
+      if (input instanceof Request) {
+        try {
+          lastBody = await input.clone().json();
+        } catch {
+          /* no body */
+        }
+      } else if (init?.body) {
+        lastBody = JSON.parse(init.body as string);
+      }
       if (url.includes("poultry-batches")) return respond([BATCH, LAYER_BATCH]);
       if (url.includes("/breeds")) return respond(BREEDS);
       if (url.includes("tray-stock")) return respond(TRAY_STOCK);
+      if (url.includes("catalog/sales_channels")) return respond(SALES_CHANNELS);
       if (url.includes("inventory/catalog/articles")) return respond(ARTICLES);
       if (url.includes("commercial/clients")) return respond([]);
+      if (url.includes("commercial/sales") && lastMethod === "POST") return respond(CREATED_SALE);
       return respond([]);
     }),
   );
@@ -151,5 +185,51 @@ describe("QuickSaleDialog — production availability", () => {
     // …but the layer lot (breed type "layer") is not shown as a meat lot.
     expect(screen.queryByText("Lot Pondeuse")).not.toBeInTheDocument();
     expect(screen.queryByText("30 têtes restantes")).not.toBeInTheDocument();
+  });
+});
+
+describe("QuickSaleDialog — circuit de distribution", () => {
+  beforeEach(() => {
+    setupFetch();
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("envoie salesChannelKey quand un circuit est sélectionné", async () => {
+    const user = userEvent.setup();
+    setup();
+
+    // Add a line so the sale can be submitted.
+    const lotCard = await screen.findByText("50 têtes restantes");
+    const card = lotCard.closest("[role='button']") as HTMLElement;
+    await user.click(card);
+
+    // Wait for the channel catalog to load, then pick "Détail".
+    const channelSelect = await screen.findByRole("combobox", { name: "Circuit (optionnel)" });
+    await user.click(channelSelect);
+    await user.click(await screen.findByRole("option", { name: "Détail" }));
+
+    await user.click(screen.getByRole("button", { name: /Valider la vente/i }));
+
+    await waitFor(() => expect(lastMethod).toBe("POST"));
+    expect(lastBody).toMatchObject({ salesChannelKey: "retail" });
+  });
+
+  it("n'envoie pas salesChannelKey quand aucun circuit n'est choisi", async () => {
+    const user = userEvent.setup();
+    setup();
+
+    const lotCard = await screen.findByText("50 têtes restantes");
+    const card = lotCard.closest("[role='button']") as HTMLElement;
+    await user.click(card);
+
+    // Let the channel catalog resolve without picking anything.
+    await screen.findByRole("combobox", { name: "Circuit (optionnel)" });
+
+    await user.click(screen.getByRole("button", { name: /Valider la vente/i }));
+
+    await waitFor(() => expect(lastMethod).toBe("POST"));
+    expect(lastBody).not.toHaveProperty("salesChannelKey");
   });
 });

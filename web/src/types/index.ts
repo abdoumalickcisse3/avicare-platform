@@ -1004,6 +1004,8 @@ export interface SaleInput {
   saleDate?: string;
   paymentMethod?: string;
   notes?: string;
+  /** Optional distribution channel tag (Sprint sales-channels, D-sales-channels). */
+  salesChannelKey?: string;
   lines: SaleLineInput[];
 }
 
@@ -1068,6 +1070,8 @@ export interface OrderInput {
   expectedPaymentMethod?: string;
   expectedPaymentDueDate?: string;
   notes?: string;
+  /** Optional distribution channel tag (Sprint sales-channels, D-sales-channels). */
+  salesChannelKey?: string;
   lines: OrderLineInput[];
 }
 
