@@ -112,6 +112,7 @@ class SaleServiceTest {
             LocalDate.now(),
             "CASH",
             null,
+            null,
             List.of(line("eggs_consumption", "10", 3000), line("chicken_meat", "5", 2500)));
 
     Sale sale = service.create(7L, cmd, 42L);
@@ -142,7 +143,8 @@ class SaleServiceTest {
   void create_walkInSale_hasNoClient() {
     when(saleRepository.findMaxSequence(eq(7L), any())).thenReturn(0);
     SaleCommand cmd =
-        new SaleCommand(null, null, "CASH", null, List.of(line("eggs_consumption", "2", 3000)));
+        new SaleCommand(
+            null, null, "CASH", null, null, List.of(line("eggs_consumption", "2", 3000)));
 
     Sale sale = service.create(7L, cmd, 42L);
 
@@ -158,7 +160,8 @@ class SaleServiceTest {
     Sale sale =
         service.create(
             7L,
-            new SaleCommand(null, null, null, null, List.of(line("eggs_consumption", "1", 2500))),
+            new SaleCommand(
+                null, null, null, null, null, List.of(line("eggs_consumption", "1", 2500))),
             42L);
 
     assertThat(sale.getSaleNumber()).isEqualTo("V-" + LocalDate.now().getYear() + "-009");
@@ -168,7 +171,7 @@ class SaleServiceTest {
   void create_unknownClientThrowsNotFound() {
     when(clientRepository.findByFarmIdAndId(7L, 99L)).thenReturn(Optional.empty());
     SaleCommand cmd =
-        new SaleCommand(99L, null, null, null, List.of(line("eggs_consumption", "1", 2500)));
+        new SaleCommand(99L, null, null, null, null, List.of(line("eggs_consumption", "1", 2500)));
 
     assertThatExceptionOfType(NotFoundException.class)
         .isThrownBy(() -> service.create(7L, cmd, 42L));
@@ -176,7 +179,7 @@ class SaleServiceTest {
 
   @Test
   void create_emptyLinesThrowsValidation_andTouchesNoStock() {
-    SaleCommand cmd = new SaleCommand(null, null, null, null, List.of());
+    SaleCommand cmd = new SaleCommand(null, null, null, null, null, List.of());
 
     assertThatExceptionOfType(ValidationException.class)
         .isThrownBy(() -> service.create(7L, cmd, 42L));
@@ -186,7 +189,7 @@ class SaleServiceTest {
   @Test
   void create_nonPositiveQuantityThrowsValidation() {
     SaleCommand cmd =
-        new SaleCommand(null, null, null, null, List.of(line("eggs_consumption", "0", 2500)));
+        new SaleCommand(null, null, null, null, null, List.of(line("eggs_consumption", "0", 2500)));
 
     assertThatExceptionOfType(ValidationException.class)
         .isThrownBy(() -> service.create(7L, cmd, 42L));
@@ -195,7 +198,7 @@ class SaleServiceTest {
   @Test
   void create_negativePriceThrowsValidation() {
     SaleCommand cmd =
-        new SaleCommand(null, null, null, null, List.of(line("eggs_consumption", "1", -5)));
+        new SaleCommand(null, null, null, null, null, List.of(line("eggs_consumption", "1", -5)));
 
     assertThatExceptionOfType(ValidationException.class)
         .isThrownBy(() -> service.create(7L, cmd, 42L));
@@ -203,7 +206,8 @@ class SaleServiceTest {
 
   @Test
   void create_unknownArticleThrowsNotFound() {
-    SaleCommand cmd = new SaleCommand(null, null, null, null, List.of(line("ghost", "1", 2500)));
+    SaleCommand cmd =
+        new SaleCommand(null, null, null, null, null, List.of(line("ghost", "1", 2500)));
 
     assertThatExceptionOfType(NotFoundException.class)
         .isThrownBy(() -> service.create(7L, cmd, 42L));
@@ -212,7 +216,7 @@ class SaleServiceTest {
   @Test
   void create_nonProductArticleThrowsValidation() {
     SaleCommand cmd =
-        new SaleCommand(null, null, null, null, List.of(line("layer_feed", "10", 300)));
+        new SaleCommand(null, null, null, null, null, List.of(line("layer_feed", "10", 300)));
 
     assertThatExceptionOfType(ValidationException.class)
         .isThrownBy(() -> service.create(7L, cmd, 42L));

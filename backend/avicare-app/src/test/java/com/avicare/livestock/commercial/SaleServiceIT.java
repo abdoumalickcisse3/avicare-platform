@@ -69,6 +69,7 @@ class SaleServiceIT {
                 null,
                 "CASH",
                 null,
+                null,
                 List.of(line("eggs_consumption", "10", 3000), line("chicken_meat", "5", 2500))),
             1L);
     assertThat(sale.getStatus()).isEqualTo(SaleStatus.COMPLETED);
@@ -87,7 +88,8 @@ class SaleServiceIT {
     Sale sale2 =
         saleService.create(
             farmId,
-            new SaleCommand(null, null, null, null, List.of(line("eggs_consumption", "1", 3000))),
+            new SaleCommand(
+                null, null, null, null, null, List.of(line("eggs_consumption", "1", 3000))),
             1L);
     assertThat(sale2.getSaleNumber()).isEqualTo(String.format("V-%d-002", year));
 

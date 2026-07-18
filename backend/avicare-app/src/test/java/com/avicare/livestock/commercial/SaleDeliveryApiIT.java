@@ -102,6 +102,28 @@ class SaleDeliveryApiIT {
   }
 
   @Test
+  void sale_withSalesChannelKey_persistsAndReturnsIt() throws Exception {
+    String owner = onboardOwner("sd-channel");
+    long farmId = createFarm(owner, "Ferme Canal");
+    owner = relogin("sd-channel");
+    enableModule(owner, farmId, "module.commercial.basic");
+    String base = "/api/v1/farms/" + farmId + "/commercial";
+    long clientId = createClient(owner, base, "Client Canal");
+
+    JsonNode sale =
+        data(
+            postOk(
+                base + "/sales",
+                owner,
+                saleBodyWithChannel(clientId, "eggs_consumption", 10, 3000, "retail")));
+    long saleId = sale.get("id").asLong();
+    assertThat(sale.get("salesChannelKey").asText()).isEqualTo("retail");
+
+    JsonNode fetched = data(getOk(base + "/sales/" + saleId, owner));
+    assertThat(fetched.get("salesChannelKey").asText()).isEqualTo("retail");
+  }
+
+  @Test
   void salesEndpoint_withoutModule_returns403() throws Exception {
     String owner = onboardOwner("sd-gate");
     long farmId = createFarm(owner, "Ferme Sans Module");
@@ -204,6 +226,13 @@ class SaleDeliveryApiIT {
     return String.format(
         "{\"clientId\":%d,\"paymentMethod\":\"CASH\",\"lines\":[{\"articleKey\":\"%s\",\"articleSource\":\"INVENTORY\",\"quantity\":%d,\"unitPriceXof\":%d}]}",
         clientId, articleKey, qty, price);
+  }
+
+  private static String saleBodyWithChannel(
+      long clientId, String articleKey, int qty, int price, String salesChannelKey) {
+    return String.format(
+        "{\"clientId\":%d,\"paymentMethod\":\"CASH\",\"salesChannelKey\":\"%s\",\"lines\":[{\"articleKey\":\"%s\",\"articleSource\":\"INVENTORY\",\"quantity\":%d,\"unitPriceXof\":%d}]}",
+        clientId, salesChannelKey, articleKey, qty, price);
   }
 
   private JsonNode data(JsonNode response) {

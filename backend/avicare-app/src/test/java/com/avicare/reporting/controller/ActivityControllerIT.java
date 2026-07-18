@@ -118,6 +118,7 @@ class ActivityControllerIT {
             null,
             "CREDIT",
             null,
+            null,
             java.util.List.of(
                 new com.avicare.livestock.commercial.SaleCommand.Line(
                     "eggs_consumption",

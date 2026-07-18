@@ -79,7 +79,7 @@ class CommercialRevenueQueriesIT {
         saleService.create(
             farmId,
             new SaleCommand(
-                null, null, "CASH", null, List.of(saleLine("eggs_consumption", "10", 3000))),
+                null, null, "CASH", null, null, List.of(saleLine("eggs_consumption", "10", 3000))),
             1L);
     assertThat(completed.getStatus()).isEqualTo(SaleStatus.COMPLETED);
 
@@ -87,7 +87,7 @@ class CommercialRevenueQueriesIT {
         saleService.create(
             farmId,
             new SaleCommand(
-                null, null, "CASH", null, List.of(saleLine("eggs_consumption", "5", 3000))),
+                null, null, "CASH", null, null, List.of(saleLine("eggs_consumption", "5", 3000))),
             1L);
     saleService.cancel(farmId, toCancel.getId(), "erreur", 1L);
 
@@ -120,7 +120,12 @@ class CommercialRevenueQueriesIT {
         saleService.create(
             farmId,
             new SaleCommand(
-                clientId, null, "CREDIT", null, List.of(saleLine("eggs_consumption", "10", 3000))),
+                clientId,
+                null,
+                "CREDIT",
+                null,
+                null,
+                List.of(saleLine("eggs_consumption", "10", 3000))),
             1L);
     Invoice saleInvoice = invoiceService.createFromSale(farmId, sale.getId(), null, 1L);
     paymentService.record(

@@ -17,6 +17,7 @@ public record SaleResponse(
     SaleStatus status,
     LocalDate saleDate,
     String paymentMethod,
+    String salesChannelKey,
     Long totalXof,
     String notes,
     List<Line> items) {
@@ -55,6 +56,7 @@ public record SaleResponse(
         s.getStatus(),
         s.getSaleDate(),
         s.getPaymentMethod(),
+        s.getSalesChannelKey(),
         s.getTotalXof(),
         s.getNotes(),
         s.getItems().stream().map(Line::from).toList());
