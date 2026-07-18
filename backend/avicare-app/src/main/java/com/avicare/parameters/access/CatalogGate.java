@@ -11,7 +11,8 @@ import org.springframework.stereotype.Component;
  * catalog_items} rows, so without this it could be used to read/write them while bypassing the
  * module gate. This bean lets the generic endpoints enforce the SAME requirement: {@code
  * vaccines}/{@code vaccination_programs} → {@code module.health.basic}, {@code treatments} → {@code
- * module.health.advanced}, {@code inventory_items} → {@code module.inventory}.
+ * module.health.advanced}, {@code inventory_items} → {@code module.inventory}, {@code
+ * sales_channels} → {@code module.commercial.basic}.
  *
  * <p>Returns {@code null} for categories that carry no module requirement (breeds,
  * expense_categories, …). Kept dependency-free so it stays in the {@code parameters} context; the
@@ -32,6 +33,7 @@ public class CatalogGate {
       case "vaccines", "vaccination_programs" -> "module.health.basic";
       case "treatments" -> "module.health.advanced";
       case "inventory_items" -> "module.inventory";
+      case "sales_channels" -> "module.commercial.basic";
       default -> null;
     };
   }
