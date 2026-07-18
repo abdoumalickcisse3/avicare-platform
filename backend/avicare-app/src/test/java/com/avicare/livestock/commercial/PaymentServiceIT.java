@@ -80,6 +80,7 @@ class PaymentServiceIT {
                 null,
                 "CREDIT",
                 null,
+                null,
                 List.of(line("eggs_consumption", "10", 3000), line("chicken_meat", "5", 2500))),
             1L);
     Invoice invoice = invoiceService.createFromSale(farmId, sale.getId(), null, 1L);

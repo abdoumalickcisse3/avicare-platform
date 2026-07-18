@@ -66,6 +66,7 @@ public class SaleService {
     sale.setStatus(SaleStatus.COMPLETED);
     sale.setSaleDate(cmd.saleDate() != null ? cmd.saleDate() : LocalDate.now());
     sale.setPaymentMethod(cmd.paymentMethod());
+    sale.setSalesChannelKey(cmd.salesChannelKey());
     sale.setNotes(cmd.notes());
     sale.setCreatedBy(userId);
     sale.setSaleNumber(generateSaleNumber(farmId, sale.getSaleDate().getYear()));

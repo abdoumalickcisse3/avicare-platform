@@ -14,7 +14,12 @@ import java.util.List;
  * productionUnitId} is required for BROILER and forbidden for EGGS (D27).
  */
 public record SaleCommand(
-    Long clientId, LocalDate saleDate, String paymentMethod, String notes, List<Line> lines) {
+    Long clientId,
+    LocalDate saleDate,
+    String paymentMethod,
+    String salesChannelKey,
+    String notes,
+    List<Line> lines) {
 
   public record Line(
       String articleKey,

@@ -82,6 +82,7 @@ class InvoiceServiceIT {
                 null,
                 "CREDIT",
                 null,
+                null,
                 List.of(
                     saleLine("eggs_consumption", "10", 3000), saleLine("chicken_meat", "5", 2500))),
             1L);

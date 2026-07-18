@@ -65,6 +65,9 @@ public class Sale {
   @Column(name = "payment_method")
   private String paymentMethod;
 
+  @Column(name = "sales_channel_key")
+  private String salesChannelKey;
+
   @Column(name = "total_xof", nullable = false)
   private Long totalXof = 0L;
 

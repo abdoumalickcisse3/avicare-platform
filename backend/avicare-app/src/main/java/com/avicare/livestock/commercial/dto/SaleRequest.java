@@ -19,6 +19,7 @@ public record SaleRequest(
     Long clientId,
     LocalDate saleDate,
     @Size(max = 40) String paymentMethod,
+    @Size(max = 80) String salesChannelKey,
     @Size(max = 2000) String notes,
     @NotEmpty @Valid List<LineRequest> lines) {
 
@@ -42,6 +43,7 @@ public record SaleRequest(
         clientId,
         saleDate,
         paymentMethod,
+        salesChannelKey,
         notes,
         lines.stream().map(LineRequest::toCommandLine).toList());
   }

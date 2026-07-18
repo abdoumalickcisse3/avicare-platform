@@ -85,6 +85,7 @@ class CommercialActivityIT {
                 null,
                 "CREDIT",
                 null,
+                null,
                 List.of(
                     new SaleCommand.Line(
                         "eggs_consumption",

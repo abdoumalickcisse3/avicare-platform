@@ -92,7 +92,7 @@ class CommercialProductionIT {
     Sale sale =
         saleService.create(
             ctx.farmId(),
-            new SaleCommand(null, null, "CASH", null, List.of(broilerLine(unitId, 20, 5000))),
+            new SaleCommand(null, null, "CASH", null, null, List.of(broilerLine(unitId, 20, 5000))),
             ctx.userId());
 
     assertThat(sale.getStatus().name()).isEqualTo("COMPLETED");
@@ -109,7 +109,7 @@ class CommercialProductionIT {
     Sale sale =
         saleService.create(
             ctx.farmId(),
-            new SaleCommand(null, null, "CASH", null, List.of(broilerLine(unitId, 20, 5000))),
+            new SaleCommand(null, null, "CASH", null, null, List.of(broilerLine(unitId, 20, 5000))),
             ctx.userId());
 
     var invoice =
@@ -129,7 +129,7 @@ class CommercialProductionIT {
 
     saleService.create(
         ctx.farmId(),
-        new SaleCommand(null, null, "CASH", null, List.of(eggsLine(4, 2000))),
+        new SaleCommand(null, null, "CASH", null, null, List.of(eggsLine(4, 2000))),
         ctx.userId());
 
     assertThat(eggTrayStockRepository.findByFarmId(ctx.farmId()).orElseThrow().getFullTraysCount())
@@ -149,7 +149,7 @@ class CommercialProductionIT {
                 saleService.create(
                     ctx.farmId(),
                     new SaleCommand(
-                        null, null, "CASH", null, List.of(broilerLine(unitId, 50, 5000))),
+                        null, null, "CASH", null, null, List.of(broilerLine(unitId, 50, 5000))),
                     ctx.userId()))
         .isInstanceOf(BusinessRuleException.class);
 
@@ -213,7 +213,7 @@ class CommercialProductionIT {
     Sale sale =
         saleService.create(
             ctx.farmId(),
-            new SaleCommand(null, null, "CASH", null, List.of(broilerLine(unitId, 20, 5000))),
+            new SaleCommand(null, null, "CASH", null, null, List.of(broilerLine(unitId, 20, 5000))),
             ctx.userId());
     assertThat(productionUnitRepository.findById(unitId).orElseThrow().getCurrentCount())
         .isEqualTo(80);
@@ -242,6 +242,7 @@ class CommercialProductionIT {
                         null,
                         "CASH",
                         null,
+                        null,
                         List.of(
                             new SaleCommand.Line(
                                 "PROD",
@@ -264,6 +265,7 @@ class CommercialProductionIT {
                         null,
                         null,
                         "CASH",
+                        null,
                         null,
                         List.of(
                             new SaleCommand.Line(
@@ -288,6 +290,7 @@ class CommercialProductionIT {
                         null,
                         "CASH",
                         null,
+                        null,
                         List.of(
                             new SaleCommand.Line(
                                 "EGGS",
@@ -310,6 +313,7 @@ class CommercialProductionIT {
                         null,
                         null,
                         "CASH",
+                        null,
                         null,
                         List.of(
                             new SaleCommand.Line(
@@ -347,6 +351,7 @@ class CommercialProductionIT {
                         null,
                         null,
                         "CASH",
+                        null,
                         null,
                         List.of(
                             inventoryLine("chicken_meat", 3, 2500), broilerLine(unitId, 50, 5000))),
