@@ -178,6 +178,7 @@ class CommercialProductionIT {
                 null,
                 null,
                 null,
+                null,
                 List.of(
                     new OrderDraftCommand.Line(
                         "BROILER",

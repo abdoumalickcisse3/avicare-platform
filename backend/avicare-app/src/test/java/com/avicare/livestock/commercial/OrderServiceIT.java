@@ -80,6 +80,7 @@ class OrderServiceIT {
                 "CASH",
                 null,
                 null,
+                null,
                 List.of(line("eggs_consumption", "10", 3000), line("chicken_meat", "5", 2500))),
             1L);
     assertThat(order.getStatus()).isEqualTo(OrderStatus.PENDING);
@@ -95,6 +96,7 @@ class OrderServiceIT {
             farmId,
             new OrderDraftCommand(
                 clientId,
+                null,
                 null,
                 null,
                 null,
@@ -142,6 +144,7 @@ class OrderServiceIT {
                 null,
                 null,
                 null,
+                null,
                 List.of(line("eggs_consumption", "2", 3000))),
             1L);
     orderService.confirm(farmId, order.getId(), 1L);
@@ -163,6 +166,7 @@ class OrderServiceIT {
                         null,
                         null,
                         null,
+                        null,
                         List.of(line("eggs_consumption", "1", 3000))),
                     1L))
         .isInstanceOf(NotFoundException.class);
@@ -174,6 +178,7 @@ class OrderServiceIT {
                     farmId,
                     new OrderDraftCommand(
                         clientId,
+                        null,
                         null,
                         null,
                         null,

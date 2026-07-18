@@ -123,6 +123,7 @@ class InvoiceServiceIT {
                 null,
                 null,
                 null,
+                null,
                 List.of(orderLine("eggs_consumption", "4", 3000))),
             1L);
     orderService.confirm(farmId, order.getId(), 1L);

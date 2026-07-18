@@ -82,6 +82,7 @@ class DeliveryServiceIT {
                 null,
                 null,
                 null,
+                null,
                 List.of(line("eggs_consumption", "10", 3000), line("chicken_meat", "5", 2500))),
             1L);
     orderService.confirm(farmId, order.getId(), 1L);

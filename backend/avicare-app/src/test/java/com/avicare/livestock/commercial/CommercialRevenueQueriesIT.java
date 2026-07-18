@@ -150,6 +150,7 @@ class CommercialRevenueQueriesIT {
                 null,
                 null,
                 null,
+                null,
                 List.of(orderLine("eggs_consumption", qty, price))),
             1L);
     orderService.confirm(farmId, order.getId(), 1L);
