@@ -113,6 +113,7 @@ class OrderServiceTest {
             null,
             null,
             null,
+            null,
             List.of(line("eggs_consumption", "1", 2500)));
 
     assertThatExceptionOfType(NotFoundException.class)
@@ -122,7 +123,7 @@ class OrderServiceTest {
   @Test
   void createDraft_emptyLinesThrowsValidation() {
     OrderDraftCommand cmd =
-        new OrderDraftCommand(3L, null, null, null, null, null, null, null, List.of());
+        new OrderDraftCommand(3L, null, null, null, null, null, null, null, null, List.of());
 
     assertThatExceptionOfType(ValidationException.class)
         .isThrownBy(() -> service.createDraft(7L, cmd, 42L));
@@ -293,7 +294,8 @@ class OrderServiceTest {
   }
 
   private static OrderDraftCommand draft(OrderDraftCommand.Line... lines) {
-    return new OrderDraftCommand(3L, null, null, null, null, null, null, null, List.of(lines));
+    return new OrderDraftCommand(
+        3L, null, null, null, null, null, null, null, null, List.of(lines));
   }
 
   private static OrderDraftCommand.Line line(String articleKey, String qty, int unitPriceXof) {

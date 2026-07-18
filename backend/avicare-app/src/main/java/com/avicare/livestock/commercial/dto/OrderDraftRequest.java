@@ -22,6 +22,7 @@ public record OrderDraftRequest(
     @Size(max = 2000) String deliveryAddress,
     @Size(max = 2000) String deliveryNotes,
     @Size(max = 40) String expectedPaymentMethod,
+    @Size(max = 80) String salesChannelKey,
     LocalDate expectedPaymentDueDate,
     @Size(max = 2000) String notes,
     @NotEmpty @Valid List<LineRequest> lines) {
@@ -49,6 +50,7 @@ public record OrderDraftRequest(
         deliveryAddress,
         deliveryNotes,
         expectedPaymentMethod,
+        salesChannelKey,
         expectedPaymentDueDate,
         notes,
         lines.stream().map(LineRequest::toCommandLine).toList());

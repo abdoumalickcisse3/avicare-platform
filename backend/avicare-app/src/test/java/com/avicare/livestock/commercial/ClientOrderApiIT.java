@@ -206,6 +206,43 @@ class ClientOrderApiIT {
         .andExpect(status().isNotFound());
   }
 
+  @Test
+  void order_withSalesChannelKey_persistsAndReturnsIt() throws Exception {
+    String owner = onboardOwner("co-channel");
+    long farmId = createFarm(owner, "Ferme Circuit");
+    owner = relogin("co-channel");
+    enableModule(owner, farmId, "module.commercial.basic");
+    String base = "/api/v1/farms/" + farmId + "/commercial";
+
+    long clientId =
+        data(postOk(
+                base + "/clients",
+                owner,
+                """
+                    {"clientType":"BUSINESS","displayName":"Grossiste Teranga"}
+                    """))
+            .get("id")
+            .asLong();
+
+    JsonNode order =
+        data(
+            postOk(
+                base + "/orders",
+                owner,
+                String.format(
+                    """
+                    {"clientId":%d,"salesChannelKey":"wholesale","lines":[
+                      {"articleKey":"eggs_consumption","articleSource":"INVENTORY","quantity":5,"unitPriceXof":3000}]}
+                    """,
+                    clientId)));
+    assertThat(order.get("salesChannelKey").asText()).isEqualTo("wholesale");
+
+    // read back — the channel was persisted, not just echoed
+    long orderId = order.get("id").asLong();
+    assertThat(data(getOk(base + "/orders/" + orderId, owner)).get("salesChannelKey").asText())
+        .isEqualTo("wholesale");
+  }
+
   // --- helpers --------------------------------------------------------
 
   private JsonNode data(JsonNode response) {

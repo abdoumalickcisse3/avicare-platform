@@ -20,6 +20,7 @@ public record OrderDraftCommand(
     String deliveryAddress,
     String deliveryNotes,
     String expectedPaymentMethod,
+    String salesChannelKey,
     LocalDate expectedPaymentDueDate,
     String notes,
     List<Line> lines) {

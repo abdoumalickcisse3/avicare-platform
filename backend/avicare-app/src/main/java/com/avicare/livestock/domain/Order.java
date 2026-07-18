@@ -76,6 +76,9 @@ public class Order {
   @Column(name = "expected_payment_method")
   private String expectedPaymentMethod;
 
+  @Column(name = "sales_channel_key")
+  private String salesChannelKey;
+
   @Column(name = "expected_payment_due_date")
   private LocalDate expectedPaymentDueDate;
 

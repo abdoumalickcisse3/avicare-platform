@@ -60,6 +60,7 @@ public class OrderService {
     order.setDeliveryAddress(cmd.deliveryAddress());
     order.setDeliveryNotes(cmd.deliveryNotes());
     order.setExpectedPaymentMethod(cmd.expectedPaymentMethod());
+    order.setSalesChannelKey(cmd.salesChannelKey());
     order.setExpectedPaymentDueDate(cmd.expectedPaymentDueDate());
     order.setNotes(cmd.notes());
     order.setCreatedBy(userId);
