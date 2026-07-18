@@ -27,7 +27,7 @@ describe("CatalogCategoryView", () => {
     expect(await screen.findByText("Souches et races de volaille (chair, ponte).")).toBeInTheDocument();
   });
   it("renders a coming-soon placeholder for an unconfigured slug", () => {
-    renderWithProviders(<CatalogCategoryView slug="ventes" />);
+    renderWithProviders(<CatalogCategoryView slug="inexistant" />);
     expect(screen.getByText(/Bientôt disponible/i)).toBeInTheDocument();
   });
 });
