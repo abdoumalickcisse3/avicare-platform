@@ -21,6 +21,11 @@ class CatalogGateTest {
   }
 
   @Test
+  void mapsSalesChannelsToTheCommercialModule() {
+    assertThat(gate.moduleFor("sales_channels")).isEqualTo("module.commercial.basic");
+  }
+
+  @Test
   void returnsNullForCategoriesWithNoModuleRequirement() {
     assertThat(gate.moduleFor("breeds")).isNull();
     assertThat(gate.moduleFor("expense_categories")).isNull();
