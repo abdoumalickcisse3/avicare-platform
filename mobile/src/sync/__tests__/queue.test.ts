@@ -61,4 +61,37 @@ describe('mutation queue', () => {
     q.enqueue(mutation);
     expect(q.peekNext()?.payload).toEqual({ count: 2, reason: 'field' });
   });
+
+  // Guardrail for Task 6's sync engine: attempts is owned solely by
+  // bumpAttempts. markFailed must never touch the counter, so a retryable
+  // failure (bumpAttempts) and a terminal failure (markFailed) can never
+  // double-count.
+  it('does not increment attempts on markFailed', () => {
+    const q = setup();
+    q.enqueue(mutation);
+    const id = q.peekNext()!.id;
+    q.markFailed(id, 'msg');
+
+    const failed = q.listFailed()[0];
+    expect(failed).toBeDefined();
+    expect(failed?.attempts).toBe(0);
+    expect(failed?.lastError).toBe('msg');
+    expect(failed?.status).toBe('FAILED');
+  });
+
+  it('increments attempts only via bumpAttempts', () => {
+    const q = setup();
+    q.enqueue(mutation);
+    const id = q.peekNext()!.id;
+
+    q.bumpAttempts(id);
+    const afterFirst = q.listAll()[0];
+    expect(afterFirst).toBeDefined();
+    expect(afterFirst?.attempts).toBe(1);
+
+    q.bumpAttempts(id);
+    const afterSecond = q.listAll()[0];
+    expect(afterSecond).toBeDefined();
+    expect(afterSecond?.attempts).toBe(2);
+  });
 });

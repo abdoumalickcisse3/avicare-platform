@@ -53,11 +53,11 @@ export function createQueue(driver: SqlDriver) {
       driver.run(`DELETE FROM mutation_queue WHERE id = ?`, [id]);
     },
 
+    // attempts is owned solely by bumpAttempts — markFailed only records the
+    // terminal state, it must never touch the counter (avoids double-count
+    // when the sync engine calls bumpAttempts on retryable errors).
     markFailed(id: number, message: string): void {
-      driver.run(
-        `UPDATE mutation_queue SET status = 'FAILED', last_error = ?, attempts = attempts + 1 WHERE id = ?`,
-        [message, id],
-      );
+      driver.run(`UPDATE mutation_queue SET status = 'FAILED', last_error = ? WHERE id = ?`, [message, id]);
     },
 
     markPending(id: number): void {
