@@ -26,6 +26,9 @@
       "expo-router",
       "expo-sqlite",
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "apiUrl": "http://localhost:8080"
+    }
   }
 }
