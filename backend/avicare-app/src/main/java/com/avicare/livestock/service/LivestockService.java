@@ -139,6 +139,25 @@ public class LivestockService {
       String reason,
       Map<String, Object> details,
       Long userId) {
+    return recordEvent(unitId, eventType, quantityDelta, reason, details, userId, null);
+  }
+
+  /**
+   * Same as {@link #recordEvent(Long, String, int, String, Map, Long)} but attaches {@code
+   * clientRef} to the entity BEFORE {@code save()}, so that {@code save()} — which triggers an
+   * immediate {@code IDENTITY}-strategy {@code INSERT} — already carries the real value. A
+   * duplicate {@code clientRef} then fails the partial unique index synchronously at insert-time,
+   * mirroring {@code GrowthAnalysisService#insertWeighing}, instead of inserting with {@code
+   * client_ref = NULL} and relying on a deferred {@code UPDATE} at flush/commit.
+   */
+  private LifecycleEvent recordEvent(
+      Long unitId,
+      String eventType,
+      int quantityDelta,
+      String reason,
+      Map<String, Object> details,
+      Long userId,
+      UUID clientRef) {
     ProductionUnit unit = getUnit(unitId);
     if (unit.getStatus() == UnitStatus.CLOSED || unit.getStatus() == UnitStatus.CANCELLED) {
       throw new BusinessRuleException(
@@ -163,6 +182,7 @@ public class LivestockService {
     event.setReason(reason);
     event.setDetails(details != null ? details : Map.of());
     event.setCreatedBy(userId);
+    event.setClientRef(clientRef);
     return lifecycleEventRepository.save(event);
   }
 
@@ -221,9 +241,7 @@ public class LivestockService {
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public LifecycleEvent insertMortalityEvent(
       Long unitId, int count, String reason, Long userId, UUID clientRef) {
-    LifecycleEvent event = recordEvent(unitId, EVENT_MORTALITY, -count, reason, Map.of(), userId);
-    event.setClientRef(clientRef);
-    return event;
+    return recordEvent(unitId, EVENT_MORTALITY, -count, reason, Map.of(), userId, clientRef);
   }
 
   /** Set the unit's count to an exact value, journaling the delta as a COUNT_ADJUSTMENT. */
