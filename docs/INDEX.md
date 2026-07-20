@@ -93,7 +93,7 @@ Pour toute décision d'architecture non documentée, ME DEMANDER avant d'agir.
 - [x] Sprint B3 — health
 - [x] Sprint B4 — inventory
 - [x] Sprint B5 — commercial
-- [ ] Sprint B6 — finance
+- [x] Sprint B6 — finance
 - [ ] Sprint B7 — mobile MVP
 - [ ] Sprint C1 — notifications
 - [ ] Sprint C2 — reporting
