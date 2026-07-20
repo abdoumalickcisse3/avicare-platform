@@ -1,14 +1,13 @@
 /**
- * Point d'entrée du thème mobile.
+ * Mobile theme entry point.
  *
- * Tous les composants des tâches suivantes importent depuis `@/theme`, jamais
- * depuis `@/theme/tokens` : la façade reste stable si l'implémentation bouge.
+ * All components in later tasks import from `@/theme`, never from `@/theme/tokens`:
+ * the facade stays stable even if the implementation changes.
  *
  *   import { tokens } from '@/theme';
  *
- * Aucune valeur littérale de couleur, d'espacement ou de taille de police ne doit
- * apparaître ailleurs que dans `tokens.ts` (doc 10 : « aucune valeur métier en dur »,
- * appliqué ici au visuel).
+ * No literal colour, spacing, or font-size value should appear anywhere but
+ * `tokens.ts` (doc 10: "no hardcoded business value", applied here to the visuals).
  */
 
 export { tokens, fontFamily } from './tokens';
@@ -20,4 +19,5 @@ export type {
   TypographyToken,
   SyncState,
   ActionRole,
+  IconToken,
 } from './tokens';
