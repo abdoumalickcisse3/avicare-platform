@@ -96,4 +96,99 @@ describe('sync engine', () => {
     await engine.drain();
     expect(seen).toEqual(['a', 'b']);
   });
+
+  it('treats a second 401 (after refresh+replay) as retryable, not terminal', async () => {
+    const q = setupQueue();
+    q.enqueue(mutation);
+    let refreshCalls = 0;
+    let call = 0;
+    const engine = createEngine({
+      queue: q,
+      // Both the initial attempt and the post-refresh replay come back 401.
+      transport: async () => (++call <= 2 ? { status: 401 } : { status: 201 }),
+      refresh: async () => {
+        refreshCalls += 1;
+        return true;
+      },
+    });
+
+    const result = await engine.drain();
+
+    expect(refreshCalls).toBe(1);
+    expect(result.retryable).toBe(1);
+    expect(result.failed).toBe(0);
+    expect(q.listFailed()).toHaveLength(0);
+    expect(q.countPending()).toBe(1);
+    expect(q.listAll()[0]?.attempts).toBe(1);
+
+    // The mutation was not parked — it recovers once the server accepts it.
+    const recovered = await engine.drain();
+    expect(recovered.sent).toBe(1);
+    expect(q.countPending()).toBe(0);
+  });
+
+  it('parks a double-401 FAILED once the attempt ceiling is reached', async () => {
+    const q = setupQueue();
+    q.enqueue(mutation);
+    const maxAttempts = 2;
+
+    // First pass: a plain 503 bumps attempts 0 -> 1 (still under ceiling).
+    const bumpEngine = createEngine({
+      queue: q,
+      transport: async () => ({ status: 503 }),
+      maxAttempts,
+    });
+    await bumpEngine.drain();
+    expect(q.listAll()[0]?.attempts).toBe(1);
+    expect(q.listFailed()).toHaveLength(0);
+
+    // Second pass: double-401 with attempts already at maxAttempts - 1, so
+    // next.attempts + 1 (== 2) reaches the ceiling of 2 -> terminal FAILED.
+    let refreshCalls = 0;
+    let call = 0;
+    const ceilingEngine = createEngine({
+      queue: q,
+      transport: async () => (++call <= 2 ? { status: 401 } : { status: 201 }),
+      refresh: async () => {
+        refreshCalls += 1;
+        return true;
+      },
+      maxAttempts,
+    });
+
+    const result = await ceilingEngine.drain();
+
+    expect(refreshCalls).toBe(1);
+    expect(result.failed).toBe(1);
+    expect(result.retryable).toBe(0);
+    expect(q.listFailed()).toHaveLength(1);
+    expect(q.listFailed()[0]?.lastError).toBe(`HTTP 401 after ${maxAttempts} attempts`);
+  });
+
+  it('resolves drain() with a retryable result when transport throws, and does not wedge', async () => {
+    const q = setupQueue();
+    q.enqueue(mutation);
+    let call = 0;
+    const engine = createEngine({
+      queue: q,
+      transport: async () => {
+        call += 1;
+        if (call === 1) throw new Error('Network request failed');
+        return { status: 201 };
+      },
+    });
+
+    const result = await engine.drain();
+
+    expect(result.retryable).toBe(1);
+    expect(result.failed).toBe(0);
+    expect(q.listFailed()).toHaveLength(0);
+    expect(q.countPending()).toBe(1);
+
+    // running must have been reset in finally — the same engine instance
+    // can still make progress on a later pass, proving it was not wedged.
+    const recovered = await engine.drain();
+    expect(recovered.sent).toBe(1);
+    expect(q.countPending()).toBe(0);
+  });
 });
