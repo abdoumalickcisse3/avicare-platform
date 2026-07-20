@@ -14,6 +14,8 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,6 +48,24 @@ public class GrowthAnalysisService {
 
   @Transactional
   public WeighingSample recordWeighing(Long batchId, WeighingCommand cmd, Long userId) {
+    return recordWeighing(batchId, cmd, userId, null);
+  }
+
+  /**
+   * Record a sample weighing with an optional mobile replay key (doc 08 §9): if {@code clientRef}
+   * is non-null and already recorded, the original sample is returned instead of inserting a
+   * duplicate — the short-circuit sits before the statistics computation and the performance
+   * recompute. Web callers pass {@code null} and keep the append-only behavior.
+   */
+  @Transactional
+  public WeighingSample recordWeighing(
+      Long batchId, WeighingCommand cmd, Long userId, UUID clientRef) {
+    if (clientRef != null) {
+      Optional<WeighingSample> existing = weighingSampleRepository.findByClientRef(clientRef);
+      if (existing.isPresent()) {
+        return existing.get();
+      }
+    }
     PoultryBatch batch = loadBatch(batchId);
     List<Integer> weights = cmd.individualWeights();
     if (weights == null || weights.isEmpty()) {
@@ -88,6 +108,7 @@ public class GrowthAnalysisService {
     sample.setUniformityPercent(scaled(uniformity, 2));
     sample.setNotes(cmd.notes());
     sample.setRecordedBy(userId);
+    sample.setClientRef(clientRef);
     WeighingSample saved = weighingSampleRepository.save(sample);
 
     computePerformance(batch, cmd.sampleDate());

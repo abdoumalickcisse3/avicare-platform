@@ -15,6 +15,8 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -159,11 +161,30 @@ public class LivestockService {
   /** Record mortality: a {@code MORTALITY} event decrementing the count by {@code count}. */
   @Transactional
   public LifecycleEvent recordMortality(Long unitId, int count, String reason, Long userId) {
+    return recordMortality(unitId, count, reason, userId, null);
+  }
+
+  /**
+   * Record mortality with an optional mobile replay key (doc 08 §9): if {@code clientRef} is
+   * non-null and already journaled, the original event is returned instead of decrementing the
+   * count again. Web callers pass {@code null} and keep the append-only behavior.
+   */
+  @Transactional
+  public LifecycleEvent recordMortality(
+      Long unitId, int count, String reason, Long userId, UUID clientRef) {
     if (count <= 0) {
       throw new BusinessRuleException(
           "INVALID_MORTALITY_COUNT", "Mortality count must be positive");
     }
-    return recordEvent(unitId, EVENT_MORTALITY, -count, reason, Map.of(), userId);
+    if (clientRef != null) {
+      Optional<LifecycleEvent> existing = lifecycleEventRepository.findByClientRef(clientRef);
+      if (existing.isPresent()) {
+        return existing.get();
+      }
+    }
+    LifecycleEvent event = recordEvent(unitId, EVENT_MORTALITY, -count, reason, Map.of(), userId);
+    event.setClientRef(clientRef);
+    return event;
   }
 
   /** Set the unit's count to an exact value, journaling the delta as a COUNT_ADJUSTMENT. */

@@ -4,6 +4,7 @@ import com.avicare.livestock.domain.WeighingSample;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -17,6 +18,9 @@ public interface WeighingSampleRepository extends JpaRepository<WeighingSample, 
   List<WeighingSample> findByPoultryBatchIdOrderBySampleDateDesc(Long poultryBatchId);
 
   Optional<WeighingSample> findFirstByPoultryBatchIdOrderBySampleDateDesc(Long poultryBatchId);
+
+  /** Mobile replay lookup (doc 08 §9): find the sample already recorded for this client-generated key. */
+  Optional<WeighingSample> findByClientRef(UUID clientRef);
 
   // ── Dashboard aggregations (Task 2.1, Spec B) ────────────────────────────
 
