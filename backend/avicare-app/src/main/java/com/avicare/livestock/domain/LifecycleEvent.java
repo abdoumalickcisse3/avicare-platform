@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -56,4 +57,11 @@ public class LifecycleEvent {
 
   @Column(name = "created_at", insertable = false, updatable = false)
   private LocalDateTime createdAt;
+
+  /**
+   * Mobile replay key (doc 08 §9): when set, a retry with the same value returns the original row
+   * instead of applying the delta again. NULL for web-originated events (partial unique index).
+   */
+  @Column(name = "client_ref")
+  private UUID clientRef;
 }

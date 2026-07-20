@@ -124,7 +124,11 @@ public class ProductionUnitController {
       @RequestBody @Valid RecordMortalityRequest request) {
     LifecycleEvent event =
         livestockService.recordMortality(
-            unitId, request.count(), request.reason(), TenancyContext.currentUserId());
+            unitId,
+            request.count(),
+            request.reason(),
+            TenancyContext.currentUserId(),
+            request.clientRef());
     return ApiResponse.of(toEventResponse(event));
   }
 

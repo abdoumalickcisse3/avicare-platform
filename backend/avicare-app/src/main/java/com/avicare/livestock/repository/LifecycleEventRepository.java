@@ -3,6 +3,8 @@ package com.avicare.livestock.repository;
 import com.avicare.livestock.domain.LifecycleEvent;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -14,6 +16,9 @@ public interface LifecycleEventRepository extends JpaRepository<LifecycleEvent, 
   List<LifecycleEvent> findByProductionUnitId(Long productionUnitId);
 
   List<LifecycleEvent> findByProductionUnitIdAndEventType(Long productionUnitId, String eventType);
+
+  /** Mobile replay lookup (doc 08 §9): find the event already recorded for this client-generated key. */
+  Optional<LifecycleEvent> findByClientRef(UUID clientRef);
 
   // ── Dashboard aggregations (Task 2.1, Spec B) ────────────────────────────
 

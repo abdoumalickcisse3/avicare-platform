@@ -55,7 +55,8 @@ public class PoultryWeighingController {
         growthAnalysisService.recordWeighing(
             batchId,
             new WeighingCommand(request.sampleDate(), request.individualWeights(), request.notes()),
-            TenancyContext.currentUserId());
+            TenancyContext.currentUserId(),
+            request.clientRef());
     return ApiResponse.of(toResponse(saved));
   }
 

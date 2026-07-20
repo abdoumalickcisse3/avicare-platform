@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -83,4 +84,12 @@ public class WeighingSample {
 
   @Column(name = "updated_at", insertable = false, updatable = false)
   private LocalDateTime updatedAt;
+
+  /**
+   * Mobile replay key (doc 08 §9): when set, a retry with the same value returns the original
+   * sample instead of inserting a duplicate. NULL for web-originated samples (partial unique
+   * index).
+   */
+  @Column(name = "client_ref")
+  private UUID clientRef;
 }
