@@ -1,31 +1,31 @@
 /**
- * AviCare mobile — design tokens (B7 « mode terrain »).
+ * AviCare mobile — design tokens ("field mode" — B7).
  *
- * Portage React Native de `docs/10-design-system.md` (§2 palette, §3 typo, §4 espacement,
- * §9 accessibilité), augmenté des décisions terrain de
+ * React Native port of `docs/10-design-system.md` (§2 palette, §3 typography, §4 spacing,
+ * §9 accessibility), extended with the field decisions from
  * `docs/superpowers/specs/2026-07-20-b7-mobile-design-direction.md`.
  *
- * Module sans dépendance : aucun import, compile seul, compatible `strict`.
- * Toutes les valeurs sont en points densité-indépendants (dp/pt), jamais en pixels physiques.
+ * Dependency-free module: no imports, compiles standalone, compatible with `strict`.
+ * All values are in density-independent points (dp/pt), never physical pixels.
  *
- * Deux règles gouvernent chaque couple de couleurs (cf. direction de design §4) :
- *   1. WCAG AA  — ratio ≥ 4.5:1 (texte courant) ou ≥ 3:1 (texte ≥ 18dp).
- *   2. Porte « soleil » — écart de luminance relative ΔL ≥ 0.75.
- * Un couple qui passe (1) mais échoue (2) reste lisible au bureau et devient illisible
- * en lumière ambiante forte : il ne peut jamais porter une valeur à lire.
+ * Two rules govern every colour pair (see design direction §4):
+ *   1. WCAG AA  — ratio ≥ 4.5:1 (body text) or ≥ 3:1 (text ≥ 18dp).
+ *   2. The "sun" gate — absolute relative-luminance gap ΔL ≥ 0.75.
+ * A pair that passes (1) but fails (2) stays readable at a desk and becomes illegible
+ * under strong ambient light: it can never carry a value that must be read.
  */
 
-/** Familles chargées par `expo-font` à la tâche 3. Repli système si absentes. */
+/** Fonts loaded by `expo-font` in task 3. Falls back to the system font if absent. */
 export const fontFamily = {
-  /** Interface, libellés, corps de texte. */
+  /** Interface, labels, body text. */
   sans: 'Outfit',
-  /** Chiffres : compteurs, pesées, tableaux. Chasse fixe = colonnes stables. */
-  mono: 'JetBrainsMono',
+  /** Digits: counters, weighings, tables. Fixed-width = stable columns. */
+  mono: 'JetBrains Mono',
 } as const;
 
 /**
- * Rampes brutes issues de doc 10 §2. Les écrans ne consomment pas ces rampes
- * directement : ils passent par `tokens.colors.field` et `tokens.colors.sync`.
+ * Raw ramps sourced from doc 10 §2. Screens never consume these ramps
+ * directly: they go through `tokens.colors.field` and `tokens.colors.sync`.
  */
 const primary = {
   50: '#F0F7F0',
@@ -68,8 +68,8 @@ const neutral = {
   950: '#0C0A09',
 } as const;
 
-/** Vert le plus profond de la rampe primary. Seule couleur de texte admise sur l'orange. */
-const earth = '#122B12';
+/** Deepest green of the primary ramp (locked, identical to `primary[900]`). The only text colour allowed on orange. */
+const earth = primary[900];
 
 const semantic = {
   success: '#16A34A',
@@ -87,50 +87,50 @@ const semantic = {
 } as const;
 
 /**
- * Alias sémantiques des écrans terrain. Surface unique blanche, texte au maximum
- * d'écart de luminance, filets épais : sous forte lumière un filet 1dp `neutral-200`
- * (1.26:1) disparaît, un aplat blanc ne disparaît jamais.
+ * Semantic aliases for field screens. Single white surface, text pushed to the
+ * maximum luminance gap, thick rules: under strong light a 1dp `neutral-200` rule
+ * (1.26:1) disappears, a solid white fill never does.
  */
 const field = {
-  /** Fond des écrans terrain — blanc pur, pas `neutral-50` : luminance maximale. */
+  /** Field screen background — pure white, not `neutral-50`: maximum luminance. */
   background: neutral[0],
-  /** Surfaces surélevées hors terrain (login, sélecteur de ferme). */
+  /** Elevated surfaces outside the field flow (login, farm picker). */
   surface: neutral[0],
-  /** Texte principal — 17.49:1, ΔL 0.990. Le meilleur couple disponible. */
+  /** Primary text — 17.49:1, ΔL 0.990. The best pair available. */
   text: neutral[900],
-  /** Texte secondaire — 10.27:1, ΔL 0.948. Remplace `neutral-500` du web (ΔL 0.831). */
+  /** Secondary text — 10.27:1, ΔL 0.948. Replaces the web's `neutral-500` (ΔL 0.831). */
   textMuted: neutral[700],
-  /** Texte sur fond sombre inversé. */
+  /** Text on an inverted dark background. */
   textInverse: neutral[0],
-  /** Filets et bordures structurels, à tracer en `layout.ruleWidth`. */
+  /** Structural rules and borders, drawn at `layout.ruleWidth`. */
   rule: neutral[700],
-  /** Séparateur décoratif non porteur d'information (listes denses hors terrain). */
+  /** Decorative separator carrying no information (dense lists outside the field flow). */
   ruleSubtle: neutral[300],
-  /** Contrôle désactivé — jamais utilisé pour masquer une information. */
+  /** Disabled control — never used to hide information. */
   disabled: neutral[400],
 } as const;
 
 /**
- * Les trois états de synchronisation. La couleur ne porte jamais seule l'information :
- * chaque état s'accompagne d'une icône et d'un mot (daltonisme + délavage solaire).
+ * The three sync states. Colour never carries the information alone:
+ * every state is paired with an icon and a word (colour-blindness + sun-washout).
  *
- * `stripe` = liseré de tête pleine hauteur, identifie l'état à la périphérie du regard.
- * `bg`/`fg` = le couple réellement lu. Priorité d'affichage : failed > pending > synced.
+ * `stripe` = full-height header stripe, identifies the state at the edge of peripheral vision.
+ * `bg`/`fg` = the pair actually read. Display priority: failed > pending > synced.
  */
 const sync = {
-  /** À jour. Calme : si l'état normal crie, l'état anormal n'est plus remarqué. */
+  /** Up to date. Calm: if the normal state shouts, the abnormal one no longer stands out. */
   synced: {
     stripe: primary[600],
     bg: neutral[0],
     fg: neutral[900],
   },
-  /** En attente (hors ligne ou envoi en cours). Orange de marque en liseré seulement. */
+  /** Pending (offline or currently sending). Brand orange as a stripe only. */
   pending: {
     stripe: accent[400],
     bg: neutral[0],
     fg: neutral[900],
   },
-  /** Refusé par le serveur (4xx définitif, doc 08 §7.3). Seul état en aplat plein. */
+  /** Rejected by the server (definitive 4xx, doc 08 §7.3). The only state shown as a solid fill. */
   failed: {
     stripe: semantic.errorDark,
     bg: semantic.error,
@@ -139,30 +139,40 @@ const sync = {
 } as const;
 
 /**
- * Rôles d'action. Séparation sémantique issue des mesures de contraste :
- *   vert  = accumuler (répété, réversible) — blanc sur primary-600, 6.44:1, ΔL 0.887
- *   orange = valider  (une fois par écran) — earth sur accent-400, 6.79:1, ΔL 0.400
- * L'orange échoue la porte soleil : il ne porte qu'un libellé mémorisé par position,
- * jamais une valeur. Sa bordure `earth` restitue une arête à fort ΔL.
+ * Action roles. Semantic split driven by the contrast measurements:
+ *   green  = accumulate (repeated, reversible) — white on primary-600, 6.44:1, ΔL 0.887
+ *   orange = commit (once per screen)          — earth on accent-400, 6.79:1, ΔL 0.400
+ * Orange fails the sun gate: it can only carry a label memorised by position,
+ * never a value to read. Its `earth` border restores a high-ΔL edge.
  */
 const action = {
-  /** Incrément du compteur, action répétée. */
+  /** Counter increment, repeated action. */
   accumulate: { bg: primary[600], fg: neutral[0], border: primary[800] },
-  /** Validation / envoi. Un seul par écran (doc 10 §6 « règle d'or »). */
-  commit: { bg: accent[400], fg: earth, border: earth },
-  /** Correction, retour, annulation douce. */
+  /** Validation / submission. One per screen (doc 10 §6 "golden rule"). */
+  commit: {
+    bg: accent[400],
+    fg: earth,
+    border: earth,
+    /**
+     * Pressed state — earth on accent-500, 5.33:1 (design direction §4: "restricted —
+     * pressed state only"). Kept next to `bg` so screens never have to reach into the
+     * raw `accent` ramp for this pairing; `fg`/`border` stay `earth` in both states.
+     */
+    pressedBg: accent[500],
+  },
+  /** Correction, back, soft cancel. */
   secondary: { bg: neutral[0], fg: neutral[900], border: neutral[700] },
-  /** Destructif. */
+  /** Destructive. */
   danger: { bg: semantic.error, fg: neutral[0], border: semantic.errorDark },
 } as const;
 
 /**
- * Échelle typographique terrain. En React Native `lineHeight` est une valeur absolue
- * en dp, pas un multiplicateur CSS : les hauteurs sont donc pré-calculées.
- * `fontWeight` est typé en littéral string, seule forme acceptée par `TextStyle`.
+ * Field typography scale. In React Native `lineHeight` is an absolute dp value,
+ * not a CSS multiplier: heights are therefore pre-computed.
+ * `fontWeight` is typed as a string literal, the only form `TextStyle` accepts.
  */
 const typography = {
-  /** Lecture du compteur — le héros de chaque écran de saisie. */
+  /** Counter reading — the hero of every entry screen. */
   numeric: {
     fontFamily: fontFamily.mono,
     fontSize: 64,
@@ -170,7 +180,7 @@ const typography = {
     fontWeight: '700',
     letterSpacing: -1,
   },
-  /** Chiffre en ligne de liste (effectif, poids moyen). */
+  /** Digit in a list row (headcount, medium weight). */
   numericSm: {
     fontFamily: fontFamily.mono,
     fontSize: 32,
@@ -206,7 +216,7 @@ const typography = {
     fontWeight: '600',
     letterSpacing: 0,
   },
-  /** Corps par défaut en mode terrain — un cran au-dessus du web (doc 10 : 14dp). */
+  /** Default body copy in field mode — one notch above the web (doc 10: 14dp). */
   bodyLg: {
     fontFamily: fontFamily.sans,
     fontSize: 17,
@@ -221,7 +231,7 @@ const typography = {
     fontWeight: '500',
     letterSpacing: 0,
   },
-  /** Plancher absolu. Jamais pour une valeur métier. */
+  /** Absolute floor. Never for a business value. */
   bodySm: {
     fontFamily: fontFamily.sans,
     fontSize: 13,
@@ -229,7 +239,7 @@ const typography = {
     fontWeight: '500',
     letterSpacing: 0,
   },
-  /** Libellé de champ, en capitales (doc 10 §3 : capitales tolérées à ce seul niveau). */
+  /** Field label, in caps (doc 10 §3: caps tolerated only at this level). */
   label: {
     fontFamily: fontFamily.sans,
     fontSize: 14,
@@ -237,7 +247,7 @@ const typography = {
     fontWeight: '600',
     letterSpacing: 0.6,
   },
-  /** Texte de bouton. */
+  /** Button text. */
   button: {
     fontFamily: fontFamily.sans,
     fontSize: 17,
@@ -245,7 +255,7 @@ const typography = {
     fontWeight: '600',
     letterSpacing: 0.2,
   },
-  /** Mot d'état du bandeau de synchronisation. */
+  /** Status word in the sync banner. */
   syncLabel: {
     fontFamily: fontFamily.sans,
     fontSize: 15,
@@ -267,7 +277,7 @@ export const tokens = {
     action,
   },
 
-  /** Échelle 4dp reprise telle quelle de doc 10 §4. */
+  /** 4dp scale, carried over as-is from doc 10 §4. */
   spacing: {
     0: 0,
     1: 4,
@@ -293,48 +303,60 @@ export const tokens = {
   typography,
 
   /**
-   * Cibles tactiles. `min` et `button` portent doc 10 §9 ; les autres sont des
-   * décisions terrain (main gantée ou humide, appui répété).
+   * Touch targets. `min` and `button` come from doc 10 §9; the others are
+   * field decisions (gloved or wet hand, repeated tap).
    */
   touch: {
-    /** Plancher d'accessibilité — contrôles incidents uniquement. */
+    /** Accessibility floor — incidental controls only. */
     min: 44,
-    /** Bouton standard hors écran de saisie (doc 10 §9). */
+    /** Standard button outside an entry screen (doc 10 §9). */
     button: 48,
-    /** Tout contrôle d'un écran de saisie. */
+    /** Any control on an entry screen. */
     field: 64,
-    /** Pavé d'incrément, pressé des dizaines de fois d'affilée. ≈ 15 mm. */
+    /** Increment pad, tapped dozens of times in a row. ≈ 15 mm. */
     counterPrimary: 96,
-    /** Décrément / correction. Volontairement plus petit que l'incrément. */
+    /** Decrement / correction. Deliberately smaller than the increment. */
     counterSecondary: 64,
-    /** Touche du pavé numérique intégré. */
+    /** Key of the built-in numeric keypad. */
     keypadKey: 64,
-    /** Écart minimal entre deux cibles (doc 10 §9). */
+    /** Minimum gap between two targets (doc 10 §9). */
     gap: 8,
-    /** Écart minimal entre une cible répétée et une cible aux effets opposés. */
+    /** Minimum gap between a repeated target and a target with the opposite effect. */
     gapDanger: 24,
   },
 
   layout: {
-    /** Marge horizontale des écrans terrain. */
+    /** Horizontal margin of field screens. */
     screenPadding: 16,
-    /** Respiration entre deux blocs — remplace la bordure de carte. */
+    /** Breathing room between two blocks — replaces the card border. */
     sectionGap: 24,
-    /** Barre d'action basse persistante, hors inset de sécurité. */
+    /** Persistent bottom action bar, outside the safe-area inset. */
     actionBarHeight: 88,
-    /** Bandeau de synchronisation — dimensionné pour rester une cible légale. */
+    /** Sync banner — sized to remain a legal target. */
     syncRibbonHeight: 44,
-    /** Liseré de tête du bandeau de synchronisation. */
+    /** Header stripe of the sync banner. */
     syncStripeWidth: 6,
-    /** Épaisseur des filets structurels. Un filet 1dp est invisible en plein jour. */
+    /** Thickness of structural rules. A 1dp rule is invisible in full daylight. */
     ruleWidth: 2,
-    /** Épaisseur des bordures de bouton. */
+    /** Thickness of button borders. */
     borderWidth: 2,
-    /** Fraction basse de l'écran réservée aux actions primaires (zone du pouce). */
+    /** Bottom fraction of the screen reserved for primary actions (thumb zone). */
     thumbZoneRatio: 0.35,
   },
 
-  /** Mouvement réduit au strict nécessaire : tic du compteur, bascule du bandeau. */
+  /**
+   * Icon sizes (design direction §7, gap #9 vs doc 10's 20/24dp Lucide default):
+   * bumped up for the same reason as the body-text bump — legibility at arm's length,
+   * under glare, on a dusty screen.
+   */
+  icons: {
+    /** Minimum icon size anywhere in field mode. */
+    default: 24,
+    /** Icon size inside the sync banner only — the one icon that is permanently on screen. */
+    syncBanner: 28,
+  },
+
+  /** Motion kept to the strict minimum: counter tick, banner toggle. */
   motion: {
     fast: 120,
     base: 200,
@@ -348,3 +370,4 @@ export type RadiusToken = keyof Tokens['radii'];
 export type TypographyToken = keyof Tokens['typography'];
 export type SyncState = keyof Tokens['colors']['sync'];
 export type ActionRole = keyof Tokens['colors']['action'];
+export type IconToken = keyof Tokens['icons'];
