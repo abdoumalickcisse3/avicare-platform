@@ -18,7 +18,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -42,6 +45,11 @@ public class LivestockService {
   private final ProductionUnitRepository productionUnitRepository;
   private final LifecycleEventRepository lifecycleEventRepository;
   private final BreedRepository breedRepository;
+
+  // Self-reference resolved lazily through the Spring proxy so that self.getObject().insertX(...)
+  // actually goes through AOP (REQUIRES_NEW). ObjectProvider defers the lookup, so it does not
+  // trigger a "bean currently in creation" circular-dependency error at startup.
+  private final ObjectProvider<LivestockService> self;
 
   @Transactional(readOnly = true)
   public ProductionUnit getUnit(Long unitId) {
@@ -168,6 +176,17 @@ public class LivestockService {
    * Record mortality with an optional mobile replay key (doc 08 §9): if {@code clientRef} is
    * non-null and already journaled, the original event is returned instead of decrementing the
    * count again. Web callers pass {@code null} and keep the append-only behavior.
+   *
+   * <p>Concurrency: two replays of the same {@code clientRef} can both miss the {@code
+   * findByClientRef} lookup below and both attempt the insert; the partial unique index {@code
+   * uq_lifecycle_events_client_ref} lets exactly one of them win. The loser's insert is isolated in
+   * {@link #insertMortalityEvent}, its own {@code REQUIRES_NEW} transaction, so its rollback does
+   * not poison this method's transaction (a constraint violation inside the SAME transaction would
+   * abort the underlying Postgres transaction, making a same-transaction recovery read fail too).
+   * Once the inner transaction has rolled back, the recovery read here runs in this (still healthy)
+   * transaction and is guaranteed to see the winner's row: Postgres blocks the losing INSERT/UPDATE
+   * on the unique index until the winner's transaction finishes, so by the time we observe the
+   * exception the winner has already committed.
    */
   @Transactional
   public LifecycleEvent recordMortality(
@@ -176,12 +195,32 @@ public class LivestockService {
       throw new BusinessRuleException(
           "INVALID_MORTALITY_COUNT", "Mortality count must be positive");
     }
-    if (clientRef != null) {
-      Optional<LifecycleEvent> existing = lifecycleEventRepository.findByClientRef(clientRef);
-      if (existing.isPresent()) {
-        return existing.get();
-      }
+    if (clientRef == null) {
+      // No replay key: plain call (not through the proxy) simply joins this transaction, which is
+      // exactly what append-only web writes want.
+      return insertMortalityEvent(unitId, count, reason, userId, null);
     }
+    Optional<LifecycleEvent> existing = lifecycleEventRepository.findByClientRef(clientRef);
+    if (existing.isPresent()) {
+      return existing.get();
+    }
+    try {
+      // Must go through the proxy (self.getObject()) for REQUIRES_NEW to actually apply — a plain
+      // this.insertMortalityEvent(...) call bypasses AOP and would run in this same transaction.
+      return self.getObject().insertMortalityEvent(unitId, count, reason, userId, clientRef);
+    } catch (DataIntegrityViolationException raced) {
+      return lifecycleEventRepository.findByClientRef(clientRef).orElseThrow(() -> raced);
+    }
+  }
+
+  /**
+   * Isolated in its own transaction so that a {@code client_ref} unique-constraint violation only
+   * rolls back this insert, never the caller's transaction. See {@link #recordMortality} for why
+   * this must be invoked through the Spring proxy.
+   */
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public LifecycleEvent insertMortalityEvent(
+      Long unitId, int count, String reason, Long userId, UUID clientRef) {
     LifecycleEvent event = recordEvent(unitId, EVENT_MORTALITY, -count, reason, Map.of(), userId);
     event.setClientRef(clientRef);
     return event;

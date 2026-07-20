@@ -20,6 +20,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.beans.factory.ObjectProvider;
 
 /** Unit test for {@link LivestockService} count adjustments and lifecycle rules (repos mocked). */
 class LivestockServiceTest {
@@ -34,8 +35,12 @@ class LivestockServiceTest {
     productionUnitRepository = Mockito.mock(ProductionUnitRepository.class);
     lifecycleEventRepository = Mockito.mock(LifecycleEventRepository.class);
     breedRepository = Mockito.mock(BreedRepository.class);
+    // Unused by every path exercised here: null-clientRef calls never reach self.getObject().
+    @SuppressWarnings("unchecked")
+    ObjectProvider<LivestockService> self = Mockito.mock(ObjectProvider.class);
     service =
-        new LivestockService(productionUnitRepository, lifecycleEventRepository, breedRepository);
+        new LivestockService(
+            productionUnitRepository, lifecycleEventRepository, breedRepository, self);
     lenient()
         .when(lifecycleEventRepository.save(any(LifecycleEvent.class)))
         .thenAnswer(i -> i.getArgument(0));
