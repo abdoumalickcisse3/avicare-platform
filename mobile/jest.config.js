@@ -1,6 +1,11 @@
 module.exports = {
   preset: 'jest-expo',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+  // Jest's default testMatch treats every file under a __tests__ directory
+  // as a suite. sync/__tests__/fakeDriver.ts is a shared test helper (a
+  // better-sqlite3-backed SqlDriver), not a suite itself, so it needs to be
+  // excluded — narrow the match to files that actually declare tests.
+  testMatch: ['**/*.test.ts', '**/*.test.tsx'],
   // NOTE: the brief's pattern only exempted the literal `expo/` package from
   // being ignored, not any `expo-*` package (expo-modules-core, expo-sqlite,
   // expo-secure-store, ...). jest-expo's own setup script imports
