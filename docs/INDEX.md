@@ -16,6 +16,7 @@
 | 05 | `05-securite-rbac.md` | Avant Sprint A2 (semaine prochaine) — JWT, @FarmAccess, features |
 | 06 | `06-cross-cutting.md` | Pendant Phase A — RFC 7807, i18n, logs, observabilité |
 | 07 | `07-frontend-nextjs.md` | Avant le frontend Sprint A3 — App Router, RTK Query, MUI |
+| 08 | `08-mobile-react-native.md` | **Sprint B7** — offline-first, file de sync, idempotence, mode terrain |
 | 10 | `10-design-system.md` | Avant tout écran — tokens, typo, couleurs (référence UI) |
 | 11 | `11-go-to-market.md` | Plan commercial V1 — phases –1→3, critères de passage, métriques |
 
@@ -25,7 +26,6 @@
 
 | # | Document | Quand l'aborder |
 |---|---|---|
-| 08 | `08-mobile-react-native.md` | Avant Sprint B7 — offline-first, sync, multi-rôles |
 | 09 | `09-plan-j1-j30.md` | Avant de coder — résumé opérationnel des 30 premiers jours |
 
 ---
