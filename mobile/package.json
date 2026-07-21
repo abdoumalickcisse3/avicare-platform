@@ -45,5 +45,8 @@
     "web": "expo start --web",
     "test": "jest"
   },
+  "overrides": {
+    "react-dom": "19.2.3"
+  },
   "private": true
 }
