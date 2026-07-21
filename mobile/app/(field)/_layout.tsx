@@ -9,6 +9,15 @@
  *
  * Farm selection and every actual field screen are built in task 8+; this
  * layout only gates access to that (currently empty) group.
+ *
+ * Re-evaluation: the mount-only check above only covers the initial load.
+ * A background `drain()` pass (triggered by reconnect/app-foreground, see
+ * `startSyncTriggers` below) can hit a 401, call `refresh()`, and have
+ * `refresh()` give up and purge SecureStore. Without reacting to that, this
+ * guard would keep showing `authorized` for a logged-out session.
+ * `subscribeAuthInvalidated` (from `sync/index.ts`) is the signal: on fire,
+ * flip status to `unauthenticated` so the existing `<Redirect>` branch below
+ * fires immediately, no re-navigation needed.
  */
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
@@ -19,6 +28,7 @@ import { tokens } from '@/theme';
 import { SyncStatusBar } from '@/components/SyncStatusBar';
 import { useSyncStatus } from '@/sync/useSyncStatus';
 import { startSyncTriggers } from '@/sync/triggers';
+import { subscribeAuthInvalidated } from '@/sync';
 
 type GuardStatus = 'loading' | 'unauthenticated' | 'forbidden' | 'authorized';
 
@@ -54,6 +64,17 @@ export default function FieldLayout() {
   useEffect(() => {
     const stopSyncTriggers = startSyncTriggers();
     return stopSyncTriggers;
+  }, []);
+
+  // A background `drain()` can discover the session is dead (failed
+  // refresh) well after the mount-only check above ran. Re-drive the guard
+  // to `unauthenticated` when that happens so the `<Redirect>` branch below
+  // fires right away, instead of leaving `authorized` stale for a
+  // logged-out user until the next manual navigation.
+  useEffect(() => {
+    return subscribeAuthInvalidated(() => {
+      setStatus('unauthenticated');
+    });
   }, []);
 
   if (status === 'loading') {
