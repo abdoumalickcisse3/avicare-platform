@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 import { SyncStatusBar } from '../SyncStatusBar';
 
 describe('SyncStatusBar', () => {
@@ -25,5 +25,12 @@ describe('SyncStatusBar', () => {
   it('surfaces failures over the pending count', async () => {
     await render(<SyncStatusBar online pending={2} failed={1} syncing={false} />);
     expect(screen.getByText('1 saisie à corriger')).toBeTruthy();
+  });
+
+  it('opens the queue screen when tapped, if an onPress is provided', async () => {
+    const onPress = jest.fn();
+    await render(<SyncStatusBar online pending={2} failed={1} syncing={false} onPress={onPress} />);
+    fireEvent.press(screen.getByLabelText('1 saisie à corriger'));
+    expect(onPress).toHaveBeenCalledTimes(1);
   });
 });

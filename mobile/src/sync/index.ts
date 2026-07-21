@@ -86,6 +86,19 @@ export const queue: ReturnType<typeof createQueue> = {
     rawQueue.enqueue(m);
     notify();
   },
+  // The queue screen (`(field)/file`) retries and deletes rows outside a
+  // drain, so these must notify too — otherwise the always-visible status
+  // ribbon (`useSyncStatus`) would show a stale pending/failed count until
+  // the next unrelated notify. The sync engine uses `rawQueue` directly and
+  // batches its own notify() at the drain edges, so it is unaffected.
+  markPending(id) {
+    rawQueue.markPending(id);
+    notify();
+  },
+  markDone(id) {
+    rawQueue.markDone(id);
+    notify();
+  },
 };
 
 // --- transport / refresh -------------------------------------------------
