@@ -40,6 +40,28 @@ function notify(): void {
   for (const listener of listeners) listener();
 }
 
+// --- auth-invalidation signal --------------------------------------------
+// Separate from the queue subscribe/notify above on purpose: this fires only
+// when `refresh()` (below) gives up on the session and purges tokens, which
+// is a completely different concern from "pending/failed counts changed."
+// Overloading one Set for both would make `useSyncStatus` re-render on auth
+// loss (harmless but noisy) and, worse, couple a future change to one
+// concern into accidentally firing the other. The field route guard
+// (`app/(field)/_layout.tsx`) is the sole subscriber today: its `useEffect`
+// reads the token exactly once on mount, so without this signal a
+// background `drain()` that kills the session leaves the guard showing
+// `authorized` for a logged-out user.
+const authInvalidatedListeners = new Set<() => void>();
+
+export function subscribeAuthInvalidated(listener: () => void): () => void {
+  authInvalidatedListeners.add(listener);
+  return () => authInvalidatedListeners.delete(listener);
+}
+
+function notifyAuthInvalidated(): void {
+  for (const listener of authInvalidatedListeners) listener();
+}
+
 let syncing = false;
 
 /** Whether a `drain()` pass is currently in flight. Read by `useSyncStatus`. */
@@ -99,6 +121,7 @@ async function refresh(): Promise<boolean> {
   const refreshToken = await getRefreshToken();
   if (!refreshToken) {
     await clearTokens();
+    notifyAuthInvalidated();
     return false;
   }
 
@@ -110,6 +133,7 @@ async function refresh(): Promise<boolean> {
     });
     if (!res.ok) {
       await clearTokens();
+      notifyAuthInvalidated();
       return false;
     }
     const body = (await parseBody(res)) as RefreshResponseBody | undefined;
@@ -117,6 +141,7 @@ async function refresh(): Promise<boolean> {
     const nextRefreshToken = body?.data?.refreshToken;
     if (!accessToken || !nextRefreshToken) {
       await clearTokens();
+      notifyAuthInvalidated();
       return false;
     }
     await saveTokens({ accessToken, refreshToken: nextRefreshToken });
