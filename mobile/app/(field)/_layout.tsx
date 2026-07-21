@@ -21,7 +21,7 @@
  */
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import { Redirect, Slot } from 'expo-router';
+import { Redirect, Slot, useRouter } from 'expo-router';
 import { getAccessToken } from '@/auth/tokens';
 import { decodeSession, hasFieldAccess } from '@/auth/session';
 import { tokens } from '@/theme';
@@ -33,6 +33,7 @@ import { subscribeAuthInvalidated } from '@/sync';
 type GuardStatus = 'loading' | 'unauthenticated' | 'forbidden' | 'authorized';
 
 export default function FieldLayout() {
+  const router = useRouter();
   const [status, setStatus] = useState<GuardStatus>('loading');
   const syncStatus = useSyncStatus();
 
@@ -103,7 +104,7 @@ export default function FieldLayout() {
 
   return (
     <View style={styles.authorized}>
-      <SyncStatusBar {...syncStatus} />
+      <SyncStatusBar {...syncStatus} onPress={() => router.push('/(field)/file')} />
       <Slot />
     </View>
   );

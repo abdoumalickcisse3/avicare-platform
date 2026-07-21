@@ -10,7 +10,7 @@
  * — a definitive rejection needs the farmer's action and never clears on its
  * own, so it must never be masked by an in-flight sync.
  */
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { tokens, type SyncState } from '@/theme';
 
 export type SyncStatusBarProps = {
@@ -18,6 +18,13 @@ export type SyncStatusBarProps = {
   pending: number;
   failed: number;
   syncing: boolean;
+  /**
+   * When provided, the whole ribbon becomes a button that opens the queue
+   * screen (`(field)/file`), so a farmer can act on a "à corriger" straight
+   * from the banner. Left unset the ribbon stays a passive, presentational
+   * indicator (the default in tests).
+   */
+  onPress?: () => void;
 };
 
 type Presentation = { state: SyncState; icon: string; text: string };
@@ -40,13 +47,37 @@ function present(pending: number, failed: number): Presentation {
   return { state: 'synced', icon: '✓', text: 'Tout est synchronisé' };
 }
 
-export function SyncStatusBar({ online, pending, failed, syncing }: SyncStatusBarProps) {
+export function SyncStatusBar({ online, pending, failed, syncing, onPress }: SyncStatusBarProps) {
   const { state, icon, text } = present(pending, failed);
   const palette = tokens.colors.sync[state];
   // Connectivity has no effect on the single displayed phrase (the fusion
   // rule above already collapses queue + network into one signal), but a
   // screen reader still benefits from the extra context.
   const accessibilityLabel = online ? text : `${text}, hors ligne`;
+
+  const body = (
+    <>
+      <View style={[styles.stripe, { backgroundColor: palette.stripe }]} />
+      <View style={styles.content}>
+        <Text style={[styles.icon, { color: palette.fg }]}>{syncing ? '…' : icon}</Text>
+        <Text style={[styles.label, { color: palette.fg }]}>{text}</Text>
+      </View>
+    </>
+  );
+
+  if (onPress) {
+    return (
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+        accessibilityHint="Voir les saisies en attente"
+        onPress={onPress}
+        style={[styles.container, { backgroundColor: palette.bg }]}
+      >
+        {body}
+      </TouchableOpacity>
+    );
+  }
 
   return (
     <View
@@ -55,11 +86,7 @@ export function SyncStatusBar({ online, pending, failed, syncing }: SyncStatusBa
       accessibilityLabel={accessibilityLabel}
       style={[styles.container, { backgroundColor: palette.bg }]}
     >
-      <View style={[styles.stripe, { backgroundColor: palette.stripe }]} />
-      <View style={styles.content}>
-        <Text style={[styles.icon, { color: palette.fg }]}>{syncing ? '…' : icon}</Text>
-        <Text style={[styles.label, { color: palette.fg }]}>{text}</Text>
-      </View>
+      {body}
     </View>
   );
 }
