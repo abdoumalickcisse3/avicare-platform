@@ -16,11 +16,15 @@ import { Redirect, Slot } from 'expo-router';
 import { getAccessToken } from '@/auth/tokens';
 import { decodeSession, hasFieldAccess } from '@/auth/session';
 import { tokens } from '@/theme';
+import { SyncStatusBar } from '@/components/SyncStatusBar';
+import { useSyncStatus } from '@/sync/useSyncStatus';
+import { startSyncTriggers } from '@/sync/triggers';
 
 type GuardStatus = 'loading' | 'unauthenticated' | 'forbidden' | 'authorized';
 
 export default function FieldLayout() {
   const [status, setStatus] = useState<GuardStatus>('loading');
+  const syncStatus = useSyncStatus();
 
   useEffect(() => {
     let cancelled = false;
@@ -42,6 +46,14 @@ export default function FieldLayout() {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  // Background sync triggers (reconnect, app foreground) run for the whole
+  // field app, independent of the guard status above — starting them here
+  // keeps a single subscription per mount instead of per-screen.
+  useEffect(() => {
+    const stopSyncTriggers = startSyncTriggers();
+    return stopSyncTriggers;
   }, []);
 
   if (status === 'loading') {
@@ -68,10 +80,18 @@ export default function FieldLayout() {
     );
   }
 
-  return <Slot />;
+  return (
+    <View style={styles.authorized}>
+      <SyncStatusBar {...syncStatus} />
+      <Slot />
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
+  authorized: {
+    flex: 1,
+  },
   centered: {
     flex: 1,
     alignItems: 'center',
