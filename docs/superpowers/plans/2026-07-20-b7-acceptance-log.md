@@ -64,7 +64,17 @@ qu'elle éprouve sont chacun déjà couverts par un test qui tourne en CI :
 | 7–8 | pas de doublon au rejeu (idempotence `client_ref`) | mortalité/pesée : `client_ref` porté dans le payload + dédup serveur (backend Tâche 2, migration V30) ; ITs livestock |
 | 6 | barre de statut : compteur juste, à corriger vs en attente | `src/components/__tests__/SyncStatusBar.test.tsx` |
 | 8 | 5xx rejouable / 4xx terminal | `src/sync/__tests__/engine.test.ts` |
+| 3–8 | **recette bout-en-bout** : file offline → survie au « restart » → drain au retour → même `client_ref` au rejeu | `src/sync/__tests__/airplaneMode.integration.test.ts` |
 
-Reste à confirmer **manuellement** ce qu'aucun harnais ne reproduit : la
-bascule réelle du mode avion, la persistance à travers un vrai kill/restart du
-process, et la vérification croisée de l'effectif côté application web.
+`airplaneMode.integration.test.ts` pilote le **vrai** cœur de sync (file SQLite +
+moteur réels + transport qui bascule offline→online) et rejoue mécaniquement
+les étapes 3 à 8 : 5 mortalités chair = un upsert, +pesée +œufs = 3 actions,
+persistance à travers une nouvelle instance de file sur la même base, drain
+unique au retour réseau, et rejeu de la même clé `client_ref` après une coupure
+en plein drain.
+
+Reste à confirmer **manuellement sur appareil**, car aucun harnais ne le
+reproduit : la bascule réelle du mode avion (étape 2), un vrai kill/restart du
+process (le « restart » du test n'est qu'une nouvelle instance de file sur la
+même base — étape 5), et la vérification croisée de l'effectif côté application
+web (étape 7). Ces cases-là ne se cochent que manette en main.
