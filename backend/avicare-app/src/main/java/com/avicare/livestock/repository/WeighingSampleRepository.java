@@ -19,7 +19,10 @@ public interface WeighingSampleRepository extends JpaRepository<WeighingSample, 
 
   Optional<WeighingSample> findFirstByPoultryBatchIdOrderBySampleDateDesc(Long poultryBatchId);
 
-  /** Mobile replay lookup (doc 08 §9): find the sample already recorded for this client-generated key. */
+  /**
+   * Mobile replay lookup (doc 08 §9): find the sample already recorded for this client-generated
+   * key.
+   */
   Optional<WeighingSample> findByClientRef(UUID clientRef);
 
   // ── Dashboard aggregations (Task 2.1, Spec B) ────────────────────────────

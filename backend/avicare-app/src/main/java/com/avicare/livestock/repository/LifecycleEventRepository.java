@@ -17,7 +17,10 @@ public interface LifecycleEventRepository extends JpaRepository<LifecycleEvent, 
 
   List<LifecycleEvent> findByProductionUnitIdAndEventType(Long productionUnitId, String eventType);
 
-  /** Mobile replay lookup (doc 08 §9): find the event already recorded for this client-generated key. */
+  /**
+   * Mobile replay lookup (doc 08 §9): find the event already recorded for this client-generated
+   * key.
+   */
   Optional<LifecycleEvent> findByClientRef(UUID clientRef);
 
   // ── Dashboard aggregations (Task 2.1, Spec B) ────────────────────────────

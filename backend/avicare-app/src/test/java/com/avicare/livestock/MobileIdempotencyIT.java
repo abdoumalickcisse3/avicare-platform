@@ -132,7 +132,12 @@ class MobileIdempotencyIT {
         poultryBatchService
             .create(
                 new PoultryBatchCreate(
-                    f.getId(), breedId, "Lot MIB", LocalDate.now().minusDays(20), 2200, 42,
+                    f.getId(),
+                    breedId,
+                    "Lot MIB",
+                    LocalDate.now().minusDays(20),
+                    2200,
+                    42,
                     initialCount),
                 u.getId())
             .getId();
