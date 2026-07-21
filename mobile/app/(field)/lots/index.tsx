@@ -102,7 +102,10 @@ const styles = StyleSheet.create({
   },
   staleHint: {
     ...tokens.typography.bodySm,
-    color: tokens.colors.accent[600],
+    // Semantic muted-text token, not the raw `accent` ramp: orange is
+    // reserved for the single "commit" affordance (design direction §4) and
+    // fails the daylight legibility gate for an informational hint.
+    color: tokens.colors.field.textMuted,
     marginTop: tokens.spacing[1],
   },
   empty: {
