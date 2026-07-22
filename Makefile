@@ -51,10 +51,18 @@ web-build:
 web-lint:
 	cd web && npm run lint
 
-mobile-android:
+# Réinstalle les dépendances mobiles uniquement quand le lockfile a changé
+# (ex. après un merge/pull) — évite l'erreur "Failed to resolve plugin for
+# module expo-router" sur un node_modules absent ou périmé. Même intention que
+# backend-run qui installe avant de lancer.
+mobile/node_modules: mobile/package-lock.json
+	cd mobile && npm ci
+	@touch mobile/node_modules
+
+mobile-android: mobile/node_modules
 	cd mobile && npm run android
 
-mobile-ios:
+mobile-ios: mobile/node_modules
 	cd mobile && npm run ios
 
 reset-db:
