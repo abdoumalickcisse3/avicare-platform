@@ -148,6 +148,12 @@ class MobileIdempotencyIT {
   @Test
   void recordMortality_sameClientRef_appliesOnce() {
     long unitId = seedFarmAndUnit(500);
+    // The clientRef path inserts through insertMortalityEvent (REQUIRES_NEW), so the seed must be
+    // committed to be visible to that nested transaction — a flushed-but-uncommitted unit is
+    // invisible under READ COMMITTED. Same reason the concurrent tests below commit their seed.
+    TestTransaction.flagForCommit();
+    TestTransaction.end();
+
     UUID ref = UUID.randomUUID();
     int before = livestockService.getUnit(unitId).getCurrentCount();
 
@@ -172,6 +178,11 @@ class MobileIdempotencyIT {
   @Test
   void recordWeighing_sameClientRef_createsOneSample() {
     long batchId = seedBatch(1000);
+    // recordWeighing's clientRef path runs REQUIRES_NEW too, so commit the seed first (see the
+    // mortality test above for the full rationale).
+    TestTransaction.flagForCommit();
+    TestTransaction.end();
+
     UUID ref = UUID.randomUUID();
     WeighingCommand cmd = new WeighingCommand(LocalDate.now(), List.of(1200, 1250, 1180), null);
 
@@ -179,6 +190,7 @@ class MobileIdempotencyIT {
     WeighingSample replay = growthAnalysisService.recordWeighing(batchId, cmd, userId, ref);
 
     assertThat(replay.getId()).isEqualTo(first.getId());
+    TestTransaction.start();
     assertThat(weighingSampleRepository.findByPoultryBatchIdOrderBySampleDateDesc(batchId))
         .hasSize(1);
   }
