@@ -19,6 +19,7 @@
 | 08 | `08-mobile-react-native.md` | **Sprint B7** — offline-first, file de sync, idempotence, mode terrain |
 | 10 | `10-design-system.md` | Avant tout écran — tokens, typo, couleurs (référence UI) |
 | 11 | `11-go-to-market.md` | Plan commercial V1 — phases –1→3, critères de passage, métriques |
+| 12 | `12-assistant-ia-strategie.md` | Stratégie « IA au centre » (cible ouvrier de terrain) — vision, archi, garde-fous, phasage |
 
 ---
 
