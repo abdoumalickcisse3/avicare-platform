@@ -58,21 +58,23 @@ import { queue } from '@/sync';
 // eslint-disable-next-line import/first
 import WeighingEntryScreen from '../pesee';
 
-// React 19 + RNTL 14: fireEvent.press schedules a state update that isn't
-// flushed by the time fireEvent returns; wrapping in an async act commits it
-// before the next interaction reads the updated state.
+// React 19 + RNTL 14: fireEvent.press / changeText schedule a state update that
+// isn't flushed by the time fireEvent returns; wrapping in an async act commits
+// it before the next interaction (or the submit handler) reads the state.
 const press = (el: Parameters<typeof fireEvent.press>[0]): Promise<void> =>
   act(async () => {
     fireEvent.press(el);
   });
 
-/** Types a gram value on the in-screen keypad and pushes it onto the list. */
-async function addWeight(grams: number): Promise<void> {
-  for (const digit of String(grams)) {
-    await press(screen.getByLabelText(`Chiffre ${digit}`));
-  }
-  await press(screen.getByLabelText('Ajouter la pesée à la liste'));
-}
+const type = (el: Parameters<typeof fireEvent.changeText>[0], text: string): Promise<void> =>
+  act(async () => {
+    fireEvent.changeText(el, text);
+  });
+
+/** Types the comma-separated weights into the "Poids individuels" field —
+ * mirrors the web `WeighingDialog`, which parses a free-text list. */
+const typeWeights = (raw: string): Promise<void> =>
+  type(screen.getByLabelText('Poids individuels (g)'), raw);
 
 describe('WeighingEntryScreen', () => {
   afterEach(() => {
@@ -82,10 +84,7 @@ describe('WeighingEntryScreen', () => {
   it('keeps the individual weights intact through the queue round-trip', async () => {
     await render(<WeighingEntryScreen />);
 
-    await addWeight(1850);
-    await addWeight(1920);
-    await addWeight(1780);
-
+    await typeWeights('1850, 1920, 1780');
     await press(screen.getByLabelText('Enregistrer la pesée'));
 
     const [entry] = queue.listAll();
@@ -96,16 +95,11 @@ describe('WeighingEntryScreen', () => {
     expect(payload.individualWeights).toEqual([1850, 1920, 1780]);
   });
 
-  it('drops a mistyped weight before it is ever queued', async () => {
+  it('drops a mistyped (non-numeric) token before it is ever queued', async () => {
     await render(<WeighingEntryScreen />);
 
-    await addWeight(1850);
-    await addWeight(999); // fat-fingered
-    await addWeight(1920);
-
-    // Remove the bad row from the live list.
-    await press(screen.getByLabelText('Supprimer la pesée 999 grammes'));
-
+    // Same free-text parsing as the web: junk tokens are filtered out.
+    await typeWeights('1850, abc, 1920');
     await press(screen.getByLabelText('Enregistrer la pesée'));
 
     const [entry] = queue.listAll();
@@ -113,20 +107,19 @@ describe('WeighingEntryScreen', () => {
     expect(payload.individualWeights).toEqual([1850, 1920]);
   });
 
-  it('shows the live average as weights are added', async () => {
+  it('shows the live stats preview as weights are typed', async () => {
     await render(<WeighingEntryScreen />);
 
-    await addWeight(1800);
-    await addWeight(2000);
+    await typeWeights('1800, 2000');
 
-    // (1800 + 2000) / 2 = 1900
-    expect(screen.getByText('Moyenne : 1900 g (2 pesées)')).toBeTruthy();
+    // (1800 + 2000) / 2 = 1900, over 2 sampled birds.
+    expect(screen.getByText('Aperçu — 2 sujets pesés')).toBeTruthy();
   });
 
   it('carries the same clientRef in the payload and the queue row', async () => {
     await render(<WeighingEntryScreen />);
 
-    await addWeight(1850);
+    await typeWeights('1850, 1920');
     await press(screen.getByLabelText('Enregistrer la pesée'));
 
     const [entry] = queue.listAll();

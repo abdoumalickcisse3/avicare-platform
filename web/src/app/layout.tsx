@@ -5,7 +5,7 @@ import { ThemeRegistry } from "@/theme/ThemeRegistry";
 import { StoreProvider } from "@/store/StoreProvider";
 
 export const metadata: Metadata = {
-  title: "AviCare Platform",
+  title: "Jawdi Platform",
   description: "Plateforme de gestion d'élevage pour l'Afrique de l'Ouest.",
 };
 

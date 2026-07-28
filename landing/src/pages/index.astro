@@ -27,7 +27,7 @@ const signupUrl = import.meta.env.PUBLIC_APP_SIGNUP_URL || "#";
 // ses 3 cartes chiffrées et son CTA de signup unique.
 const homePlans = plans.filter((plan) => !plan.contactCta);
 
-const title = "AviCare — Le logiciel de gestion d'élevage avicole en Afrique de l'Ouest";
+const title = "Jawdi — Le logiciel de gestion d'élevage avicole en Afrique de l'Ouest";
 const description =
   "Suivez vos bandes, vos coûts et vos ventes sur une seule plateforme. Réduisez la mortalité, maîtrisez le coût de l'aliment, connaissez votre marge. Gratuit pendant le pilote.";
 
@@ -38,7 +38,7 @@ const jsonLd = {
   "@graph": [
     {
       "@type": "Organization",
-      name: "AviCare Platform",
+      name: "Jawdi Platform",
       url: siteUrl,
       // logo.src is the hashed, real path astro:assets emits under /_astro
       // at build time — resolving it here (instead of a hand-written path
@@ -49,7 +49,7 @@ const jsonLd = {
     },
     {
       "@type": "SoftwareApplication",
-      name: "AviCare",
+      name: "Jawdi",
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
       description,
@@ -112,7 +112,7 @@ const jsonLd = {
   <section id="solution" class="panel reveal">
     <SectionHead
       eyebrow="La solution"
-      lead="AviCare relie l'élevage, le sanitaire, les stocks, les ventes et les finances — pour que chaque saisie du quotidien devienne une décision éclairée."
+      lead="Jawdi relie l'élevage, le sanitaire, les stocks, les ventes et les finances — pour que chaque saisie du quotidien devienne une décision éclairée."
     >
       Une seule plateforme, <Highlight>du poussin à la marge</Highlight>.
     </SectionHead>
@@ -191,7 +191,7 @@ const jsonLd = {
           <h3>Tout est relié.</h3>
           <p style="flex:none;margin-top:8px">
             Une pesée nourrit la courbe de croissance. Un sac d'aliment sorti nourrit les
-            dépenses. Une vente nourrit la marge. Vous saisissez une fois — AviCare calcule le
+            dépenses. Une vente nourrit la marge. Vous saisissez une fois — Jawdi calcule le
             reste.
           </p>
         </div>
@@ -203,7 +203,7 @@ const jsonLd = {
   <PhotoBand
     eyebrow="Sur le terrain"
     title="Le vrai travail est au poulailler. Pas dans un cahier."
-    description="AviCare tient les chiffres pendant que vous tenez l'élevage. Chaque geste du quotidien devient une donnée qui vous rapporte."
+    description="Jawdi tient les chiffres pendant que vous tenez l'élevage. Chaque geste du quotidien devient une donnée qui vous rapporte."
   />
 
   <section id="comment" class="panel panel-tint reveal">
@@ -222,13 +222,13 @@ const jsonLd = {
       <StepCard
         number="03"
         title="Pilotez vos marges"
-        description="AviCare calcule le reste&nbsp;: marge de la ferme, revenu par lot, alertes. Vous décidez."
+        description="Jawdi calcule le reste&nbsp;: marge de la ferme, revenu par lot, alertes. Vous décidez."
       />
     </div>
   </section>
 
   <section id="parcours" class="panel panel-stone reveal">
-    <SectionHead eyebrow="Pour qui">Deux façons de gagner avec AviCare.</SectionHead>
+    <SectionHead eyebrow="Pour qui">Deux façons de gagner avec Jawdi.</SectionHead>
     <DualPath />
   </section>
 

@@ -1,229 +1,340 @@
 /**
- * Batch detail — "essentials" screen (task 9 brief, decision M2): current
- * head count, age and breed, plus a launcher to the four entry screens
- * (tasks 10-13, not built yet — routes exist here but the target screens
- * don't, which is expected at this point in the sprint).
- *
- * Offline behaviour mirrors task 8's batch list: the unit is looked up in
- * the already-cached `useListProductionUnitsQuery` result rather than
- * fetched again, so the essentials stay available offline. `stale` is
- * derived the same way — a failed refetch on top of existing cached data.
- *
- * "Saisies du jour" (today's-entries recap, also mentioned in the brief) is
- * deliberately deferred: it depends on the entry screens' local queue
- * (tasks 10-13) and there's no backend endpoint that returns "today's
- * entries for this unit" in one call. A labelled placeholder stands in its
- * place instead of a half-wired version.
+ * Lot detail — broiler batch, rebuilt to the Stitch "Détail du Lot - AviCare
+ * Mobile" reference: header, a 2×2 KPI grid (effectif · âge · mortalité ·
+ * poids moyen), swipeable tabs (Vue d'ensemble / Saisies / Sanitaire /
+ * Documents) and a FAB. Data is ported from the web (poultryBatchesApi):
+ * batch, performance, weighings, daily records — nothing recomputed.
  */
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
+import { ArrowLeft, ClipboardList, Plus, Scale } from 'lucide-react-native';
 import { tokens } from '@/theme';
-import { UnitEssentials } from '@/components/UnitEssentials';
-import { useListProductionUnitsQuery } from '@/store/api/productionUnitsApi';
+import { GrowthChart, type GrowthPoint } from '@/components/charts/GrowthChart';
+import { MortalityChart } from '@/components/charts/MortalityChart';
+import { FeedConsumptionChart } from '@/components/charts/FeedConsumptionChart';
+import { HealthSection } from '@/components/health/HealthSection';
+import { scoreMeta, daysUntil } from '@/lib/poultry';
+import {
+  useGetBatchQuery,
+  useGetDailyRecordsQuery,
+  useGetPerformanceQuery,
+  useGetWeighingsQuery,
+} from '@/store/api/poultryBatchesApi';
 import { useListBreedsQuery } from '@/store/api/breedsApi';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
+import { useFarmAccess } from '@/auth/useSession';
+import { formatNumber } from '@/lib/format';
+import type { PoultryDailyRecord, WeighingSample } from '@/types';
 
 const MS_PER_DAY = 86_400_000;
-
-/** Plain Date math per the brief — avoids adding `date-fns` to mobile for one computation. */
-function ageInDays(startDate: string | null | undefined): number | null {
-  if (!startDate) return null;
-  const start = Date.parse(startDate);
-  if (Number.isNaN(start)) return null;
-  return Math.max(0, Math.floor((Date.now() - start) / MS_PER_DAY));
+function ageInDays(startDate?: string): number {
+  if (!startDate) return 0;
+  const t = Date.parse(startDate);
+  return Number.isNaN(t) ? 0 : Math.max(0, Math.floor((Date.now() - t) / MS_PER_DAY));
+}
+function shortDate(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? iso : `${d.getDate()}/${d.getMonth() + 1}`;
+}
+const MONTHS_FR = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+function formatDateLong(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return `${d.getDate()} ${MONTHS_FR[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-interface ActionDef {
-  key: string;
-  label: string;
-  /** Segment appended under `/(field)/lots/{unitId}/`. */
-  segment: string;
-}
+type Tab = 'overview' | 'saisies' | 'pesees' | 'sanitaire';
+const TABS: Array<{ key: Tab; label: string }> = [
+  { key: 'overview', label: "Vue d'ensemble" },
+  { key: 'saisies', label: 'Saisies' },
+  { key: 'pesees', label: 'Pesées' },
+  { key: 'sanitaire', label: 'Sanitaire' },
+];
 
-const JOURNALIER: ActionDef = { key: 'journalier', label: 'Suivi journalier', segment: 'journalier' };
-const PESEE: ActionDef = { key: 'pesee', label: 'Pesée', segment: 'pesee' };
-const MORTALITE: ActionDef = { key: 'mortalite', label: 'Mortalité', segment: 'mortalite' };
-const OEUFS: ActionDef = { key: 'oeufs', label: "Collecte d'œufs", segment: 'oeufs' };
-
-/**
- * D17 (decision brief): gate entry actions by breed type. Broiler = growth
- * tracking (journalier + pesée) + mortalité. Layer = egg collection +
- * mortalité. Unknown/missing breed type degrades permissively — show
- * everything rather than hide an action the farmer might need.
- */
-function actionsForBreedType(breedType: string | null): ActionDef[] {
-  if (breedType === 'broiler') return [JOURNALIER, PESEE, MORTALITE];
-  if (breedType === 'layer') return [OEUFS, MORTALITE];
-  return [MORTALITE, JOURNALIER, PESEE, OEUFS];
-}
-
-export default function BatchDetailScreen() {
+export default function LotDetailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ unitId: string }>();
-  const rawUnitId = Array.isArray(params.unitId) ? params.unitId[0] : params.unitId;
-  const unitId = rawUnitId ? Number(rawUnitId) : NaN;
-
+  const raw = Array.isArray(params.unitId) ? params.unitId[0] : params.unitId;
+  const batchId = raw ? Number(raw) : NaN;
   const selectedFarmId = useSelector(selectSelectedFarmId);
+  const { can } = useFarmAccess();
+  const canWrite = can('poultry:write');
+  const [tab, setTab] = useState<Tab>('overview');
 
-  // Hooks run unconditionally (rules of hooks) — the "no farm selected"
-  // redirect below happens after every hook has been called, same as
-  // `(field)/lots/index.tsx`. `skipToken` keeps the queries inert when
-  // there's nothing valid to fetch yet.
-  const {
-    data: units,
-    isLoading: unitsLoading,
-    isError: unitsError,
-  } = useListProductionUnitsQuery(selectedFarmId ?? skipToken);
+  const skip = selectedFarmId === null || Number.isNaN(batchId);
+  const arg = skip ? skipToken : { farmId: selectedFarmId as number, batchId };
+  const { data: batch } = useGetBatchQuery(arg);
+  const planned = batch?.status === 'PLANNED';
+  const { data: perf } = useGetPerformanceQuery(skip || planned ? skipToken : { farmId: selectedFarmId as number, batchId });
+  const { data: weighings } = useGetWeighingsQuery(skip || planned ? skipToken : { farmId: selectedFarmId as number, batchId });
+  const { data: records } = useGetDailyRecordsQuery(skip ? skipToken : { farmId: selectedFarmId as number, batchId });
+  const { data: breeds } = useListBreedsQuery(skip ? skipToken : 'POULTRY');
 
-  const unit = units?.find((u) => u.id === unitId);
+  const breedName = breeds?.find((b) => b.id === batch?.breedId)?.name;
+  const age = ageInDays(batch?.startDate);
+  const deaths = batch ? Math.max(0, batch.initialCount - batch.currentCount) : 0;
+  const mortalityPct = perf?.cumulativeMortalityPercent ?? (batch && batch.initialCount > 0 ? (deaths / batch.initialCount) * 100 : 0);
+  const avgKg = perf?.currentWeightG != null ? perf.currentWeightG / 1000 : weighings && weighings.length ? weighings[weighings.length - 1]!.avgWeightG / 1000 : null;
 
-  const { data: breeds } = useListBreedsQuery(unit ? unit.species : skipToken);
-  const breed = unit && unit.breedId !== null ? breeds?.find((b) => b.id === unit.breedId) : undefined;
-  const breedName = breed?.name ?? 'Race inconnue';
-  const breedType = breed?.type ?? null;
+  const growth = useMemo<GrowthPoint[]>(
+    () => (weighings ?? []).slice().sort((a, b) => a.ageDays - b.ageDays).map((w) => ({ age: w.ageDays, weightG: w.avgWeightG })),
+    [weighings],
+  );
+  const target = batch?.targetAgeDays && batch?.targetWeightG ? { age: batch.targetAgeDays, weightG: batch.targetWeightG } : null;
 
-  // No farm picked yet (e.g. a cold deep link) — send back to the selector
-  // rather than rendering against an invalid farmId.
-  if (selectedFarmId === null) {
-    return <Redirect href="/(field)" />;
-  }
-
-  // Same offline signal as the batch list: a refetch failed, but the last
-  // successful payload (containing this unit) is still in cache.
-  const stale = unitsError && units !== undefined;
-
-  const actions = actionsForBreedType(breedType);
+  if (selectedFarmId === null) return <Redirect href="/(field)" />;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>{unit ? unit.name : 'Lot'}</Text>
-        {unit ? (
-          <Text style={styles.subtitle}>
-            {unit.species} · {unit.status}
-          </Text>
-        ) : null}
+        <Pressable onPress={() => router.back()} hitSlop={8} accessibilityRole="button" accessibilityLabel="Retour">
+          <ArrowLeft size={24} color={tokens.colors.field.text} />
+        </Pressable>
+        <Text style={styles.headerTitle} numberOfLines={1}>
+          {batch?.name ?? (batch ? `Lot #${batch.id}` : 'Lot')}
+        </Text>
+        <View style={{ width: 24 }} />
       </View>
 
-      <View style={styles.rule} />
-
-      {unitsLoading ? (
-        <View style={styles.centered}>
-          <Text style={styles.empty}>Chargement…</Text>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* KPI grid */}
+        <View style={styles.kpiGrid}>
+          <Kpi label="Effectif actuel" value={batch ? formatNumber(batch.currentCount) : '—'} unit="sujets" />
+          <Kpi label="Âge" value={String(age)} unit="jours" />
+          <Kpi label="Mortalité" value={`${mortalityPct.toFixed(1)}%`} unit="cumulée" tone={deaths > 0 ? tokens.colors.error : undefined} />
+          <Kpi label="Poids moyen" value={avgKg != null ? avgKg.toFixed(2) : '—'} unit="kg" tone={tokens.colors.primary[600]} />
         </View>
-      ) : !unit ? (
-        <View style={styles.centered}>
-          <Text style={styles.empty}>
-            {unitsError ? 'Lot indisponible hors ligne' : 'Lot introuvable'}
-          </Text>
+
+        {/* Tabs */}
+        <View style={styles.tabs}>
+          {TABS.map((t) => {
+            const on = tab === t.key;
+            return (
+              <Pressable key={t.key} style={styles.tab} onPress={() => setTab(t.key)} accessibilityRole="button">
+                <Text style={[styles.tabText, on && styles.tabTextOn]} numberOfLines={1}>{t.label}</Text>
+                {on && <View style={styles.tabUnderline} />}
+              </Pressable>
+            );
+          })}
         </View>
-      ) : (
-        <>
-          <UnitEssentials
-            unit={{
-              currentCount: unit.currentCount,
-              ageDays: ageInDays(unit.startDate) ?? 0,
-              breedName,
-            }}
-            stale={stale}
-          />
 
-          <View style={styles.rule} />
+        {tab === 'overview' && (
+          <>
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Croissance du lot</Text>
+              <View style={styles.legendRow}>
+                <Text style={styles.cardSub}>Poids moyen vs cible</Text>
+                <View style={styles.legend}>
+                  <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: tokens.colors.primary[600] }]} /><Text style={styles.legendText}>Réel</Text></View>
+                  {target && <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: tokens.colors.neutral[400] }]} /><Text style={styles.legendText}>Cible</Text></View>}
+                </View>
+              </View>
+              <GrowthChart data={growth} target={target} />
+            </View>
 
-          <View style={styles.todaySection}>
-            <Text style={styles.sectionLabel}>Saisies du jour</Text>
-            <Text style={styles.todayPlaceholder}>Disponible après la première saisie</Text>
+            {/* Maturity forecast (mirrors the web "Prévision" gradient card). */}
+            {perf && (
+              <View style={styles.forecastCard}>
+                <Text style={styles.forecastEyebrow}>PRÉVISION · MATURITÉ ESTIMÉE</Text>
+                {perf.forecastedTargetDate ? (
+                  <>
+                    <Text style={styles.forecastDate}>{formatDateLong(perf.forecastedTargetDate)}</Text>
+                    <Text style={styles.forecastSub}>Jours restants : {daysUntil(perf.forecastedTargetDate) ?? '—'}</Text>
+                  </>
+                ) : (
+                  <Text style={styles.forecastSub}>Disponible après la première pesée.</Text>
+                )}
+                {(() => {
+                  const s = scoreMeta(perf.performanceScore);
+                  return s ? (
+                    <View style={[styles.scoreBadge, { backgroundColor: 'rgba(255,255,255,0.18)' }]}>
+                      <Text style={styles.scoreText}>{s.label}</Text>
+                    </View>
+                  ) : null;
+                })()}
+              </View>
+            )}
+
+            {perf && (
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>Performance</Text>
+                <View style={styles.perfRow}>
+                  <Perf label="GMQ" value={perf.gmqGPerDay != null ? `${formatNumber(perf.gmqGPerDay)} g/j` : '—'} />
+                  <Perf label="IC (FCR)" value={perf.feedConversionRatio != null ? String(perf.feedConversionRatio) : '—'} />
+                  <Perf label="Aliment cumulé" value={perf.cumulativeFeedKg != null ? `${formatNumber(perf.cumulativeFeedKg)} kg` : '—'} />
+                </View>
+              </View>
+            )}
+
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Mortalité quotidienne</Text>
+              <MortalityChart records={records ?? []} />
+            </View>
+
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Consommation cumulée</Text>
+              <FeedConsumptionChart records={records ?? []} />
+            </View>
+          </>
+        )}
+
+        {tab === 'saisies' && (
+          <View style={styles.tabBlock}>
+            {canWrite && <ActionButton icon={ClipboardList} label="Nouvelle saisie journalière" onPress={() => router.push(`/(field)/lots/${batchId}/journalier`)} />}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Saisies journalières</Text>
+              {!records || records.length === 0 ? (
+                <Text style={styles.muted}>Aucune saisie enregistrée.</Text>
+              ) : (
+                records.slice().reverse().map((r: PoultryDailyRecord, i) => (
+                  <View key={r.id} style={[styles.recRow, i > 0 && styles.recBorder]}>
+                    <View style={styles.recDisc}><ClipboardList size={16} color={tokens.colors.info} /></View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.recTitle}>{shortDate(r.recordDate)}</Text>
+                      <Text style={styles.recSub}>{r.mortalityCount} mort · {formatNumber(r.feedKg)} kg aliment · {formatNumber(r.waterL)} L eau</Text>
+                    </View>
+                  </View>
+                ))
+              )}
+            </View>
           </View>
+        )}
 
-          <View style={styles.launcher}>
-            {actions.map((action) => (
-              <TouchableOpacity
-                key={action.key}
-                style={styles.actionButton}
-                onPress={() => router.push(`/(field)/lots/${unitId}/${action.segment}`)}
-                accessibilityRole="button"
-                accessibilityLabel={action.label}
-              >
-                <Text style={styles.actionLabel}>{action.label}</Text>
-              </TouchableOpacity>
-            ))}
+        {tab === 'pesees' && (
+          <View style={styles.tabBlock}>
+            {canWrite && <ActionButton icon={Scale} label="Nouvelle pesée" onPress={() => router.push(`/(field)/lots/${batchId}/pesee`)} />}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Pesées</Text>
+              {!weighings || weighings.length === 0 ? (
+                <Text style={styles.muted}>Aucune pesée enregistrée.</Text>
+              ) : (
+                weighings.slice().reverse().map((w: WeighingSample, i) => (
+                  <View key={w.id} style={[styles.weighRow, i > 0 && styles.recBorder]}>
+                    <View style={styles.weighHead}>
+                      <Text style={styles.recTitle}>{shortDate(w.sampleDate)}</Text>
+                      <Text style={styles.recSub}>Jour {w.ageDays} · {w.sampleSize} sujets</Text>
+                    </View>
+                    <View style={styles.weighMetrics}>
+                      <WeighMetric label="Moyenne" value={`${Math.round(w.avgWeightG)} g`} />
+                      {w.uniformityPercent != null ? <WeighMetric label="Uniformité" value={`${Math.round(w.uniformityPercent)}%`} /> : null}
+                      {w.minWeightG != null && w.maxWeightG != null ? <WeighMetric label="Min–Max" value={`${w.minWeightG}–${w.maxWeightG} g`} /> : null}
+                    </View>
+                  </View>
+                ))
+              )}
+            </View>
           </View>
-        </>
+        )}
+
+        {tab === 'sanitaire' && (
+          <View style={styles.tabBlock}>
+            <HealthSection farmId={selectedFarmId} unitId={batchId} />
+          </View>
+        )}
+      </ScrollView>
+
+      {/* FAB → quick entry (gated by poultry:write) */}
+      {canWrite && (
+        <Pressable style={styles.fab} onPress={() => router.push(`/(field)/lots/${batchId}/mortalite`)} accessibilityRole="button" accessibilityLabel="Nouvelle saisie">
+          <Plus size={30} color={tokens.colors.earth} />
+        </Pressable>
       )}
     </SafeAreaView>
   );
 }
 
+function Kpi({ label, value, unit, tone }: { label: string; value: string; unit?: string; tone?: string }) {
+  return (
+    <View style={styles.kpi}>
+      <Text style={styles.kpiLabel}>{label.toUpperCase()}</Text>
+      <View style={styles.kpiValRow}>
+        <Text style={[styles.kpiVal, tone && { color: tone }]} numberOfLines={1}>{value}</Text>
+        {unit ? <Text style={styles.kpiUnit}>{unit}</Text> : null}
+      </View>
+    </View>
+  );
+}
+
+function Perf({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.perf}>
+      <Text style={styles.perfVal}>{value}</Text>
+      <Text style={styles.perfLabel}>{label}</Text>
+    </View>
+  );
+}
+
+function ActionButton({ icon: Icon, label, onPress }: { icon: typeof Scale; label: string; onPress: () => void }) {
+  return (
+    <Pressable style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.85 }]} onPress={onPress} accessibilityRole="button" accessibilityLabel={label}>
+      <Icon size={18} color={tokens.colors.primary[700]} />
+      <Text style={styles.actionBtnText}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function WeighMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.weighMetric}>
+      <Text style={styles.weighMetricVal}>{value}</Text>
+      <Text style={styles.weighMetricLabel}>{label}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: tokens.colors.field.background,
-  },
-  centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: tokens.layout.screenPadding,
-  },
-  header: {
-    paddingHorizontal: tokens.layout.screenPadding,
-    paddingTop: tokens.spacing[6],
-    paddingBottom: tokens.spacing[4],
-  },
-  title: {
-    ...tokens.typography.displayMd,
-    color: tokens.colors.field.text,
-  },
-  subtitle: {
-    ...tokens.typography.bodyMd,
-    color: tokens.colors.field.textMuted,
-    marginTop: tokens.spacing[1],
-  },
-  empty: {
-    ...tokens.typography.headingMd,
-    color: tokens.colors.field.textMuted,
-  },
-  rule: {
-    height: tokens.layout.ruleWidth,
-    backgroundColor: tokens.colors.field.rule,
-  },
-  todaySection: {
-    paddingHorizontal: tokens.layout.screenPadding,
-    paddingVertical: tokens.spacing[5],
-  },
-  sectionLabel: {
-    ...tokens.typography.label,
-    color: tokens.colors.field.textMuted,
-  },
-  todayPlaceholder: {
-    ...tokens.typography.bodyMd,
-    color: tokens.colors.field.textMuted,
-    marginTop: tokens.spacing[2],
-  },
-  // Stacked toward the lower part of the screen — the thumb zone (design
-  // direction §2.3) — via `marginTop: 'auto'` on the section that pushes
-  // it to the bottom of the flex-column container.
-  launcher: {
-    marginTop: 'auto',
-    paddingHorizontal: tokens.layout.screenPadding,
-    paddingBottom: tokens.spacing[6],
-    gap: tokens.spacing[3],
-  },
-  actionButton: {
-    minHeight: tokens.touch.button,
-    borderWidth: tokens.layout.borderWidth,
-    borderColor: tokens.colors.action.secondary.border,
-    backgroundColor: tokens.colors.action.secondary.bg,
-    borderRadius: tokens.radii.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: tokens.spacing[4],
-  },
-  actionLabel: {
-    ...tokens.typography.button,
-    color: tokens.colors.action.secondary.fg,
-  },
+  container: { flex: 1, backgroundColor: tokens.colors.neutral[50] },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: tokens.layout.screenPadding, paddingVertical: tokens.spacing[3] },
+  headerTitle: { ...tokens.typography.headingLg, color: tokens.colors.field.text, flex: 1, textAlign: 'center' },
+  content: { paddingHorizontal: tokens.layout.screenPadding, paddingBottom: tokens.spacing[16] },
+  kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.spacing[3] },
+  kpi: { width: '47%', flexGrow: 1, backgroundColor: tokens.colors.neutral[0], borderWidth: 1, borderColor: tokens.colors.neutral[200], borderRadius: tokens.radii.lg, padding: tokens.spacing[4] },
+  kpiLabel: { ...tokens.typography.bodySm, fontSize: 10.5, letterSpacing: 0.4, fontWeight: '700', color: tokens.colors.field.textMuted },
+  kpiValRow: { flexDirection: 'row', alignItems: 'baseline', gap: 5, marginTop: tokens.spacing[2] },
+  kpiVal: { ...tokens.typography.numericSm, fontSize: 24, color: tokens.colors.field.text },
+  kpiUnit: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted },
+  tabs: { flexDirection: 'row', marginTop: tokens.spacing[5], borderBottomWidth: 1, borderBottomColor: tokens.colors.neutral[200] },
+  tab: { flex: 1, alignItems: 'center', paddingBottom: tokens.spacing[2] },
+  tabText: { ...tokens.typography.bodySm, fontWeight: '600', color: tokens.colors.field.textMuted },
+  tabTextOn: { color: tokens.colors.primary[700] },
+  tabUnderline: { position: 'absolute', bottom: -1, height: 2.5, width: '70%', backgroundColor: tokens.colors.primary[600], borderRadius: 2 },
+  card: { backgroundColor: tokens.colors.neutral[0], borderWidth: 1, borderColor: tokens.colors.neutral[200], borderRadius: tokens.radii.xl, padding: tokens.spacing[4], marginTop: tokens.spacing[4] },
+  cardTitle: { ...tokens.typography.headingMd, color: tokens.colors.field.text },
+  cardSub: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted },
+  legendRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 2, marginBottom: tokens.spacing[2] },
+  legend: { flexDirection: 'row', gap: tokens.spacing[3] },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  legendDot: { width: 8, height: 8, borderRadius: 4 },
+  legendText: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted },
+  perfRow: { flexDirection: 'row', gap: tokens.spacing[3], marginTop: tokens.spacing[3] },
+  perf: { flex: 1, backgroundColor: tokens.colors.neutral[50], borderRadius: tokens.radii.md, padding: tokens.spacing[3] },
+  perfVal: { ...tokens.typography.numericSm, fontSize: 16, color: tokens.colors.field.text },
+  perfLabel: { ...tokens.typography.bodySm, fontSize: 11, color: tokens.colors.field.textMuted, marginTop: 2 },
+  forecastCard: { backgroundColor: tokens.colors.primary[700], borderRadius: tokens.radii.xl, padding: tokens.spacing[5], marginTop: tokens.spacing[4] },
+  forecastEyebrow: { ...tokens.typography.bodySm, fontSize: 10.5, letterSpacing: 0.6, fontWeight: '700', color: 'rgba(255,255,255,0.75)' },
+  forecastDate: { ...tokens.typography.numericSm, fontSize: 26, color: tokens.colors.neutral[0], marginTop: tokens.spacing[2] },
+  forecastSub: { ...tokens.typography.bodyMd, color: 'rgba(255,255,255,0.9)', marginTop: tokens.spacing[1] },
+  scoreBadge: { alignSelf: 'flex-start', marginTop: tokens.spacing[3], borderRadius: tokens.radii.full, paddingHorizontal: tokens.spacing[3], paddingVertical: tokens.spacing[1] },
+  scoreText: { ...tokens.typography.bodySm, fontWeight: '700', color: tokens.colors.neutral[0] },
+  muted: { ...tokens.typography.bodyMd, color: tokens.colors.field.textMuted, textAlign: 'center', paddingVertical: tokens.spacing[4] },
+  tabBlock: { marginTop: tokens.spacing[4], gap: tokens.spacing[3] },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: tokens.spacing[2], minHeight: tokens.touch.primaryButton, borderRadius: tokens.radii.lg, borderWidth: tokens.layout.borderWidth, borderColor: tokens.colors.primary[600], backgroundColor: tokens.colors.primary[50] },
+  actionBtnText: { ...tokens.typography.button, fontSize: 15, color: tokens.colors.primary[700] },
+  weighRow: { paddingVertical: tokens.spacing[3], gap: tokens.spacing[2] },
+  weighHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
+  weighMetrics: { flexDirection: 'row', gap: tokens.spacing[3] },
+  weighMetric: { backgroundColor: tokens.colors.neutral[50], borderRadius: tokens.radii.md, paddingHorizontal: tokens.spacing[3], paddingVertical: tokens.spacing[2] },
+  weighMetricVal: { ...tokens.typography.numericSm, fontSize: 15, color: tokens.colors.field.text },
+  weighMetricLabel: { ...tokens.typography.bodySm, fontSize: 11, color: tokens.colors.field.textMuted },
+  recRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[3], paddingVertical: tokens.spacing[3] },
+  recBorder: { borderTopWidth: 1, borderTopColor: tokens.colors.neutral[100] },
+  recDisc: { width: 34, height: 34, borderRadius: tokens.radii.full, backgroundColor: tokens.colors.infoLight, alignItems: 'center', justifyContent: 'center' },
+  recTitle: { ...tokens.typography.bodyMd, fontWeight: '600', color: tokens.colors.field.text },
+  recSub: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted },
+  fab: { position: 'absolute', right: tokens.spacing[5], bottom: tokens.spacing[6], width: 60, height: 60, borderRadius: tokens.radii.full, backgroundColor: tokens.colors.accent[400], alignItems: 'center', justifyContent: 'center', shadowColor: '#1C1917', shadowOpacity: 0.25, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 6 },
 });

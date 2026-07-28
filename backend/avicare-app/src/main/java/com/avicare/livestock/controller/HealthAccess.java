@@ -16,14 +16,19 @@ final class HealthAccess {
 
   private static final String OWNER = "T(com.avicare.common.security.principal.FarmRole).OWNER";
   private static final String MANAGER = "T(com.avicare.common.security.principal.FarmRole).MANAGER";
-  private static final String FARMER = "T(com.avicare.common.security.principal.FarmRole).FARMER";
 
   // --- basic tier -----------------------------------------------------
   static final String READ_BASIC = "@farmAccess.hasPermission(#farmId, 'health:read') and " + BASIC;
 
-  /** OWNER / MANAGER / FARMER — field entry (record vaccination, observation). */
+  /**
+   * Field entry (record vaccination, observation) — gated by the grantable {@code health:write}
+   * permission rather than a fixed role list, so per-member sub-access works: a VETERINARIAN holds
+   * it by default, a FARMER can have it revoked, and any member can be granted it individually. The
+   * default roles (OWNER {@code *}, MANAGER {@code health:*}, FARMER/VET {@code health:write}) all
+   * carry it, so existing provisioning is unaffected.
+   */
   static final String WRITE_BASIC_FARMER =
-      "@farmAccess.hasRole(#farmId, " + OWNER + ", " + MANAGER + ", " + FARMER + ") and " + BASIC;
+      "@farmAccess.hasPermission(#farmId, 'health:write') and " + BASIC;
 
   /** OWNER / MANAGER — supervisory (delete, program assign/remove). */
   static final String WRITE_BASIC_MANAGER =

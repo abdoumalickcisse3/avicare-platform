@@ -36,7 +36,7 @@ public class StockItemController {
   private final StockMovementService stockMovementService;
 
   @GetMapping
-  @PreAuthorize(InventoryAccess.READ)
+  @PreAuthorize(InventoryAccess.READ_OR_CONSUME)
   public ApiResponse<List<StockItemResponse>> list(@PathVariable Long farmId) {
     return ApiResponse.of(
         stockItemService.listForFarm(farmId).stream().map(StockItemResponse::from).toList());

@@ -16,6 +16,7 @@ import { useGetWeighingsQuery } from "@/store/api/poultryBatchesApi";
 import { apiErrorMessage } from "@/lib/apiError";
 import { formatDate } from "@/lib/format";
 import { colors } from "@/theme/tokens";
+import { useFarmPermissions } from "@/hooks/useFarmPermissions";
 import { WeighingDialog } from "./WeighingDialog";
 import type { PoultryBatch, WeighingSample } from "@/types";
 
@@ -115,6 +116,8 @@ export function WeighingsTab({
   batch: PoultryBatch;
 }) {
   const [open, setOpen] = useState(false);
+  const { can } = useFarmPermissions(farmId);
+  const canWrite = can("poultry:write");
   const { data: weighings, isLoading, error } = useGetWeighingsQuery({
     farmId,
     batchId: batch.id,
@@ -138,16 +141,18 @@ export function WeighingsTab({
             Suivi du poids moyen et de l&apos;uniformité du lot.
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          color="primary"
-          size="large"
-          startIcon={<Plus size={20} />}
-          onClick={() => setOpen(true)}
-          sx={{ fontWeight: 700, boxShadow: 3, flexShrink: 0 }}
-        >
-          Nouvelle pesée
-        </Button>
+        {canWrite && (
+          <Button
+            variant="contained"
+            color="primary"
+            size="large"
+            startIcon={<Plus size={20} />}
+            onClick={() => setOpen(true)}
+            sx={{ fontWeight: 700, boxShadow: 3, flexShrink: 0 }}
+          >
+            Nouvelle pesée
+          </Button>
+        )}
       </Stack>
 
       {error ? (
@@ -174,15 +179,17 @@ export function WeighingsTab({
             Pesez un échantillon de sujets pour suivre la croissance réelle face à
             l&apos;objectif de la souche.
           </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<Plus size={18} />}
-            onClick={() => setOpen(true)}
-            sx={{ mt: 1, fontWeight: 700 }}
-          >
-            Première pesée
-          </Button>
+          {canWrite && (
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<Plus size={18} />}
+              onClick={() => setOpen(true)}
+              sx={{ mt: 1, fontWeight: 700 }}
+            >
+              Première pesée
+            </Button>
+          )}
         </Card>
       ) : (
         <Stack spacing={2}>

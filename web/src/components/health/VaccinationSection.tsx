@@ -25,6 +25,7 @@ import { useToast } from "@/components/feedback/ToastProvider";
 import { apiErrorMessage } from "@/lib/apiError";
 import { colors } from "@/theme/tokens";
 import { VaccinationCalendar } from "./VaccinationCalendar";
+import { useFarmPermissions } from "@/hooks/useFarmPermissions";
 import { VaccinationDialog, type VaccinationPrefill } from "./VaccinationDialog";
 
 export function VaccinationSection({
@@ -61,6 +62,8 @@ export function VaccinationSection({
   const [removeProgram] = useRemoveProgramMutation();
 
   const [selectedProgram, setSelectedProgram] = useState("");
+  const { can } = useFarmPermissions(farmId);
+  const canWrite = can("health:write");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [prefill, setPrefill] = useState<VaccinationPrefill | undefined>();
 
@@ -124,7 +127,7 @@ export function VaccinationSection({
             />
           )}
         </Stack>
-        {assignment && (
+        {assignment && canWrite && (
           <Button
             size="small"
             variant="contained"

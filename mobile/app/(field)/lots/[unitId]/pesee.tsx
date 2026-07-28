@@ -1,45 +1,30 @@
 /**
- * Weighing sample entry ("Pesée") — task 12.
+ * Weighing sample entry ("Pesée") — a faithful replica of the web
+ * `WeighingDialog`: a date field, a free-text "poids individuels" field
+ * ("1850, 1920, 2010…" split on commas/spaces), a live stats preview
+ * (moyenne / min / max / écart-type / uniformité) and a notes field, with an
+ * Annuler / Enregistrer footer. Submission goes through the offline
+ * `enqueueFieldMutation` queue.
  *
- * The one screen of the four (design direction §2.4) that does NOT use the
- * counter as its input mode: a weighing has no natural step size (~1850g,
- * nothing to increment by), so it gets a numeric keypad DRAWN IN THE
- * SCREEN — never the system keyboard, which would cover the thumb zone
- * (§2.3) and closes unreliably with wet/gloved hands.
- *
- * Flow: type a weight on the keypad (`pendingDigits`), "Ajouter" pushes it
- * onto `weights` and clears the pad for the next bird — quick successive
- * entry, no navigation between samples. Each row in the list can be deleted
- * (a mis-typed value). The live average recomputes on every add/delete.
- * "Enregistrer" pushes the whole sample once.
- *
- * clientRef semantics mirror mortality (task 11): the weighing endpoint has
- * the same server-side replay dedup (Task 2) on a `client_ref` carried in
- * the body, so this screen mints ONE ref per submission and reuses it
- * verbatim in both the payload and `enqueueFieldMutation`.
+ * clientRef semantics mirror mortality: the weighing endpoint has server-side
+ * replay dedup (Task 2) on a `client_ref` in the body, so this screen mints ONE
+ * ref per submission and reuses it verbatim in the payload and the queue row.
  */
-import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
 import * as Crypto from 'expo-crypto';
+import { ArrowLeft } from 'lucide-react-native';
 import { tokens } from '@/theme';
+import { FormField, TodayDateField } from '@/components/field/FormField';
 import { useListProductionUnitsQuery } from '@/store/api/productionUnitsApi';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { enqueueFieldMutation } from '@/field/enqueueMutation';
 
 const MS_PER_DAY = 86_400_000;
-/** A weighing is a handful of digits in grams; five digits already covers a very heavy bird. */
-const MAX_DIGITS = 5;
-
-const KEYPAD_ROWS: readonly (readonly string[])[] = [
-  ['1', '2', '3'],
-  ['4', '5', '6'],
-  ['7', '8', '9'],
-  ['⌫', '0'],
-];
 
 /** Duplicated on purpose — see journalier.tsx's identical helper for why. */
 function ageInDays(startDate: string | null | undefined): number | null {
@@ -49,13 +34,44 @@ function ageInDays(startDate: string | null | undefined): number | null {
   return Math.max(0, Math.floor((Date.now() - start) / MS_PER_DAY));
 }
 
-/** Today's date as `YYYY-MM-DD` — see journalier.tsx's identical helper for why local, not UTC. */
+/** Today's date as `YYYY-MM-DD` — see journalier.tsx for why local, not UTC. */
 function todayIsoDate(): string {
   const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
+/** Parse a free-text list of weights ("1850, 1920 2010") — mirrors the web. */
+function parseWeights(raw: string): number[] {
+  return raw
+    .split(/[\s,;]+/)
+    .map((t) => Number(t.replace(',', '.')))
+    .filter((n) => Number.isFinite(n) && n > 0);
+}
+
+interface Stats {
+  count: number;
+  avg: number;
+  min: number;
+  max: number;
+  std: number;
+  uniformity: number;
+}
+
+/** Mean, range, population std-dev and uniformity (% within ±10% of mean). */
+function computeStats(weights: number[]): Stats | null {
+  if (weights.length === 0) return null;
+  const count = weights.length;
+  const avg = weights.reduce((s, w) => s + w, 0) / count;
+  const variance = weights.reduce((s, w) => s + (w - avg) ** 2, 0) / count;
+  const within = weights.filter((w) => Math.abs(w - avg) <= avg * 0.1).length;
+  return {
+    count,
+    avg,
+    min: Math.min(...weights),
+    max: Math.max(...weights),
+    std: Math.sqrt(variance),
+    uniformity: (within / count) * 100,
+  };
 }
 
 export default function WeighingEntryScreen() {
@@ -69,9 +85,11 @@ export default function WeighingEntryScreen() {
   const { data: units } = useListProductionUnitsQuery(selectedFarmId ?? skipToken);
   const unit = units?.find((u) => u.id === unitId);
 
-  const [weights, setWeights] = useState<number[]>([]);
-  const [pendingDigits, setPendingDigits] = useState('');
+  const [weightsRaw, setWeightsRaw] = useState('');
   const [notes, setNotes] = useState('');
+
+  const weights = useMemo(() => parseWeights(weightsRaw), [weightsRaw]);
+  const stats = useMemo(() => computeStats(weights), [weights]);
 
   // Hooks above run unconditionally (rules of hooks); the redirect below
   // only happens once every hook ran, same as the other field screens.
@@ -79,29 +97,10 @@ export default function WeighingEntryScreen() {
     return <Redirect href="/(field)" />;
   }
 
-  function pressDigit(d: string): void {
-    setPendingDigits((cur) => (cur.length >= MAX_DIGITS ? cur : cur + d));
-  }
-
-  function pressBackspace(): void {
-    setPendingDigits((cur) => cur.slice(0, -1));
-  }
-
-  function addPendingWeight(): void {
-    const n = Number(pendingDigits);
-    if (pendingDigits === '' || !Number.isInteger(n) || n <= 0) return;
-    setWeights((cur) => [...cur, n]);
-    setPendingDigits('');
-  }
-
-  function removeWeight(index: number): void {
-    setWeights((cur) => cur.filter((_, i) => i !== index));
-  }
+  const canSubmit = !Number.isNaN(unitId) && weights.length >= 2;
 
   function handleSubmit(): void {
-    // Backend requires a non-empty list of positive integers (@NotEmpty
-    // List<@Positive Integer>) — nothing to send with an empty sample.
-    if (selectedFarmId === null || Number.isNaN(unitId) || weights.length === 0) return;
+    if (selectedFarmId === null || !canSubmit) return;
 
     const ref = Crypto.randomUUID();
     enqueueFieldMutation({
@@ -117,15 +116,11 @@ export default function WeighingEntryScreen() {
       clientRef: ref,
     });
 
-    setWeights([]);
-    setPendingDigits('');
-    setNotes('');
     router.back();
   }
 
   const age = ageInDays(unit?.startDate);
-  const headerLabel = unit ? `Lot ${unit.name}${age !== null ? ` · J${age}` : ''}` : 'Lot';
-  const average = weights.length > 0 ? Math.round(weights.reduce((sum, w) => sum + w, 0) / weights.length) : null;
+  const subtitle = unit ? `Lot ${unit.name}${age !== null ? ` · J${age}` : ''}` : 'Lot';
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -134,256 +129,105 @@ export default function WeighingEntryScreen() {
           onPress={() => router.back()}
           accessibilityRole="button"
           accessibilityLabel="Retour"
-          hitSlop={{
-            top: tokens.spacing[2],
-            bottom: tokens.spacing[2],
-            left: tokens.spacing[2],
-            right: tokens.spacing[2],
-          }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={styles.backBtn}
         >
-          <Text style={styles.backLabel}>{`← ${headerLabel}`}</Text>
+          <ArrowLeft size={22} color={tokens.colors.field.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Pesée</Text>
-      </View>
-
-      <View style={styles.rule} />
-
-      <View style={styles.content}>
-        <View style={styles.displayBlock}>
-          <Text style={styles.displayLabel}>POIDS (G)</Text>
-          <Text style={styles.displayValue}>{pendingDigits || '0'}</Text>
-          <Text style={styles.displayConsequence}>
-            {average !== null ? `Moyenne : ${average} g (${weights.length} pesées)` : 'Aucune pesée enregistrée'}
-          </Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.title}>Nouvelle pesée</Text>
+          <Text style={styles.subtitle}>{subtitle}</Text>
         </View>
-
-        <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
-          {weights.map((w, index) => (
-            <View key={`${index}-${w}`} style={styles.weightRow}>
-              <Text style={styles.weightValue}>{w} g</Text>
-              <TouchableOpacity
-                onPress={() => removeWeight(index)}
-                accessibilityRole="button"
-                accessibilityLabel={`Supprimer la pesée ${w} grammes`}
-                hitSlop={{
-                  top: tokens.spacing[2],
-                  bottom: tokens.spacing[2],
-                  left: tokens.spacing[2],
-                  right: tokens.spacing[2],
-                }}
-              >
-                <Text style={styles.weightDelete}>×</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
-        </ScrollView>
       </View>
 
-      <View style={styles.rule} />
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <TodayDateField label="Date de la pesée" />
 
-      {/* In-screen numeric keypad — always visible, never the system
-          keyboard (design direction §2.4). */}
-      <View style={styles.keypadBlock}>
-        {KEYPAD_ROWS.map((row, rowIndex) => (
-          <View key={rowIndex} style={styles.keypadRow}>
-            {row.map((key) =>
-              key === '⌫' ? (
-                <TouchableOpacity
-                  key={key}
-                  style={styles.keypadKey}
-                  onPress={pressBackspace}
-                  accessibilityRole="button"
-                  accessibilityLabel="Effacer le dernier chiffre"
-                >
-                  <Text style={styles.keypadKeyLabel}>⌫</Text>
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity
-                  key={key}
-                  style={styles.keypadKey}
-                  onPress={() => pressDigit(key)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Chiffre ${key}`}
-                >
-                  <Text style={styles.keypadKeyLabel}>{key}</Text>
-                </TouchableOpacity>
-              ),
-            )}
+        <FormField
+          label="Poids individuels (g)"
+          value={weightsRaw}
+          onChangeText={setWeightsRaw}
+          keyboardType="decimal-pad"
+          inputMode="decimal"
+          placeholder="1850, 1920, 2010, 1880…"
+          multiline
+          helperText="Séparez chaque poids par une virgule ou un espace."
+        />
+
+        {stats && (
+          <View style={styles.statsCard}>
+            <Text style={styles.statsTitle}>Aperçu — {stats.count} sujets pesés</Text>
+            <View style={styles.statsRow}>
+              <StatBox label="Moyenne" value={String(Math.round(stats.avg))} unit="g" />
+              <StatBox label="Min" value={String(Math.round(stats.min))} unit="g" />
+              <StatBox label="Max" value={String(Math.round(stats.max))} unit="g" />
+              <StatBox label="Écart-type" value={stats.std.toFixed(1)} unit="g" />
+              <StatBox label="Uniformité" value={String(Math.round(stats.uniformity))} unit="%" />
+            </View>
           </View>
-        ))}
+        )}
 
-        <TouchableOpacity
-          style={[styles.addButton, pendingDigits === '' && styles.stepButtonDisabled]}
-          onPress={addPendingWeight}
-          disabled={pendingDigits === ''}
-          accessibilityRole="button"
-          accessibilityLabel="Ajouter la pesée à la liste"
-        >
-          <Text style={styles.addButtonLabel}>Ajouter</Text>
-        </TouchableOpacity>
-
-        <TextInput
-          style={styles.notesInput}
+        <FormField
+          label="Notes"
           value={notes}
           onChangeText={setNotes}
-          placeholder="Remarque (facultatif)"
-          placeholderTextColor={tokens.colors.field.disabled}
-          maxLength={200}
+          placeholder="Conditions de pesée, remarques…"
+          multiline
+          maxLength={1000}
         />
-      </View>
+      </ScrollView>
 
       <View style={styles.actionBar}>
+        <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Annuler">
+          <Text style={styles.cancelLabel}>Annuler</Text>
+        </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.validateButton, weights.length === 0 && styles.stepButtonDisabled]}
+          style={[styles.validateButton, !canSubmit && styles.validateButtonDisabled]}
           onPress={handleSubmit}
-          disabled={weights.length === 0}
+          disabled={!canSubmit}
           accessibilityRole="button"
           accessibilityLabel="Enregistrer la pesée"
         >
-          <Text style={styles.validateLabel}>Enregistrer</Text>
+          <Text style={styles.validateLabel}>Enregistrer la pesée</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 }
 
+function StatBox({ label, value, unit }: { label: string; value: string; unit?: string }) {
+  return (
+    <View style={styles.statBox}>
+      <Text style={styles.statLabel}>{label}</Text>
+      <Text style={styles.statValue}>
+        {value}
+        {unit ? <Text style={styles.statUnit}>{` ${unit}`}</Text> : null}
+      </Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: tokens.colors.field.background,
-  },
-  header: {
-    paddingHorizontal: tokens.layout.screenPadding,
-    paddingTop: tokens.spacing[4],
-    paddingBottom: tokens.spacing[4],
-  },
-  backLabel: {
-    ...tokens.typography.bodyMd,
-    color: tokens.colors.field.textMuted,
-  },
-  title: {
-    ...tokens.typography.displayMd,
-    color: tokens.colors.field.text,
-    marginTop: tokens.spacing[1],
-  },
-  rule: {
-    height: tokens.layout.ruleWidth,
-    backgroundColor: tokens.colors.field.rule,
-  },
-  content: {
-    flex: 1,
-  },
-  displayBlock: {
-    alignItems: 'center',
-    paddingHorizontal: tokens.layout.screenPadding,
-    paddingVertical: tokens.spacing[5],
-  },
-  displayLabel: {
-    ...tokens.typography.label,
-    color: tokens.colors.field.textMuted,
-  },
-  displayValue: {
-    ...tokens.typography.numeric,
-    color: tokens.colors.field.text,
-    marginTop: tokens.spacing[2],
-  },
-  displayConsequence: {
-    ...tokens.typography.bodyMd,
-    color: tokens.colors.field.textMuted,
-    marginTop: tokens.spacing[2],
-  },
-  list: {
-    flex: 1,
-  },
-  listContent: {
-    paddingHorizontal: tokens.layout.screenPadding,
-    gap: tokens.spacing[2],
-  },
-  weightRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: tokens.spacing[2],
-    borderBottomWidth: tokens.layout.ruleWidth,
-    borderBottomColor: tokens.colors.field.ruleSubtle,
-  },
-  weightValue: {
-    ...tokens.typography.bodyLg,
-    color: tokens.colors.field.text,
-  },
-  weightDelete: {
-    ...tokens.typography.headingMd,
-    color: tokens.colors.action.danger.bg,
-    paddingHorizontal: tokens.spacing[2],
-  },
-  keypadBlock: {
-    paddingHorizontal: tokens.layout.screenPadding,
-    paddingVertical: tokens.spacing[3],
-    gap: tokens.spacing[2],
-  },
-  keypadRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: tokens.spacing[2],
-  },
-  keypadKey: {
-    width: tokens.touch.keypadKey,
-    height: tokens.touch.keypadKey,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: tokens.radii.md,
-    borderWidth: tokens.layout.borderWidth,
-    borderColor: tokens.colors.action.secondary.border,
-    backgroundColor: tokens.colors.action.secondary.bg,
-  },
-  keypadKeyLabel: {
-    ...tokens.typography.headingLg,
-    color: tokens.colors.action.secondary.fg,
-  },
-  addButton: {
-    minHeight: tokens.touch.field,
-    borderRadius: tokens.radii.md,
-    borderWidth: tokens.layout.borderWidth,
-    borderColor: tokens.colors.action.accumulate.border,
-    backgroundColor: tokens.colors.action.accumulate.bg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  addButtonLabel: {
-    ...tokens.typography.button,
-    color: tokens.colors.action.accumulate.fg,
-  },
-  stepButtonDisabled: {
-    opacity: 0.4,
-  },
-  notesInput: {
-    ...tokens.typography.bodyMd,
-    color: tokens.colors.field.text,
-    minHeight: tokens.touch.field,
-    borderWidth: tokens.layout.borderWidth,
-    borderColor: tokens.colors.field.rule,
-    borderRadius: tokens.radii.md,
-    paddingHorizontal: tokens.spacing[3],
-  },
-  actionBar: {
-    minHeight: tokens.layout.actionBarHeight,
-    paddingHorizontal: tokens.layout.screenPadding,
-    paddingVertical: tokens.spacing[4],
-    justifyContent: 'center',
-    borderTopWidth: tokens.layout.ruleWidth,
-    borderTopColor: tokens.colors.field.rule,
-  },
-  validateButton: {
-    minHeight: tokens.touch.field,
-    borderRadius: tokens.radii.md,
-    borderWidth: tokens.layout.borderWidth,
-    borderColor: tokens.colors.action.commit.border,
-    backgroundColor: tokens.colors.action.commit.bg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  validateLabel: {
-    ...tokens.typography.button,
-    color: tokens.colors.action.commit.fg,
-  },
+  container: { flex: 1, backgroundColor: tokens.colors.neutral[50] },
+  header: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[3], paddingHorizontal: tokens.layout.screenPadding, paddingTop: tokens.spacing[3], paddingBottom: tokens.spacing[3] },
+  backBtn: { width: 40, height: 40, borderRadius: tokens.radii.full, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.colors.neutral[0], borderWidth: 1, borderColor: tokens.colors.neutral[200] },
+  title: { ...tokens.typography.displayMd, color: tokens.colors.field.text },
+  subtitle: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginTop: 2 },
+
+  content: { paddingHorizontal: tokens.layout.screenPadding, paddingTop: tokens.spacing[2], paddingBottom: tokens.spacing[8], gap: tokens.spacing[4] },
+
+  statsCard: { backgroundColor: tokens.colors.primary[50], borderRadius: tokens.radii.lg, borderWidth: 1, borderColor: tokens.colors.primary[100], padding: tokens.spacing[4] },
+  statsTitle: { ...tokens.typography.bodySm, fontWeight: '600', color: tokens.colors.primary[700], marginBottom: tokens.spacing[3] },
+  statsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.spacing[3], justifyContent: 'space-between' },
+  statBox: { alignItems: 'center', minWidth: 56 },
+  statLabel: { ...tokens.typography.bodySm, fontSize: 11, color: tokens.colors.field.textMuted },
+  statValue: { ...tokens.typography.numericSm, fontSize: 15, color: tokens.colors.neutral[800], marginTop: 2 },
+  statUnit: { ...tokens.typography.bodySm, fontSize: 10, color: tokens.colors.neutral[500] },
+
+  actionBar: { flexDirection: 'row', gap: tokens.spacing[3], paddingHorizontal: tokens.layout.screenPadding, paddingTop: tokens.spacing[3], paddingBottom: tokens.spacing[4], borderTopWidth: tokens.layout.ruleWidth, borderTopColor: tokens.colors.neutral[200], backgroundColor: tokens.colors.neutral[0] },
+  cancelButton: { minHeight: tokens.touch.primaryButton, borderRadius: tokens.radii.lg, borderWidth: 1, borderColor: tokens.colors.neutral[300], alignItems: 'center', justifyContent: 'center', paddingHorizontal: tokens.spacing[5] },
+  cancelLabel: { ...tokens.typography.button, fontSize: 16, color: tokens.colors.field.textMuted },
+  validateButton: { flex: 1, minHeight: tokens.touch.primaryButton, borderRadius: tokens.radii.lg, backgroundColor: tokens.colors.primary[600], alignItems: 'center', justifyContent: 'center' },
+  validateButtonDisabled: { opacity: 0.4 },
+  validateLabel: { ...tokens.typography.button, fontSize: 15, color: tokens.colors.neutral[0] },
 });

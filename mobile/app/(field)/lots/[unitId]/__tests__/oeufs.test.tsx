@@ -70,6 +70,13 @@ const press = (el: Parameters<typeof fireEvent.press>[0]): Promise<void> =>
     fireEvent.press(el);
   });
 
+const type = (el: Parameters<typeof fireEvent.changeText>[0], text: string): Promise<void> =>
+  act(async () => {
+    fireEvent.changeText(el, text);
+  });
+
+const typeTotal = (n: string): Promise<void> => type(screen.getByLabelText("Total d'œufs"), n);
+
 describe('EggCollectionEntryScreen', () => {
   afterEach(() => {
     for (const m of queue.listAll()) queue.markDone(m.id);
@@ -79,11 +86,11 @@ describe('EggCollectionEntryScreen', () => {
     await render(<EggCollectionEntryScreen />);
     // First slot (Matin) is auto-selected once the config loads.
 
-    await press(screen.getByLabelText('Ajouter un œuf'));
+    await typeTotal('12');
     await press(screen.getByLabelText('Enregistrer la collecte'));
 
     // A correction for the SAME slot before the first ever reached the server.
-    await press(screen.getByLabelText('Ajouter un plateau (30 œufs)'));
+    await typeTotal('30');
     await press(screen.getByLabelText('Enregistrer la collecte'));
 
     const rows = queue.listAll();
@@ -96,11 +103,10 @@ describe('EggCollectionEntryScreen', () => {
   it('queues distinct rows for two different slots on the same day', async () => {
     await render(<EggCollectionEntryScreen />);
 
-    await press(screen.getByLabelText('Ajouter un œuf'));
+    await typeTotal('10');
     await press(screen.getByLabelText('Enregistrer la collecte'));
 
     await press(screen.getByLabelText('Créneau Soir'));
-    await press(screen.getByLabelText('Ajouter un œuf'));
     await press(screen.getByLabelText('Enregistrer la collecte'));
 
     const slots = queue.listAll().map((m) => (m.payload as { timeslotKey: string }).timeslotKey);
@@ -110,7 +116,7 @@ describe('EggCollectionEntryScreen', () => {
   it('derives a deterministic queue key from the natural key (unit, date, slot)', async () => {
     await render(<EggCollectionEntryScreen />);
 
-    await press(screen.getByLabelText('Ajouter un œuf'));
+    await typeTotal('10');
     await press(screen.getByLabelText('Enregistrer la collecte'));
 
     const [entry] = queue.listAll();

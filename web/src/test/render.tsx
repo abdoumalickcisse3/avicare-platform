@@ -6,7 +6,7 @@ import { makeStore } from "@/store/store";
 import { avicareTheme } from "@/theme";
 import { ToastProvider } from "@/components/feedback/ToastProvider";
 
-/** Render a component inside a fresh Redux store + the AviCare MUI theme + toasts. */
+/** Render a component inside a fresh Redux store + the Jawdi MUI theme + toasts. */
 export function renderWithProviders(ui: ReactElement) {
   const store = makeStore();
   return {

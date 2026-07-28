@@ -1,4 +1,4 @@
-# 📚 Index des documents AviCare Platform
+# 📚 Index des documents Jawdi Platform
 
 > Document récapitulatif. À placer dans `docs/INDEX.md` du repo pour servir d'accueil.
 
@@ -37,7 +37,7 @@
 Prompt système recommandé :
 
 ```
-Tu es Claude Code travaillant sur AviCare Platform.
+Tu es Claude Code travaillant sur Jawdi Platform.
 
 Lis OBLIGATOIREMENT ces documents dans cet ordre AVANT toute action :
 1. docs/00-vision-strategique.md

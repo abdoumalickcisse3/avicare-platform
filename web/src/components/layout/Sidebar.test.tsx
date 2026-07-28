@@ -23,6 +23,11 @@ vi.mock("@/hooks/useFarmPermissions", () => ({
   useFarmPermissions: () => permsMock(),
 }));
 
+const roleMock = vi.fn();
+vi.mock("@/hooks/useFarmRole", () => ({
+  useFarmRole: () => roleMock(),
+}));
+
 function mockPerms(perms: string[]) {
   permsMock.mockReturnValue({
     can: (p: string) =>
@@ -51,15 +56,24 @@ describe("Sidebar module filtering", () => {
     activeModulesMock.mockReset();
     focusMock.mockReset();
     permsMock.mockReset();
+    roleMock.mockReset();
     mockFocus([]); // default: no explicit focus → modules alone decide
     mockPerms(["*"]); // default: OWNER-like, sees everything
+    roleMock.mockReturnValue("OWNER"); // default: OWNER sees owner-only entries
   });
 
-  it("always shows Fermes and Réglages", () => {
+  it("shows Fermes to an OWNER and always shows Réglages", () => {
     mockModules(["module.poultry.broiler"]);
     renderWithProviders(<Sidebar />);
     expect(screen.getByText("Fermes")).toBeInTheDocument();
     expect(screen.getByText("Réglages")).toBeInTheDocument();
+  });
+
+  it("hides Fermes from a non-owner (FARMER)", () => {
+    mockModules(["module.poultry.broiler"]);
+    roleMock.mockReturnValue("FARMER");
+    renderWithProviders(<Sidebar />);
+    expect(screen.queryByText("Fermes")).not.toBeInTheDocument();
   });
 
   it("shows the broiler item and hides Œufs when only broiler is active", async () => {

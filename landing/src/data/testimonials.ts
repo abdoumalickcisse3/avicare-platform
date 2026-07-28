@@ -25,7 +25,7 @@ export const testimonials: Testimonial[] = [
   },
   {
     big: "30",
-    quote: "On a mis 30 fermes de notre coopérative sur AviCare.",
+    quote: "On a mis 30 fermes de notre coopérative sur Jawdi.",
     initials: "SC",
     name: "S. Camara",
     role: "Responsable coopérative",

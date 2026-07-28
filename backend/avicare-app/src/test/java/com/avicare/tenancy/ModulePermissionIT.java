@@ -60,19 +60,29 @@ class ModulePermissionIT {
     owner = relogin("mpe-inv");
     enableModule(owner, farmId, "module.inventory");
 
-    // Real provisioned FARMER: default perms = poultry + health only, NO inventory:read.
+    // Real provisioned FARMER: default perms carry inventory:consume (entry-scoped) but NOT
+    // inventory:read, so the full Stocks area (suppliers, POs…) stays forbidden.
     String farmerPw = addMember(owner, farmId, "Farmer Inv", "mpe-inv-farmer@co.io", "FARMER");
     String farmer = loginWith("mpe-inv-farmer@co.io", farmerPw);
 
+    // Full-area read (inventory:read only) — forbidden for the FARMER.
+    mockMvc
+        .perform(
+            get("/api/v1/farms/" + farmId + "/inventory/suppliers")
+                .header("Authorization", "Bearer " + farmer))
+        .andExpect(status().isForbidden());
+
+    // Entry-scoped catalog read (inventory:read OR inventory:consume) — allowed, feeds the
+    // daily-entry stock picker.
     mockMvc
         .perform(
             get("/api/v1/farms/" + farmId + "/inventory/stock-items")
                 .header("Authorization", "Bearer " + farmer))
-        .andExpect(status().isForbidden());
+        .andExpect(status().isOk());
 
     mockMvc
         .perform(
-            get("/api/v1/farms/" + farmId + "/inventory/stock-items")
+            get("/api/v1/farms/" + farmId + "/inventory/suppliers")
                 .header("Authorization", "Bearer " + owner))
         .andExpect(status().isOk());
   }

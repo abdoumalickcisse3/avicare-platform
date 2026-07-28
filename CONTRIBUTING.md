@@ -1,4 +1,4 @@
-# Contributing — AviCare Platform
+# Contributing — Jawdi Platform
 
 > Conventions de travail. À respecter même en solo (et surtout en solo).
 

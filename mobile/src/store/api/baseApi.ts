@@ -20,11 +20,10 @@ import {
   type FetchArgs,
   type FetchBaseQueryError,
 } from '@reduxjs/toolkit/query/react';
-import Constants from 'expo-constants';
 import { clearTokens, getAccessToken, getRefreshToken, saveTokens } from '@/auth/tokens';
+import { resolveApiUrl } from '@/config/apiUrl';
 
-const API_URL =
-  (Constants.expoConfig?.extra?.apiUrl as string | undefined) ?? 'http://localhost:8080';
+const API_URL = resolveApiUrl();
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: API_URL,
@@ -67,6 +66,14 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
 export const baseApi = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Auth', 'Farm', 'ProductionUnit', 'Breed', 'LayerConfig'],
+  tagTypes: [
+    'Auth', 'Farm', 'ProductionUnit', 'Breed', 'LayerConfig', 'Dashboard',
+    'PoultryBatch', 'DailyRecord', 'Weighing', 'Performance',
+    'EggCollection', 'TrayStock', 'DailyProduction',
+    'Vaccination', 'Observation',
+    'HealthAlert', 'HealthCatalog',
+    'StockItem', 'InventoryAlert', 'FeedFormula',
+    'Client',
+  ],
   endpoints: () => ({}),
 });

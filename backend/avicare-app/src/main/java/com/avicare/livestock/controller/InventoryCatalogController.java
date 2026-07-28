@@ -27,14 +27,14 @@ public class InventoryCatalogController {
 
   /** Platform inventory articles (feed, supplies…). */
   @GetMapping("/articles")
-  @PreAuthorize(InventoryAccess.READ)
+  @PreAuthorize(InventoryAccess.READ_OR_CONSUME)
   public ApiResponse<List<InventoryCatalogItemDto>> articles(@PathVariable Long farmId) {
     return ApiResponse.of(catalogService.listInventoryArticles(farmId));
   }
 
   /** All stockable articles: inventory items ∪ medications referenced from the health catalog. */
   @GetMapping("/articles/all")
-  @PreAuthorize(InventoryAccess.READ)
+  @PreAuthorize(InventoryAccess.READ_OR_CONSUME)
   public ApiResponse<List<InventoryCatalogItemDto>> allArticles(@PathVariable Long farmId) {
     return ApiResponse.of(catalogService.listAllAvailableArticles(farmId));
   }

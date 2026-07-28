@@ -1,7 +1,7 @@
 # Analytique globale + dépense auto sur visite véto — Design
 
 **Date :** 2026-07-06
-**Contexte :** AviCare, module `finance` (root context `com.avicare.finance`). Fait suite à
+**Contexte :** Jawdi, module `finance` (root context `com.avicare.finance`). Fait suite à
 la P1 (dépenses + analytique par-lot, PR #116) et au batch de bugs PR #118 (retrait du tag
 lot sur la création de dépense).
 

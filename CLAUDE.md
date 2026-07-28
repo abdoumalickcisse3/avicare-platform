@@ -1,4 +1,4 @@
-# Instructions pour Claude Code — AviCare Platform
+# Instructions pour Claude Code — Jawdi Platform
 
 > Fichier lu automatiquement par Claude Code et Cursor à chaque session.
 > Il définit les règles non-négociables et la routine de travail attendue.

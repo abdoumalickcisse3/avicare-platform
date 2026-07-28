@@ -56,8 +56,15 @@ public enum FarmRole {
               "inventory:*",
               "finance:read",
               "settings:read");
-      case FARMER -> List.of("poultry:read", "poultry:write", "health:read", "health:write");
-      case VETERINARIAN -> List.of("health:read", "health:write", "poultry:read");
+      case FARMER ->
+          List.of(
+              "poultry:read",
+              "poultry:write",
+              "health:read",
+              "health:write",
+              "inventory:consume");
+      case VETERINARIAN ->
+          List.of("health:read", "health:write", "poultry:read", "inventory:consume");
       case BUYER -> List.of("commercial:read", "finance:read");
     };
   }

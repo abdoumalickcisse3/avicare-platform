@@ -27,7 +27,7 @@ Autres pièges évités : pas de vraie génération PDF (impression navigateur),
 **Sous-titre :** Mortalité, aliment, eau, pesées : une saisie par jour, et la bande se raconte toute seule — GMQ, indice de consommation, date de maturité estimée.
 
 **Bloc 1 — La saisie du jour, en une minute.**
-Effectif, mortalité, aliment consommé, eau, observations. C'est tout ce qu'on vous demande. À partir de là, AviCare calcule le reste : effectif actuel, mortalité cumulée, consommation cumulée, et où en est la bande face à l'objectif de sa souche — **en avance**, **dans l'objectif** ou **en retard**.
+Effectif, mortalité, aliment consommé, eau, observations. C'est tout ce qu'on vous demande. À partir de là, Jawdi calcule le reste : effectif actuel, mortalité cumulée, consommation cumulée, et où en est la bande face à l'objectif de sa souche — **en avance**, **dans l'objectif** ou **en retard**.
 
 **Bloc 2 — La courbe de croissance ne ment pas.**
 Chaque pesée (échantillon, poids moyen, uniformité) se place sur la courbe de votre souche. Vous voyez l'écart au moment où il se creuse, pas trois semaines plus tard à la vente. Avec le **GMQ** en g/j, l'**indice de consommation** et une **maturité estimée** qui se recalcule à chaque saisie.
@@ -80,7 +80,7 @@ Annuaire de vos vétérinaires, visites avec motif, diagnostic et recommandation
 Chaque saisie journalière déduit l'aliment. Chaque vaccination déduit la dose. Chaque vente déduit la marchandise. Vous notez ce que vous faites sur le terrain ; le stock suit. Passez sous le seuil : **« Stock bas — action requise »**.
 
 **Bloc 2 — Vos formules, ingrédient par ingrédient.**
-Composez votre formule d'aliment en pourcentages (maïs, tourteau, prémix…), ou clonez un modèle. À la saisie journalière, indiquez 50 kg de cette formule : AviCare sort **chaque ingrédient au prorata** de votre stock. Le coût estimé aux 100 kg se recalcule avec vos prix.
+Composez votre formule d'aliment en pourcentages (maïs, tourteau, prémix…), ou clonez un modèle. À la saisie journalière, indiquez 50 kg de cette formule : Jawdi sort **chaque ingrédient au prorata** de votre stock. Le coût estimé aux 100 kg se recalcule avec vos prix.
 
 **Bloc 3 — Du bon d'achat au stock, sans ressaisie.**
 Brouillon, envoyé, reçu. À la réception, les quantités entrent en stock **et** la dépense part en comptabilité. Votre annuaire fournisseurs garde le reste.
@@ -105,7 +105,7 @@ Brouillon, envoyé, reçu. À la réception, les quantités entrent en stock **e
 Fiche client, historique complet — commandes, ventes, factures, paiements — et surtout l'**encours actuel** : ce qu'il vous doit, maintenant. Facturez, l'encours monte. Encaissez, il descend. Vous ne tenez plus d'ardoise en parallèle.
 
 **Bloc 2 — De la commande à la livraison, le stock suit.**
-Commande, confirmation, livraison. La marchandise ne quitte votre stock qu'à la livraison réelle — et si vous annulez, elle y revient. Vendez plus que vous n'avez : AviCare refuse la vente au lieu de vous laisser un stock négatif.
+Commande, confirmation, livraison. La marchandise ne quitte votre stock qu'à la livraison réelle — et si vous annulez, elle y revient. Vendez plus que vous n'avez : Jawdi refuse la vente au lieu de vous laisser un stock négatif.
 
 **Bloc 3 — Factures et paiements, sans tableur.**
 La facture naît de la vente ou de la livraison, jamais d'une ressaisie. Encaissez en espèces, Wave, Orange Money ou virement, avec la référence de la transaction. Imprimez la facture ou le bon de livraison en A4 propre depuis le navigateur.

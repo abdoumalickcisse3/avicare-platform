@@ -1,5 +1,5 @@
 /**
- * AviCare mobile — design tokens ("field mode" — B7).
+ * Jawdi mobile — design tokens ("field mode" — B7).
  *
  * React Native port of `docs/10-design-system.md` (§2 palette, §3 typography, §4 spacing,
  * §9 accessibility), extended with the field decisions from
@@ -15,12 +15,25 @@
  * under strong ambient light: it can never carry a value that must be read.
  */
 
-/** Fonts loaded by `expo-font` in task 3. Falls back to the system font if absent. */
+/**
+ * Fonts loaded by `expo-font`/`@expo-google-fonts` in `app/_layout.tsx`.
+ *
+ * React Native (Android especially) does NOT synthesize a weight from a single
+ * custom family + `fontWeight`: each weight must be a distinctly-named family
+ * whose weight is baked in. So the interface font (web: Outfit) and the digit
+ * font (web: JetBrains Mono) are exposed here per weight, and each typography
+ * variant below points at the exact weighted family it needs — matching the
+ * web's Outfit / JetBrains Mono typography rather than falling back to the
+ * device system font.
+ */
 export const fontFamily = {
-  /** Interface, labels, body text. */
-  sans: 'Outfit',
+  /** Interface, labels, body text (default = medium). */
+  sans: 'Outfit_500Medium',
+  sansMedium: 'Outfit_500Medium',
+  sansSemiBold: 'Outfit_600SemiBold',
+  sansBold: 'Outfit_700Bold',
   /** Digits: counters, weighings, tables. Fixed-width = stable columns. */
-  mono: 'JetBrains Mono',
+  mono: 'JetBrainsMono_700Bold',
 } as const;
 
 /**
@@ -84,6 +97,14 @@ const semantic = {
   info: '#2563EB',
   infoLight: '#DBEAFE',
   infoDark: '#1E3A8A',
+  /** Vet / treatments (mirrors web `vet`). */
+  vet: '#7C3AED',
+  vetLight: '#EDE9FE',
+  vetDark: '#5B21B6',
+  /** Clients / commercial people (brief: violet). */
+  clients: '#9333EA',
+  clientsLight: '#F3E8FF',
+  clientsDark: '#6B21A8',
 } as const;
 
 /**
@@ -189,28 +210,28 @@ const typography = {
     letterSpacing: -0.5,
   },
   displayLg: {
-    fontFamily: fontFamily.sans,
+    fontFamily: fontFamily.sansBold,
     fontSize: 28,
     lineHeight: 34,
     fontWeight: '700',
     letterSpacing: -0.4,
   },
   displayMd: {
-    fontFamily: fontFamily.sans,
+    fontFamily: fontFamily.sansSemiBold,
     fontSize: 24,
     lineHeight: 30,
     fontWeight: '600',
     letterSpacing: -0.2,
   },
   headingLg: {
-    fontFamily: fontFamily.sans,
+    fontFamily: fontFamily.sansSemiBold,
     fontSize: 20,
     lineHeight: 26,
     fontWeight: '600',
     letterSpacing: 0,
   },
   headingMd: {
-    fontFamily: fontFamily.sans,
+    fontFamily: fontFamily.sansSemiBold,
     fontSize: 18,
     lineHeight: 24,
     fontWeight: '600',
@@ -241,7 +262,7 @@ const typography = {
   },
   /** Field label, in caps (doc 10 §3: caps tolerated only at this level). */
   label: {
-    fontFamily: fontFamily.sans,
+    fontFamily: fontFamily.sansSemiBold,
     fontSize: 14,
     lineHeight: 18,
     fontWeight: '600',
@@ -249,7 +270,7 @@ const typography = {
   },
   /** Button text. */
   button: {
-    fontFamily: fontFamily.sans,
+    fontFamily: fontFamily.sansSemiBold,
     fontSize: 17,
     lineHeight: 22,
     fontWeight: '600',
@@ -257,7 +278,7 @@ const typography = {
   },
   /** Status word in the sync banner. */
   syncLabel: {
-    fontFamily: fontFamily.sans,
+    fontFamily: fontFamily.sansBold,
     fontSize: 15,
     lineHeight: 20,
     fontWeight: '700',
@@ -309,8 +330,16 @@ export const tokens = {
   touch: {
     /** Accessibility floor — incidental controls only. */
     min: 44,
+    /** Secondary / cancel button (brief: 48dp). */
+    secondary: 48,
     /** Standard button outside an entry screen (doc 10 §9). */
     button: 48,
+    /** Primary button, standard screens (brief: 56dp — gloved/field use). */
+    primaryButton: 56,
+    /** Primary CTA on an action screen (brief: 72dp — "Enregistrer" géant). */
+    cta: 72,
+    /** Quick-action tile on the dashboard (brief: ≥ 96dp). */
+    quickAction: 104,
     /** Any control on an entry screen. */
     field: 64,
     /** Increment pad, tapped dozens of times in a row. ≈ 15 mm. */

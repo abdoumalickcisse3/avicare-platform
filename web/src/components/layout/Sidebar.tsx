@@ -42,6 +42,7 @@ import {
 import { useActiveModules } from "@/hooks/useActiveModules";
 import { useCurrentFarmFocus } from "@/hooks/useCurrentFarmFocus";
 import { useFarmPermissions } from "@/hooks/useFarmPermissions";
+import { useFarmRole } from "@/hooks/useFarmRole";
 import { colors } from "@/theme/tokens";
 
 export const SIDEBAR_WIDTH = 264;
@@ -56,6 +57,8 @@ interface Leaf {
   requiredModule?: string;
   requiredModuleAny?: string[];
   requiredPermission?: string;
+  /** Visible only to the farm OWNER (farm admin) — e.g. the Fermes/subscription area. */
+  ownerOnly?: boolean;
   focusToken?: "broiler" | "layer";
 }
 interface Group {
@@ -86,7 +89,7 @@ const NAV: Section[] = [
   {
     entries: [
       { kind: "leaf", label: "Tableau de bord", href: "/dashboard", icon: LayoutDashboard },
-      { kind: "leaf", label: "Fermes", href: "/fermes", icon: Warehouse },
+      { kind: "leaf", label: "Fermes", href: "/fermes", icon: Warehouse, ownerOnly: true },
     ],
   },
   {
@@ -197,6 +200,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const { isModuleActive, isLoading, farmId, hasFarm } = useActiveModules();
   const { can } = useFarmPermissions(farmId);
+  const role = useFarmRole(farmId);
   const { focus } = useCurrentFarmFocus();
   // Only the group of the active route is open by default; track the ones the user opens.
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
@@ -365,7 +369,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <Box
           component="img"
           src="/logo/logo.png"
-          alt="AviCare Platform"
+          alt="Jawdi Platform"
           sx={{ height: 48, width: "auto", maxWidth: "100%", display: "block" }}
         />
       </Box>
@@ -389,7 +393,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                 {section.entries.map((entry) =>
                   entry.kind === "group"
                     ? renderGroup(entry)
-                    : entry.requiredPermission && !can(entry.requiredPermission)
+                    : (entry.requiredPermission && !can(entry.requiredPermission)) ||
+                        (entry.ownerOnly && role !== "OWNER")
                       ? null
                       : leafButton(entry, false),
                 )}
@@ -401,7 +406,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
       <Stack sx={{ px: 3, py: 2, borderTop: `1px solid ${colors.neutral[100]}` }}>
         <Typography variant="caption" color="text.secondary">
-          AviCare V1 · Volaille
+          Jawdi V1 · Volaille
         </Typography>
       </Stack>
     </Box>

@@ -29,7 +29,7 @@
 
 L'utilisateur n'est pas devant un tableau de bord. Il est debout dans un bâtiment
 d'élevage, à Thiès ou à Sangalkam, une main sur un seau, de la poussière sur l'écran,
-et il compte des bêtes mortes. Ce qu'il remplace en installant AviCare, ce n'est pas
+et il compte des bêtes mortes. Ce qu'il remplace en installant Jawdi, ce n'est pas
 un logiciel : c'est **la feuille de relevé scotchée à la porte du poulailler** —
 un papier quadrillé, des colonnes tracées au marqueur, des chiffres écrits gros,
 des bâtons pour compter.
@@ -51,7 +51,7 @@ C'est de là que vient la direction, et pas d'un langage d'app générique.
 
 C'est le contraire d'un tableau de bord : pas de dégradé, pas d'ombre, pas de carte,
 pas d'icône décorative. Le risque esthétique assumé est la **dureté** — l'interface
-est franchement graphique, presque brutale, là où le web AviCare est chaleureux et
+est franchement graphique, presque brutale, là où le web Jawdi est chaleureux et
 arrondi. Ce n'est pas une incohérence de marque : c'est le même produit dans deux
 postures, le bureau et le terrain. La palette, elle, est rigoureusement identique.
 

@@ -95,7 +95,7 @@ Le `required_approving_review_count: 0` reste l'astuce solo dev (passage par PR 
 
 ## Alternatives écartées
 
-- **Make repo public maintenant** : exposition prématurée du code et du business model AviCare. Décision business non justifiée en Sprint A1.
+- **Make repo public maintenant** : exposition prématurée du code et du business model Jawdi. Décision business non justifiée en Sprint A1.
 - **Upgrade Pro maintenant** : engagement $4/mois pour un seul bénéfice (branch protection) alors que le risque réel est très faible en solo dev. À reprendre dès qu'un second contributeur rejoint ou que le projet sort de la phase prototype.
 - **Hook pre-push local strict** : protection illusoire (contournable depuis une autre machine sans le hook), complexifie le setup dev. Ne remplace pas une vraie règle serveur.
 

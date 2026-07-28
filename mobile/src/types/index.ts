@@ -1,0 +1,279 @@
+/** Shared app types ported from the web (`web/src/types`). Kept minimal on
+ * mobile — extended as more web features land here. */
+
+/** One item in a farm's recent-activity feed (mirrors backend ActivityItem). */
+export interface ActivityItem {
+  kind: string;
+  at: string; // ISO LocalDateTime
+  label: string;
+  detail: string | null;
+}
+
+/** Broiler batch status (mirrors the web `BatchStatus`). */
+export type BatchStatus = 'PLANNED' | 'ACTIVE' | 'CLOSED' | 'CANCELLED';
+
+/** A broiler batch (mirrors the web `PoultryBatch`). */
+export interface PoultryBatch {
+  id: number;
+  farmId: number;
+  breedId: number;
+  name: string | null;
+  startDate: string;
+  status: BatchStatus;
+  currentCount: number;
+  initialCount: number;
+  targetWeightG: number | null;
+  targetAgeDays: number | null;
+}
+
+/** A weighing sample point (mirrors the web `WeighingSample`). */
+export interface WeighingSample {
+  id: number;
+  poultryBatchId: number;
+  sampleDate: string;
+  ageDays: number;
+  sampleSize: number;
+  avgWeightG: number;
+  minWeightG: number | null;
+  maxWeightG: number | null;
+  stdDeviation: number | null;
+  uniformityPercent: number | null;
+  notes: string | null;
+}
+
+/** A recorded vaccination (mirrors the web `Vaccination`). */
+export interface Vaccination {
+  id: number;
+  unitId: number;
+  vaccineKey: string;
+  administeredDate: string;
+  subjectsCount: number;
+  route: string | null;
+  notes: string | null;
+}
+
+export type ObservationSeverity = string;
+
+/** A health observation (mirrors the web `HealthObservation`). */
+export interface HealthObservation {
+  id: number;
+  unitId: number;
+  observationDate: string;
+  severity: ObservationSeverity;
+  title: string;
+  description: string | null;
+}
+
+/* --- Health alerts / catalog (farm-level Sanitaire overview) ------------- */
+
+export interface VaccinationLateItem {
+  unitId: number;
+  unitName: string | null;
+  vaccineKey: string;
+  dueDate: string;
+  daysLate: number;
+}
+
+export interface ActiveWithdrawalItem {
+  unitId: number;
+  treatmentId: number;
+  treatmentKey: string;
+  withdrawalEndDateMeat: string | null;
+  withdrawalEndDateEggs: string | null;
+  daysRemainingMeat: number | null;
+  daysRemainingEggs: number | null;
+}
+
+export interface FollowUpItem {
+  unitId: number;
+  vetVisitId: number;
+  followUpDate: string;
+  daysUntil: number;
+}
+
+export interface CriticalObservationItem {
+  unitId: number;
+  observationId: number;
+  severity: ObservationSeverity;
+  title: string;
+  observationDate: string;
+}
+
+/** Consolidated farm health alerts (mirrors the web `HealthAlerts`). */
+export interface HealthAlerts {
+  vaccinationsLate: VaccinationLateItem[];
+  activeWithdrawals: ActiveWithdrawalItem[];
+  upcomingFollowUps: FollowUpItem[];
+  criticalObservations: CriticalObservationItem[];
+}
+
+/** A catalog entry (vaccine / treatment / program) — only the count is used on
+ * mobile, so the shape is kept minimal. */
+export interface HealthCatalogEntry {
+  key: string;
+}
+
+/** Record a vaccination (mirrors the web `VaccinationInput`, trimmed to the
+ * fields the mobile form captures). */
+export interface VaccinationInput {
+  unitId: number;
+  vaccineKey: string;
+  administeredDate: string;
+  route?: string;
+  subjectsCount: number;
+  notes?: string;
+}
+
+/** Record a health observation (mirrors the web `ObservationInput`). */
+export interface ObservationInput {
+  unitId: number;
+  observationDate: string;
+  severity?: ObservationSeverity;
+  title: string;
+  description?: string;
+}
+
+/** A broiler daily record (mirrors the web `PoultryDailyRecord`). */
+export interface PoultryDailyRecord {
+  id: number;
+  productionUnitId: number;
+  recordDate: string;
+  mortalityCount: number;
+  feedKg: number;
+  waterL: number;
+  observations: string | null;
+}
+
+/** Growth performance snapshot (mirrors the web `GrowthPerformance`). */
+export type PerformanceScore = 'AHEAD' | 'ON_TARGET' | 'BEHIND';
+
+export interface GrowthPerformance {
+  poultryBatchId: number;
+  ageDays: number;
+  currentWeightG: number | null;
+  gmqGPerDay: number | null;
+  feedConversionRatio: number | null;
+  cumulativeMortalityPercent: number | null;
+  cumulativeFeedKg: number | null;
+  forecastedTargetDate: string | null;
+  performanceScore: PerformanceScore | null;
+}
+
+/** Egg tray stock (mirrors the web `TrayStock`). */
+export interface TrayStock {
+  farmId: number;
+  fullTraysCount: number;
+  emptyTraysCount: number;
+  updatedAt: string;
+}
+
+/** An egg collection entry (mirrors the web `EggCollection`). */
+export interface EggCollection {
+  id: number;
+  unitId: number;
+  collectionDate: string;
+  timeslotKey: string;
+  totalEggs: number;
+  brokenEggs: number;
+  gradesCount?: Record<string, number> | null;
+  notes: string | null;
+}
+
+/** A closed daily production aggregate (mirrors the web `DailyProduction`). */
+export interface DailyProduction {
+  unitId: number;
+  productionDate: string;
+  totalEggsCollected: number;
+  totalBrokenEggs: number;
+  gradesAggregate: Record<string, number>;
+  layingRatePct: number | null;
+  breakRatePct: number | null;
+  activeLayersCount: number;
+  closedAt: string | null;
+  closedById: number | null;
+}
+
+/** Rolling laying-rate average (mirrors the web `RollingRate`). */
+export interface RollingRate {
+  unitId: number;
+  days: number;
+  avgLayingRatePct: number | null;
+}
+
+/* --- Inventory / stock (mirrors the web inventory slice) ----------------- */
+
+export type ArticleSource = 'INVENTORY' | 'TREATMENT' | 'PRODUCTION';
+
+/** A stock item (mirrors the web `StockItem`). */
+export interface StockItem {
+  id: number;
+  farmId: number;
+  articleKey: string;
+  articleSource: ArticleSource;
+  currentQuantity: number;
+  unit: string | null;
+  alertThreshold: number | null;
+  typicalUnitPriceXof: number | null;
+  lastMovementAt: string | null;
+  active: boolean;
+  notes: string | null;
+}
+
+/** Farm-wide stock valuation total (mirrors the web `StockValuation`). */
+export interface StockValuation {
+  totalValueXof: number;
+}
+
+/* --- Feed source coupling (D18 / D20) for the daily entry ---------------- */
+
+/** Draw a single stock article as feed (D18) — becomes an OUT movement. */
+export interface StockConsumption {
+  articleKey: string;
+  articleSource: ArticleSource;
+  quantity: number;
+  notes?: string;
+}
+
+/** Draw a feed formula (D20 révisée) — decomposed into per-ingredient OUT movements. */
+export interface FeedFormulaRef {
+  formulaKey?: string;
+  formulaId?: number;
+  totalKg: number;
+  notes?: string;
+}
+
+/** Minimal shapes of the available formulas (only the fields the picker uses). */
+export interface PlatformFeedFormula {
+  key: string;
+  label: string;
+}
+export interface FarmFeedFormula {
+  id: number;
+  name: string;
+}
+export interface AvailableFeedFormulas {
+  platformFormulas: PlatformFeedFormula[];
+  farmFormulas: FarmFeedFormula[];
+}
+
+/* --- Commercial / clients (mirrors the web commercial slice) ------------- */
+
+export type ClientType = 'INDIVIDUAL' | 'BUSINESS' | 'WHOLESALER';
+
+/** A commercial client in a farm's directory (mirrors backend ClientResponse). */
+export interface Client {
+  id: number;
+  farmId: number;
+  clientType: ClientType;
+  displayName: string;
+  legalName: string | null;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  city: string | null;
+  creditLimitXof: number | null;
+  currentBalanceXof: number;
+  defaultPaymentTerms: string | null;
+  active: boolean;
+  notes: string | null;
+}

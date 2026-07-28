@@ -1,7 +1,7 @@
 # Mockups animés des sous-pages Fonctionnalités — valeurs figées
 
 > Décision client (2026-07-16) : **pas de captures d'écran**. Les blocs « capacité »
-> des 5 sous-pages sont des **recréations HTML/CSS** de l'UI réelle d'AviCare.
+> des 5 sous-pages sont des **recréations HTML/CSS** de l'UI réelle d'Jawdi.
 > Référence visuelle : `landing/src/assets/fonctionalités/*.png` (captures du produit réel).
 >
 > **Pourquoi** : les captures pèsent 2,9 Mo et sont illisibles à 375 px (dashboard 3024 px),

@@ -6,7 +6,7 @@
 
 ## Contexte
 
-Le projet AviCare Platform est une reconstruction de GINAARTECH avec :
+Le projet Jawdi Platform est une reconstruction de GINAARTECH avec :
 - Élargissement multi-espèces (volaille → ovins → bovins...)
 - Changement de stack (AdonisJS → Spring Boot)
 - Ajout d'un mobile React Native

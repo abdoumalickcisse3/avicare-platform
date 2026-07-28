@@ -4,6 +4,13 @@ import { Stack } from 'expo-router';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import {
+  Outfit_500Medium,
+  Outfit_600SemiBold,
+  Outfit_700Bold,
+  useFonts,
+} from '@expo-google-fonts/outfit';
+import { JetBrainsMono_700Bold } from '@expo-google-fonts/jetbrains-mono';
 import { persistor, store } from '@/store';
 import { baseApi } from '@/store/api/baseApi';
 import { setSelectedFarmId } from '@/store/slices/selectionSlice';
@@ -31,6 +38,24 @@ function AuthInvalidationPurge() {
 }
 
 export default function RootLayout() {
+  // Load the same typefaces as the web (Outfit + JetBrains Mono, per weight)
+  // so the app renders in the brand type, not the device system font. The
+  // weighted family names must match `tokens.fontFamily.*`.
+  const [fontsLoaded] = useFonts({
+    Outfit_500Medium,
+    Outfit_600SemiBold,
+    Outfit_700Bold,
+    JetBrainsMono_700Bold,
+  });
+
+  if (!fontsLoaded) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color={tokens.colors.primary[600]} />
+      </View>
+    );
+  }
+
   return (
     <Provider store={store}>
       <PersistGate

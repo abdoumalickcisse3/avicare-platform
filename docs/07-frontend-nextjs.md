@@ -1,6 +1,6 @@
 # 07 — Frontend Next.js
 
-> Architecture frontend AviCare Platform.
+> Architecture frontend Jawdi Platform.
 > Référence pour Sprint A6 (bootstrap frontend) et tous les sprints frontend Phase B+.
 >
 > **Pré-requis :** avoir lu `00-vision-strategique.md`, `06-cross-cutting.md`, `10-design-system.md`.
@@ -566,7 +566,7 @@ export const t = (key: string, fallback: string) => fallback;
 Le pattern :
 
 ```typescript
-<Typography>{t('login.title', 'Connexion à AviCare')}</Typography>
+<Typography>{t('login.title', 'Connexion à Jawdi')}</Typography>
 ```
 
 ### V2+ : next-intl

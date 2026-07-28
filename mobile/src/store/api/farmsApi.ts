@@ -14,6 +14,13 @@ interface ApiEnvelope<T> {
 export interface Farm {
   id: number;
   name: string;
+  /** These come from the same backend payload as the web `Farm`; optional so
+   *  older/minimal responses don't break typing. */
+  location?: string | null;
+  capacity?: number | null;
+  active?: boolean;
+  /** Métier focus tokens: "broiler" / "layer". */
+  productionFocus?: string[];
 }
 
 export const farmsApi = baseApi.injectEndpoints({

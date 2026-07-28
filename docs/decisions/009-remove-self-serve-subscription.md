@@ -6,7 +6,7 @@
 
 ## Contexte
 
-AviCare V1 (volaille) est fonctionnellement complet mais sans fermes en production. La priorité
+Jawdi V1 (volaille) est fonctionnellement complet mais sans fermes en production. La priorité
 est l'adoption et la preuve de ROI, pas la monétisation. Le modèle « modules vendus à la carte »
 en self-serve (doc 00 §7, D13-D16) impose une friction inadaptée à la réalité ouest-africaine :
 mobile money (pas de carte), trésorerie des éleveurs en dents de scie (cycle chair ~45 j), et une
@@ -27,7 +27,7 @@ distribution qui passe par des canaux (coopératives, provendiers, couvoirs, vé
 ## Thèse de monétisation (différée, hors code)
 
 - **Primaire : B2B2C canal.** Un partenaire (coopérative / provendier / couvoir) paie ou subventionne
-  AviCare pour son réseau d'éleveurs — il porte la relation, la confiance et le rail de paiement.
+  Jawdi pour son réseau d'éleveurs — il porte la relation, la confiance et le rail de paiement.
 - **Secondaire : mobile money par cycle** (Wave / Orange Money) pour la ferme semi-industrielle
   indépendante — aligné sur le cash-flow (« payer quand la bande est vendue »).
 - **Écartés** : prélèvement mensuel fixe au petit éleveur (friction max) ; tout flux carte bancaire.

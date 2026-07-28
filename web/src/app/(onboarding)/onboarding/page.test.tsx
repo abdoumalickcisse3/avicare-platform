@@ -6,7 +6,7 @@ import OnboardingPage from "./page";
 describe("OnboardingPage (light)", () => {
   it("shows the welcome screen with the first-batch placeholder", () => {
     renderWithProviders(<OnboardingPage />);
-    expect(screen.getByText(/bienvenue sur avicare/i)).toBeInTheDocument();
+    expect(screen.getByText(/bienvenue sur jawdi/i)).toBeInTheDocument();
     expect(
       screen.getByText(/la création de lots sera disponible/i),
     ).toBeInTheDocument();

@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>common-api</artifactId>
-    <name>AviCare Common — API</name>
+    <name>Jawdi Common — API</name>
     <description>Shared API contracts: ApiResponse, RFC 7807, exceptions, CorrelationIdFilter</description>
 
     <dependencies>

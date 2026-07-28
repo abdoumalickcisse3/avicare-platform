@@ -1,4 +1,4 @@
-# AviCare Platform — Vision stratégique
+# Jawdi Platform — Vision stratégique
 
 > Document fondateur du projet. À garder à la racine de `docs/` du repo.
 > Toute personne (ou IA) qui rejoint le projet **doit lire ce document en premier**.
@@ -7,13 +7,13 @@
 
 ## 1. Le projet en une phrase
 
-**AviCare Platform** est une plateforme SaaS multi-tenant de gestion d'élevage destinée aux exploitations d'Afrique de l'Ouest (Sénégal en premier), construite pour évoluer d'une couverture avicole vers une gestion multi-espèces (ovins, bovins, caprins, porcins).
+**Jawdi Platform** est une plateforme SaaS multi-tenant de gestion d'élevage destinée aux exploitations d'Afrique de l'Ouest (Sénégal en premier), construite pour évoluer d'une couverture avicole vers une gestion multi-espèces (ovins, bovins, caprins, porcins).
 
 ---
 
 ## 2. Historique et contexte
 
-- Le projet succède à **GINAARTECH / AviCare Pro**, un SaaS avicole multi-sites construit en **AdonisJS v7 + Next.js 16 + PostgreSQL**.
+- Le projet succède à **GINAARTECH / Jawdi Pro**, un SaaS avicole multi-sites construit en **AdonisJS v7 + Next.js 16 + PostgreSQL**.
 - L'ancien projet (repo `avicare-pro`) est **figé en lecture seule**. Son `ARCHITECTURE.md` est conservé comme **bible métier** dans `docs/legacy-reference/`.
 - La reconstruction est motivée par :
   1. Un **changement de stack** vers Spring Boot + Next.js + React Native (mobile)
@@ -192,7 +192,7 @@ Les bundles sont des **collections d'entitlements** côté DB — le code de ges
 ## 9. Naming
 
 - Repo provisoire : **`avicare-platform`**
-- Nom commercial actuel : **AviCare Pro** (gardé pour V1)
+- Nom commercial actuel : **Jawdi Pro** (gardé pour V1)
 - Rebrand décidé à l'approche de V2, avec nom-parapluie multi-espèces (pistes : KheulPro, Jam-Ferme, Téraanga Farm, à valider avec le marché)
 
 ---
@@ -220,7 +220,7 @@ Les bundles sont des **collections d'entitlements** côté DB — le code de ges
 | 8 | Règle d'or | Tout ce qui appartient à l'éleveur est paramétrable (3 couches) |
 | 9 | Repo | Nouveau repo `avicare-platform`, mono-repo |
 | 10 | Legacy | Ancien repo `avicare-pro` figé, ARCHITECTURE.md gardé comme bible métier |
-| 11 | RBAC plateforme (`UserRole`) | 2 niveaux : `ADMIN` (staff AviCare) / `USER` (éleveur) — YAGNI V1, ajout d'un 3e rôle reste non-breaking |
+| 11 | RBAC plateforme (`UserRole`) | 2 niveaux : `ADMIN` (staff Jawdi) / `USER` (éleveur) — YAGNI V1, ajout d'un 3e rôle reste non-breaking |
 | 12 | RBAC tenant (`FarmRole`) | 5 personas par ferme : `OWNER`, `MANAGER`, `FARMER`, `VETERINARIAN`, `BUYER`, avec `defaultPermissions()` conservateurs (`resource:verb`), surchargeables par membership |
 | 13 | Catalogue modules | Tous les modules V1+V2+ déclarés (future-proof), champ `wave` marque la disponibilité (cf. doc 04 / A4) |
 | 14 | Modes d'activation | `OFF`/`HARD` seulement ; `SHADOW`/`SOFT` différés (cf. doc 04 / A4) |

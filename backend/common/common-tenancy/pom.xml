@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>common-tenancy</artifactId>
-    <name>AviCare Common — Tenancy</name>
+    <name>Jawdi Common — Tenancy</name>
     <description>Shared multi-tenant utilities: tenancy context (ThreadLocal), accessible-farms helpers</description>
 
     <dependencies>

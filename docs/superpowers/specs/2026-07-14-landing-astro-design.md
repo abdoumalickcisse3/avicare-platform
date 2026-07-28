@@ -1,7 +1,7 @@
-# Site vitrine AviCare (Astro) — Design & copywriting
+# Site vitrine Jawdi (Astro) — Design & copywriting
 
 **Date :** 2026-07-14
-**Contexte :** AviCare Platform (SaaS de gestion d'élevage avicole, Afrique de l'Ouest) n'a pas de
+**Contexte :** Jawdi Platform (SaaS de gestion d'élevage avicole, Afrique de l'Ouest) n'a pas de
 site vitrine. Objectif : un site **premium, orienté conversion et SEO**, bâti en **Astro** (SSG),
 séparé de l'app Next.js. Cible double (éleveurs + partenaires B2B2C), pilote **gratuit** (ADR-009).
 
@@ -28,13 +28,13 @@ séparé de l'app Next.js. Cible double (éleveurs + partenaires B2B2C), pilote 
   - **Structure** reprise des maquettes Figma fournies par le client (`~/Desktop/*.png`) :
     `Home` → Accueil, **`Integration` → Fonctionnalités**, `Pricing` → Tarifs, `About us` → À propos
     (`Integration Details` → gabarit des sous-pages fonctionnalités, à décliner).
-  - **Recolorée aux tokens de marque AviCare** (doc 10) : vert/orange, jamais le violet/lime du template.
+  - **Recolorée aux tokens de marque Jawdi** (doc 10) : vert/orange, jamais le violet/lime du template.
   - Devices signature : **menu = île arrondie flottante** (verre dépoli) ; **sections pleine largeur**
     à fonds alternés (blanc / stone / bandes vert foncé / bande photo) — **surtout pas** de sections
     en panneaux flottants (explicitement rejeté par le client) ; **surlignage marqueur orange** tracé
     à la main sur un mot clé des titres ; hero **vert immersif** + cockpit KPI animés + **chips
     flottantes** ; **bande stats** vert foncé ; témoignages à **gros chiffre** ; FAQ accordéon ;
-    CTA final vert foncé ; **vrai logo AviCare** (foncé au header, clair au footer).
+    CTA final vert foncé ; **vrai logo Jawdi** (foncé au header, clair au footer).
 - **Images** : fournies par le client, présentes dans `web/public/images/` → à copier dans
   `landing/src/assets/` (`eleveur-poulets` = hero À propos, `equipements-ferme` = bande, `eleveur` =
   bloc vision). Logo depuis `web/public/logo/{logo,logo-dark}.png`. Captures produit générées depuis
@@ -122,7 +122,7 @@ repère visuel, mais **ne dicte pas** le design du site.
 
 ### 1. Accueil (`/`)
 
-**SEO** — title : « AviCare — Le logiciel de gestion d'élevage avicole en Afrique de l'Ouest » ;
+**SEO** — title : « Jawdi — Le logiciel de gestion d'élevage avicole en Afrique de l'Ouest » ;
 meta : « Suivez vos bandes, vos coûts et vos ventes sur une seule plateforme. Réduisez la mortalité,
 maîtrisez le coût de l'aliment, connaissez votre marge. Gratuit pendant le pilote. »
 
@@ -150,7 +150,7 @@ appartiennent ».
 
 **Solution** (révélation)
 - Titre : « Une seule plateforme, du poussin à la marge. »
-- Sous-titre : « AviCare relie l'élevage, le sanitaire, les stocks, les ventes et les finances — pour
+- Sous-titre : « Jawdi relie l'élevage, le sanitaire, les stocks, les ventes et les finances — pour
   que chaque saisie du quotidien devienne une décision éclairée. »
 - 5 `FeatureCard` (icône + titre + 1 phrase + lien vers la sous-page) :
   1. **Élevage** — « Suivez chaque bande au jour le jour : effectif, mortalité, aliment, pesées. »
@@ -162,7 +162,7 @@ appartiennent ».
 **Comment ça marche** (3 étapes `StepCard`)
 1. « Créez votre ferme » — « En 2 minutes, sans carte bancaire. »
 2. « Saisissez au quotidien » — « Mortalité, aliment, ventes : quelques secondes par jour. »
-3. « Pilotez vos marges » — « AviCare calcule le reste : coût au kg, marge, alertes. »
+3. « Pilotez vos marges » — « Jawdi calcule le reste : coût au kg, marge, alertes. »
 
 **Double parcours** (2 cartes côte à côte)
 - « **Vous êtes éleveur** » — « Reprenez le contrôle de vos bandes et de vos marges. Gratuit pendant
@@ -178,7 +178,7 @@ appartiennent ».
   - « Avant, je découvrais mes pertes à la vente. Maintenant je les vois venir. » — *Éleveur de chair,
     Thiès [à confirmer]*
   - « Je sais enfin combien me coûte un kilo de poulet. » — *Éleveuse, Niayes [à confirmer]*
-  - « On a mis 30 fermes de notre coopérative sur AviCare. » — *Responsable coopérative [à confirmer]*
+  - « On a mis 30 fermes de notre coopérative sur Jawdi. » — *Responsable coopérative [à confirmer]*
 
 **FAQ (extrait)** — 4–5 questions (les mêmes que `/faq`, top items), lien « Toutes les questions ».
 
@@ -187,7 +187,7 @@ et voyez, dès la première bande, où part votre argent. » CTA « Commencer gr
 
 ### 2. Hub Fonctionnalités (`/fonctionnalites`)
 
-Title : « Fonctionnalités — Tout l'élevage avicole, d'un seul endroit | AviCare ». Intro courte +
+Title : « Fonctionnalités — Tout l'élevage avicole, d'un seul endroit | Jawdi ». Intro courte +
 grille des 5 modules (mêmes `FeatureCard` que l'accueil, vers les sous-pages) + CTA.
 
 ### 3–7. Sous-pages fonctionnalités (`/fonctionnalites/{module}`)

@@ -1,32 +1,30 @@
 /**
- * Egg collection entry ("Collecte d'œufs") — task 13. DIFFERENT clientRef
- * semantics from mortality/weighing (tasks 11/12): the backend upserts a
- * collection on the natural key (unit, date, time-slot), so replaying the
- * exact same request is already safe server-side and needs no `client_ref`
- * in the payload at all.
+ * Egg collection entry ("Collecte d'œufs") — a faithful replica of the web
+ * `EggCollectionDialog`: a date field, a time-slot selector, total/broken egg
+ * number fields and an observations field, with an Annuler / Enregistrer
+ * footer. Submission goes through the offline `enqueueFieldMutation` queue.
  *
- * The local queue, however, still needs a stable identity for this
- * (unit, date, slot) so that submitting the same slot twice in the app
- * (a farmer correcting a count before the first submission even left the
- * device) REPLACES the queued draft instead of stacking a second one that
- * would double-send. `queue.enqueue` throws on a duplicate `client_ref`
- * (UNIQUE column), so this screen derives a deterministic ref from the
- * natural key, and — before enqueueing — removes any existing queue row
- * sharing that exact ref (`queue.markDone`, regardless of its status) so
- * the insert always succeeds and only the latest draft survives.
+ * clientRef semantics differ from mortality/weighing: the backend upserts a
+ * collection on the natural key (unit, date, time-slot), so replaying the same
+ * request is already safe. The local queue still needs a stable identity for
+ * that (unit, date, slot) so submitting the same slot twice REPLACES the queued
+ * draft instead of stacking a second one — this screen derives a deterministic
+ * ref from the natural key and removes any existing queue row sharing it before
+ * enqueuing (the queue's `client_ref` column is UNIQUE).
  *
- * `timeslotKey` is never hardcoded (doc 00 "Règle d'or n°0"): it comes from
- * the farm's configured time-slots, fetched via `layerConfigApi`. Offline
- * with no cached config, submission is disabled with a clear message rather
- * than falling back to a guessed slot.
+ * `timeslotKey` is never hardcoded (doc 00 "Règle d'or n°0"): it comes from the
+ * farm's configured time-slots via `layerConfigApi`. Offline with no cached
+ * config, submission is disabled with a clear message.
  */
-import { useEffect, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
+import { ArrowLeft } from 'lucide-react-native';
 import { tokens } from '@/theme';
+import { FormField, TodayDateField } from '@/components/field/FormField';
 import { useListProductionUnitsQuery } from '@/store/api/productionUnitsApi';
 import { useListTimeslotsQuery, type LayerConfigEntry } from '@/store/api/layerConfigApi';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
@@ -34,7 +32,6 @@ import { enqueueFieldMutation } from '@/field/enqueueMutation';
 import { queue } from '@/sync';
 
 const MS_PER_DAY = 86_400_000;
-const TRAY_SIZE = 30;
 
 /** Duplicated on purpose — see journalier.tsx's identical helper for why. */
 function ageInDays(startDate: string | null | undefined): number | null {
@@ -44,13 +41,10 @@ function ageInDays(startDate: string | null | undefined): number | null {
   return Math.max(0, Math.floor((Date.now() - start) / MS_PER_DAY));
 }
 
-/** Today's date as `YYYY-MM-DD` — see journalier.tsx's identical helper for why local, not UTC. */
+/** Today's date as `YYYY-MM-DD` — see journalier.tsx for why local, not UTC. */
 function todayIsoDate(): string {
   const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
 
 function timeslotLabel(entry: LayerConfigEntry): string {
@@ -83,11 +77,15 @@ export default function EggCollectionEntryScreen() {
     isError: timeslotsError,
   } = useListTimeslotsQuery(selectedFarmId ?? skipToken);
 
-  const sortedTimeslots = [...(timeslots ?? [])].sort((a, b) => timeslotOrder(a) - timeslotOrder(b));
+  const sortedTimeslots = useMemo(
+    () => [...(timeslots ?? [])].sort((a, b) => timeslotOrder(a) - timeslotOrder(b)),
+    [timeslots],
+  );
 
   const [selectedTimeslotKey, setSelectedTimeslotKey] = useState<string | null>(null);
-  const [totalEggs, setTotalEggs] = useState(0);
-  const [brokenEggs, setBrokenEggs] = useState(0);
+  const [totalEggs, setTotalEggs] = useState('');
+  const [brokenEggs, setBrokenEggs] = useState('');
+  const [notes, setNotes] = useState('');
 
   // Default to the first configured slot once the config loads, but only if
   // the farmer hasn't already picked one — never override a manual choice.
@@ -104,19 +102,20 @@ export default function EggCollectionEntryScreen() {
   }
 
   const noTimeslotsAvailable = !timeslotsLoading && sortedTimeslots.length === 0;
-  const canSubmit = selectedTimeslotKey !== null && !Number.isNaN(unitId);
+  const totalValid = /^\d+$/.test(totalEggs.trim());
+  const brokenValid = brokenEggs.trim() === '' || /^\d+$/.test(brokenEggs.trim());
+  const canSubmit = selectedTimeslotKey !== null && !Number.isNaN(unitId) && totalValid && brokenValid;
 
   function handleSubmit(): void {
-    if (selectedFarmId === null || Number.isNaN(unitId) || selectedTimeslotKey === null) return;
+    if (selectedFarmId === null || Number.isNaN(unitId) || selectedTimeslotKey === null || !totalValid) return;
 
     const collectionDate = todayIsoDate();
     const ref = slotClientRef(unitId, collectionDate, selectedTimeslotKey);
 
     // Upsert-per-slot, locally: any existing queue row for this exact
-    // (unit, date, slot) is a stale draft of THIS submission, not a
-    // separate one — remove it (whatever its status) so the enqueue below
-    // never collides with the UNIQUE client_ref constraint, and only the
-    // latest values are ever sent.
+    // (unit, date, slot) is a stale draft of THIS submission — remove it
+    // (whatever its status) so the enqueue below never collides with the
+    // UNIQUE client_ref constraint, and only the latest values are sent.
     for (const pending of queue.listAll()) {
       if (pending.clientRef === ref) {
         queue.markDone(pending.id);
@@ -131,19 +130,18 @@ export default function EggCollectionEntryScreen() {
         unitId,
         collectionDate,
         timeslotKey: selectedTimeslotKey,
-        totalEggs,
-        brokenEggs,
+        totalEggs: Number(totalEggs.trim()),
+        brokenEggs: brokenEggs.trim() === '' ? 0 : Number(brokenEggs.trim()),
+        notes: notes.trim() || undefined,
       },
       clientRef: ref,
     });
 
-    setTotalEggs(0);
-    setBrokenEggs(0);
     router.back();
   }
 
   const age = ageInDays(unit?.startDate);
-  const headerLabel = unit ? `Lot ${unit.name}${age !== null ? ` · J${age}` : ''}` : 'Lot';
+  const subtitle = unit ? `Lot ${unit.name}${age !== null ? ` · J${age}` : ''}` : 'Lot';
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -152,23 +150,23 @@ export default function EggCollectionEntryScreen() {
           onPress={() => router.back()}
           accessibilityRole="button"
           accessibilityLabel="Retour"
-          hitSlop={{
-            top: tokens.spacing[2],
-            bottom: tokens.spacing[2],
-            left: tokens.spacing[2],
-            right: tokens.spacing[2],
-          }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={styles.backBtn}
         >
-          <Text style={styles.backLabel}>{`← ${headerLabel}`}</Text>
+          <ArrowLeft size={22} color={tokens.colors.field.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Collecte d&apos;œufs</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.title}>Saisir une collecte</Text>
+          <Text style={styles.subtitle}>{subtitle}</Text>
+        </View>
       </View>
 
-      <View style={styles.rule} />
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <TodayDateField />
 
-      <View style={styles.content}>
-        <View style={styles.timeslotBlock}>
-          <Text style={styles.sectionLabel}>CRÉNEAU</Text>
+        {/* Time-slot selector — the RN equivalent of the web's <select>. */}
+        <View style={styles.fieldWrap}>
+          <Text style={styles.fieldLabel}>Créneau</Text>
           {noTimeslotsAvailable || timeslotsError ? (
             <Text style={styles.unavailable}>Créneaux indisponibles hors ligne</Text>
           ) : (
@@ -194,71 +192,47 @@ export default function EggCollectionEntryScreen() {
           )}
         </View>
 
-        <View style={styles.rule} />
-
-        <View style={styles.counterBlock}>
-          <Text style={styles.counterLabel}>ŒUFS COLLECTÉS</Text>
-          <Text style={styles.counterValue}>{totalEggs}</Text>
-
-          <View style={styles.counterControls}>
-            <TouchableOpacity
-              style={[styles.stepButton, styles.decrementButton, totalEggs === 0 && styles.stepButtonDisabled]}
-              onPress={() => setTotalEggs((c) => Math.max(0, c - 1))}
-              disabled={totalEggs === 0}
-              accessibilityRole="button"
-              accessibilityLabel="Retirer un œuf"
-            >
-              <Text style={styles.decrementLabel}>−1</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.stepButton, styles.smallIncrementButton]}
-              onPress={() => setTotalEggs((c) => c + 1)}
-              accessibilityRole="button"
-              accessibilityLabel="Ajouter un œuf"
-            >
-              <Text style={styles.smallIncrementLabel}>+1</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.stepButton, styles.incrementButton]}
-              onPress={() => setTotalEggs((c) => c + TRAY_SIZE)}
-              accessibilityRole="button"
-              accessibilityLabel={`Ajouter un plateau (${TRAY_SIZE} œufs)`}
-            >
-              <Text style={styles.incrementLabel}>{`+${TRAY_SIZE}`}</Text>
-            </TouchableOpacity>
+        <View style={styles.row}>
+          <View style={styles.rowItem}>
+            <FormField
+              label="Total d'œufs"
+              required
+              value={totalEggs}
+              onChangeText={setTotalEggs}
+              keyboardType="number-pad"
+              inputMode="numeric"
+              placeholder="0"
+            />
+          </View>
+          <View style={styles.rowItem}>
+            <FormField
+              label="Œufs cassés"
+              value={brokenEggs}
+              onChangeText={setBrokenEggs}
+              keyboardType="number-pad"
+              inputMode="numeric"
+              placeholder="0"
+              helperText="Comptés séparément."
+            />
           </View>
         </View>
 
-        <View style={styles.rule} />
-
-        <View style={styles.brokenBlock}>
-          <Text style={styles.sectionLabel}>DONT CASSÉS</Text>
-          <Text style={styles.brokenValue}>{brokenEggs}</Text>
-          <View style={styles.brokenControls}>
-            <TouchableOpacity
-              style={[styles.readingStepButton, brokenEggs === 0 && styles.stepButtonDisabled]}
-              onPress={() => setBrokenEggs((c) => Math.max(0, c - 1))}
-              disabled={brokenEggs === 0}
-              accessibilityRole="button"
-              accessibilityLabel="Retirer un œuf cassé"
-            >
-              <Text style={styles.readingStepLabel}>−1</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.readingStepButton, styles.readingStepButtonAccent]}
-              onPress={() => setBrokenEggs((c) => c + 1)}
-              accessibilityRole="button"
-              accessibilityLabel="Ajouter un œuf cassé"
-            >
-              <Text style={styles.readingStepLabelAccent}>+1</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+        <FormField
+          label="Observations"
+          value={notes}
+          onChangeText={setNotes}
+          placeholder="Conditions, incidents, collecteur…"
+          multiline
+          maxLength={2000}
+        />
+      </ScrollView>
 
       <View style={styles.actionBar}>
+        <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Annuler">
+          <Text style={styles.cancelLabel}>Annuler</Text>
+        </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.validateButton, !canSubmit && styles.stepButtonDisabled]}
+          style={[styles.validateButton, !canSubmit && styles.validateButtonDisabled]}
           onPress={handleSubmit}
           disabled={!canSubmit}
           accessibilityRole="button"
@@ -272,189 +246,30 @@ export default function EggCollectionEntryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: tokens.colors.field.background,
-  },
-  header: {
-    paddingHorizontal: tokens.layout.screenPadding,
-    paddingTop: tokens.spacing[4],
-    paddingBottom: tokens.spacing[4],
-  },
-  backLabel: {
-    ...tokens.typography.bodyMd,
-    color: tokens.colors.field.textMuted,
-  },
-  title: {
-    ...tokens.typography.displayMd,
-    color: tokens.colors.field.text,
-    marginTop: tokens.spacing[1],
-  },
-  rule: {
-    height: tokens.layout.ruleWidth,
-    backgroundColor: tokens.colors.field.rule,
-  },
-  content: {
-    flex: 1,
-  },
-  timeslotBlock: {
-    paddingHorizontal: tokens.layout.screenPadding,
-    paddingVertical: tokens.spacing[4],
-  },
-  sectionLabel: {
-    ...tokens.typography.label,
-    color: tokens.colors.field.textMuted,
-  },
-  unavailable: {
-    ...tokens.typography.bodyMd,
-    color: tokens.colors.field.textMuted,
-    marginTop: tokens.spacing[2],
-  },
-  timeslotRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: tokens.spacing[2],
-    marginTop: tokens.spacing[2],
-  },
-  timeslotChip: {
-    minHeight: tokens.touch.button,
-    paddingHorizontal: tokens.spacing[4],
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: tokens.radii.md,
-    borderWidth: tokens.layout.borderWidth,
-    borderColor: tokens.colors.action.secondary.border,
-    backgroundColor: tokens.colors.action.secondary.bg,
-  },
-  timeslotChipSelected: {
-    backgroundColor: tokens.colors.action.accumulate.bg,
-    borderColor: tokens.colors.action.accumulate.border,
-  },
-  timeslotChipLabel: {
-    ...tokens.typography.button,
-    color: tokens.colors.action.secondary.fg,
-  },
-  timeslotChipLabelSelected: {
-    color: tokens.colors.action.accumulate.fg,
-  },
-  counterBlock: {
-    alignItems: 'center',
-    paddingHorizontal: tokens.layout.screenPadding,
-    paddingVertical: tokens.spacing[6],
-  },
-  counterLabel: {
-    ...tokens.typography.label,
-    color: tokens.colors.field.textMuted,
-  },
-  counterValue: {
-    ...tokens.typography.numeric,
-    color: tokens.colors.field.text,
-    marginTop: tokens.spacing[2],
-  },
-  counterControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: tokens.spacing[8],
-    gap: tokens.spacing[4],
-  },
-  stepButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: tokens.radii.full,
-    borderWidth: tokens.layout.borderWidth,
-  },
-  stepButtonDisabled: {
-    opacity: 0.4,
-  },
-  decrementButton: {
-    width: tokens.touch.counterSecondary,
-    height: tokens.touch.counterSecondary,
-    backgroundColor: tokens.colors.action.secondary.bg,
-    borderColor: tokens.colors.action.secondary.border,
-  },
-  decrementLabel: {
-    ...tokens.typography.headingMd,
-    color: tokens.colors.action.secondary.fg,
-  },
-  smallIncrementButton: {
-    width: tokens.touch.counterSecondary,
-    height: tokens.touch.counterSecondary,
-    backgroundColor: tokens.colors.action.accumulate.bg,
-    borderColor: tokens.colors.action.accumulate.border,
-  },
-  smallIncrementLabel: {
-    ...tokens.typography.headingMd,
-    color: tokens.colors.action.accumulate.fg,
-  },
-  incrementButton: {
-    width: tokens.touch.counterPrimary,
-    height: tokens.touch.counterPrimary,
-    backgroundColor: tokens.colors.action.accumulate.bg,
-    borderColor: tokens.colors.action.accumulate.border,
-  },
-  incrementLabel: {
-    ...tokens.typography.headingLg,
-    color: tokens.colors.action.accumulate.fg,
-  },
-  brokenBlock: {
-    alignItems: 'center',
-    paddingHorizontal: tokens.layout.screenPadding,
-    paddingVertical: tokens.spacing[4],
-  },
-  brokenValue: {
-    ...tokens.typography.numericSm,
-    color: tokens.colors.field.text,
-    marginTop: tokens.spacing[2],
-  },
-  brokenControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: tokens.spacing[3],
-    gap: tokens.spacing[3],
-  },
-  readingStepButton: {
-    minWidth: tokens.touch.field,
-    minHeight: tokens.touch.field,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: tokens.radii.md,
-    borderWidth: tokens.layout.borderWidth,
-    borderColor: tokens.colors.action.secondary.border,
-    backgroundColor: tokens.colors.action.secondary.bg,
-    paddingHorizontal: tokens.spacing[3],
-  },
-  readingStepButtonAccent: {
-    backgroundColor: tokens.colors.action.accumulate.bg,
-    borderColor: tokens.colors.action.accumulate.border,
-  },
-  readingStepLabel: {
-    ...tokens.typography.button,
-    color: tokens.colors.action.secondary.fg,
-  },
-  readingStepLabelAccent: {
-    ...tokens.typography.button,
-    color: tokens.colors.action.accumulate.fg,
-  },
-  actionBar: {
-    minHeight: tokens.layout.actionBarHeight,
-    paddingHorizontal: tokens.layout.screenPadding,
-    paddingVertical: tokens.spacing[4],
-    justifyContent: 'center',
-    borderTopWidth: tokens.layout.ruleWidth,
-    borderTopColor: tokens.colors.field.rule,
-  },
-  validateButton: {
-    minHeight: tokens.touch.field,
-    borderRadius: tokens.radii.md,
-    borderWidth: tokens.layout.borderWidth,
-    borderColor: tokens.colors.action.commit.border,
-    backgroundColor: tokens.colors.action.commit.bg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  validateLabel: {
-    ...tokens.typography.button,
-    color: tokens.colors.action.commit.fg,
-  },
+  container: { flex: 1, backgroundColor: tokens.colors.neutral[50] },
+  header: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[3], paddingHorizontal: tokens.layout.screenPadding, paddingTop: tokens.spacing[3], paddingBottom: tokens.spacing[3] },
+  backBtn: { width: 40, height: 40, borderRadius: tokens.radii.full, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.colors.neutral[0], borderWidth: 1, borderColor: tokens.colors.neutral[200] },
+  title: { ...tokens.typography.displayMd, color: tokens.colors.field.text },
+  subtitle: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginTop: 2 },
+
+  content: { paddingHorizontal: tokens.layout.screenPadding, paddingTop: tokens.spacing[2], paddingBottom: tokens.spacing[8], gap: tokens.spacing[4] },
+
+  fieldWrap: { gap: tokens.spacing[1] },
+  fieldLabel: { ...tokens.typography.bodySm, fontWeight: '600', color: tokens.colors.field.text },
+  unavailable: { ...tokens.typography.bodyMd, color: tokens.colors.field.textMuted },
+  timeslotRow: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.spacing[2] },
+  timeslotChip: { minHeight: tokens.touch.secondary, paddingHorizontal: tokens.spacing[4], alignItems: 'center', justifyContent: 'center', borderRadius: tokens.radii.full, borderWidth: tokens.layout.borderWidth, borderColor: tokens.colors.neutral[300], backgroundColor: tokens.colors.neutral[0] },
+  timeslotChipSelected: { backgroundColor: tokens.colors.primary[600], borderColor: tokens.colors.primary[600] },
+  timeslotChipLabel: { ...tokens.typography.button, color: tokens.colors.field.textMuted },
+  timeslotChipLabelSelected: { color: tokens.colors.neutral[0] },
+
+  row: { flexDirection: 'row', gap: tokens.spacing[3] },
+  rowItem: { flex: 1 },
+
+  actionBar: { flexDirection: 'row', gap: tokens.spacing[3], paddingHorizontal: tokens.layout.screenPadding, paddingTop: tokens.spacing[3], paddingBottom: tokens.spacing[4], borderTopWidth: tokens.layout.ruleWidth, borderTopColor: tokens.colors.neutral[200], backgroundColor: tokens.colors.neutral[0] },
+  cancelButton: { minHeight: tokens.touch.primaryButton, borderRadius: tokens.radii.lg, borderWidth: 1, borderColor: tokens.colors.neutral[300], alignItems: 'center', justifyContent: 'center', paddingHorizontal: tokens.spacing[6] },
+  cancelLabel: { ...tokens.typography.button, fontSize: 16, color: tokens.colors.field.textMuted },
+  validateButton: { flex: 1, minHeight: tokens.touch.primaryButton, borderRadius: tokens.radii.lg, backgroundColor: tokens.colors.primary[600], alignItems: 'center', justifyContent: 'center' },
+  validateButtonDisabled: { opacity: 0.4 },
+  validateLabel: { ...tokens.typography.button, fontSize: 16, color: tokens.colors.neutral[0] },
 });

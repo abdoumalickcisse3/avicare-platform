@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deploy / refresh the AviCare production stack on the VPS.
+# Deploy / refresh the Jawdi production stack on the VPS.
 #   Usage:  ./deploy.sh [IMAGE_TAG]
 #   IMAGE_TAG (optional) overrides the tag of BACKEND_IMAGE / WEB_IMAGE
 #   (e.g. a commit SHA passed by CI). Without it, the tags from .env are used.

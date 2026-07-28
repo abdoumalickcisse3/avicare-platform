@@ -1,5 +1,5 @@
 # =====================================================================
-# AviCare Platform — PRODUCTION stack (single VPS, docker-compose).
+# Jawdi Platform — PRODUCTION stack (single VPS, docker-compose).
 #   caddy (80/443, auto-HTTPS)  ->  web (Next.js) + backend (Spring Boot)
 #   backend -> postgres + redis (internal network only, no host ports)
 #

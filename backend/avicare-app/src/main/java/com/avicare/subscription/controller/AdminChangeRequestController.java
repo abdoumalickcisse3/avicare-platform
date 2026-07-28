@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Platform-admin review of subscription change requests. Restricted to AviCare staff ({@code
+ * Platform-admin review of subscription change requests. Restricted to Jawdi staff ({@code
  * ROLE_ADMIN}); approval applies the requested modules and plan to the farm's subscription.
  */
 @RestController

@@ -1,29 +1,29 @@
 /**
- * Layer mortality entry ("Mortalité") — task 11, reusing the layout and
- * counter anatomy established by task 10's `journalier.tsx`.
+ * Mortality entry ("Mortalité") — a faithful replica of the web form style
+ * (labeled date/number/text fields, Annuler / Enregistrer footer). There is no
+ * dedicated web mortality dialog (mortality is a field of the daily record), so
+ * this mirrors that field plus an optional reason, posting to the generic
+ * production-unit mortality endpoint.
  *
- * The key difference from journalier's mortality stepper is the clientRef
- * semantics (doc 08 §9 / Task 2's backend dedup): journalier accumulates
- * taps locally and pushes a single UPSERT per day, so one clientRef per
- * screen visit is enough. This screen is the opposite — every "Enregistrer"
- * is its OWN distinct attrition event (a farmer can log a batch found dead
- * in the morning, then another in the evening; both must persist). Each
- * submission therefore mints a FRESH clientRef, put in the request payload
- * AND handed to `enqueueFieldMutation` verbatim — same value in both
- * places, so the server's replay dedup on `client_ref` (in the body)
- * actually protects this exact event and never merges it with a
- * neighbouring one.
+ * clientRef semantics (doc 08 §9 / Task 2 backend dedup): every "Enregistrer"
+ * is its OWN distinct attrition event, so each submission mints a FRESH
+ * clientRef, put in the request payload AND handed to `enqueueFieldMutation`
+ * verbatim — the server's replay dedup on `client_ref` then protects this exact
+ * event and never merges it with a neighbour.
  */
 import { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
 import * as Crypto from 'expo-crypto';
+import { ArrowLeft } from 'lucide-react-native';
 import { tokens } from '@/theme';
+import { FormField, TodayDateField } from '@/components/field/FormField';
 import { useListProductionUnitsQuery } from '@/store/api/productionUnitsApi';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
+import { formatNumber } from '@/lib/format';
 import { enqueueFieldMutation } from '@/field/enqueueMutation';
 
 const MS_PER_DAY = 86_400_000;
@@ -34,6 +34,12 @@ function ageInDays(startDate: string | null | undefined): number | null {
   const start = Date.parse(startDate);
   if (Number.isNaN(start)) return null;
   return Math.max(0, Math.floor((Date.now() - start) / MS_PER_DAY));
+}
+
+/** Today's date as `YYYY-MM-DD` — see journalier.tsx for why local, not UTC. */
+function todayIsoDate(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
 
 export default function MortalityEntryScreen() {
@@ -47,7 +53,7 @@ export default function MortalityEntryScreen() {
   const { data: units } = useListProductionUnitsQuery(selectedFarmId ?? skipToken);
   const unit = units?.find((u) => u.id === unitId);
 
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState('');
   const [reason, setReason] = useState('');
 
   // Hooks above run unconditionally (rules of hooks); the redirect below
@@ -56,28 +62,31 @@ export default function MortalityEntryScreen() {
     return <Redirect href="/(field)" />;
   }
 
+  const countNum = /^\d+$/.test(count.trim()) ? Number(count.trim()) : NaN;
+  const canSubmit = !Number.isNaN(unitId) && Number.isInteger(countNum) && countNum >= 1;
+
   function handleSubmit(): void {
-    // Backend requires a strictly positive count (@Positive) — a zero-count
-    // "Enregistrer" is a no-op rather than a rejected request.
-    if (selectedFarmId === null || Number.isNaN(unitId) || count < 1) return;
+    if (selectedFarmId === null || !canSubmit) return;
 
     const ref = Crypto.randomUUID();
     enqueueFieldMutation({
       farmId: selectedFarmId,
       kind: 'MORTALITY',
       endpoint: `/api/v1/farms/${selectedFarmId}/production-units/${unitId}/mortality`,
-      payload: { count, reason: reason.trim() || undefined, clientRef: ref },
+      payload: { count: countNum, reason: reason.trim() || undefined, clientRef: ref },
       clientRef: ref,
     });
 
-    setCount(0);
+    setCount('');
     setReason('');
     router.back();
   }
 
   const age = ageInDays(unit?.startDate);
-  const headerLabel = unit ? `Lot ${unit.name}${age !== null ? ` · J${age}` : ''}` : 'Lot';
-  const countAfter = unit ? Math.max(0, unit.currentCount - count) : null;
+  const subtitle = unit ? `Lot ${unit.name}${age !== null ? ` · J${age}` : ''}` : 'Lot';
+  const effectifHelper = unit
+    ? `Effectif actuel : ${formatNumber(unit.currentCount)} sujets`
+    : 'Effectif indisponible hors ligne';
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -86,72 +95,46 @@ export default function MortalityEntryScreen() {
           onPress={() => router.back()}
           accessibilityRole="button"
           accessibilityLabel="Retour"
-          hitSlop={{
-            top: tokens.spacing[2],
-            bottom: tokens.spacing[2],
-            left: tokens.spacing[2],
-            right: tokens.spacing[2],
-          }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={styles.backBtn}
         >
-          <Text style={styles.backLabel}>{`← ${headerLabel}`}</Text>
+          <ArrowLeft size={22} color={tokens.colors.field.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Mortalité</Text>
-      </View>
-
-      <View style={styles.rule} />
-
-      <View style={styles.content}>
-        {/* Hero counter — anatomy of the counter (design direction §5). */}
-        <View style={styles.counterBlock}>
-          <Text style={styles.counterLabel}>MORTALITÉ DU JOUR</Text>
-          <Text style={styles.counterValue}>{count}</Text>
-          <Text style={styles.counterConsequence}>
-            {countAfter !== null ? `Effectif après saisie : ${countAfter}` : 'Effectif indisponible hors ligne'}
-          </Text>
-
-          <View style={styles.counterControls}>
-            <TouchableOpacity
-              style={[styles.stepButton, styles.decrementButton, count === 0 && styles.stepButtonDisabled]}
-              onPress={() => setCount((c) => Math.max(0, c - 1))}
-              disabled={count === 0}
-              accessibilityRole="button"
-              accessibilityLabel="Retirer une mortalité"
-            >
-              <Text style={styles.decrementLabel}>−1</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.stepButton, styles.incrementButton]}
-              onPress={() => setCount((c) => c + 1)}
-              accessibilityRole="button"
-              accessibilityLabel="Ajouter une mortalité"
-            >
-              <Text style={styles.incrementLabel}>+1</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.rule} />
-
-        {/* Optional free-text reason — never autofocused (design direction
-            §2.4: a keyboard must never surge over the thumb zone on mount). */}
-        <View style={styles.reasonBlock}>
-          <Text style={styles.reasonLabel}>MOTIF (FACULTATIF)</Text>
-          <TextInput
-            style={styles.reasonInput}
-            value={reason}
-            onChangeText={setReason}
-            placeholder="Mortalité terrain"
-            placeholderTextColor={tokens.colors.field.disabled}
-            maxLength={100}
-          />
+        <View style={{ flex: 1 }}>
+          <Text style={styles.title}>Mortalité</Text>
+          <Text style={styles.subtitle}>{subtitle}</Text>
         </View>
       </View>
+
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <TodayDateField />
+        <FormField
+          label="Mortalité constatée"
+          required
+          value={count}
+          onChangeText={setCount}
+          keyboardType="number-pad"
+          inputMode="numeric"
+          placeholder="0"
+          helperText={effectifHelper}
+        />
+        <FormField
+          label="Motif (facultatif)"
+          value={reason}
+          onChangeText={setReason}
+          placeholder="Prédateur, maladie, écrasement…"
+          maxLength={100}
+        />
+      </ScrollView>
 
       <View style={styles.actionBar}>
+        <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Annuler">
+          <Text style={styles.cancelLabel}>Annuler</Text>
+        </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.validateButton, count === 0 && styles.stepButtonDisabled]}
+          style={[styles.validateButton, !canSubmit && styles.validateButtonDisabled]}
           onPress={handleSubmit}
-          disabled={count === 0}
+          disabled={!canSubmit}
           accessibilityRole="button"
           accessibilityLabel="Enregistrer la mortalité"
         >
@@ -163,123 +146,18 @@ export default function MortalityEntryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: tokens.colors.field.background,
-  },
-  header: {
-    paddingHorizontal: tokens.layout.screenPadding,
-    paddingTop: tokens.spacing[4],
-    paddingBottom: tokens.spacing[4],
-  },
-  backLabel: {
-    ...tokens.typography.bodyMd,
-    color: tokens.colors.field.textMuted,
-  },
-  title: {
-    ...tokens.typography.displayMd,
-    color: tokens.colors.field.text,
-    marginTop: tokens.spacing[1],
-  },
-  rule: {
-    height: tokens.layout.ruleWidth,
-    backgroundColor: tokens.colors.field.rule,
-  },
-  content: {
-    flex: 1,
-  },
-  counterBlock: {
-    alignItems: 'center',
-    paddingHorizontal: tokens.layout.screenPadding,
-    paddingVertical: tokens.spacing[6],
-  },
-  counterLabel: {
-    ...tokens.typography.label,
-    color: tokens.colors.field.textMuted,
-  },
-  counterValue: {
-    ...tokens.typography.numeric,
-    color: tokens.colors.field.text,
-    marginTop: tokens.spacing[2],
-  },
-  counterConsequence: {
-    ...tokens.typography.bodyMd,
-    color: tokens.colors.field.textMuted,
-    marginTop: tokens.spacing[2],
-  },
-  counterControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: tokens.spacing[8],
-    gap: tokens.touch.gapDanger,
-  },
-  stepButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: tokens.radii.full,
-    borderWidth: tokens.layout.borderWidth,
-  },
-  stepButtonDisabled: {
-    opacity: 0.4,
-  },
-  decrementButton: {
-    width: tokens.touch.counterSecondary,
-    height: tokens.touch.counterSecondary,
-    backgroundColor: tokens.colors.action.secondary.bg,
-    borderColor: tokens.colors.action.secondary.border,
-  },
-  decrementLabel: {
-    ...tokens.typography.headingMd,
-    color: tokens.colors.action.secondary.fg,
-  },
-  incrementButton: {
-    width: tokens.touch.counterPrimary,
-    height: tokens.touch.counterPrimary,
-    backgroundColor: tokens.colors.action.accumulate.bg,
-    borderColor: tokens.colors.action.accumulate.border,
-  },
-  incrementLabel: {
-    ...tokens.typography.headingLg,
-    color: tokens.colors.action.accumulate.fg,
-  },
-  reasonBlock: {
-    paddingHorizontal: tokens.layout.screenPadding,
-    paddingVertical: tokens.spacing[4],
-  },
-  reasonLabel: {
-    ...tokens.typography.label,
-    color: tokens.colors.field.textMuted,
-  },
-  reasonInput: {
-    ...tokens.typography.bodyLg,
-    color: tokens.colors.field.text,
-    minHeight: tokens.touch.field,
-    marginTop: tokens.spacing[2],
-    borderWidth: tokens.layout.borderWidth,
-    borderColor: tokens.colors.field.rule,
-    borderRadius: tokens.radii.md,
-    paddingHorizontal: tokens.spacing[3],
-  },
-  actionBar: {
-    minHeight: tokens.layout.actionBarHeight,
-    paddingHorizontal: tokens.layout.screenPadding,
-    paddingVertical: tokens.spacing[4],
-    justifyContent: 'center',
-    borderTopWidth: tokens.layout.ruleWidth,
-    borderTopColor: tokens.colors.field.rule,
-  },
-  validateButton: {
-    minHeight: tokens.touch.field,
-    borderRadius: tokens.radii.md,
-    borderWidth: tokens.layout.borderWidth,
-    borderColor: tokens.colors.action.commit.border,
-    backgroundColor: tokens.colors.action.commit.bg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  validateLabel: {
-    ...tokens.typography.button,
-    color: tokens.colors.action.commit.fg,
-  },
+  container: { flex: 1, backgroundColor: tokens.colors.neutral[50] },
+  header: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[3], paddingHorizontal: tokens.layout.screenPadding, paddingTop: tokens.spacing[3], paddingBottom: tokens.spacing[3] },
+  backBtn: { width: 40, height: 40, borderRadius: tokens.radii.full, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.colors.neutral[0], borderWidth: 1, borderColor: tokens.colors.neutral[200] },
+  title: { ...tokens.typography.displayMd, color: tokens.colors.field.text },
+  subtitle: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginTop: 2 },
+
+  content: { paddingHorizontal: tokens.layout.screenPadding, paddingTop: tokens.spacing[2], paddingBottom: tokens.spacing[8], gap: tokens.spacing[4] },
+
+  actionBar: { flexDirection: 'row', gap: tokens.spacing[3], paddingHorizontal: tokens.layout.screenPadding, paddingTop: tokens.spacing[3], paddingBottom: tokens.spacing[4], borderTopWidth: tokens.layout.ruleWidth, borderTopColor: tokens.colors.neutral[200], backgroundColor: tokens.colors.neutral[0] },
+  cancelButton: { minHeight: tokens.touch.primaryButton, borderRadius: tokens.radii.lg, borderWidth: 1, borderColor: tokens.colors.neutral[300], alignItems: 'center', justifyContent: 'center', paddingHorizontal: tokens.spacing[6] },
+  cancelLabel: { ...tokens.typography.button, fontSize: 16, color: tokens.colors.field.textMuted },
+  validateButton: { flex: 1, minHeight: tokens.touch.primaryButton, borderRadius: tokens.radii.lg, backgroundColor: tokens.colors.primary[600], alignItems: 'center', justifyContent: 'center' },
+  validateButtonDisabled: { opacity: 0.4 },
+  validateLabel: { ...tokens.typography.button, fontSize: 16, color: tokens.colors.neutral[0] },
 });

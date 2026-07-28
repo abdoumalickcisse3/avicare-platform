@@ -46,7 +46,7 @@ export const MODULES: Module[] = [
     capabilities: [
       {
         title: "La saisie du jour, en une minute.",
-        body: "Effectif, mortalité, aliment consommé, eau, observations. C'est tout ce qu'on vous demande. À partir de là, AviCare calcule le reste : effectif actuel, mortalité cumulée, consommation cumulée, et où en est la bande face à l'objectif de sa souche — **en avance**, **dans l'objectif** ou **en retard**.",
+        body: "Effectif, mortalité, aliment consommé, eau, observations. C'est tout ce qu'on vous demande. À partir de là, Jawdi calcule le reste : effectif actuel, mortalité cumulée, consommation cumulée, et où en est la bande face à l'objectif de sa souche — **en avance**, **dans l'objectif** ou **en retard**.",
       },
       {
         title: "La courbe de croissance ne ment pas.",
@@ -63,7 +63,7 @@ export const MODULES: Module[] = [
       "Recompter l'effectif après chaque vente : il se réconcilie tout seul.",
     ],
     seo: {
-      title: "Logiciel de suivi de bande — poulets de chair & pondeuses | AviCare",
+      title: "Logiciel de suivi de bande — poulets de chair & pondeuses | Jawdi",
       description:
         "Suivez mortalité, aliment, eau et pesées de chaque bande. GMQ, indice de consommation et courbe de croissance calculés automatiquement. Chair et pondeuses. Gratuit en phase pilote.",
     },
@@ -96,7 +96,7 @@ export const MODULES: Module[] = [
       "Retrouver la facture du véto trois mois plus tard.",
     ],
     seo: {
-      title: "Calendrier vaccinal volaille & suivi sanitaire | AviCare",
+      title: "Calendrier vaccinal volaille & suivi sanitaire | Jawdi",
       description:
         "Programme vaccinal par souche, doses en retard signalées, bibliothèque de vaccins et traitements personnalisable, visites vétérinaires et délais d'attente. Gratuit en phase pilote.",
     },
@@ -116,7 +116,7 @@ export const MODULES: Module[] = [
       },
       {
         title: "Vos formules, ingrédient par ingrédient.",
-        body: "Composez votre formule d'aliment en pourcentages (maïs, tourteau, prémix…), ou clonez un modèle. À la saisie journalière, indiquez 50 kg de cette formule : AviCare sort **chaque ingrédient au prorata** de votre stock. Le coût estimé aux 100 kg se recalcule avec vos prix.",
+        body: "Composez votre formule d'aliment en pourcentages (maïs, tourteau, prémix…), ou clonez un modèle. À la saisie journalière, indiquez 50 kg de cette formule : Jawdi sort **chaque ingrédient au prorata** de votre stock. Le coût estimé aux 100 kg se recalcule avec vos prix.",
       },
       {
         title: "Du bon d'achat au stock, sans ressaisie.",
@@ -129,7 +129,7 @@ export const MODULES: Module[] = [
       "Saisir le même achat deux fois : au stock, puis en comptabilité.",
     ],
     seo: {
-      title: "Gestion de stock d'aliment & formules pour élevage | AviCare",
+      title: "Gestion de stock d'aliment & formules pour élevage | Jawdi",
       description:
         "Inventaire, seuils d'alerte, bons d'achat et formules d'aliment décomposées automatiquement à chaque saisie. Le stock se met à jour tout seul. Gratuit en phase pilote.",
     },
@@ -149,7 +149,7 @@ export const MODULES: Module[] = [
       },
       {
         title: "De la commande à la livraison, le stock suit.",
-        body: "Commande, confirmation, livraison. La marchandise ne quitte votre stock qu'à la livraison réelle — et si vous annulez, elle y revient. Vendez plus que vous n'avez : AviCare refuse la vente au lieu de vous laisser un stock négatif.",
+        body: "Commande, confirmation, livraison. La marchandise ne quitte votre stock qu'à la livraison réelle — et si vous annulez, elle y revient. Vendez plus que vous n'avez : Jawdi refuse la vente au lieu de vous laisser un stock négatif.",
       },
       {
         title: "Factures et paiements, sans tableur.",
@@ -162,7 +162,7 @@ export const MODULES: Module[] = [
       "Refaire la facture dans un tableur après l'avoir écrite sur un carnet.",
     ],
     seo: {
-      title: "Facturation & gestion clients pour éleveurs | AviCare",
+      title: "Facturation & gestion clients pour éleveurs | Jawdi",
       description:
         "Fichier clients avec encours en temps réel, commandes, livraisons, factures et paiements. Le stock se décrémente à la livraison, jamais avant. Gratuit en phase pilote.",
     },
@@ -194,7 +194,7 @@ export const MODULES: Module[] = [
       "Découvrir l'ardoise du personnel en fin de mois.",
     ],
     seo: {
-      title: "Calcul de marge & rentabilité en élevage avicole | AviCare",
+      title: "Calcul de marge & rentabilité en élevage avicole | Jawdi",
       description:
         "Revenus, dépenses et marge de la ferme, alimentés automatiquement par vos achats, vos visites vétérinaires et vos salaires. Revenu par lot. Gratuit en phase pilote.",
     },

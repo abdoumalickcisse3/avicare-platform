@@ -1,8 +1,8 @@
-# Site vitrine AviCare (Astro) — Implementation Plan
+# Site vitrine Jawdi (Astro) — Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Livrer le site vitrine AviCare en Astro (SSG, français, SEO/perf), fidèle au prototype visuel validé, dans `landing/`.
+**Goal:** Livrer le site vitrine Jawdi en Astro (SSG, français, SEO/perf), fidèle au prototype visuel validé, dans `landing/`.
 
 **Architecture:** Astro 7 en `output: "static"`, **CSS natif à tokens** (pas de Tailwind), zéro JS hors deux micro-îlots (compteurs KPI, reveals). Le **prototype validé** `docs/superpowers/specs/assets/landing-prototype.html` est la **source de vérité visuelle** : on en extrait les tokens + le CSS des composants, et on découpe en composants `.astro` réutilisés par toutes les pages. Le copy est déjà rédigé dans le spec.
 
@@ -144,7 +144,7 @@ Expected: BUILD SUCCESS (aucune page encore, ou une page vide).
 
 ```bash
 git add landing
-git commit -m "feat(landing): scaffold Astro site with AviCare design tokens, header island and footer"
+git commit -m "feat(landing): scaffold Astro site with Jawdi design tokens, header island and footer"
 ```
 
 ---
@@ -186,7 +186,7 @@ Reprendre **verbatim** le copywriting de l'accueil du spec (`docs/superpowers/sp
 
 - [ ] **Step 4: SEO de l'accueil**
 
-`title` : « AviCare — Le logiciel de gestion d'élevage avicole en Afrique de l'Ouest » ; meta du spec ; JSON-LD `Organization` + `SoftwareApplication` + `FAQPage` (les questions de la section FAQ).
+`title` : « Jawdi — Le logiciel de gestion d'élevage avicole en Afrique de l'Ouest » ; meta du spec ; JSON-LD `Organization` + `SoftwareApplication` + `FAQPage` (les questions de la section FAQ).
 
 - [ ] **Step 5: Build + vérif visuelle**
 

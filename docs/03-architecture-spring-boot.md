@@ -1,6 +1,6 @@
 # 03 — Architecture Spring Boot détaillée
 
-> Document de référence pour la structure du backend AviCare Platform.
+> Document de référence pour la structure du backend Jawdi Platform.
 > À donner en contexte à Claude Code à chaque sprint où on code un bounded context.
 
 ---

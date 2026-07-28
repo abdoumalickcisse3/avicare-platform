@@ -195,7 +195,7 @@ export function AddMemberDialog({ open, onClose, farmId }: AddMemberDialogProps)
               Ajouter un membre
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Un nouveau compte AviCare sera créé pour ce membre.
+              Un nouveau compte Jawdi sera créé pour ce membre.
             </Typography>
             <IconButton
               onClick={onClose}

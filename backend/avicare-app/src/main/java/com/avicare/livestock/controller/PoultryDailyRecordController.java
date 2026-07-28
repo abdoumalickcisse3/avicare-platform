@@ -37,12 +37,10 @@ public class PoultryDailyRecordController {
           + "or @features.isEnabled(#farmId, 'module.poultry.layer'))";
   static final String READ =
       "@farmAccess.hasPermission(#farmId, 'poultry:read') and " + FEATURE_ANY;
+  // Field entry (saisie journalière) — grantable via the poultry:write permission so per-member
+  // sub-access works (a VETERINARIAN without poultry:write is refused; a FARMER can be revoked).
   static final String WRITE =
-      "@farmAccess.hasRole(#farmId, "
-          + "T(com.avicare.common.security.principal.FarmRole).OWNER, "
-          + "T(com.avicare.common.security.principal.FarmRole).MANAGER, "
-          + "T(com.avicare.common.security.principal.FarmRole).FARMER) and "
-          + FEATURE_ANY;
+      "@farmAccess.hasPermission(#farmId, 'poultry:write') and " + FEATURE_ANY;
 
   private final DailyRecordService dailyRecordService;
 

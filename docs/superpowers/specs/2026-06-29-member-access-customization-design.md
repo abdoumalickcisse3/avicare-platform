@@ -5,8 +5,8 @@
 **Périmètre** : Backend (`identity` + `tenancy` + `common-security`) + Frontend (`web/`). Aucune migration
 (le schéma `users.full_name/phone` et `user_farms.role/permissions/is_active` existe déjà).
 **Designs Stitch** (projet « Avicare Design System » `2827477240241166880`) :
-- Création : « Modale Ajouter un membre - AviCare » (`4524f35defdd4c67b9910712c68ccca2`)
-- Modification : « Modale Modifier le membre - AviCare » (`8d615c9354094c918abc7fe99dd5f493`)
+- Création : « Modale Ajouter un membre - Jawdi » (`4524f35defdd4c67b9910712c68ccca2`)
+- Modification : « Modale Modifier le membre - Jawdi » (`8d615c9354094c918abc7fe99dd5f493`)
 
 > Sous-projet **A**. Le sous-projet **B** (gestionnaire de catalogue réglages) suit séparément.
 

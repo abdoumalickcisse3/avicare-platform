@@ -30,6 +30,7 @@ import { isFeatureForbidden } from "@/lib/poultry";
 import { formatDate } from "@/lib/format";
 import { isoDaysAgo, isoToday, sortGradeKeys, timeslotLabel } from "@/lib/layer";
 import { colors } from "@/theme/tokens";
+import { useFarmPermissions } from "@/hooks/useFarmPermissions";
 import { EggCollectionDialog } from "./EggCollectionDialog";
 import type { ProductionUnit } from "@/types";
 
@@ -55,6 +56,8 @@ export function LayerCollectionsTab({
 }) {
   const { showToast } = useToast();
   const [open, setOpen] = useState(false);
+  const { can } = useFarmPermissions(farmId);
+  const canWrite = can("poultry:write");
   const { data: collections, isLoading, error } = useGetCollectionsQuery({
     farmId,
     unitId: unit.id,
@@ -101,16 +104,18 @@ export function LayerCollectionsTab({
             Une ligne par créneau de ramassage.
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          color="primary"
-          size="large"
-          startIcon={<Plus size={20} />}
-          onClick={() => setOpen(true)}
-          sx={{ fontWeight: 700, boxShadow: 3, flexShrink: 0 }}
-        >
-          Saisir collecte
-        </Button>
+        {canWrite && (
+          <Button
+            variant="contained"
+            color="primary"
+            size="large"
+            startIcon={<Plus size={20} />}
+            onClick={() => setOpen(true)}
+            sx={{ fontWeight: 700, boxShadow: 3, flexShrink: 0 }}
+          >
+            Saisir collecte
+          </Button>
+        )}
       </Stack>
 
       {error ? (

@@ -17,13 +17,13 @@ final class LayerAccess {
 
   static final String READ = "@farmAccess.hasPermission(#farmId, 'poultry:read') and " + FEATURE;
 
-  /** OWNER / MANAGER / FARMER — daily field operations (record, adjust). */
+  /**
+   * Daily field operations (record collection, adjust) — gated by the grantable {@code
+   * poultry:write} permission rather than a fixed role list, so per-member sub-access works
+   * (OWNER {@code *}, MANAGER {@code poultry:*}, FARMER {@code poultry:write} carry it by default).
+   */
   static final String WRITE_FARMER =
-      "@farmAccess.hasRole(#farmId, "
-          + "T(com.avicare.common.security.principal.FarmRole).OWNER, "
-          + "T(com.avicare.common.security.principal.FarmRole).MANAGER, "
-          + "T(com.avicare.common.security.principal.FarmRole).FARMER) and "
-          + FEATURE;
+      "@farmAccess.hasPermission(#farmId, 'poultry:write') and " + FEATURE;
 
   /** OWNER / MANAGER — supervisory operations (delete, arbitrary set, day close). */
   static final String WRITE_MANAGER =

@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Drives the subscription change-request review workflow (Décision 16): {@code DRAFT → SUBMITTED →
- * APPROVED | REJECTED}. A farm OWNER creates and submits a request; an AviCare platform admin
+ * APPROVED | REJECTED}. A farm OWNER creates and submits a request; a Jawdi platform admin
  * approves or rejects it. On approval the request is <b>applied</b>: the modules listed in {@code
  * requestedModules} (a JSON array of module keys) are enabled on the farm's subscription and the
  * {@code requestedPlan} becomes the subscription's plan.
