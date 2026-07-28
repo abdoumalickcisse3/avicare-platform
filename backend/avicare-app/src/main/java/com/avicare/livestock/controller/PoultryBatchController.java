@@ -36,8 +36,7 @@ public class PoultryBatchController {
   static final String READ = "@farmAccess.hasPermission(#farmId, 'poultry:read') and " + FEATURE;
   // Broiler writes (batch create, weighing entry) — grantable via poultry:write for per-member
   // sub-access (OWNER *, MANAGER poultry:*, FARMER poultry:write carry it by default).
-  static final String WRITE =
-      "@farmAccess.hasPermission(#farmId, 'poultry:write') and " + FEATURE;
+  static final String WRITE = "@farmAccess.hasPermission(#farmId, 'poultry:write') and " + FEATURE;
 
   private final PoultryBatchService poultryBatchService;
 

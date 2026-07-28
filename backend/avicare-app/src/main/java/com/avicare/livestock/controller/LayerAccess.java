@@ -19,8 +19,8 @@ final class LayerAccess {
 
   /**
    * Daily field operations (record collection, adjust) — gated by the grantable {@code
-   * poultry:write} permission rather than a fixed role list, so per-member sub-access works
-   * (OWNER {@code *}, MANAGER {@code poultry:*}, FARMER {@code poultry:write} carry it by default).
+   * poultry:write} permission rather than a fixed role list, so per-member sub-access works (OWNER
+   * {@code *}, MANAGER {@code poultry:*}, FARMER {@code poultry:write} carry it by default).
    */
   static final String WRITE_FARMER =
       "@farmAccess.hasPermission(#farmId, 'poultry:write') and " + FEATURE;
