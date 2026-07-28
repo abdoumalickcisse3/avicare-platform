@@ -186,7 +186,7 @@ class HealthFlowIT {
   }
 
   @Test
-  void veterinarian_canRead_cannotWrite_andCrossFarmIsBlocked() throws Exception {
+  void veterinarian_canReadAndWriteHealth_andCrossFarmIsBlocked() throws Exception {
     signup("o2@health.io", "password123", "Owner2");
     String owner = login("o2@health.io", "password123");
     long farmId = createFarm(owner, "Ferme H");
@@ -215,7 +215,9 @@ class HealthFlowIT {
         .perform(
             get(base + "/vaccinations?unitId=" + unitId).header("Authorization", "Bearer " + vet))
         .andExpect(status().isOk());
-    // ...but cannot record one.
+    // ...and CAN record one: health writes are now gated by the grantable
+    // health:write permission, which a VETERINARIAN holds by default (the vet
+    // owns the sanitaire work). Same payload the OWNER used above.
     mockMvc
         .perform(
             post(base + "/vaccinations")
@@ -227,7 +229,7 @@ class HealthFlowIT {
                         + ",\"vaccineKey\":\"marek_hvt\",\"administeredDate\":\""
                         + LocalDate.now()
                         + "\",\"subjectsCount\":10}"))
-        .andExpect(status().isForbidden());
+        .andExpect(status().isCreated());
 
     // Cross-farm: another farm's unit is not reachable here (404).
     signup("o3@health.io", "password123", "Owner3");
