@@ -17,6 +17,8 @@ import { GrowthChart, type GrowthPoint } from '@/components/charts/GrowthChart';
 import { MortalityChart } from '@/components/charts/MortalityChart';
 import { FeedConsumptionChart } from '@/components/charts/FeedConsumptionChart';
 import { HealthSection } from '@/components/health/HealthSection';
+import { MicButton } from '@/components/assistant/MicButton';
+import { AssistantSheet } from '@/components/assistant/AssistantSheet';
 import { scoreMeta, daysUntil } from '@/lib/poultry';
 import {
   useGetBatchQuery,
@@ -64,6 +66,7 @@ export default function LotDetailScreen() {
   const { can } = useFarmAccess();
   const canWrite = can('poultry:write');
   const [tab, setTab] = useState<Tab>('overview');
+  const [assistantOpen, setAssistantOpen] = useState(false);
 
   const skip = selectedFarmId === null || Number.isNaN(batchId);
   const arg = skip ? skipToken : { farmId: selectedFarmId as number, batchId };
@@ -238,12 +241,15 @@ export default function LotDetailScreen() {
         )}
       </ScrollView>
 
-      {/* FAB → quick entry (gated by poultry:write) */}
+      {/* Assistant vocal (Jawdi) + FAB saisie rapide — gated by poultry:write */}
+      {canWrite && <MicButton onPress={() => setAssistantOpen(true)} style={styles.micFab} />}
       {canWrite && (
         <Pressable style={styles.fab} onPress={() => router.push(`/(field)/lots/${batchId}/mortalite`)} accessibilityRole="button" accessibilityLabel="Nouvelle saisie">
           <Plus size={30} color={tokens.colors.earth} />
         </Pressable>
       )}
+
+      <AssistantSheet visible={assistantOpen} onClose={() => setAssistantOpen(false)} unitId={batchId} />
     </SafeAreaView>
   );
 }
@@ -337,4 +343,5 @@ const styles = StyleSheet.create({
   recTitle: { ...tokens.typography.bodyMd, fontWeight: '600', color: tokens.colors.field.text },
   recSub: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted },
   fab: { position: 'absolute', right: tokens.spacing[5], bottom: tokens.spacing[6], width: 60, height: 60, borderRadius: tokens.radii.full, backgroundColor: tokens.colors.accent[400], alignItems: 'center', justifyContent: 'center', shadowColor: '#1C1917', shadowOpacity: 0.25, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 6 },
+  micFab: { position: 'absolute', right: tokens.spacing[5], bottom: tokens.spacing[6] + 72 },
 });
