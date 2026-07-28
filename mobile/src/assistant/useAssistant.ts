@@ -1,48 +1,37 @@
 /**
- * Assistant orchestrator (Phase 1). Pipeline: free text → intent (rules
- * parser) → confirmation draft (computed offline) → on confirm, the existing
- * offline queue. Handles the two clarifications a mortality entry can need: an
- * unrecognized phrase, and an ambiguous lot.
+ * Assistant orchestrator (Phase 2, hybrid). Pipeline:
+ *   text → on-device rules (offline, free) → if understood, confirm.
+ *        → else, online → backend `/assistant/interpret` (LLM + dry-run) → draft
+ *          or clarification; offline → ask to retry online.
+ * The card is built uniformly from the intent (see `buildConfirmation`), so the
+ * rules path and the LLM path look identical. On confirm, the entry goes through
+ * the existing offline queue.
  */
 import { useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
 import { useListProductionUnitsQuery } from '@/store/api/productionUnitsApi';
+import { useInterpretMutation } from '@/store/api/assistantApi';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { enqueueFieldMutation } from '@/field/enqueueMutation';
-import { formatNumber } from '@/lib/format';
 import { mortalityParser } from './parsers/mortalityParser';
+import { intentFromInterpret } from './llm/fromInterpret';
+import { buildConfirmation } from './drafts';
 import { toMutation } from './intentRegistry';
-import type { AssistantUnit, ConfirmationDraft, MortalityIntent } from './types';
+import type { AssistantIntent, AssistantUnit, ConfirmationDraft } from './types';
 
 interface UnitChoice {
-  intent: MortalityIntent;
+  intent: AssistantIntent;
   units: AssistantUnit[];
-}
-
-function buildMortalityDraft(intent: MortalityIntent, unit: AssistantUnit | undefined): ConfirmationDraft {
-  const after = unit ? Math.max(0, unit.currentCount - intent.count) : null;
-  const lines = [
-    { label: 'Sujets morts', value: formatNumber(intent.count) },
-    { label: 'Lot', value: unit?.name ?? '—' },
-  ];
-  if (after !== null) lines.push({ label: 'Effectif après', value: formatNumber(after) });
-  if (intent.reason) lines.push({ label: 'Motif', value: intent.reason });
-
-  const speech = unit
-    ? `Mortalité de ${intent.count} sujets sur le lot ${unit.name}. Effectif après : ${after}. Confirmer ?`
-    : `Mortalité de ${intent.count} sujets. Confirmer ?`;
-
-  return { intent, title: 'Mortalité', lines, speech };
 }
 
 export interface Assistant {
   draft: ConfirmationDraft | null;
-  /** A clarification/error message to show and read aloud, or null. */
   message: string | null;
-  /** Set when the lot is ambiguous and must be chosen. */
   unitChoice: UnitChoice | null;
-  submit: (text: string) => void;
+  /** True while the backend LLM is being queried. */
+  thinking: boolean;
+  submit: (text: string) => Promise<void>;
   chooseUnit: (unitId: number) => void;
   confirm: () => void;
   cancel: () => void;
@@ -51,6 +40,7 @@ export interface Assistant {
 export function useAssistant({ unitId }: { unitId?: number | null } = {}): Assistant {
   const farmId = useSelector(selectSelectedFarmId);
   const { data: units } = useListProductionUnitsQuery(farmId ?? skipToken);
+  const [interpret] = useInterpretMutation();
 
   const activeUnits = useMemo<AssistantUnit[]>(
     () =>
@@ -63,36 +53,62 @@ export function useAssistant({ unitId }: { unitId?: number | null } = {}): Assis
   const [draft, setDraft] = useState<ConfirmationDraft | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [unitChoice, setUnitChoice] = useState<UnitChoice | null>(null);
+  const [thinking, setThinking] = useState(false);
 
   function reset() {
     setDraft(null);
     setMessage(null);
     setUnitChoice(null);
+    setThinking(false);
   }
 
-  function finalize(intent: MortalityIntent) {
-    const unit = activeUnits.find((u) => u.id === intent.unitId);
-    setDraft(buildMortalityDraft(intent, unit));
-    setMessage(null);
-    setUnitChoice(null);
-  }
-
-  function submit(text: string) {
-    const intent = mortalityParser.parse(text, { unitId, activeUnits });
-    if (!intent) {
-      setDraft(null);
-      setUnitChoice(null);
-      setMessage("Je n'ai pas compris. Dites par exemple : « dix sont morts ».");
-      return;
-    }
+  /** Turn a resolved intent into either a lot question or a confirmation card. */
+  function finalize(intent: AssistantIntent) {
     if (intent.unitId == null) {
-      // Ambiguous lot — ask which one.
       setDraft(null);
       setMessage('Sur quel lot ?');
       setUnitChoice({ intent, units: activeUnits });
       return;
     }
-    finalize(intent);
+    setDraft(buildConfirmation(intent, activeUnits));
+    setMessage(null);
+    setUnitChoice(null);
+  }
+
+  async function submit(text: string) {
+    setMessage(null);
+    setUnitChoice(null);
+
+    // 1) On-device rules — offline, free, covers the common phrases.
+    const local = mortalityParser.parse(text, { unitId, activeUnits });
+    if (local) {
+      finalize(local);
+      return;
+    }
+
+    // 2) Backend LLM fallback — only online.
+    if (farmId == null) {
+      setMessage("Je n'ai pas compris.");
+      return;
+    }
+    setThinking(true);
+    try {
+      const resp = await interpret({ farmId, text, unitId }).unwrap();
+      setThinking(false);
+      if (resp.kind === 'CLARIFICATION') {
+        setMessage(resp.message ?? "Je n'ai pas compris.");
+        return;
+      }
+      const intent = intentFromInterpret(resp);
+      if (!intent) {
+        setMessage('Action non prise en charge pour le moment.');
+        return;
+      }
+      finalize(intent);
+    } catch {
+      setThinking(false);
+      setMessage('Serveur injoignable. Réessayez en ligne.');
+    }
   }
 
   function chooseUnit(id: number) {
@@ -108,5 +124,5 @@ export function useAssistant({ unitId }: { unitId?: number | null } = {}): Assis
     reset();
   }
 
-  return { draft, message, unitChoice, submit, chooseUnit, confirm, cancel: reset };
+  return { draft, message, unitChoice, thinking, submit, chooseUnit, confirm, cancel: reset };
 }

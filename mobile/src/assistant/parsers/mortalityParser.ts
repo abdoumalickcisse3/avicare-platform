@@ -5,7 +5,7 @@
  * nothing, works offline, and covers the single Phase-1 action. An LLM parser
  * can replace it later behind the same `IntentParser` interface.
  */
-import type { IntentParser, ParseContext, ParsedIntent } from '../types';
+import type { MortalityIntent, ParseContext } from '../types';
 
 /** lowercase + strip accents + hyphens→spaces + collapse whitespace. */
 function normalize(s: string): string {
@@ -110,8 +110,10 @@ function resolveUnit(ctx: ParseContext): number | null {
   return null;
 }
 
-export const mortalityParser: IntentParser = {
-  parse(text: string, ctx: ParseContext): ParsedIntent {
+/** Typed to return a MortalityIntent (not the whole union) so callers keep the
+ * narrow type; still structurally usable wherever an `IntentParser` is expected. */
+export const mortalityParser = {
+  parse(text: string, ctx: ParseContext): MortalityIntent | null {
     const norm = normalize(text);
     if (!MORTALITY_RE.test(norm)) return null;
 
