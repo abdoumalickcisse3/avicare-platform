@@ -1,6 +1,6 @@
 # 06 — Cross-cutting concerns
 
-> Document de référence pour les **préoccupations transverses** d'AviCare Platform.
+> Document de référence pour les **préoccupations transverses** d'Jawdi Platform.
 > Ces patterns sont utilisés par TOUS les bounded contexts. À lire avant d'attaquer
 > Sprint A4 (parameters) et tous les sprints métier Phase B.
 >
@@ -154,7 +154,7 @@ Voir `backend/common/common-i18n/` pour le code complet + tests.
 
 ## 3. Paramétrage 3 couches
 
-> ⚠️ **CRITIQUE Sprint A4.** Cette section décrit le pattern central du paramétrage AviCare.
+> ⚠️ **CRITIQUE Sprint A4.** Cette section décrit le pattern central du paramétrage Jawdi.
 
 ### Principe — La règle d'or n°0
 
@@ -183,7 +183,7 @@ Voir `backend/common/common-i18n/` pour le code complet + tests.
 ┌─────────────────────────────────────────────────────────┐
 │  Couche 1 — Catalogue PLATEFORME                        │
 │  catalog_items (category, key, value, locale)           │
-│  Défauts gérés par super-admin AviCare                  │
+│  Défauts gérés par super-admin Jawdi                  │
 │  Ex: liste Cobb 500/Ross 308, vaccins Newcastle/Gumboro │
 └─────────────────────────────────────────────────────────┘
 ```

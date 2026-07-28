@@ -21,21 +21,23 @@
  */
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import { Redirect, Slot, useRouter } from 'expo-router';
+import { Redirect, Stack } from 'expo-router';
 import { getAccessToken } from '@/auth/tokens';
 import { decodeSession, hasFieldAccess } from '@/auth/session';
+import { useFarmAccess } from '@/auth/useSession';
 import { tokens } from '@/theme';
-import { SyncStatusBar } from '@/components/SyncStatusBar';
-import { useSyncStatus } from '@/sync/useSyncStatus';
+import { BottomNavBar } from '@/components/ui/BottomNavBar';
+import { DrawerOverlay } from '@/components/navigation/DrawerOverlay';
+import { NavProvider } from '@/navigation/NavContext';
 import { startSyncTriggers } from '@/sync/triggers';
 import { subscribeAuthInvalidated } from '@/sync';
 
 type GuardStatus = 'loading' | 'unauthenticated' | 'forbidden' | 'authorized';
 
 export default function FieldLayout() {
-  const router = useRouter();
   const [status, setStatus] = useState<GuardStatus>('loading');
-  const syncStatus = useSyncStatus();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const { isAdmin, can } = useFarmAccess();
 
   useEffect(() => {
     let cancelled = false;
@@ -103,10 +105,13 @@ export default function FieldLayout() {
   }
 
   return (
-    <View style={styles.authorized}>
-      <SyncStatusBar {...syncStatus} onPress={() => router.push('/(field)/file')} />
-      <Slot />
-    </View>
+    <NavProvider value={{ isAdmin, can, openDrawer: () => setDrawerOpen(true) }}>
+      <View style={styles.authorized}>
+        <Stack screenOptions={{ headerShown: false }} />
+        <BottomNavBar />
+      </View>
+      <DrawerOverlay visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
+    </NavProvider>
   );
 }
 

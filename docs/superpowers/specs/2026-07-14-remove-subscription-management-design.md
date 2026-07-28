@@ -1,7 +1,7 @@
 # Retrait de la gestion d'abonnement (pilote gratuit, tout allumé) — Design
 
 **Date :** 2026-07-14
-**Contexte :** Décision GTM. AviCare n'a pas encore de fermes en production ; la priorité est
+**Contexte :** Décision GTM. Jawdi n'a pas encore de fermes en production ; la priorité est
 l'adoption et la preuve de ROI, pas la monétisation. Le modèle « modules vendus à la carte » en
 self-serve (doc 00 §7, D13-D16) ajoute de la friction inadaptée à la réalité ouest-africaine
 (mobile money, pas de carte ; trésorerie en dents de scie ; distribution par canaux). On **retire la

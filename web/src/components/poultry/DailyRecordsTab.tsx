@@ -21,6 +21,7 @@ import { useGetDailyRecordsQuery } from "@/store/api/poultryBatchesApi";
 import { apiErrorMessage } from "@/lib/apiError";
 import { formatDate } from "@/lib/format";
 import { colors } from "@/theme/tokens";
+import { useFarmPermissions } from "@/hooks/useFarmPermissions";
 import { DailyRecordDialog } from "./DailyRecordDialog";
 import type { PoultryBatch } from "@/types";
 
@@ -39,6 +40,8 @@ export function DailyRecordsTab({
   batch: PoultryBatch;
 }) {
   const [open, setOpen] = useState(false);
+  const { can } = useFarmPermissions(farmId);
+  const canWrite = can("poultry:write");
   const { data: records, isLoading, error } = useGetDailyRecordsQuery({
     farmId,
     batchId: batch.id,
@@ -63,16 +66,18 @@ export function DailyRecordsTab({
             Mortalité, aliment et eau au jour le jour.
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          color="primary"
-          size="large"
-          startIcon={<Plus size={20} />}
-          onClick={() => setOpen(true)}
-          sx={{ fontWeight: 700, boxShadow: 3, flexShrink: 0 }}
-        >
-          Nouvelle saisie
-        </Button>
+        {canWrite && (
+          <Button
+            variant="contained"
+            color="primary"
+            size="large"
+            startIcon={<Plus size={20} />}
+            onClick={() => setOpen(true)}
+            sx={{ fontWeight: 700, boxShadow: 3, flexShrink: 0 }}
+          >
+            Nouvelle saisie
+          </Button>
+        )}
       </Stack>
 
       {error ? (
@@ -99,15 +104,17 @@ export function DailyRecordsTab({
             Enregistrez la mortalité et la consommation du jour pour suivre les
             performances du lot.
           </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<Plus size={18} />}
-            onClick={() => setOpen(true)}
-            sx={{ mt: 1, fontWeight: 700 }}
-          >
-            Première saisie
-          </Button>
+          {canWrite && (
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<Plus size={18} />}
+              onClick={() => setOpen(true)}
+              sx={{ mt: 1, fontWeight: 700 }}
+            >
+              Première saisie
+            </Button>
+          )}
         </Card>
       ) : (
         <TableContainer component={Card}>

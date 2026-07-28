@@ -1,4 +1,4 @@
-# 10 — Design System AviCare
+# 10 — Design System Jawdi
 
 > Identité visuelle, tokens design, conventions UI.
 > Référence pour Sprint A6 (frontend) et tous les sprints frontend suivants.
@@ -26,7 +26,7 @@
 
 ### Positionnement
 
-AviCare Platform = **outil sérieux d'éleveur professionnel africain**, pas un jouet tech.
+Jawdi Platform = **outil sérieux d'éleveur professionnel africain**, pas un jouet tech.
 
 **Trois adjectifs pivots :**
 - **Chaleureux** (couleurs warm, pas froid corporate)
@@ -471,7 +471,7 @@ export const avicareTheme = createTheme({
 ```
 1. STITCH (Google AI)
    → Générer maquette page (login, dashboard, fermes, etc.)
-   → Brief : "AviCare = SaaS élevage avicole Sénégal, palette vert/orange,
+   → Brief : "Jawdi = SaaS élevage avicole Sénégal, palette vert/orange,
               MUI v7, style chaleureux pro, FR"
    → Export en HTML/CSS ou React (selon options Stitch)
 

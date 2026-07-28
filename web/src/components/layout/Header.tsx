@@ -117,7 +117,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
             </Typography>
           )}
           <Typography variant="h6" noWrap sx={{ fontWeight: 700, fontSize: "1.05rem", lineHeight: 1.2 }}>
-            {page?.label ?? "AviCare"}
+            {page?.label ?? "Jawdi"}
           </Typography>
         </Box>
 

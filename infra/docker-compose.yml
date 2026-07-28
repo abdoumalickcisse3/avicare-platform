@@ -1,5 +1,5 @@
 # =====================================================================
-# AviCare Platform — Local dev environment
+# Jawdi Platform — Local dev environment
 # =====================================================================
 # NOTE on host port mapping:
 #   Doc 02 §3.4 specifies 5432:5432 (Postgres) and 6379:6379 (Redis).

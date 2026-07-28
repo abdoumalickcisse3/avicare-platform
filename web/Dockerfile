@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # ============================================================================
-# AviCare web (Next.js 16, standalone output) — production image.
+# Jawdi web (Next.js 16, standalone output) — production image.
 # Build context = ./web. NEXT_PUBLIC_API_URL is baked at build time; keep it
 # EMPTY so the browser calls same-origin /api/* (Caddy routes it to backend).
 # ============================================================================

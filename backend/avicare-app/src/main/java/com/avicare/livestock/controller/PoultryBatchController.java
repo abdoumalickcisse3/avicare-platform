@@ -34,12 +34,10 @@ public class PoultryBatchController {
 
   static final String FEATURE = "@features.isEnabled(#farmId, 'module.poultry.broiler')";
   static final String READ = "@farmAccess.hasPermission(#farmId, 'poultry:read') and " + FEATURE;
+  // Broiler writes (batch create, weighing entry) — grantable via poultry:write for per-member
+  // sub-access (OWNER *, MANAGER poultry:*, FARMER poultry:write carry it by default).
   static final String WRITE =
-      "@farmAccess.hasRole(#farmId, "
-          + "T(com.avicare.common.security.principal.FarmRole).OWNER, "
-          + "T(com.avicare.common.security.principal.FarmRole).MANAGER, "
-          + "T(com.avicare.common.security.principal.FarmRole).FARMER) and "
-          + FEATURE;
+      "@farmAccess.hasPermission(#farmId, 'poultry:write') and " + FEATURE;
 
   private final PoultryBatchService poultryBatchService;
 

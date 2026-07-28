@@ -1741,13 +1741,13 @@ package com.avicare.common.security.principal;
 /**
  * Platform-level role carried in the JWT.
  *
- * <p>Two-level system (YAGNI for V1): every actual user is a {@link #USER}; only AviCare platform
+ * <p>Two-level system (YAGNI for V1): every actual user is a {@link #USER}; only Jawdi platform
  * staff is {@link #ADMIN}. Tenant-level authority is handled separately by {@link FarmRole} via
  * the per-farm {@link Membership}s.
  */
 public enum UserRole {
 
-  /** AviCare platform staff. Bypasses every tenant-level access check. */
+  /** Jawdi platform staff. Bypasses every tenant-level access check. */
   ADMIN,
 
   /** Standard user. Access is scoped to their farm memberships. */

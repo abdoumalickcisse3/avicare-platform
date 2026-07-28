@@ -27,6 +27,17 @@ final class InventoryAccess {
    */
   static final String READ = "@farmAccess.hasPermission(#farmId, 'inventory:read') and " + FEATURE;
 
+  /**
+   * Read gate for the catalogs a data-entry flow needs to draw stock (articles, stock items, feed
+   * formulas): {@code inventory:read} OR the narrow entry-scoped {@code inventory:consume}. A field
+   * role (FARMER/VETERINARIAN) holds only {@code inventory:consume} — enough to populate the
+   * feed/medicine pickers, never enough to browse the full Stocks area (still {@link #READ}).
+   */
+  static final String READ_OR_CONSUME =
+      "(@farmAccess.hasPermission(#farmId, 'inventory:read') or "
+          + "@farmAccess.hasPermission(#farmId, 'inventory:consume')) and "
+          + FEATURE;
+
   /** OWNER / MANAGER / FARMER — field entry (manual stock movement). */
   static final String WRITE_FARMER =
       "@farmAccess.hasRole(#farmId, " + OWNER + ", " + MANAGER + ", " + FARMER + ") and " + FEATURE;

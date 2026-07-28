@@ -1,4 +1,4 @@
-# AviCare — VPS deployment runbook
+# Jawdi — VPS deployment runbook
 
 Single-VPS deploy with Docker Compose: **Caddy** (auto-HTTPS) → **web** (Next.js) +
 **backend** (Spring Boot) → **postgres** + **redis**. Images are built in GitHub

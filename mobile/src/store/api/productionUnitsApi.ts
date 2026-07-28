@@ -25,6 +25,18 @@ export interface ProductionUnit {
   status: string;
 }
 
+/** A unit lifecycle event (mirrors the web `LifecycleEvent`): CREATED /
+ * MORTALITY / REFORM / COUNT_ADJUSTMENT / SALE / SALE_CANCEL. */
+export interface LifecycleEvent {
+  id: number;
+  productionUnitId: number;
+  eventType: string;
+  quantityDelta: number;
+  reason: string | null;
+  details: Record<string, unknown>;
+  occurredAt: string;
+}
+
 export const productionUnitsApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     listProductionUnits: build.query<ProductionUnit[], number>({
@@ -38,7 +50,12 @@ export const productionUnitsApi = baseApi.injectEndpoints({
             ]
           : [{ type: 'ProductionUnit' as const, id: `LIST-${farmId}` }],
     }),
+    getUnitEvents: build.query<LifecycleEvent[], { farmId: number; unitId: number }>({
+      query: ({ farmId, unitId }) => `/api/v1/farms/${farmId}/production-units/${unitId}/events`,
+      transformResponse: (r: ApiEnvelope<LifecycleEvent[]>) => r.data,
+      providesTags: (_r, _e, { unitId }) => [{ type: 'ProductionUnit' as const, id: `events-${unitId}` }],
+    }),
   }),
 });
 
-export const { useListProductionUnitsQuery } = productionUnitsApi;
+export const { useListProductionUnitsQuery, useGetUnitEventsQuery } = productionUnitsApi;

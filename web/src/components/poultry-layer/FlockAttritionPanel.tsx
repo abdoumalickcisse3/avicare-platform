@@ -9,6 +9,7 @@ import { formatNumber } from "@/lib/format";
 import { ageInDays } from "@/lib/poultry";
 import { colors } from "@/theme/tokens";
 import type { LifecycleEvent } from "@/types";
+import { useFarmPermissions } from "@/hooks/useFarmPermissions";
 import { LayerFlockEventDialog } from "./LayerFlockEventDialog";
 
 const mono = {
@@ -55,6 +56,8 @@ export function FlockAttritionPanel({
   onsetDate: string | null;
 }) {
   const [dialog, setDialog] = useState<null | "mortality" | "reform">(null);
+  const { can } = useFarmPermissions(farmId);
+  const canWrite = can("poultry:write");
   const a = summarizeAttrition(events);
 
   const onsetLabel =
@@ -78,7 +81,7 @@ export function FlockAttritionPanel({
           <Row label="Entrée en ponte" value={onsetLabel} />
         </Stack>
 
-        {status === "ACTIVE" && (
+        {status === "ACTIVE" && canWrite && (
           <Stack direction="row" spacing={1.5} sx={{ mt: 2.5 }}>
             <Button
               variant="outlined"

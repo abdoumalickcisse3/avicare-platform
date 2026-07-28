@@ -24,33 +24,33 @@ export const faqFull: FaqItem[] = [
   {
     question: "C'est vraiment gratuit ?",
     answer:
-      "Oui. Pendant la phase pilote, toutes les fonctionnalités d'AviCare sont gratuites, sans carte bancaire ni engagement. Les tarifs affichés sur la page Tarifs sont indicatifs&nbsp;: ils n'entreront en vigueur qu'après le pilote, et vous serez prévenu bien à l'avance.",
+      "Oui. Pendant la phase pilote, toutes les fonctionnalités d'Jawdi sont gratuites, sans carte bancaire ni engagement. Les tarifs affichés sur la page Tarifs sont indicatifs&nbsp;: ils n'entreront en vigueur qu'après le pilote, et vous serez prévenu bien à l'avance.",
     open: true,
   },
   {
     question: "Ai-je besoin d'Internet en permanence ?",
     answer:
-      "AviCare est une application en ligne&nbsp;: une connexion est nécessaire pour saisir et synchroniser vos données. Elle est conçue pour rester légère sur un petit forfait data (2G/3G), ce qui compte quand la couverture réseau est limitée.",
+      "Jawdi est une application en ligne&nbsp;: une connexion est nécessaire pour saisir et synchroniser vos données. Elle est conçue pour rester légère sur un petit forfait data (2G/3G), ce qui compte quand la couverture réseau est limitée.",
   },
   {
     question: "Ça marche pour les pondeuses ?",
     answer:
-      "Oui. AviCare couvre le poulet de chair <b>et</b> la pondeuse&nbsp;: suivi journalier aliment/eau, attrition du lot, collecte des œufs et stock de plateaux pour les pondeuses. Le logiciel reste, à ce stade, dédié à la volaille.",
+      "Oui. Jawdi couvre le poulet de chair <b>et</b> la pondeuse&nbsp;: suivi journalier aliment/eau, attrition du lot, collecte des œufs et stock de plateaux pour les pondeuses. Le logiciel reste, à ce stade, dédié à la volaille.",
   },
   {
     question: "Mes données sont-elles à moi ?",
     answer:
-      "Oui. Chaque ferme est isolée dans AviCare&nbsp;: vos données vous appartiennent, nous ne les revendons pas et ne les partageons pas avec d'autres fermes ou éleveurs.",
+      "Oui. Chaque ferme est isolée dans Jawdi&nbsp;: vos données vous appartiennent, nous ne les revendons pas et ne les partageons pas avec d'autres fermes ou éleveurs.",
   },
   {
     question: "Faut-il un ordinateur ou ça marche sur téléphone ?",
     answer:
-      "AviCare est pensé mobile-first&nbsp;: toute la saisie quotidienne (aliment, mortalité, ventes...) se fait depuis un téléphone, en quelques secondes. Un ordinateur n'est pas nécessaire, même si l'interface reste accessible depuis un navigateur classique.",
+      "Jawdi est pensé mobile-first&nbsp;: toute la saisie quotidienne (aliment, mortalité, ventes...) se fait depuis un téléphone, en quelques secondes. Un ordinateur n'est pas nécessaire, même si l'interface reste accessible depuis un navigateur classique.",
   },
   {
     question: "Comment calcule-t-il ma marge ?",
     answer:
-      "En reliant vos ventes (factures et paiements enregistrés), vos dépenses (achats, aliment sorti du stock, salaires, vétérinaire) et vos lots. Vous obtenez le revenu de chaque lot et la marge de votre ferme dans son ensemble&nbsp;: un compte de résultat cumulé depuis le début de votre activité sur AviCare, pas un calcul de coût au kilo ni une marge calculée lot par lot.",
+      "En reliant vos ventes (factures et paiements enregistrés), vos dépenses (achats, aliment sorti du stock, salaires, vétérinaire) et vos lots. Vous obtenez le revenu de chaque lot et la marge de votre ferme dans son ensemble&nbsp;: un compte de résultat cumulé depuis le début de votre activité sur Jawdi, pas un calcul de coût au kilo ni une marge calculée lot par lot.",
   },
   {
     question: "Que se passe-t-il après le pilote ?",
@@ -79,7 +79,7 @@ export const faq: FaqItem[] = [
   {
     question: "Est-ce que ça marche sur téléphone ?",
     answer:
-      "AviCare est pensé mobile-first : la saisie quotidienne se fait depuis votre téléphone, en quelques secondes, et reste légère sur un petit forfait data.",
+      "Jawdi est pensé mobile-first : la saisie quotidienne se fait depuis votre téléphone, en quelques secondes, et reste légère sur un petit forfait data.",
   },
   {
     question: "Ça gère les pondeuses aussi ?",
@@ -87,7 +87,7 @@ export const faq: FaqItem[] = [
       "Oui. Poulets de chair <b>et</b> pondeuses : collecte d'œufs, stock de plateaux, suivi journalier aliment/eau et attrition du lot.",
   },
   {
-    question: "Comment AviCare calcule ma marge ?",
+    question: "Comment Jawdi calcule ma marge ?",
     answer:
       "En reliant vos ventes (factures encaissées), vos dépenses (achats, aliment sorti du stock, salaires, vétérinaire) et vos bandes. Résultat : marge de la ferme et revenu par lot, en temps réel.",
   },

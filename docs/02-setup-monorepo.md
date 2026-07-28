@@ -359,7 +359,7 @@ echo "✅ DB réinitialisée. Lance le backend pour appliquer les migrations Fly
 ### 3.6 — `README.md` (racine)
 
 ```markdown
-# AviCare Platform
+# Jawdi Platform
 
 > Plateforme SaaS multi-tenant de gestion d'élevage en Afrique de l'Ouest.
 > Volaille en V1 → multi-espèces (ovins, bovins, caprins) en V2+.
@@ -435,7 +435,7 @@ Propriétaire — © Abdou Malick Cisse, 2025-2026. Tous droits réservés.
 ### 3.7 — `CONTRIBUTING.md`
 
 ```markdown
-# Contributing — AviCare Platform
+# Contributing — Jawdi Platform
 
 > Conventions de travail. À respecter même en solo (et surtout en solo).
 
@@ -605,7 +605,7 @@ Même en solo, on travaille en PR (jamais de commit direct sur `main`).
     <version>0.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <name>AviCare Platform — Parent</name>
+    <name>Jawdi Platform — Parent</name>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -725,7 +725,7 @@ Pour chaque module `common-api`, `common-security`, `common-tenancy`, `common-i1
     </parent>
 
     <artifactId>common-api</artifactId>
-    <name>AviCare Common — API</name>
+    <name>Jawdi Common — API</name>
     <description>Shared API contracts: ApiResponse, RFC 7807, exceptions, CorrelationIdFilter</description>
 
     <dependencies>
@@ -768,7 +768,7 @@ Le contenu Java de chaque module sera créé en Sprint A2 — pour A1, **vide ou
     </parent>
 
     <artifactId>avicare-app</artifactId>
-    <name>AviCare Platform — Application</name>
+    <name>Jawdi Platform — Application</name>
     <description>Main Spring Boot application (modular monolith)</description>
 
     <dependencies>
@@ -1173,7 +1173,7 @@ jobs:
 
 ## Contexte
 
-Le projet AviCare Platform est une reconstruction de GINAARTECH avec :
+Le projet Jawdi Platform est une reconstruction de GINAARTECH avec :
 - Élargissement multi-espèces (volaille → ovins → bovins...)
 - Changement de stack (AdonisJS → Spring Boot)
 - Ajout d'un mobile React Native

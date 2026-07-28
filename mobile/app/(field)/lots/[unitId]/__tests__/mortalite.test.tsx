@@ -1,13 +1,18 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 
-// React 19 + RNTL 14: fireEvent.press invokes onPress, but the state update it
-// schedules isn't flushed by the time fireEvent returns (concurrent scheduling
-// defers it past the synchronous act wrapper). Wrapping the press in an async
-// act forces the update to commit — required here because each "Enregistrer"
-// reads the `count` captured by the previous "+1" re-render.
+// React 19 + RNTL 14: fireEvent.press / changeText schedule a state update that
+// isn't flushed by the time fireEvent returns (concurrent scheduling defers it
+// past the synchronous act wrapper). Wrapping in an async act commits it — the
+// "Enregistrer" handler reads the `count` state captured at the last render, so
+// typing must flush before the press.
 const press = (el: Parameters<typeof fireEvent.press>[0]): Promise<void> =>
   act(async () => {
     fireEvent.press(el);
+  });
+
+const type = (el: Parameters<typeof fireEvent.changeText>[0], text: string): Promise<void> =>
+  act(async () => {
+    fireEvent.changeText(el, text);
   });
 
 /**
@@ -92,13 +97,13 @@ describe('MortalityEntryScreen', () => {
   it('enqueues one mutation per submission, each with its own clientRef', async () => {
     await render(<MortalityEntryScreen />);
 
-    // count starts at 0 and the backend requires a strictly positive count
-    // (@Positive), so each distinct event needs a "+1" tap before "Enregistrer".
-    await press(screen.getByLabelText('Ajouter une mortalité'));
-    await press(screen.getByText('Enregistrer'));
+    // The backend requires a strictly positive count (@Positive); the field is
+    // cleared after each submit, so each distinct event is retyped.
+    await type(screen.getByLabelText('Mortalité constatée'), '2');
+    await press(screen.getByLabelText('Enregistrer la mortalité'));
 
-    await press(screen.getByLabelText('Ajouter une mortalité'));
-    await press(screen.getByText('Enregistrer'));
+    await type(screen.getByLabelText('Mortalité constatée'), '3');
+    await press(screen.getByLabelText('Enregistrer la mortalité'));
 
     const refs = queue.listAll().map((m) => m.clientRef);
     expect(refs).toHaveLength(2);
@@ -108,12 +113,13 @@ describe('MortalityEntryScreen', () => {
   it('puts the SAME clientRef in the payload and the queue row — the whole point of Task 2', async () => {
     await render(<MortalityEntryScreen />);
 
-    await press(screen.getByLabelText('Ajouter une mortalité'));
-    await press(screen.getByText('Enregistrer'));
+    await type(screen.getByLabelText('Mortalité constatée'), '5');
+    await press(screen.getByLabelText('Enregistrer la mortalité'));
 
     const [entry] = queue.listAll();
     expect(entry).toBeDefined();
-    const payload = entry?.payload as { clientRef: string };
+    const payload = entry?.payload as { clientRef: string; count: number };
     expect(payload.clientRef).toBe(entry?.clientRef);
+    expect(payload.count).toBe(5);
   });
 });

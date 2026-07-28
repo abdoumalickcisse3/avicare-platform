@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # ============================================================================
-# AviCare backend (Spring Boot / Java 21) — production image.
+# Jawdi backend (Spring Boot / Java 21) — production image.
 # Build context = ./backend (the full Maven reactor: common-* + avicare-app).
 # ============================================================================
 

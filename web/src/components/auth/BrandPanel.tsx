@@ -53,7 +53,7 @@ export function BrandPanel({
       <Box
         component="img"
         src="/logo/logo-dark.png"
-        alt="AviCare Platform"
+        alt="Jawdi Platform"
         sx={{ height: 60, width: "auto", alignSelf: "flex-start" }}
       />
 
@@ -67,7 +67,7 @@ export function BrandPanel({
       </Stack>
 
       <Typography variant="caption" sx={{ opacity: 0.7 }}>
-        © {new Date().getFullYear()} AviCare Platform · Dakar, Sénégal
+        © {new Date().getFullYear()} Jawdi Platform · Dakar, Sénégal
       </Typography>
     </Box>
   );

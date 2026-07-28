@@ -22,6 +22,7 @@ import { isFeatureForbidden } from "@/lib/poultry";
 import { formatDate } from "@/lib/format";
 import { severityChip, humanizeKey } from "@/lib/health";
 import { colors } from "@/theme/tokens";
+import { useFarmPermissions } from "@/hooks/useFarmPermissions";
 import { ObservationDialog } from "./ObservationDialog";
 
 export function ObservationsList({
@@ -37,6 +38,8 @@ export function ObservationsList({
 }) {
   const { showToast } = useToast();
   const { data: observations, isLoading, error } = useGetObservationsQuery({ farmId, unitId });
+  const { can } = useFarmPermissions(farmId);
+  const canWrite = can("health:write");
   const [deleteObservation] = useDeleteObservationMutation();
   const [open, setOpen] = useState(false);
 
@@ -56,9 +59,11 @@ export function ObservationsList({
           <Eye size={18} color={colors.primary[600]} />
           <Typography sx={{ fontWeight: 700 }}>Observations</Typography>
         </Stack>
-        <Button size="small" startIcon={<Plus size={16} />} onClick={() => setOpen(true)}>
-          Ajouter
-        </Button>
+        {canWrite && (
+          <Button size="small" startIcon={<Plus size={16} />} onClick={() => setOpen(true)}>
+            Ajouter
+          </Button>
+        )}
       </Stack>
 
       {isLoading ? (

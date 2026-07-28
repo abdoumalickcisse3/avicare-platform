@@ -1,4 +1,4 @@
-display_name: "AviCare — Dashboard KPI Modeling"
+display_name: "Jawdi — Dashboard KPI Modeling"
 description: |
   Design-time Rill project for modeling and validating the KPI aggregations
   that will be implemented in the Spring Boot reporting context (Phases 1-3).

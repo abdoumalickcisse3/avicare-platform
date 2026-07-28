@@ -21,6 +21,7 @@ import { useGetDailyRecordsQuery } from "@/store/api/poultryBatchesApi";
 import { apiErrorMessage } from "@/lib/apiError";
 import { formatDate } from "@/lib/format";
 import { colors } from "@/theme/tokens";
+import { useFarmPermissions } from "@/hooks/useFarmPermissions";
 import { LayerDailyEntryDialog } from "./LayerDailyEntryDialog";
 import type { ProductionUnit } from "@/types";
 
@@ -35,6 +36,8 @@ export function LayerDailyRecordsTab({
   unit: ProductionUnit;
 }) {
   const [open, setOpen] = useState(false);
+  const { can } = useFarmPermissions(farmId);
+  const canWrite = can("poultry:write");
   const { data: records, isLoading, error } = useGetDailyRecordsQuery({
     farmId,
     batchId: unit.id,
@@ -54,7 +57,7 @@ export function LayerDailyRecordsTab({
             Aliment et eau distribués (mortalité dans l&apos;onglet Pondeuses).
           </Typography>
         </Box>
-        {unit.status === "ACTIVE" && (
+        {unit.status === "ACTIVE" && canWrite && (
           <Button variant="contained" startIcon={<Plus size={18} />} onClick={() => setOpen(true)}>
             Saisir
           </Button>

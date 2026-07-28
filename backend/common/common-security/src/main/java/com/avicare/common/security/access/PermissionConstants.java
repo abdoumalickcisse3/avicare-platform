@@ -29,6 +29,13 @@ public final class PermissionConstants {
   public static final String INVENTORY_READ = "inventory:read";
   public static final String INVENTORY_WRITE = "inventory:write";
 
+  /**
+   * Narrow, entry-scoped stock right: lets a field role read the article/formula catalogs and draw
+   * stock as an OUT movement from within a data-entry flow (daily record, vaccination, treatment)
+   * WITHOUT unlocking the full Stocks area (which stays gated by {@link #INVENTORY_READ}).
+   */
+  public static final String INVENTORY_CONSUME = "inventory:consume";
+
   // Finance
   public static final String FINANCE_READ = "finance:read";
   public static final String FINANCE_WRITE = "finance:write";
@@ -46,7 +53,7 @@ public final class PermissionConstants {
           "poultry", java.util.List.of("read", "write", "delete"),
           "health", java.util.List.of("read", "write"),
           "commercial", java.util.List.of("read", "write"),
-          "inventory", java.util.List.of("read", "write"),
+          "inventory", java.util.List.of("read", "write", "consume"),
           "finance", java.util.List.of("read", "write"),
           "settings", java.util.List.of("read", "write"));
 }

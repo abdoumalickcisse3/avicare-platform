@@ -4,7 +4,7 @@
 
 **Goal:** Remplacer l'analytique par-lot par un compte de résultat ferme (revenus − dépenses = marge) et faire qu'un coût saisi sur une visite vétérinaire crée automatiquement une dépense `veterinary`.
 
-**Architecture:** Deux features indépendantes dans le monolithe modulaire AviCare. F1 (analytique globale) : nouveau DTO + méthode de service `finance` s'appuyant sur deux nouvelles méthodes de `CommercialFacade` (revenu) et la requête `sumByCategory` existante (dépenses), plus un frontend RTK Query/MUI. F2 (dépense véto) : `VetVisitService` (contexte livestock) appelle `FinanceFacade` (contexte finance) — même sens de dépendance que `PurchaseOrderService`/`StockMovementService` déjà en place.
+**Architecture:** Deux features indépendantes dans le monolithe modulaire Jawdi. F1 (analytique globale) : nouveau DTO + méthode de service `finance` s'appuyant sur deux nouvelles méthodes de `CommercialFacade` (revenu) et la requête `sumByCategory` existante (dépenses), plus un frontend RTK Query/MUI. F2 (dépense véto) : `VetVisitService` (contexte livestock) appelle `FinanceFacade` (contexte finance) — même sens de dépendance que `PurchaseOrderService`/`StockMovementService` déjà en place.
 
 **Tech Stack:** Spring Boot 3.4 / Java 21 / Hibernate 6.4 / PostgreSQL / Flyway ; Next.js 16 / MUI v9 / RTK Query / Vitest.
 

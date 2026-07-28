@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>avicare-app</artifactId>
-    <name>AviCare Platform — Application</name>
+    <name>Jawdi Platform — Application</name>
     <description>Main Spring Boot application (modular monolith)</description>
 
     <dependencies>

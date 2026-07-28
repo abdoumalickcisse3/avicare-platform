@@ -15,15 +15,15 @@
  * `expo-secure-store`) that don't run under Jest. Verified by `tsc --noEmit`
  * and by the app actually bundling/running (see task 7 report).
  */
-import Constants from 'expo-constants';
 import { clearTokens, getAccessToken, getRefreshToken, saveTokens } from '@/auth/tokens';
+import { resolveApiUrl } from '@/config/apiUrl';
 import { createSqliteDriver } from './driver';
 import { createQueue } from './queue';
 import { createEngine, type TransportResponse } from './engine';
 import { QUEUE_SCHEMA } from './schema';
 import type { QueuedMutation } from './types';
 
-const API_URL = (Constants.expoConfig?.extra?.apiUrl as string | undefined) ?? 'http://localhost:8080';
+const API_URL = resolveApiUrl();
 
 // --- subscribe/notify -------------------------------------------------
 // countPending()/listFailed() are synchronous DB reads, not reactive on

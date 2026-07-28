@@ -1,0 +1,227 @@
+{
+  "meta": {
+    "title": "Jawdi — Architecture de l'application web",
+    "source": "web/ (Next.js App Router)",
+    "generatedAt": "2026-07-22",
+    "description": "Cartographie de l'application web Jawdi : gestion d'élevage avicole (Sénégal / Afrique de l'Ouest). Front Next.js 16 (App Router) + MUI + RTK Query, adossé au monolithe modulaire Spring Boot via /api/v1."
+  },
+  "stack": [
+    { "name": "Next.js 16", "role": "Framework / App Router (route groups, server + client components)" },
+    { "name": "React 19", "role": "UI runtime" },
+    { "name": "TypeScript", "role": "Typage strict de bout en bout" },
+    { "name": "MUI v7 + Emotion", "role": "Design system, composants, @mui/x-charts" },
+    { "name": "Redux Toolkit + RTK Query", "role": "État global + couche data (cache, tags, reauth)" },
+    { "name": "react-hook-form + zod", "role": "Formulaires + validation de schéma" },
+    { "name": "recharts / @mui/x-charts", "role": "Visualisations (dashboard, analytique)" },
+    { "name": "@react-pdf/renderer", "role": "Impression factures / livraisons (PDF)" },
+    { "name": "date-fns", "role": "Dates" },
+    { "name": "Vitest + Testing Library / Playwright", "role": "Tests unitaires + E2E" }
+  ],
+  "requestFlow": [
+    { "step": "Navigateur", "detail": "Rendu Next.js (App Router, RSC + client components)" },
+    { "step": "Route group + layout", "detail": "(auth) · (dashboard) · (onboarding) — chaque groupe a son layout" },
+    { "step": "Route guard", "detail": "(dashboard)/layout : hasAccessToken() sinon redirect /login ; AppShell monte la coquille" },
+    { "step": "Feature components", "detail": "MUI + 15 domaines composants ; formulaires react-hook-form + zod" },
+    { "step": "Hooks (focus & gating)", "detail": "useSelectedFarm, useActiveModules, use*Gating, useFarmPermissions" },
+    { "step": "RTK Query slice", "detail": "28 slices injectés dans baseApi (cache par tags, hooks générés)" },
+    { "step": "baseQuery + reauth", "detail": "Header Bearer ; sur 401 → POST /auth/refresh (1 fois) → retry ; sinon purge + redirect" },
+    { "step": "Spring Boot API", "detail": "NEXT_PUBLIC_API_URL (def. localhost:8080) — monolithe modulaire /api/v1" }
+  ],
+  "routeGroups": [
+    {
+      "group": "(auth)",
+      "guard": "Public — layout dédié (photo + dégradé Sénégal)",
+      "routes": [
+        { "path": "/login", "kind": "page" },
+        { "path": "/signup", "kind": "page" },
+        { "path": "/forgot-password", "kind": "page" }
+      ]
+    },
+    {
+      "group": "(onboarding)",
+      "guard": "Authentifié, sans ferme — création de la première ferme",
+      "routes": [
+        { "path": "/onboarding", "kind": "page" }
+      ]
+    },
+    {
+      "group": "(dashboard)",
+      "guard": "Authentifié — route guard token + AppShell (sidebar + header) ; nav gatée par modules actifs",
+      "sections": [
+        {
+          "nav": "Général",
+          "routes": [
+            { "path": "/dashboard", "kind": "page", "label": "Tableau de bord" },
+            { "path": "/fermes", "kind": "page", "label": "Fermes" },
+            { "path": "/fermes/[id]", "kind": "page", "label": "Détail ferme" }
+          ]
+        },
+        {
+          "nav": "Élevage",
+          "module": "module.poultry.broiler / .layer / module.health.*",
+          "routes": [
+            { "path": "/elevage/lots", "kind": "page", "label": "Poulets de chair", "module": "module.poultry.broiler" },
+            { "path": "/elevage/lots/[id]", "kind": "page", "label": "Détail lot" },
+            { "path": "/elevage/oeufs", "kind": "page", "label": "Œufs (ponte)", "module": "module.poultry.layer" },
+            { "path": "/elevage/oeufs/[unitId]", "kind": "page", "label": "Détail unité ponte" },
+            { "path": "/elevage/sanitaire", "kind": "page", "label": "Sanitaire", "module": "module.health.basic|advanced" }
+          ]
+        },
+        {
+          "nav": "Stocks",
+          "module": "module.inventory",
+          "routes": [
+            { "path": "/stocks", "kind": "page", "label": "Vue d'ensemble" },
+            { "path": "/stocks/articles", "kind": "page", "label": "Bibliothèque" },
+            { "path": "/stocks/articles/[id]", "kind": "page", "label": "Détail article" },
+            { "path": "/stocks/fournisseurs", "kind": "page", "label": "Fournisseurs" },
+            { "path": "/stocks/achats", "kind": "page", "label": "Bons d'achat" },
+            { "path": "/stocks/achats/[id]", "kind": "page", "label": "Détail bon d'achat" },
+            { "path": "/stocks/formules", "kind": "page", "label": "Formules d'aliment" }
+          ]
+        },
+        {
+          "nav": "Commercial",
+          "module": "module.commercial.basic",
+          "routes": [
+            { "path": "/commercial", "kind": "page", "label": "Accueil commercial" },
+            { "path": "/commercial/clients", "kind": "page", "label": "Clients" },
+            { "path": "/commercial/clients/[id]", "kind": "page", "label": "Fiche client (compte-courant)" },
+            { "path": "/commercial/commandes", "kind": "page", "label": "Commandes" },
+            { "path": "/commercial/commandes/[id]", "kind": "page", "label": "Détail commande" },
+            { "path": "/commercial/commandes/livraison/[id]/imprimer", "kind": "page", "label": "Bon de livraison (PDF)" },
+            { "path": "/commercial/ventes", "kind": "page", "label": "Ventes directes" },
+            { "path": "/commercial/livraisons", "kind": "page", "label": "Livraisons" },
+            { "path": "/commercial/factures", "kind": "page", "label": "Factures" },
+            { "path": "/commercial/factures/[id]", "kind": "page", "label": "Détail facture" },
+            { "path": "/commercial/factures/[id]/imprimer", "kind": "page", "label": "Facture (PDF)" },
+            { "path": "/commercial/paiements", "kind": "page", "label": "Paiements" }
+          ]
+        },
+        {
+          "nav": "Finance",
+          "module": "module.finance",
+          "routes": [
+            { "path": "/finance/depenses", "kind": "page", "label": "Dépenses" },
+            { "path": "/finance/analytique", "kind": "page", "label": "Analytique (P&L)" },
+            { "path": "/finance/salaires", "kind": "page", "label": "Salaires & avances" }
+          ]
+        },
+        {
+          "nav": "Réglages",
+          "routes": [
+            { "path": "/reglages", "kind": "page", "label": "Réglages" },
+            { "path": "/reglages/[category]", "kind": "page", "label": "Catalogue générique (paramétrage)" },
+            { "path": "/reglages/ponte", "kind": "page", "label": "Réglages ponte" },
+            { "path": "/reglages/sanitaire", "kind": "page", "label": "Bibliothèque sanitaire (vaccins/traitements)" }
+          ]
+        }
+      ]
+    }
+  ],
+  "apiLayer": {
+    "base": "baseApi (reducerPath 'api') — createApi + injectEndpoints par domaine",
+    "reauth": "baseQueryWithReauth : Bearer depuis tokenStorage ; sur 401 → refresh unique → retry ; échec → purge + redirect login",
+    "tagTypes": ["Auth","User","Farm","Member","Permission","Subscription","Setting","Catalog","ProductionUnit","UnitEvent","Breed","PoultryBatch","DailyRecord","Weighing","Performance","EggCollection","TrayStock","DailyProduction","LayerConfig","HealthCatalog","Vaccination","Observation","Treatment","Veterinarian","VetVisit","HealthProgram","HealthSchedule","HealthAlert","StockItem","StockMovement","InventoryCatalog","InventoryAlert","Supplier","PurchaseOrder","FeedFormula","Client","Sale","Order","Delivery","Invoice","Payment","Expense","Salary","Advance","Dashboard"],
+    "slices": [
+      { "name": "authApi", "queries": 1, "mutations": 3, "context": "identity", "tags": ["Auth","User"] },
+      { "name": "accountSettingsApi", "queries": 1, "mutations": 1, "context": "parameters", "tags": ["Setting"] },
+      { "name": "membersApi", "queries": 1, "mutations": 4, "context": "tenancy", "tags": ["Member"] },
+      { "name": "permissionsApi", "queries": 1, "mutations": 0, "context": "security", "tags": ["Permission"] },
+      { "name": "farmsApi", "queries": 2, "mutations": 3, "context": "tenancy", "tags": ["Farm"] },
+      { "name": "subscriptionApi", "queries": 1, "mutations": 0, "context": "subscription", "tags": ["Subscription"] },
+      { "name": "catalogApi", "queries": 1, "mutations": 2, "context": "parameters", "tags": ["Catalog"] },
+      { "name": "breedsApi", "queries": 1, "mutations": 0, "context": "livestock", "tags": ["Breed"] },
+      { "name": "productionUnitsApi", "queries": 3, "mutations": 3, "context": "livestock", "tags": ["ProductionUnit","UnitEvent"] },
+      { "name": "poultryBatchesApi", "queries": 5, "mutations": 3, "context": "livestock", "tags": ["PoultryBatch","DailyRecord","Weighing","Performance"] },
+      { "name": "eggProductionApi", "queries": 7, "mutations": 5, "context": "livestock", "tags": ["EggCollection","TrayStock","DailyProduction","LayerConfig"] },
+      { "name": "healthApi", "queries": 14, "mutations": 18, "context": "livestock", "tags": ["HealthCatalog","Vaccination","Observation","Treatment","Veterinarian","VetVisit","HealthProgram","HealthSchedule","HealthAlert"] },
+      { "name": "inventoryCatalogApi", "queries": 3, "mutations": 3, "context": "inventory", "tags": ["InventoryCatalog"] },
+      { "name": "inventoryStockApi", "queries": 7, "mutations": 4, "context": "inventory", "tags": ["StockItem","StockMovement","InventoryAlert"] },
+      { "name": "suppliersApi", "queries": 2, "mutations": 3, "context": "inventory", "tags": ["Supplier"] },
+      { "name": "purchaseOrdersApi", "queries": 2, "mutations": 5, "context": "inventory", "tags": ["PurchaseOrder"] },
+      { "name": "feedFormulasApi", "queries": 2, "mutations": 5, "context": "inventory", "tags": ["FeedFormula"] },
+      { "name": "clientsApi", "queries": 4, "mutations": 3, "context": "commercial", "tags": ["Client"] },
+      { "name": "salesApi", "queries": 2, "mutations": 2, "context": "commercial", "tags": ["Sale"] },
+      { "name": "ordersApi", "queries": 2, "mutations": 4, "context": "commercial", "tags": ["Order"] },
+      { "name": "deliveriesApi", "queries": 2, "mutations": 2, "context": "commercial", "tags": ["Delivery"] },
+      { "name": "invoicesApi", "queries": 3, "mutations": 3, "context": "commercial", "tags": ["Invoice"] },
+      { "name": "paymentsApi", "queries": 1, "mutations": 2, "context": "commercial", "tags": ["Payment"] },
+      { "name": "financeApi", "queries": 7, "mutations": 9, "context": "finance", "tags": ["Expense","Salary","Advance"] },
+      { "name": "dashboardApi", "queries": 1, "mutations": 0, "context": "dashboard", "tags": ["Dashboard"] },
+      { "name": "activityApi", "queries": 1, "mutations": 0, "context": "dashboard", "tags": ["Dashboard"] }
+    ]
+  },
+  "backendContexts": [
+    { "key": "identity", "label": "Identity / Auth", "hue": "green" },
+    { "key": "tenancy", "label": "Tenancy (fermes, membres)", "hue": "green" },
+    { "key": "security", "label": "Security / RBAC", "hue": "vet" },
+    { "key": "subscription", "label": "Subscription (modules)", "hue": "stone" },
+    { "key": "parameters", "label": "Parameters (catalogue 3 couches)", "hue": "stone" },
+    { "key": "livestock", "label": "Livestock (volaille, ponte, santé)", "hue": "green" },
+    { "key": "inventory", "label": "Inventory (stocks, achats, formules)", "hue": "warning" },
+    { "key": "commercial", "label": "Commercial (clients, ventes, factures)", "hue": "accent" },
+    { "key": "finance", "label": "Finance (dépenses, salaires, P&L)", "hue": "info" },
+    { "key": "dashboard", "label": "Dashboard / Activité", "hue": "success" }
+  ],
+  "store": {
+    "reducers": [
+      { "name": "api", "type": "RTK Query (baseApi.reducer)", "detail": "Cache normalisé par tags, 28 slices injectés" },
+      { "name": "auth", "type": "slice", "detail": "Session (tokens en mémoire/stockage), état d'authentification" },
+      { "name": "ui", "type": "slice", "detail": "État UI transverse (sidebar, focus ferme, préférences)" }
+    ],
+    "middleware": "getDefaultMiddleware().concat(baseApi.middleware)",
+    "authActions": "authActions.ts — login/logout/refresh orchestrant tokenStorage + cache RTK (purge au logout)"
+  },
+  "crossCutting": [
+    {
+      "name": "Authentification",
+      "detail": "tokenStorage (access + refresh) ; baseQuery pose le Bearer ; reauth transparent sur 401 (refresh unique puis retry) ; purge du cache RTK + redirect au logout (fuite inter-comptes corrigée).",
+      "files": ["lib/auth.ts","lib/storage.ts","lib/cookies.ts","store/authActions.ts","store/slices/authSlice.ts","hooks/useRefreshSession.ts"]
+    },
+    {
+      "name": "Feature gating (modules)",
+      "detail": "La ferme sélectionnée porte des modules actifs. La sidebar masque les groupes/liens non gréés ; les hooks de gating protègent les pages. Modules : poultry.broiler/.layer, health.basic/.advanced, inventory, commercial.basic, finance.",
+      "files": ["hooks/useActiveModules.ts","hooks/useCommercialGating.ts","hooks/useHealthGating.ts","hooks/useInventoryGating.ts","components/layout/Sidebar.tsx"]
+    },
+    {
+      "name": "Multi-tenant (focus ferme)",
+      "detail": "Toutes les données sont cadrées par la ferme courante. Le focus ferme est un état transverse ; les appels API portent farmId ; permissions par membre.",
+      "files": ["hooks/useSelectedFarm.ts","hooks/useCurrentFarmFocus.ts","hooks/useFarmRole.ts","hooks/useFarmPermissions.ts","constants/farmRoles.ts"]
+    },
+    {
+      "name": "Thème & design system",
+      "detail": "Tokens de marque (vert #3D8B3D, orange #F8961E, neutres stone chauds) ; Outfit (UI) + JetBrains Mono (données) ; mode clair/sombre ; ThemeRegistry Emotion pour Next.",
+      "files": ["theme/tokens.ts","theme/index.ts","theme/fonts.ts","theme/ThemeRegistry.tsx"]
+    }
+  ],
+  "componentDomains": [
+    { "name": "health", "count": 22, "purpose": "Sanitaire : vaccins, traitements, programmes, vétérinaires, alertes" },
+    { "name": "poultry-layer", "count": 21, "purpose": "Ponte : collecte œufs, stock plateaux, production journalière" },
+    { "name": "commercial", "count": 15, "purpose": "Clients, commandes, ventes, factures, paiements, DocumentFlow" },
+    { "name": "inventory", "count": 14, "purpose": "Articles, mouvements, fournisseurs, bons d'achat, formules" },
+    { "name": "poultry", "count": 14, "purpose": "Chair : lots, journalier, pesées, courbes de croissance" },
+    { "name": "dashboard", "count": 12, "purpose": "KPIs, flux d'activité, héros cockpit, graphiques" },
+    { "name": "farms", "count": 7, "purpose": "Fermes, membres, provisioning, permissions" },
+    { "name": "finance", "count": 6, "purpose": "Dépenses, salaires, avances, analytique" },
+    { "name": "settings", "count": 3, "purpose": "Catalogue générique, réglages ponte/sanitaire" },
+    { "name": "layout", "count": 3, "purpose": "AppShell, Header, Sidebar (navigation gatée)" },
+    { "name": "account", "count": 1, "purpose": "Réglages du compte utilisateur" },
+    { "name": "auth", "count": 1, "purpose": "Panneau d'authentification" },
+    { "name": "forms", "count": 1, "purpose": "Primitives de formulaire partagées" },
+    { "name": "feedback", "count": 1, "purpose": "Toasts / retours utilisateur" },
+    { "name": "shared", "count": 1, "purpose": "Primitives transverses" }
+  ],
+  "libUtilities": [
+    "apiError","auth","commercial","cookies","dashboard","dashboardHero","flock","format","health","inventory","layer","permissions","poultry","salesChannel","slug","storage"
+  ],
+  "stats": {
+    "routeGroups": 3,
+    "pages": 45,
+    "apiSlices": 26,
+    "tagTypes": 45,
+    "componentDomains": 15,
+    "hooks": 9,
+    "libUtilities": 16
+  }
+}

@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>common-i18n</artifactId>
-    <name>AviCare Common — i18n</name>
+    <name>Jawdi Common — i18n</name>
     <description>Shared internationalization: locale resolver, message sources (FR default, WO/EN later)</description>
 
     <dependencies>

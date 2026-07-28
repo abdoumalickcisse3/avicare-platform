@@ -1,7 +1,7 @@
 # Page Ferme « Vue d'ensemble » — KPIs + activité récente — Design
 
 **Date :** 2026-07-06
-**Contexte :** AviCare. La page `Fermes › [ferme] › Vue d'ensemble` (`FarmDetailView.tsx`, onglet
+**Contexte :** Jawdi. La page `Fermes › [ferme] › Vue d'ensemble` (`FarmDetailView.tsx`, onglet
 `overview`) affiche aujourd'hui 4 cartes KPI vides (« — · bientôt disponible ») et un placeholder
 « Activité récente ». Bug #9 du backlog de test. Objectif : brancher des données réelles.
 

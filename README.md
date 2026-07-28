@@ -1,4 +1,4 @@
-# AviCare Platform
+# Jawdi Platform
 
 > Plateforme SaaS multi-tenant de gestion d'élevage en Afrique de l'Ouest.
 > Volaille en V1 → multi-espèces (ovins, bovins, caprins) en V2+.

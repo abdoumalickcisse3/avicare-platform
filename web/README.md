@@ -1,6 +1,6 @@
-# AviCare — Web (Next.js)
+# Jawdi — Web (Next.js)
 
-Frontend de la plateforme AviCare. Next.js 16 (App Router) + MUI v7 + Redux
+Frontend de la plateforme Jawdi. Next.js 16 (App Router) + MUI v7 + Redux
 Toolkit / RTK Query. Voir `docs/07-frontend-nextjs.md` (architecture) et
 `docs/10-design-system.md` (design tokens / thème).
 

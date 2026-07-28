@@ -38,13 +38,14 @@ class FarmRoleTest {
   @Test
   void farmer_defaultPermissions_hasFieldOperatorScope() {
     assertThat(FarmRole.FARMER.defaultPermissions())
-        .containsExactly("poultry:read", "poultry:write", "health:read", "health:write");
+        .containsExactly(
+            "poultry:read", "poultry:write", "health:read", "health:write", "inventory:consume");
   }
 
   @Test
   void veterinarian_defaultPermissions_hasHealthScope() {
     assertThat(FarmRole.VETERINARIAN.defaultPermissions())
-        .containsExactly("health:read", "health:write", "poultry:read");
+        .containsExactly("health:read", "health:write", "poultry:read", "inventory:consume");
   }
 
   @Test

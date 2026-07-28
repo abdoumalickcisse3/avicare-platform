@@ -33,7 +33,7 @@ public class FeedFormulaController {
   private final FeedFormulaService feedFormulaService;
 
   @GetMapping
-  @PreAuthorize(InventoryAccess.READ)
+  @PreAuthorize(InventoryAccess.READ_OR_CONSUME)
   public ApiResponse<FeedFormulasAvailableResponse> listAvailable(@PathVariable Long farmId) {
     return ApiResponse.of(
         FeedFormulasAvailableResponse.from(feedFormulaService.listAllAvailable(farmId)));

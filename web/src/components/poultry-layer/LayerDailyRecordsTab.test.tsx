@@ -4,6 +4,11 @@ import { renderWithProviders } from "@/test/render";
 import { LayerDailyRecordsTab } from "./LayerDailyRecordsTab";
 import type { ProductionUnit } from "@/types";
 
+// The "Saisir" button is gated by the poultry:write permission; grant it here.
+vi.mock("@/hooks/useFarmPermissions", () => ({
+  useFarmPermissions: () => ({ can: () => true }),
+}));
+
 const UNIT: ProductionUnit = {
   id: 3,
   farmId: 1,

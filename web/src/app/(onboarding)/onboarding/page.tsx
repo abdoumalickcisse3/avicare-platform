@@ -22,7 +22,7 @@ export default function OnboardingPage() {
     <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <Box sx={{ px: { xs: 2, sm: 4 }, pt: 3 }}>
         <Typography variant="h6" sx={{ fontWeight: 700, color: colors.primary[600] }}>
-          AviCare
+          Jawdi
         </Typography>
       </Box>
 
@@ -39,7 +39,7 @@ export default function OnboardingPage() {
           <Stack spacing={3}>
             <Box>
               <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                Bienvenue sur AviCare 🎉
+                Bienvenue sur Jawdi 🎉
               </Typography>
               <Typography variant="body1" color="text.secondary">
                 Votre compte et votre ferme sont prêts. Dernière étape : votre

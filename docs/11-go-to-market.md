@@ -43,7 +43,7 @@ c'est la protection contre la dispersion.
 Tout ceci est **gratuit** et fait gagner un mois :
 
 - [ ] **Choisir les 5 fermes pilotes** (critères §3) et obtenir leur accord de principe.
-- [ ] Ouvrir le **numéro WhatsApp Business** AviCare (gratuit) ; préparer le message d'accueil.
+- [ ] Ouvrir le **numéro WhatsApp Business** Jawdi (gratuit) ; préparer le message d'accueil.
 - [ ] Rédiger la **checklist d'onboarding** (45 min : créer ferme → bande → première saisie ensemble).
 - [ ] Écrire le **script de la démo vocale de 3 min** (FR, puis version wolof) — l'enregistrement
       attendra que l'app soit en ligne pour montrer le vrai produit.
@@ -110,7 +110,7 @@ part**. Chaque pilote est une introduction chaude vers son fournisseur.
 
 **Le pitch provendier** (jamais « achetez mon logiciel ») :
 
-> « X de **vos propres clients** utilisent déjà AviCare. Un éleveur qui suit ses chiffres achète
+> « X de **vos propres clients** utilisent déjà Jawdi. Un éleveur qui suit ses chiffres achète
 > plus d'aliment, plus régulièrement, et reste chez vous. Équipez votre réseau — et je vous
 > donne la vue agrégée dessus. »
 
@@ -133,7 +133,7 @@ tenable en solo.
 - **Paiement** : Wave **enregistré manuellement** d'abord (comme le module Paiements de l'app le
   fait pour les éleveurs) ; passerelle plus tard, si le volume le justifie.
 
-## 8. Métriques (calculables depuis la base AviCare)
+## 8. Métriques (calculables depuis la base Jawdi)
 
 | Métrique | Définition | Seuil de santé |
 |---|---|---|

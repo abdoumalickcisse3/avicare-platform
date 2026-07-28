@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>common-security</artifactId>
-    <name>AviCare Common — Security</name>
+    <name>Jawdi Common — Security</name>
     <description>Shared security primitives: JWT infra (Session 4a), JwtFilter + @FarmAccess SpEL bean + SecurityConfig (Session 4b)</description>
 
     <dependencies>

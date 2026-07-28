@@ -7,7 +7,7 @@
 // Contenu 100% rédigé pour cette Task 5 (le spec ne fournit qu'un
 // skeleton de sujets, pas de texte). Les repères techniques (°C,
 // densité au m², calendrier vaccinal) sont des pratiques d'élevage
-// avicole généralistes, pas des chiffres AviCare inventés. Les mentions
+// avicole généralistes, pas des chiffres Jawdi inventés. Les mentions
 // du produit restent strictement dans le périmètre réel (voir "claims
 // discipline" du brief) : le "suivi quotidien" et le "calendrier
 // vaccinal" existent et sont décrits tels quels (affichés, jamais
@@ -21,7 +21,7 @@ import eleveur from "../../assets/eleveur.jpg";
 const signupUrl = import.meta.env.PUBLIC_APP_SIGNUP_URL || "#";
 const siteUrl = Astro.site ? Astro.site.toString().replace(/\/$/, "") : "https://avicare.app";
 
-const title = "Réduire la mortalité de vos poulets de chair : le guide complet | AviCare";
+const title = "Réduire la mortalité de vos poulets de chair : le guide complet | Jawdi";
 const description =
   "Démarrage des poussins, température, densité, eau, vaccination, suivi quotidien : les gestes concrets qui font baisser la mortalité, bande après bande.";
 const publishDate = "2026-07-17";
@@ -36,8 +36,8 @@ const jsonLd = {
       image: `${siteUrl}${eleveur.src}`,
       datePublished: publishDate,
       dateModified: publishDate,
-      author: { "@type": "Organization", name: "AviCare Platform" },
-      publisher: { "@type": "Organization", name: "AviCare Platform" },
+      author: { "@type": "Organization", name: "Jawdi Platform" },
+      publisher: { "@type": "Organization", name: "Jawdi Platform" },
       mainEntityOfPage: `${siteUrl}/ressources/reduire-la-mortalite-poulet-de-chair`,
     },
     {
@@ -170,7 +170,7 @@ const jsonLd = {
         Un retard de quelques jours sur un rappel de vaccin peut suffire à exposer tout un lot
         à une maladie évitable. Tenez un calendrier vaccinal par bande, avec les rappels
         prévus dès l'arrivée des poussins&nbsp;: c'est l'un des gestes les moins coûteux et les
-        plus rentables de tout l'élevage. AviCare affiche ce calendrier et les délais d'attente
+        plus rentables de tout l'élevage. Jawdi affiche ce calendrier et les délais d'attente
         après traitement directement sur chaque lot&nbsp;: à vous de vérifier et d'agir au bon
         moment, l'information ne remplace jamais votre vigilance.
       </p>
@@ -181,7 +181,7 @@ const jsonLd = {
         la bande — bien trop tard pour agir. Un relevé quotidien simple (mortalité, aliment
         distribué, consommation d'eau) permet de repérer une dérive dès le deuxième ou
         troisième jour anormal, avant qu'elle ne devienne une hécatombe. C'est exactement ce que
-        couvre le suivi journalier d'AviCare&nbsp;: quelques secondes de saisie par jour, depuis
+        couvre le suivi journalier d'Jawdi&nbsp;: quelques secondes de saisie par jour, depuis
         votre téléphone, pour transformer des signaux faibles en décision à temps plutôt qu'en
         constat après coup.
       </p>
@@ -196,7 +196,7 @@ const jsonLd = {
 
       <p class="art-cta-line">
         Envie de garder ces repères sous la main, bande après bande&nbsp;? Ouvrez un compte
-        AviCare et commencez la saisie dès votre prochain lot de poussins.
+        Jawdi et commencez la saisie dès votre prochain lot de poussins.
       </p>
       <a class="btn btn-cta btn-lg" href={signupUrl}>Commencer gratuitement</a>
     </div>

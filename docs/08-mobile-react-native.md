@@ -1,6 +1,6 @@
 # 08 — Mobile React Native
 
-> Architecture mobile AviCare Platform — offline-first, mode terrain.
+> Architecture mobile Jawdi Platform — offline-first, mode terrain.
 > Référence pour Sprint B7 (mobile MVP) et tous les sprints mobile ensuite.
 >
 > **Pré-requis :** avoir lu `00-vision-strategique.md`, `01-roadmap-v1.md` (§ Sprint B7),

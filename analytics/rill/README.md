@@ -1,4 +1,4 @@
-# AviCare — Rill Design-Time Project
+# Jawdi — Rill Design-Time Project
 
 > **Design-time only.** This project is NOT deployed, NOT in the production
 > path, and NOT a CI gate. It connects to the local dev Postgres and serves
@@ -9,7 +9,7 @@
 
 ## What this project is
 
-The AviCare dashboard (Spec B) serves KPI data from Spring Boot endpoints,
+The Jawdi dashboard (Spec B) serves KPI data from Spring Boot endpoints,
 not from Rill at runtime. This Rill project exists for two purposes:
 
 1. **Visual validation** of SQL aggregations before they are ported to Java
@@ -63,7 +63,7 @@ results locally for fast dashboard rendering.
   ```
   Or via Homebrew: `brew install rilldata/tap/rill`
 
-- **Dev Postgres** running on `localhost:5434` with the AviCare schema
+- **Dev Postgres** running on `localhost:5434` with the Jawdi schema
   (started via `docker-compose up -d postgres` from the repo root or
   `make dev-up`).
 
