@@ -4,7 +4,7 @@
  * (same family as the web / UVDistribution). Data comes from the web-ported
  * slices (dashboardApi, activityApi) — nothing recomputed.
  */
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -35,6 +35,9 @@ import {
 import { tokens } from '@/theme';
 import { KpiCard, QuickAction, SectionHeader } from '@/components/ui';
 import { AppHeader } from '@/components/AppHeader';
+import { MicButton } from '@/components/assistant/MicButton';
+import { AssistantSheet } from '@/components/assistant/AssistantSheet';
+import { useFarmAccess } from '@/auth/useSession';
 import { useListFarmsQuery } from '@/store/api/farmsApi';
 import { useGetDashboardQuery } from '@/store/api/dashboardApi';
 import { useGetFarmActivityQuery } from '@/store/api/activityApi';
@@ -93,6 +96,8 @@ function withAlpha(hex: string, a: number): string {
 export default function HomeScreen() {
   const router = useRouter();
   const selectedFarmId = useSelector(selectSelectedFarmId);
+  const { can } = useFarmAccess();
+  const [assistantOpen, setAssistantOpen] = useState(false);
   const { data: farms } = useListFarmsQuery();
   const farmId = selectedFarmId ?? undefined;
 
@@ -184,9 +189,12 @@ export default function HomeScreen() {
         )}
       </ScrollView>
 
+      {can('poultry:write') && <MicButton onPress={() => setAssistantOpen(true)} style={styles.micFab} />}
       <Pressable style={styles.fab} onPress={goToLots} accessibilityRole="button" accessibilityLabel="Nouvelle saisie">
         <Plus size={30} color={tokens.colors.earth} />
       </Pressable>
+
+      <AssistantSheet visible={assistantOpen} onClose={() => setAssistantOpen(false)} />
     </SafeAreaView>
   );
 }
@@ -213,4 +221,5 @@ const styles = StyleSheet.create({
   actDetail: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted },
   actTime: { ...tokens.typography.bodySm, color: tokens.colors.neutral[400] },
   fab: { position: 'absolute', right: tokens.spacing[5], bottom: tokens.spacing[6], width: 60, height: 60, borderRadius: tokens.radii.full, backgroundColor: tokens.colors.accent[400], alignItems: 'center', justifyContent: 'center', shadowColor: '#1C1917', shadowOpacity: 0.25, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 6 },
+  micFab: { position: 'absolute', right: tokens.spacing[5], bottom: tokens.spacing[6] + 72 },
 });
