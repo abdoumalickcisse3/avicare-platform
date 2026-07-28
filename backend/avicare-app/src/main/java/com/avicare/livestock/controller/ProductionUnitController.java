@@ -35,8 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ProductionUnitController {
 
   // Field write (mortality, count adjust) — grantable via poultry:write for per-member sub-access.
-  private static final String WRITE_ROLES =
-      "@farmAccess.hasPermission(#farmId, 'poultry:write')";
+  private static final String WRITE_ROLES = "@farmAccess.hasPermission(#farmId, 'poultry:write')";
 
   // Creating a unit is structuring — restricted to OWNER/MANAGER (no FARMER).
   private static final String CREATE_ROLES =
