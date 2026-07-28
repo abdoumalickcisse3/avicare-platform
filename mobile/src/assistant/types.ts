@@ -21,8 +21,7 @@ export interface ParseContext {
   activeUnits?: AssistantUnit[];
 }
 
-/** Phase 1's only intent: record a mortality event. `unitId === null` means the
- * lot still has to be chosen before confirmation. */
+/** `unitId === null` means the lot still has to be chosen before confirmation. */
 export interface MortalityIntent {
   kind: 'MORTALITY';
   count: number;
@@ -30,8 +29,35 @@ export interface MortalityIntent {
   unitId: number | null;
 }
 
-/** Union of supported intents. Grows in later phases (weighing, collection…). */
-export type AssistantIntent = MortalityIntent;
+/** Broiler daily entry (feed/water/mortality/observations). */
+export interface DailyRecordIntent {
+  kind: 'DAILY_RECORD';
+  mortalityCount: number;
+  feedKg?: number;
+  waterL?: number;
+  observations?: string;
+  unitId: number | null;
+}
+
+/** A weighing sample (individual weights in grams). */
+export interface WeighingIntent {
+  kind: 'WEIGHING';
+  weights: number[];
+  notes?: string;
+  unitId: number | null;
+}
+
+/** An egg collection for a timeslot. */
+export interface EggCollectionIntent {
+  kind: 'EGG_COLLECTION';
+  totalEggs: number;
+  brokenEggs?: number;
+  timeslotKey: string;
+  unitId: number | null;
+}
+
+/** Union of supported intents (Phase 2: the four field actions). */
+export type AssistantIntent = MortalityIntent | DailyRecordIntent | WeighingIntent | EggCollectionIntent;
 
 export type ParsedIntent = AssistantIntent | null;
 

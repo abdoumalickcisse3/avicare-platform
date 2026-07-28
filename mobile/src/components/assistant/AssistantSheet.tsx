@@ -6,7 +6,7 @@
  * queue and the sheet closes with a spoken acknowledgement.
  */
 import { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Mic, X } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { useAssistant } from '@/assistant/useAssistant';
@@ -60,7 +60,12 @@ export function AssistantSheet({
             </Pressable>
           </View>
 
-          {assistant.draft ? (
+          {assistant.thinking ? (
+            <View style={styles.thinking}>
+              <ActivityIndicator color={tokens.colors.primary[600]} />
+              <Text style={styles.thinkingText}>Jawdi réfléchit…</Text>
+            </View>
+          ) : assistant.draft ? (
             <ConfirmationCard draft={assistant.draft} onConfirm={handleConfirm} onCancel={() => { assistant.cancel(); setText(''); }} />
           ) : assistant.unitChoice ? (
             <View style={styles.block}>
@@ -119,6 +124,8 @@ const styles = StyleSheet.create({
   brandDot: { width: 30, height: 30, borderRadius: tokens.radii.full, backgroundColor: tokens.colors.primary[50], alignItems: 'center', justifyContent: 'center' },
   brandText: { ...tokens.typography.headingMd, fontSize: 17, color: tokens.colors.field.text },
   block: { gap: tokens.spacing[3] },
+  thinking: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[3], paddingVertical: tokens.spacing[5] },
+  thinkingText: { ...tokens.typography.bodyMd, color: tokens.colors.field.textMuted },
   hint: { ...tokens.typography.bodyMd, color: tokens.colors.field.textMuted },
   prompt: { ...tokens.typography.headingMd, fontSize: 16, color: tokens.colors.field.text },
   inputRow: { flexDirection: 'row', alignItems: 'flex-start', gap: tokens.spacing[2], backgroundColor: tokens.colors.neutral[0], borderWidth: 1, borderColor: tokens.colors.neutral[200], borderRadius: tokens.radii.lg, paddingHorizontal: tokens.spacing[3], paddingVertical: tokens.spacing[3], minHeight: 60 },
