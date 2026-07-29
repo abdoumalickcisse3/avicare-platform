@@ -15,7 +15,9 @@ import { WizardContext, type NextHandler } from "./wizardContext";
 import { WelcomeStep } from "./steps/WelcomeStep";
 import { FarmStep } from "./steps/FarmStep";
 import { LivestockStep } from "./steps/LivestockStep";
-import { CatalogReviewStep } from "./steps/CatalogReviewStep";
+import { StockStep } from "./steps/StockStep";
+import { CommercialStep } from "./steps/CommercialStep";
+import { FinanceStep } from "./steps/FinanceStep";
 import { DoneStep } from "./steps/DoneStep";
 
 const RAIL_WIDTH = 300;
@@ -98,35 +100,11 @@ export function OnboardingWizard() {
       case "livestock":
         return <LivestockStep />;
       case "stock":
-        return (
-          <CatalogReviewStep
-            category="inventory_items"
-            title="Votre stock"
-            subtitle="Vos articles de départ — aliments, consommables, équipements. Ajustez plus tard dans Réglages."
-            accent="Articles pré-remplis"
-            emptyHint="Aucun article pour l'instant. Vous en ajouterez depuis Stock."
-          />
-        );
+        return <StockStep />;
       case "commercial":
-        return (
-          <CatalogReviewStep
-            category="sales_channels"
-            title="Votre commercial"
-            subtitle="Vos circuits de vente — détail, grossiste, marché. Vos clients et prix se règlent ensuite dans Commercial."
-            accent="Circuits pré-remplis"
-            emptyHint="Aucun circuit pour l'instant. Vous en ajouterez depuis Commercial."
-          />
-        );
+        return <CommercialStep />;
       case "finance":
-        return (
-          <CatalogReviewStep
-            category="expense_categories"
-            title="Vos finances"
-            subtitle="Vos catégories de dépenses pour suivre les coûts dès le premier jour."
-            accent="Catégories pré-remplies"
-            emptyHint="Aucune catégorie pour l'instant. Vous en ajouterez depuis Finance."
-          />
-        );
+        return <FinanceStep />;
       case "done":
         return <DoneStep />;
     }
@@ -254,10 +232,13 @@ function Rail({ index }: { index: number }) {
         background: `linear-gradient(160deg, ${colors.primary[700]} 0%, ${colors.primary[900]} 100%)`,
       }}
     >
-      <Typography sx={{ fontWeight: 800, fontSize: 24, letterSpacing: "-0.02em" }}>
-        Jawdi
-      </Typography>
-      <Typography sx={{ color: colors.primary[200], fontSize: 14, mt: 0.5, mb: 5 }}>
+      <Box
+        component="img"
+        src="/logo/logo-dark.png"
+        alt="Jawdi Platform"
+        sx={{ height: 46, width: "auto", maxWidth: 200, display: "block" }}
+      />
+      <Typography sx={{ color: colors.primary[200], fontSize: 14, mt: 1.5, mb: 5 }}>
         Configurons votre ferme
       </Typography>
 
