@@ -42,6 +42,31 @@ Pour ce public, la complexité = **navigation + lecture + saisie**. C'est cela q
 
 Cette direction est **adoptée**. Les sections suivantes la rendent exécutable et sûre.
 
+## 3bis. Jawdi IA = un **module**, pas un onglet (web **et** mobile)
+
+**Décision de cadrage.** Jawdi IA n'est **pas** une fonctionnalité isolée ni un simple onglet : c'est un **module transverse à part entière**, présent sur **les deux surfaces** :
+
+- **Mobile (ouvrier de terrain)** : la **capture** — parler pour saisir (voix → intention → confirmation → file offline). C'est le point de départ (phases 1‑2).
+- **Web (propriétaire / gérant)** : le **cerveau analytique** — poser des questions sur ses données (« qui me doit de l'argent ? », « quel lot sous‑performe ? »), recevoir **conseils**, **alertes de prévention**, **prévisions**, et déclencher des actions multi‑modules. Jawdi IA y devient un **compagnon de pilotage**, pas seulement de saisie.
+
+Le **même moteur** sert les deux : l'IA est un **client des façades existantes** (function‑calling), le bounded context `assistant` orchestre ; web et mobile ne sont que deux **canaux** au‑dessus du même cerveau. Aucun des 5 modules métier ne change.
+
+> Conséquence produit : « Jawdi IA » aura sa propre **entrée de premier niveau** (module) dans la navigation web et mobile, pas un bouton perdu dans un écran.
+
+## 3ter. Feuille de route des capacités (au‑delà de la saisie)
+
+La capture vocale n'est que la **fondation**. Une fois la chaîne fiable, Jawdi IA monte en valeur — c'est **là** qu'il innove le domaine :
+
+1. **Saisie assistée** *(phases 1‑2, en cours)* — parler/écrire → action confirmée.
+2. **Proactif** — alertes déterministes (stock bas, encours, chute de ponte, mortalité anormale) → action en 1 tap.
+3. **Conseil** — recommandations contextuelles à partir des données de la ferme (« ta consommation d'aliment dérive du standard de la souche », « pense à la vaccination J14 »).
+4. **Prévention** — détection précoce de risques (courbe de mortalité, signaux sanitaires, ruptures de stock à venir) **avant** qu'ils coûtent.
+5. **Prévision** — projection de trésorerie, date de maturité/vente, besoins d'aliment, revenus attendus.
+6. **Raisonnement cross‑module** — croiser élevage × stock × commercial × finance pour répondre et décider (« si je vends ce lot maintenant vs dans 5 jours, quel gain net ? »).
+7. **Assistant permanent multi‑canal** — in‑app, puis **WhatsApp** (là où sont les gens), à terme voix Wolof/Pulaar.
+
+**Garde‑fous constants** (rappel §4) : conseils formulés comme **suggestions** ; toute action touchant **argent/santé** reste **confirmée par l'humain** ; le déterministe garantit les chiffres. L'IA **augmente** le décideur, elle ne le remplace pas.
+
 ## 4. Principes non‑négociables (les 5 disciplines)
 
 1. **La validation finale est triviale et *lisible sans lire*.** Pas de pavé « l'IA dit que… ». Une **carte structurée** (`Vendre · 30 poulets · Modou · 45 000 F`) + gros bouton **Confirmer** / **Annuler**, **lue à voix haute**. La confiance se gagne ou se perd ici.
