@@ -13,8 +13,23 @@ interface ApiEnvelope<T> {
 
 const base = (farmId: number) => `/api/v1/farms/${farmId}/poultry-batches`;
 
+export interface CreateBatchInput {
+  breedId: number;
+  name?: string;
+  startDate?: string;
+  initialCount: number;
+}
+
 export const poultryBatchesApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
+    createBatch: build.mutation<PoultryBatch, { farmId: number; body: CreateBatchInput }>({
+      query: ({ farmId, body }) => ({ url: base(farmId), method: 'POST', body }),
+      transformResponse: (r: ApiEnvelope<PoultryBatch>) => r.data,
+      invalidatesTags: [
+        { type: 'PoultryBatch', id: 'LIST' },
+        { type: 'ProductionUnit', id: 'LIST' },
+      ],
+    }),
     getBatches: build.query<PoultryBatch[], { farmId: number; status?: BatchStatus }>({
       query: ({ farmId, status }) => (status ? `${base(farmId)}?status=${status}` : base(farmId)),
       transformResponse: (r: ApiEnvelope<PoultryBatch[]>) => r.data,
@@ -44,6 +59,7 @@ export const poultryBatchesApi = baseApi.injectEndpoints({
 });
 
 export const {
+  useCreateBatchMutation,
   useGetBatchesQuery,
   useGetBatchQuery,
   useGetPerformanceQuery,
