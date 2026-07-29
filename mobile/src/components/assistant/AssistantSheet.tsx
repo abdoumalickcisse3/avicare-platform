@@ -10,6 +10,7 @@ import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, St
 import { Mic, X } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { useAssistant } from '@/assistant/useAssistant';
+import { useSpeechInput } from '@/assistant/speech/useSpeechInput';
 import { speak } from '@/assistant/speech/tts';
 import { ConfirmationCard } from './ConfirmationCard';
 
@@ -24,12 +25,25 @@ export function AssistantSheet({
 }) {
   const assistant = useAssistant({ unitId });
   const [text, setText] = useState('');
+  const speech = useSpeechInput({
+    onFinal: (t) => {
+      setText(t);
+      void assistant.submit(t);
+    },
+  });
+
+  // Stream interim voice results into the field so the user sees it in real time.
+  useEffect(() => {
+    if (speech.transcript) setText(speech.transcript);
+  }, [speech.transcript]);
 
   // Reset the draft/message when the sheet opens.
   useEffect(() => {
     if (visible) {
       setText('');
       assistant.cancel();
+    } else if (speech.listening) {
+      speech.stop();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
@@ -81,17 +95,28 @@ export function AssistantSheet({
           ) : (
             <View style={styles.block}>
               <Text style={styles.hint}>
-                Appuyez sur le micro du clavier et parlez — ex. « dix sont morts ».
+                {speech.listening ? 'Parlez maintenant…' : 'Appuyez sur le micro et parlez — ex. « dix sont morts ».'}
               </Text>
+
+              {/* Big mic: tap to listen (on-device FR); the field mirrors the transcript. */}
+              <View style={styles.micRow}>
+                <Pressable
+                  style={({ pressed }) => [styles.micCircle, speech.listening && styles.micCircleOn, pressed && { opacity: 0.85 }]}
+                  onPress={() => (speech.listening ? speech.stop() : speech.start())}
+                  accessibilityRole="button"
+                  accessibilityLabel={speech.listening ? 'Arrêter l’écoute' : 'Parler à Jawdi'}
+                >
+                  <Mic size={30} color={speech.listening ? tokens.colors.neutral[0] : tokens.colors.primary[700]} />
+                </Pressable>
+              </View>
+
               <View style={styles.inputRow}>
-                <Mic size={18} color={tokens.colors.field.textMuted} />
                 <TextInput
                   style={styles.input}
                   value={text}
                   onChangeText={setText}
-                  placeholder="Dites ce que vous voulez faire…"
+                  placeholder="…ou tapez ici"
                   placeholderTextColor={tokens.colors.field.disabled}
-                  autoFocus
                   multiline
                   onSubmitEditing={() => assistant.submit(text)}
                   accessibilityLabel="Dictée assistant"
@@ -127,6 +152,9 @@ const styles = StyleSheet.create({
   thinking: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[3], paddingVertical: tokens.spacing[5] },
   thinkingText: { ...tokens.typography.bodyMd, color: tokens.colors.field.textMuted },
   hint: { ...tokens.typography.bodyMd, color: tokens.colors.field.textMuted },
+  micRow: { alignItems: 'center', paddingVertical: tokens.spacing[2] },
+  micCircle: { width: 84, height: 84, borderRadius: tokens.radii.full, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.colors.primary[50], borderWidth: 2, borderColor: tokens.colors.primary[600] },
+  micCircleOn: { backgroundColor: tokens.colors.primary[600], borderColor: tokens.colors.primary[600] },
   prompt: { ...tokens.typography.headingMd, fontSize: 16, color: tokens.colors.field.text },
   inputRow: { flexDirection: 'row', alignItems: 'flex-start', gap: tokens.spacing[2], backgroundColor: tokens.colors.neutral[0], borderWidth: 1, borderColor: tokens.colors.neutral[200], borderRadius: tokens.radii.lg, paddingHorizontal: tokens.spacing[3], paddingVertical: tokens.spacing[3], minHeight: 60 },
   input: { flex: 1, ...tokens.typography.bodyLg, color: tokens.colors.field.text, padding: 0 },
