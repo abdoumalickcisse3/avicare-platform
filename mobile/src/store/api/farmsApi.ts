@@ -23,6 +23,14 @@ export interface Farm {
   productionFocus?: string[];
 }
 
+export interface FarmInput {
+  name: string;
+  description?: string;
+  location?: string;
+  capacity?: number;
+  productionFocus?: string[];
+}
+
 export const farmsApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     listFarms: build.query<Farm[], void>({
@@ -36,7 +44,17 @@ export const farmsApi = baseApi.injectEndpoints({
             ]
           : [{ type: 'Farm' as const, id: 'LIST' }],
     }),
+    createFarm: build.mutation<Farm, FarmInput>({
+      query: (body) => ({ url: '/api/v1/farms', method: 'POST', body }),
+      transformResponse: (r: ApiEnvelope<Farm>) => r.data,
+      invalidatesTags: [{ type: 'Farm', id: 'LIST' }],
+    }),
+    updateFarm: build.mutation<Farm, { id: number; body: FarmInput }>({
+      query: ({ id, body }) => ({ url: `/api/v1/farms/${id}`, method: 'PUT', body }),
+      transformResponse: (r: ApiEnvelope<Farm>) => r.data,
+      invalidatesTags: [{ type: 'Farm', id: 'LIST' }],
+    }),
   }),
 });
 
-export const { useListFarmsQuery } = farmsApi;
+export const { useListFarmsQuery, useCreateFarmMutation, useUpdateFarmMutation } = farmsApi;
