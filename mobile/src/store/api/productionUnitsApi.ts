@@ -37,8 +37,24 @@ export interface LifecycleEvent {
   occurredAt: string;
 }
 
+export interface ProductionUnitInput {
+  breedId: number;
+  name?: string;
+  startDate: string;
+  initialCount: number;
+}
+
 export const productionUnitsApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
+    createProductionUnit: build.mutation<ProductionUnit, { farmId: number; body: ProductionUnitInput }>({
+      query: ({ farmId, body }) => ({
+        url: `/api/v1/farms/${farmId}/production-units`,
+        method: 'POST',
+        body,
+      }),
+      transformResponse: (r: ApiEnvelope<ProductionUnit>) => r.data,
+      invalidatesTags: [{ type: 'ProductionUnit', id: 'LIST' }],
+    }),
     listProductionUnits: build.query<ProductionUnit[], number>({
       query: (farmId) => `/api/v1/farms/${farmId}/production-units`,
       transformResponse: (r: ApiEnvelope<ProductionUnit[]>) => r.data,
@@ -58,4 +74,8 @@ export const productionUnitsApi = baseApi.injectEndpoints({
   }),
 });
 
-export const { useListProductionUnitsQuery, useGetUnitEventsQuery } = productionUnitsApi;
+export const {
+  useCreateProductionUnitMutation,
+  useListProductionUnitsQuery,
+  useGetUnitEventsQuery,
+} = productionUnitsApi;
