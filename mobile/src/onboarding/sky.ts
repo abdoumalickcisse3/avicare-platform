@@ -20,5 +20,6 @@ export function skyForStep(index: number, total: number): Sky {
   const last = Math.max(total - 1, 1);
   const clamped = Math.min(Math.max(index, 0), last);
   const paletteIndex = Math.round((clamped / last) * (PALETTE.length - 1));
-  return { stops: PALETTE[paletteIndex], sunProgress: clamped / last };
+  const stops = PALETTE[paletteIndex] ?? PALETTE[0]!;
+  return { stops, sunProgress: clamped / last };
 }
