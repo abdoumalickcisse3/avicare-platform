@@ -38,7 +38,6 @@ async function fillForm(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText(/adresse e-mail/i), "awa@example.com");
   await user.type(screen.getByLabelText("Mot de passe"), "password123");
   await user.type(screen.getByLabelText(/confirmation/i), "password123");
-  await user.type(screen.getByLabelText(/nom de la ferme/i), "Ferme Test");
 }
 
 beforeEach(() => {
@@ -47,11 +46,12 @@ beforeEach(() => {
 });
 
 describe("SignupPage (single-step)", () => {
-  it("renders a single form with identity and farm fields, no plan step", () => {
+  it("renders an identity-only form — no farm fields, no plan step", () => {
     renderWithProviders(<SignupPage />);
     expect(screen.getByRole("heading", { name: "Créer votre compte" })).toBeInTheDocument();
     expect(screen.getByLabelText(/prénom/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/nom de la ferme/i)).toBeInTheDocument();
+    // Farm details moved to the onboarding wizard.
+    expect(screen.queryByLabelText(/nom de la ferme/i)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /créer mon compte/i })).toBeInTheDocument();
     expect(screen.queryByText("Votre formule")).not.toBeInTheDocument();
     expect(screen.queryByText("Starter Volaille")).not.toBeInTheDocument();
@@ -62,11 +62,10 @@ describe("SignupPage (single-step)", () => {
     renderWithProviders(<SignupPage />);
     await user.click(screen.getByRole("button", { name: /créer mon compte/i }));
     expect(await screen.findByText("Prénom requis")).toBeInTheDocument();
-    expect(screen.getByText("Nom de la ferme requis")).toBeInTheDocument();
     expect(m.signup).not.toHaveBeenCalled();
   });
 
-  it("creates the account and farm without a plan step, then redirects to onboarding", async () => {
+  it("creates the account and a default-named farm, then redirects to onboarding", async () => {
     const user = userEvent.setup();
     renderWithProviders(<SignupPage />);
     await fillForm(user);
@@ -74,7 +73,9 @@ describe("SignupPage (single-step)", () => {
 
     await waitFor(() => expect(m.replace).toHaveBeenCalledWith("/onboarding"));
     expect(m.signup).toHaveBeenCalledTimes(1);
-    expect(m.createFarm).toHaveBeenCalledWith({ name: "Ferme Test", location: undefined });
+    // Farm is provisioned with a default name derived from the first name;
+    // the owner names/details it in the onboarding wizard.
+    expect(m.createFarm).toHaveBeenCalledWith({ name: "Ferme de Awa" });
     expect(m.refresh).toHaveBeenCalled();
     expect(m.upsert).toHaveBeenCalledWith({
       key: "onboarding_completed",

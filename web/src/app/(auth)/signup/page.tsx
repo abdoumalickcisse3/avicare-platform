@@ -11,7 +11,6 @@ import {
   Box,
   Button,
   CircularProgress,
-  Divider,
   Stack,
   TextField,
   Typography,
@@ -37,8 +36,6 @@ const signupSchema = z
     phone: z.string().max(30, "30 caractères maximum").optional().or(z.literal("")),
     password: z.string().min(8, "8 caractères minimum"),
     confirmPassword: z.string().min(1, "Veuillez confirmer le mot de passe"),
-    farmName: z.string().min(1, "Nom de la ferme requis").max(200, "200 caractères maximum"),
-    location: z.string().max(500, "500 caractères maximum").optional().or(z.literal("")),
   })
   .refine((d) => d.password === d.confirmPassword, {
     message: "Les mots de passe ne correspondent pas",
@@ -81,8 +78,6 @@ export default function SignupPage() {
       phone: "",
       password: "",
       confirmPassword: "",
-      farmName: "",
-      location: "",
     },
   });
 
@@ -108,14 +103,12 @@ export default function SignupPage() {
         dispatch(setTokens(tokens));
         orch.current.signedUp = true;
       }
-      // b. Farm (once) — signup does not create one. The farm is auto-provisioned
-      // server-side with all V1 modules. Refresh so the token carries the new
-      // OWNER membership.
+      // b. Farm (once) — provisioned with a default name so the onboarding
+      // wizard has a farm to configure (the owner names/details it in step 2).
+      // Refresh so the token carries the new OWNER membership.
       if (!orch.current.farmId) {
-        const farm = await createFarm({
-          name: v.farmName.trim(),
-          location: v.location?.trim() || undefined,
-        }).unwrap();
+        const defaultName = v.firstName.trim() ? `Ferme de ${v.firstName.trim()}` : "Ma ferme";
+        const farm = await createFarm({ name: defaultName }).unwrap();
         orch.current.farmId = farm.id;
         await refreshSession();
       }
@@ -189,23 +182,6 @@ export default function SignupPage() {
           control={control}
           render={({ field, fieldState }) => (
             <PasswordField {...field} label="Confirmation" autoComplete="new-password" fullWidth error={!!fieldState.error} helperText={fieldState.error?.message} />
-          )}
-        />
-
-        <Divider>Votre ferme</Divider>
-
-        <Controller
-          name="farmName"
-          control={control}
-          render={({ field, fieldState }) => (
-            <TextField {...field} label="Nom de la ferme" placeholder="Ex : Ferme Avicole du Saloum" fullWidth error={!!fieldState.error} helperText={fieldState.error?.message} />
-          )}
-        />
-        <Controller
-          name="location"
-          control={control}
-          render={({ field, fieldState }) => (
-            <TextField {...field} label="Localisation (optionnel)" placeholder="Ex : Thiès, Sénégal" fullWidth error={!!fieldState.error} helperText={fieldState.error?.message} />
           )}
         />
 
