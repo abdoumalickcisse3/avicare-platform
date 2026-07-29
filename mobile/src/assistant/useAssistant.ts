@@ -14,7 +14,7 @@ import { useListProductionUnitsQuery } from '@/store/api/productionUnitsApi';
 import { useInterpretMutation } from '@/store/api/assistantApi';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { enqueueFieldMutation } from '@/field/enqueueMutation';
-import { mortalityParser } from './parsers/mortalityParser';
+import { rulesParse } from './parsers';
 import { intentFromInterpret } from './llm/fromInterpret';
 import { buildConfirmation } from './drafts';
 import { toMutation } from './intentRegistry';
@@ -80,7 +80,7 @@ export function useAssistant({ unitId }: { unitId?: number | null } = {}): Assis
     setUnitChoice(null);
 
     // 1) On-device rules — offline, free, covers the common phrases.
-    const local = mortalityParser.parse(text, { unitId, activeUnits });
+    const local = rulesParse(text, { unitId, activeUnits });
     if (local) {
       finalize(local);
       return;
