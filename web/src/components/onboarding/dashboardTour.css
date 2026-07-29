@@ -1,6 +1,11 @@
 /* Jawdi theme for the driver.js guided tour popover. Values mirror
    src/theme/tokens.ts (accent 400/500, neutral scale) — static CSS can't import
    the TS tokens, so keep these in sync if the palette changes. */
+.jawdi-tour.driver-popover,
+.jawdi-tour.driver-popover * {
+  /* Respect the project typography (next/font --font-sans, then Outfit). */
+  font-family: var(--font-sans), "Outfit", -apple-system, BlinkMacSystemFont, sans-serif;
+}
 .jawdi-tour.driver-popover {
   border-radius: 16px;
   padding: 20px;
