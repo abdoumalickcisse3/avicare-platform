@@ -9,6 +9,12 @@
 import { baseApi } from './baseApi';
 import type { Client } from '@/types';
 
+export interface ClientInput {
+  clientType: 'INDIVIDUAL' | 'BUSINESS' | 'WHOLESALER';
+  displayName: string;
+  phone?: string;
+}
+
 interface ApiEnvelope<T> {
   data: T;
 }
@@ -22,7 +28,12 @@ export const clientsApi = baseApi.injectEndpoints({
       transformResponse: (r: ApiEnvelope<Client[]>) => r.data,
       providesTags: [{ type: 'Client', id: 'list' }],
     }),
+    createClient: build.mutation<Client, { farmId: number; body: ClientInput }>({
+      query: ({ farmId, body }) => ({ url: base(farmId), method: 'POST', body }),
+      transformResponse: (r: ApiEnvelope<Client>) => r.data,
+      invalidatesTags: [{ type: 'Client', id: 'list' }],
+    }),
   }),
 });
 
-export const { useGetClientsQuery } = clientsApi;
+export const { useGetClientsQuery, useCreateClientMutation } = clientsApi;
