@@ -374,7 +374,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         />
       </Box>
 
-      <Box sx={{ px: 1.5, flex: 1, overflowY: "auto" }}>
+      <Box data-tour="nav" sx={{ px: 1.5, flex: 1, overflowY: "auto" }}>
         {NAV.map((section, i) => (
           <Box key={section.heading ?? `section-${i}`} sx={{ mb: 0.5 }}>
             {section.heading && (

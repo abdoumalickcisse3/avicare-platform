@@ -1,0 +1,48 @@
+/* Jawdi theme for the driver.js guided tour popover. Values mirror
+   src/theme/tokens.ts (accent 400/500, neutral scale) — static CSS can't import
+   the TS tokens, so keep these in sync if the palette changes. */
+.jawdi-tour.driver-popover {
+  border-radius: 16px;
+  padding: 20px;
+  max-width: 340px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.06);
+}
+.jawdi-tour .driver-popover-title {
+  font-weight: 800;
+  font-size: 17px;
+  color: #292524;
+  margin-bottom: 6px;
+}
+.jawdi-tour .driver-popover-description {
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: #44403c;
+}
+.jawdi-tour .driver-popover-progress-text {
+  color: #78716c;
+  font-size: 12px;
+  font-weight: 600;
+}
+.jawdi-tour .driver-popover-navigation-btns button.driver-popover-next-btn {
+  background: #f8961e;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  text-shadow: none;
+  padding: 8px 16px;
+}
+.jawdi-tour .driver-popover-navigation-btns button.driver-popover-next-btn:hover {
+  background: #e67e0a;
+}
+.jawdi-tour .driver-popover-navigation-btns button.driver-popover-prev-btn {
+  color: #78716c;
+  text-shadow: none;
+  border-radius: 8px;
+}
+.jawdi-tour .driver-popover-close-btn {
+  color: #a8a29e;
+}
+.jawdi-tour .driver-popover-arrow {
+  border-color: #ffffff;
+}
