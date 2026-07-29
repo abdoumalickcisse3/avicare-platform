@@ -28,6 +28,7 @@ import { LivestockPanel } from "@/components/dashboard/LivestockPanel";
 import { MiniStat } from "@/components/dashboard/MiniStat";
 import { AreaTrend, type Point } from "@/components/dashboard/charts/RechartsWidgets";
 import { pickHeroTiles } from "@/lib/dashboardHero";
+import { DashboardWelcome } from "@/components/onboarding/DashboardWelcome";
 import { periodToQuery } from "@/lib/dashboard";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { colors } from "@/theme/tokens";
@@ -107,8 +108,10 @@ export default function DashboardPage() {
 
   return (
     <Stack spacing={2.5}>
+      <DashboardWelcome />
       {/* Greeting + period control */}
       <Stack
+        data-tour="overview"
         direction={{ xs: "column", md: "row" }}
         spacing={2}
         sx={{ justifyContent: "space-between", alignItems: { xs: "stretch", md: "flex-end" } }}
