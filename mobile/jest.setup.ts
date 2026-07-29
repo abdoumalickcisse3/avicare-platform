@@ -12,4 +12,23 @@ jest.mock('expo-speech-recognition', () => ({
   useSpeechRecognitionEvent: jest.fn(),
 }));
 
+// Reanimated ships an official Jest mock.
+require('react-native-reanimated').setUpTests?.();
+jest.mock('react-native-reanimated', () =>
+  require('react-native-reanimated/mock'),
+);
+jest.mock('expo-linear-gradient', () => ({
+  LinearGradient: ({ children }: { children?: React.ReactNode }) => children ?? null,
+}));
+jest.mock('expo-blur', () => ({
+  BlurView: ({ children }: { children?: React.ReactNode }) => children ?? null,
+}));
+jest.mock('expo-haptics', () => ({
+  selectionAsync: jest.fn(),
+  impactAsync: jest.fn(),
+  notificationAsync: jest.fn(),
+  ImpactFeedbackStyle: { Light: 'light', Medium: 'medium' },
+  NotificationFeedbackType: { Success: 'success' },
+}));
+
 export {};
