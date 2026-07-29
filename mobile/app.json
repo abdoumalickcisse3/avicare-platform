@@ -26,7 +26,15 @@
       "expo-router",
       "expo-sqlite",
       "expo-secure-store",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Jawdi utilise le micro pour la saisie vocale sur le terrain.",
+          "speechRecognitionPermission": "Jawdi reconnaît votre voix pour préparer vos saisies.",
+          "androidSpeechServicePackages": ["com.google.android.googlequicksearchbox"]
+        }
+      ]
     ],
     "extra": {
       "apiUrl": "http://localhost:8080"
