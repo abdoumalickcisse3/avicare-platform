@@ -1,6 +1,14 @@
 module.exports = {
   preset: 'jest-expo',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+  // react-native-worklets ships a native (`.native.ts`) and a web
+  // implementation; under Jest there's no native runtime to initialize, so
+  // this resolver (the package's own recommended Jest setup) forces every
+  // worklets import — including the one pulled in transitively by
+  // react-native-reanimated's official mock — to resolve to the plain web
+  // implementation instead of throwing "Worklets doesn't seem to be
+  // initialized".
+  resolver: 'react-native-worklets/jest/resolver',
   // @react-native/jest-preset's TestEnvironment sets
   // `customExportConditions = ['require', 'react-native']`. Several
   // packages task 8 pulls into a plain-Node RTK Query test (immer via
@@ -29,7 +37,11 @@ module.exports = {
   // expo-modules-core directly, so without the `[\\w-]*` suffix below Jest
   // never transforms it and fails on its raw TS/ESM source. Broadened to
   // match jest-expo's own default transformIgnorePatterns.
+  // Also added `react-native-reanimated` and `react-native-worklets`: the
+  // reanimated package's own official Jest mock (`react-native-reanimated/mock`)
+  // requires its raw TS `src/` sources, which need Babel transformation same
+  // as the rest of the RN/expo allowlist above.
   transformIgnorePatterns: [
-    'node_modules/(?!((jest-)?react-native|@react-native(-community)?|expo(nent)?[\\w-]*|@expo(nent)?[\\w-]*/.*|expo-router|react-navigation|@react-navigation/.*)/)',
+    'node_modules/(?!((jest-)?react-native|@react-native(-community)?|expo(nent)?[\\w-]*|@expo(nent)?[\\w-]*/.*|expo-router|react-navigation|@react-navigation/.*|react-native-reanimated|react-native-worklets)/)',
   ],
 };
