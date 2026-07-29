@@ -41,7 +41,7 @@ function SectionCard({
         p: 2.5,
         bgcolor: colors.neutral[0],
         border: `1px solid ${colors.neutral[200]}`,
-        borderRadius: radii.lg,
+        borderRadius: `${radii.lg}px`,
       }}
     >
       <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", mb: 0.5 }}>
@@ -66,7 +66,7 @@ function EntityRow({ primary, secondary }: { primary: string; secondary?: string
         px: 1.5,
         py: 1,
         bgcolor: colors.neutral[50],
-        borderRadius: radii.md,
+        borderRadius: `${radii.md}px`,
       }}
     >
       <Typography sx={{ fontWeight: 600, color: colors.neutral[800] }}>{primary}</Typography>

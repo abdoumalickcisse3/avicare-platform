@@ -68,7 +68,7 @@ export function WelcomeModal({
             color: colors.neutral[0],
             fontWeight: 700,
             fontSize: 16,
-            borderRadius: radii.lg,
+            borderRadius: `${radii.lg}px`,
             boxShadow: shadows.sm,
             "&:hover": { bgcolor: colors.accent[500] },
           }}

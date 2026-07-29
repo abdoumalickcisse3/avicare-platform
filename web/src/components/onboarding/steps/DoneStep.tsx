@@ -21,7 +21,7 @@ export function DoneStep() {
           height: 84,
           mx: "auto",
           mb: 3,
-          borderRadius: radii.full,
+          borderRadius: `${radii.full}px`,
           bgcolor: colors.primary[50],
           color: colors.primary[600],
           display: "flex",
@@ -58,14 +58,14 @@ export function DoneStep() {
               p: 1.75,
               bgcolor: colors.neutral[0],
               border: `1px solid ${colors.neutral[200]}`,
-              borderRadius: radii.lg,
+              borderRadius: `${radii.lg}px`,
             }}
           >
             <Box
               sx={{
                 width: 26,
                 height: 26,
-                borderRadius: radii.full,
+                borderRadius: `${radii.full}px`,
                 bgcolor: colors.success.light,
                 color: colors.success.dark,
                 display: "flex",

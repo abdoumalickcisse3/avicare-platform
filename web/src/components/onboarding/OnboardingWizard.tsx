@@ -112,9 +112,14 @@ export function OnboardingWizard() {
 
   const ctaLabel = nextLabel ?? (isLast ? "Aller au tableau de bord" : "Continuer");
 
+  // Table-heavy steps need more room than forms; widen their content column.
+  const wide = step.id === "stock" || step.id === "commercial" || step.id === "finance";
+  const contentMax = wide ? 1040 : 660;
+
   return (
     <WizardContext.Provider value={ctx}>
-      <Box sx={{ minHeight: "100vh", display: "flex", bgcolor: colors.neutral[50] }}>
+      {/* Fixed viewport: only the middle content scrolls — rail + footer stay put. */}
+      <Box sx={{ height: "100vh", overflow: "hidden", display: "flex", bgcolor: colors.neutral[50] }}>
         <Rail index={index} />
 
         <Box
@@ -123,6 +128,7 @@ export function OnboardingWizard() {
             display: "flex",
             flexDirection: "column",
             minWidth: 0,
+            minHeight: 0,
           }}
         >
           {/* Compact progress — visible on mobile where the rail is hidden. */}
@@ -137,7 +143,7 @@ export function OnboardingWizard() {
               value={((index + 1) / ONBOARDING_STEPS.length) * 100}
               sx={{
                 height: 6,
-                borderRadius: radii.full,
+                borderRadius: `${radii.full}px`,
                 bgcolor: colors.neutral[200],
                 "& .MuiLinearProgress-bar": { bgcolor: colors.accent[400] },
               }}
@@ -147,29 +153,31 @@ export function OnboardingWizard() {
           <Box
             sx={{
               flex: 1,
+              minHeight: 0,
               display: "flex",
               justifyContent: "center",
-              px: { xs: 3, md: 6 },
-              py: { xs: 4, md: 6 },
+              px: { xs: 2.5, md: 4 },
+              py: { xs: 3, md: 4 },
               overflowY: "auto",
             }}
           >
-            <Box sx={{ width: "100%", maxWidth: 640 }}>{content}</Box>
+            <Box sx={{ width: "100%", maxWidth: contentMax }}>{content}</Box>
           </Box>
 
-          {/* Footer: ghost Back + orange CTA. */}
+          {/* Footer: ghost Back + orange CTA. Fixed (outside the scroll area). */}
           <Box
             sx={{
+              flexShrink: 0,
               borderTop: `1px solid ${colors.neutral[200]}`,
               bgcolor: colors.neutral[0],
-              px: { xs: 3, md: 6 },
-              py: 2.5,
+              px: { xs: 2.5, md: 4 },
+              py: 2,
             }}
           >
             <Stack
               direction="row"
               sx={{
-                maxWidth: 640,
+                maxWidth: contentMax,
                 mx: "auto",
                 alignItems: "center",
                 justifyContent: "space-between",
@@ -198,7 +206,7 @@ export function OnboardingWizard() {
                   fontWeight: 700,
                   px: 3.5,
                   height: 48,
-                  borderRadius: radii.lg,
+                  borderRadius: `${radii.lg}px`,
                   boxShadow: shadows.sm,
                   "&:hover": { bgcolor: colors.accent[500] },
                   "&.Mui-disabled": {
@@ -228,6 +236,7 @@ function Rail({ index }: { index: number }) {
         flexShrink: 0,
         px: 4,
         py: 5,
+        overflowY: "auto",
         color: colors.neutral[0],
         background: `linear-gradient(160deg, ${colors.primary[700]} 0%, ${colors.primary[900]} 100%)`,
       }}
@@ -236,7 +245,7 @@ function Rail({ index }: { index: number }) {
         component="img"
         src="/logo/logo-dark.png"
         alt="Jawdi Platform"
-        sx={{ height: 46, width: "auto", maxWidth: 200, display: "block" }}
+        sx={{ height: 46, width: "auto", maxWidth: 140, display: "block" }}
       />
       <Typography sx={{ color: colors.primary[200], fontSize: 14, mt: 1.5, mb: 5 }}>
         Configurons votre ferme
@@ -254,7 +263,7 @@ function Rail({ index }: { index: number }) {
                   sx={{
                     width: 30,
                     height: 30,
-                    borderRadius: radii.full,
+                    borderRadius: `${radii.full}px`,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",

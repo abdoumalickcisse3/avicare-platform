@@ -153,7 +153,7 @@ function LotSection({
         p: 2.5,
         bgcolor: colors.neutral[0],
         border: `1px solid ${colors.neutral[200]}`,
-        borderRadius: radii.lg,
+        borderRadius: `${radii.lg}px`,
       }}
     >
       <Stack direction="row" sx={{ alignItems: "center", gap: 1.5, mb: empty ? 1.5 : 2 }}>
@@ -161,7 +161,7 @@ function LotSection({
           sx={{
             width: 40,
             height: 40,
-            borderRadius: radii.md,
+            borderRadius: `${radii.md}px`,
             bgcolor: tintBg,
             color: tint,
             display: "flex",
@@ -216,7 +216,7 @@ function LotSection({
                 px: 1.5,
                 py: 1,
                 bgcolor: colors.neutral[50],
-                borderRadius: radii.md,
+                borderRadius: `${radii.md}px`,
               }}
             >
               <Typography sx={{ fontWeight: 600, color: colors.neutral[800] }}>{l.name}</Typography>
