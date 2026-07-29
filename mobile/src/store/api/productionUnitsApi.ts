@@ -53,7 +53,7 @@ export const productionUnitsApi = baseApi.injectEndpoints({
         body,
       }),
       transformResponse: (r: ApiEnvelope<ProductionUnit>) => r.data,
-      invalidatesTags: [{ type: 'ProductionUnit', id: 'LIST' }],
+      invalidatesTags: (_r, _e, { farmId }) => [{ type: 'ProductionUnit' as const, id: `LIST-${farmId}` }],
     }),
     listProductionUnits: build.query<ProductionUnit[], number>({
       query: (farmId) => `/api/v1/farms/${farmId}/production-units`,
