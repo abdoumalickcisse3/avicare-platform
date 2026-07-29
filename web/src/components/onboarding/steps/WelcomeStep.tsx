@@ -33,14 +33,14 @@ export function WelcomeStep() {
               p: 2,
               bgcolor: colors.neutral[0],
               border: `1px solid ${colors.neutral[200]}`,
-              borderRadius: radii.lg,
+              borderRadius: `${radii.lg}px`,
             }}
           >
             <Box
               sx={{
                 width: 44,
                 height: 44,
-                borderRadius: radii.md,
+                borderRadius: `${radii.md}px`,
                 bgcolor: colors.primary[50],
                 color: colors.primary[600],
                 display: "flex",

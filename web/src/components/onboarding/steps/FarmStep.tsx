@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Box, Stack, TextField, Typography } from "@mui/material";
-import { Bird, Egg, Layers } from "lucide-react";
+import { Bird, Check, Egg, Layers } from "lucide-react";
 import { colors, radii } from "@/theme/tokens";
 import {
   useGetMyFarmsQuery,
@@ -136,29 +136,61 @@ export function FarmStep() {
               return (
                 <Box
                   key={o.id}
-                  role="button"
+                  role="radio"
+                  aria-checked={selected}
                   tabIndex={0}
                   onClick={() => setFocus(o.id)}
-                  onKeyDown={(e) => e.key === "Enter" && setFocus(o.id)}
+                  onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setFocus(o.id)}
                   sx={{
                     flex: 1,
                     cursor: "pointer",
                     p: 2,
-                    borderRadius: radii.lg,
-                    border: `2px solid ${selected ? colors.primary[500] : colors.neutral[200]}`,
+                    borderRadius: `${radii.lg}px`,
+                    border: `1.5px solid ${selected ? colors.primary[500] : colors.neutral[200]}`,
                     bgcolor: selected ? colors.primary[50] : colors.neutral[0],
-                    transition: "all .15s",
+                    boxShadow: selected ? `0 1px 2px ${colors.primary[100]}` : "none",
+                    transition: "border-color .15s, background-color .15s",
                     outline: "none",
+                    "&:hover": {
+                      borderColor: selected ? colors.primary[500] : colors.neutral[300],
+                    },
                     "&:focus-visible": { boxShadow: `0 0 0 3px ${colors.primary[100]}` },
                   }}
                 >
-                  <Icon
-                    size={22}
-                    color={selected ? colors.primary[600] : colors.neutral[400]}
-                  />
-                  <Typography
-                    sx={{ mt: 1, fontWeight: 700, color: colors.neutral[800] }}
-                  >
+                  <Stack direction="row" sx={{ alignItems: "flex-start", justifyContent: "space-between" }}>
+                    <Box
+                      sx={{
+                        width: 42,
+                        height: 42,
+                        borderRadius: `${radii.md}px`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        bgcolor: selected ? colors.primary[100] : colors.neutral[100],
+                        color: selected ? colors.primary[600] : colors.neutral[500],
+                        transition: "background-color .15s, color .15s",
+                      }}
+                    >
+                      <Icon size={22} />
+                    </Box>
+                    <Box
+                      aria-hidden
+                      sx={{
+                        width: 20,
+                        height: 20,
+                        borderRadius: "50%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        border: `2px solid ${selected ? colors.primary[500] : colors.neutral[300]}`,
+                        bgcolor: selected ? colors.primary[500] : "transparent",
+                        transition: "all .15s",
+                      }}
+                    >
+                      {selected && <Check size={12} color={colors.neutral[0]} strokeWidth={3} />}
+                    </Box>
+                  </Stack>
+                  <Typography sx={{ mt: 1.5, fontWeight: 700, color: colors.neutral[800] }}>
                     {o.label}
                   </Typography>
                   <Typography sx={{ fontSize: 13, color: colors.neutral[500] }}>
