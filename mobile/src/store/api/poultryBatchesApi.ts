@@ -25,9 +25,9 @@ export const poultryBatchesApi = baseApi.injectEndpoints({
     createBatch: build.mutation<PoultryBatch, { farmId: number; body: CreateBatchInput }>({
       query: ({ farmId, body }) => ({ url: base(farmId), method: 'POST', body }),
       transformResponse: (r: ApiEnvelope<PoultryBatch>) => r.data,
-      invalidatesTags: [
-        { type: 'PoultryBatch', id: 'LIST' },
-        { type: 'ProductionUnit', id: 'LIST' },
+      invalidatesTags: (_r, _e, { farmId }) => [
+        { type: 'PoultryBatch' as const, id: 'LIST' },
+        { type: 'ProductionUnit' as const, id: `LIST-${farmId}` },
       ],
     }),
     getBatches: build.query<PoultryBatch[], { farmId: number; status?: BatchStatus }>({
