@@ -1,21 +1,18 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/render";
 import OnboardingPage from "./page";
 
-describe("OnboardingPage (light)", () => {
-  it("shows the welcome screen with the first-batch placeholder", () => {
-    renderWithProviders(<OnboardingPage />);
-    expect(screen.getByText(/bienvenue sur jawdi/i)).toBeInTheDocument();
-    expect(
-      screen.getByText(/la création de lots sera disponible/i),
-    ).toBeInTheDocument();
-  });
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ replace: vi.fn() }),
+}));
 
-  it("links to the dashboard", () => {
+describe("OnboardingPage", () => {
+  it("mounts the guided setup wizard on its welcome panel", () => {
     renderWithProviders(<OnboardingPage />);
     expect(
-      screen.getByRole("link", { name: /aller au tableau de bord/i }),
-    ).toHaveAttribute("href", "/dashboard");
+      screen.getByText("On configure votre ferme ensemble"),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Continuer/i })).toBeInTheDocument();
   });
 });
