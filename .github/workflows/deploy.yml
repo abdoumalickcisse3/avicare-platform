@@ -71,10 +71,10 @@ jobs:
           file: ./landing/Dockerfile
           push: true
           build-args: |
-            PUBLIC_SITE_URL=${{ vars.PUBLIC_SITE_URL || 'https://jawdi.com' }}
-            PUBLIC_APP_SIGNUP_URL=${{ vars.PUBLIC_APP_SIGNUP_URL || 'https://app.jawdi.com/signup' }}
-            PUBLIC_APP_LOGIN_URL=${{ vars.PUBLIC_APP_LOGIN_URL || 'https://app.jawdi.com/login' }}
-            PUBLIC_PARTNER_EMAIL=${{ vars.PUBLIC_PARTNER_EMAIL || 'partenaires@jawdi.com' }}
+            PUBLIC_SITE_URL=${{ vars.PUBLIC_SITE_URL || 'https://jawdi.app' }}
+            PUBLIC_APP_SIGNUP_URL=${{ vars.PUBLIC_APP_SIGNUP_URL || 'https://app.jawdi.app/signup' }}
+            PUBLIC_APP_LOGIN_URL=${{ vars.PUBLIC_APP_LOGIN_URL || 'https://app.jawdi.app/login' }}
+            PUBLIC_PARTNER_EMAIL=${{ vars.PUBLIC_PARTNER_EMAIL || 'partenaires@jawdi.app' }}
           tags: |
             ${{ env.LANDING_IMAGE }}:latest
             ${{ env.LANDING_IMAGE }}:${{ github.sha }}
