@@ -18,4 +18,10 @@ public interface SubscriptionFacade {
 
   /** The farm's subscription, if any. */
   Optional<SubscriptionInfo> findByFarm(Long farmId);
+
+  /**
+   * Provision the farm's subscription with every V1 module (free-pilot, ADR-009). Called at farm
+   * creation, in the caller's write transaction. Idempotent; leaves a curated module set untouched.
+   */
+  void provisionModules(Long farmId);
 }

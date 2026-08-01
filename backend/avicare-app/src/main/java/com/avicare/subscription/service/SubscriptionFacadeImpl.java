@@ -52,4 +52,9 @@ public class SubscriptionFacadeImpl implements SubscriptionFacade {
                     sub.getPlanKey(),
                     listEnabledModules(farmId)));
   }
+
+  @Override
+  public void provisionModules(Long farmId) {
+    subscriptionService.getOrCreate(farmId);
+  }
 }
