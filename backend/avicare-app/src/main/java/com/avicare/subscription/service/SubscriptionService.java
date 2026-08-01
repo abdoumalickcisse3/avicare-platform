@@ -209,19 +209,17 @@ public class SubscriptionService {
 
   /**
    * Whether {@code moduleKey} is enabled for the farm: a subscription module row exists and is not
-   * expired.
-   *
-   * <p>Free-pilot (ADR-009): this first calls {@link #getOrCreate} so a farm's subscription is
-   * provisioned with every V1 module on the first gated access. This self-heals farms created
-   * without provisioning (e.g. via the onboarding wizard, which no longer touches the subscription
-   * endpoints) instead of returning a spurious 403. {@code getOrCreate} is idempotent and leaves a
-   * curated module set untouched.
+   * expired. Pure read — provisioning happens at farm creation (see {@code
+   * SubscriptionFacade#provisionModules}), never here, so this stays safe in read-only contexts.
    */
-  @Transactional
+  @Transactional(readOnly = true)
   public boolean isModuleEnabled(Long farmId, String moduleKey) {
-    Subscription subscription = getOrCreate(farmId);
-    return subscriptionModuleRepository
-        .findBySubscriptionIdAndModuleKey(subscription.getId(), moduleKey)
+    return subscriptionRepository
+        .findByFarmId(farmId)
+        .flatMap(
+            sub ->
+                subscriptionModuleRepository.findBySubscriptionIdAndModuleKey(
+                    sub.getId(), moduleKey))
         .filter(m -> m.getExpiresAt() == null || m.getExpiresAt().isAfter(LocalDateTime.now()))
         .isPresent();
   }

@@ -4,6 +4,7 @@ import com.avicare.common.api.exception.BusinessRuleException;
 import com.avicare.common.api.exception.NotFoundException;
 import com.avicare.common.security.principal.FarmRole;
 import com.avicare.parameters.api.ParametersFacade;
+import com.avicare.subscription.api.SubscriptionFacade;
 import com.avicare.tenancy.domain.Farm;
 import com.avicare.tenancy.domain.UserFarm;
 import com.avicare.tenancy.dto.request.CreateFarmRequest;
@@ -41,6 +42,7 @@ public class FarmService {
   private final UserFarmRepository userFarmRepository;
   private final TenancyMapper tenancyMapper;
   private final ParametersFacade parametersFacade;
+  private final SubscriptionFacade subscriptionFacade;
 
   @Transactional
   public FarmResponse create(Long creatorUserId, CreateFarmRequest request) {
@@ -66,6 +68,10 @@ public class FarmService {
     owner.setRole(FarmRole.OWNER);
     owner.setPermissions(FarmRole.OWNER.defaultPermissions());
     userFarmRepository.save(owner);
+
+    // Free-pilot (ADR-009): give the new farm every V1 module up front, so module-gated
+    // features (élevage, stock, commercial…) work immediately without any subscription step.
+    subscriptionFacade.provisionModules(saved.getId());
 
     if (request.productionFocus() != null) {
       writeFocus(saved.getId(), request.productionFocus());
