@@ -10,6 +10,7 @@ import java.net.URI;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -52,6 +53,13 @@ public class SecurityConfig {
 
   private final JwtFilter jwtFilter;
   private final ObjectMapper objectMapper;
+
+  /**
+   * Browser origins allowed to call the API (CORS). Defaults to the dev origins; production sets
+   * {@code app.cors.allowed-origins} (see application-prod.yml) to the deployed web origin.
+   */
+  @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:19006}")
+  private List<String> allowedOrigins;
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -125,7 +133,7 @@ public class SecurityConfig {
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration config = new CorsConfiguration();
-    config.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:19006"));
+    config.setAllowedOrigins(allowedOrigins);
     config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
     config.setAllowedHeaders(List.of("*"));
     config.setExposedHeaders(List.of("X-Correlation-Id"));
