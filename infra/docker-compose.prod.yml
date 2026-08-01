@@ -70,11 +70,17 @@ services:
         condition: service_started
     networks: [internal]
 
+  landing:
+    image: ${LANDING_IMAGE:?set LANDING_IMAGE in .env}
+    restart: unless-stopped
+    networks: [internal]
+
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
     depends_on:
       - web
+      - landing
       - backend
     ports:
       - "80:80"

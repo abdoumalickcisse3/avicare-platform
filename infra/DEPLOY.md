@@ -11,8 +11,15 @@ or OVH/Scaleway Paris for lowest Senegal latency). Ubuntu 22.04/24.04 LTS.
 
 ## 0. One-time: build args & routing
 
+- **Two sites, one box.** Caddy routes by hostname:
+  - `DOMAIN` + `www.DOMAIN` → **landing** (Astro vitrine).
+  - `app.DOMAIN` → **web** (Next.js dashboard) + backend.
 - The web image bakes `NEXT_PUBLIC_API_URL=""` (empty) → the browser calls
-  **same-origin** `/api/*`, which Caddy routes to the backend. No separate API host.
+  **same-origin** `/api/*` on `app.DOMAIN`, which Caddy routes to the backend. No separate API host.
+- The landing bakes its CTA links at build time (`PUBLIC_APP_LOGIN_URL`,
+  `PUBLIC_APP_SIGNUP_URL`) → "Se connecter" → `app.DOMAIN/login`, "Commencer
+  gratuitement" → `app.DOMAIN/signup`. Override via repo **Variables** if the
+  domain differs from the workflow defaults (jawdi.com).
 - Backend runs the `prod` Spring profile (feature gating **enforced**, ADR-004).
 
 ## 1. Provision the VPS
@@ -36,7 +43,7 @@ git clone https://github.com/OWNER/avicare-platform.git /opt/avicare-platform
 cd /opt/avicare-platform/infra
 
 cp .env.prod.example .env
-nano .env          # set DOMAIN, DB_PASSWORD, BACKEND_IMAGE/WEB_IMAGE (OWNER lowercase)
+nano .env          # set DOMAIN (apex), DB_PASSWORD, BACKEND_IMAGE/WEB_IMAGE/LANDING_IMAGE (OWNER lowercase)
 
 # JWT keys (fresh, NOT the dev keys):
 cd secrets
@@ -49,9 +56,10 @@ chmod +x deploy.sh scripts/backup-db.sh
 
 ## 3. DNS + GHCR access
 
-- Point `DOMAIN` (A/AAAA record) to the VPS IP. If using Cloudflare, keep it
-  **DNS-only (grey cloud)** until Caddy has issued the first cert, then you may
-  enable the proxy (SSL mode **Full (strict)**).
+- Point **three** A/AAAA records to the VPS IP: the apex `DOMAIN`, `www`, and
+  `app` (e.g. `jawdi.com`, `www.jawdi.com`, `app.jawdi.com`). Caddy issues a cert
+  for each. If using Cloudflare, keep them **DNS-only (grey cloud)** until Caddy
+  has issued the first certs, then you may enable the proxy (SSL mode **Full (strict)**).
 - If your GHCR packages are **private**, log the VPS into GHCR once:
   ```bash
   echo <GHCR_READ_PAT> | docker login ghcr.io -u <github-user> --password-stdin
