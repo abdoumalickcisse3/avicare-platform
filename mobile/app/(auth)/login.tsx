@@ -145,6 +145,10 @@ export default function LoginScreen() {
           <Pressable onPress={() => router.push('/(auth)/forgot-password')} style={styles.forgot} accessibilityRole="button">
             <Text style={styles.forgotText}>Mot de passe oublié ?</Text>
           </Pressable>
+
+          <Pressable onPress={() => router.push('/(auth)/signup')} style={styles.signup} accessibilityRole="button" accessibilityLabel="Créer un compte">
+            <Text style={styles.signupText}>Pas de compte ? Créer un compte</Text>
+          </Pressable>
           </View>
 
           <Text style={styles.footer}>SÉCURISÉ PAR JAWDI · DAKAR</Text>
@@ -207,5 +211,7 @@ const styles = StyleSheet.create({
   ctaText: { ...tokens.typography.button, fontSize: 17, color: tokens.colors.earth },
   forgot: { alignItems: 'center', marginTop: tokens.spacing[4] },
   forgotText: { ...tokens.typography.bodyMd, fontWeight: '600', color: tokens.colors.primary[600] },
+  signup: { alignItems: 'center', marginTop: tokens.spacing[3] },
+  signupText: { ...tokens.typography.bodyMd, fontWeight: '600', color: tokens.colors.field.textMuted },
   footer: { ...tokens.typography.bodySm, fontSize: 11, letterSpacing: 0.5, color: tokens.colors.field.disabled, textAlign: 'center', marginTop: tokens.spacing[6] },
 });
