@@ -77,23 +77,23 @@ import { defineConfig } from "astro/config";
 import sitemap from "@astrojs/sitemap";
 
 export default defineConfig({
-  site: process.env.PUBLIC_SITE_URL || "https://avicare.app",
+  site: process.env.PUBLIC_SITE_URL || "https://jawdi.app",
   output: "static",
   integrations: [sitemap()],
 });
 ```
 `landing/.env.example` :
 ```
-PUBLIC_SITE_URL=https://avicare.app
-PUBLIC_APP_SIGNUP_URL=https://app.avicare.app/signup
-PUBLIC_PARTNER_EMAIL=partenaires@avicare.app
+PUBLIC_SITE_URL=https://jawdi.app
+PUBLIC_APP_SIGNUP_URL=https://app.jawdi.app/signup
+PUBLIC_PARTNER_EMAIL=partenaires@jawdi.app
 PUBLIC_CONTACT_PHONE=+221 XX XXX XX XX
 ```
 `landing/public/robots.txt` :
 ```
 User-agent: *
 Allow: /
-Sitemap: https://avicare.app/sitemap-index.xml
+Sitemap: https://jawdi.app/sitemap-index.xml
 ```
 
 - [ ] **Step 3: Copier les assets**
