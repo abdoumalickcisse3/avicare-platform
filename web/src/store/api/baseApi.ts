@@ -8,8 +8,16 @@ import {
 import { tokenStorage } from "@/lib/storage";
 import { clearAuthData } from "@/lib/auth";
 
+// API base URL. Dev sets NEXT_PUBLIC_API_URL (e.g. http://localhost:8080).
+// In the prod image it's left empty — but Next.js normalizes an empty
+// NEXT_PUBLIC_* var to `undefined`, so `??` would wrongly fall back to
+// localhost. Use `||` + a NODE_ENV guard: in production, an unset/empty value
+// means SAME-ORIGIN (relative "" → the browser calls /api on the current host,
+// which Caddy routes to the backend); in dev it keeps the localhost fallback.
 const rawBaseQuery = fetchBaseQuery({
-  baseUrl: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080",
+  baseUrl:
+    process.env.NEXT_PUBLIC_API_URL ||
+    (process.env.NODE_ENV === "production" ? "" : "http://localhost:8080"),
   prepareHeaders: (headers) => {
     const token = tokenStorage.getAccess();
     if (token) headers.set("Authorization", `Bearer ${token}`);
