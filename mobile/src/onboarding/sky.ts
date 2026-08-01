@@ -1,19 +1,28 @@
 /** Maps a wizard step to its Terroir vivant sky (3 gradient stops) and the
- *  sun's progress along its arc. Pure — drives SkyBackground. See spec §3. */
+ *  sun's progress along its arc. Pure — drives SkyBackground. See spec §3.
+ *
+ *  The ambiance stays inside the project design system: only the primary green
+ *  ramp and the Senegal-orange accent ramp (+ earth). The "day cycle" reads as
+ *  a warm sunrise settling into green, brightening at midday, then a golden hour
+ *  sinking into a deep-green dusk — brand-true, not literal sky blues. */
+import { tokens } from '@/theme';
+
 export interface Sky {
   stops: [string, string, string];
   sunProgress: number;
 }
 
-// Dawn → sunrise → morning → midday → afternoon → golden hour → dusk.
+const { primary, accent, earth } = tokens.colors;
+
+// Sunrise-warm → greening → bright green midday → golden hour → deep-green dusk.
 const PALETTE: [string, string, string][] = [
-  ['#F9C9B6', '#E88E6B', '#3B3A6B'], // dawn
-  ['#FBB871', '#F2864A', '#2E5E8C'], // sunrise
-  ['#FFD79A', '#8FC3E8', '#4F9AD1'], // morning
-  ['#CFE9FB', '#7FBBE8', '#3E86C4'], // midday
-  ['#FFE1A8', '#8FB9E0', '#3D6FA6'], // afternoon
-  ['#FFD08A', '#F0975A', '#B65C7A'], // golden hour
-  ['#7C5AA6', '#C56C9A', '#241B3A'], // dusk / celebration
+  [accent[200], accent[400], primary[700]], // dawn — warm horizon into green
+  [accent[100], accent[300], primary[600]], // sunrise
+  [primary[100], primary[300], primary[600]], // morning — greening
+  [primary[50], primary[400], primary[700]], // midday — bright green
+  [accent[100], primary[400], primary[700]], // afternoon — warm light returns
+  [accent[300], accent[500], primary[800]], // golden hour
+  [accent[300], primary[700], earth], // dusk — settles to deep green / earth
 ];
 
 export function skyForStep(index: number, total: number): Sky {
