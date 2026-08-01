@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Deploy / refresh the Jawdi production stack on the VPS.
 #   Usage:  ./deploy.sh [IMAGE_TAG]
-#   IMAGE_TAG (optional) overrides the tag of BACKEND_IMAGE / WEB_IMAGE
-#   (e.g. a commit SHA passed by CI). Without it, the tags from .env are used.
+#   IMAGE_TAG (optional) overrides the tag of BACKEND_IMAGE / WEB_IMAGE /
+#   LANDING_IMAGE (e.g. a commit SHA passed by CI). Without it, .env tags are used.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -24,9 +24,10 @@ export JWT_PUBLIC_KEY="$(cat secrets/jwt_public.pem)"
 if [ "${1:-}" != "" ]; then
   export BACKEND_IMAGE="${BACKEND_IMAGE%:*}:$1"
   export WEB_IMAGE="${WEB_IMAGE%:*}:$1"
+  export LANDING_IMAGE="${LANDING_IMAGE%:*}:$1"
 fi
 
-echo "Deploying backend=$BACKEND_IMAGE  web=$WEB_IMAGE"
+echo "Deploying backend=$BACKEND_IMAGE  web=$WEB_IMAGE  landing=$LANDING_IMAGE"
 $COMPOSE pull
 $COMPOSE up -d --remove-orphans
 docker image prune -f >/dev/null || true
