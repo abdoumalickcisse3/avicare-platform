@@ -19,7 +19,7 @@ or OVH/Scaleway Paris for lowest Senegal latency). Ubuntu 22.04/24.04 LTS.
 - The landing bakes its CTA links at build time (`PUBLIC_APP_LOGIN_URL`,
   `PUBLIC_APP_SIGNUP_URL`) → "Se connecter" → `app.DOMAIN/login`, "Commencer
   gratuitement" → `app.DOMAIN/signup`. Override via repo **Variables** if the
-  domain differs from the workflow defaults (jawdi.com).
+  domain differs from the workflow defaults (jawdi.app).
 - Backend runs the `prod` Spring profile (feature gating **enforced**, ADR-004).
 
 ## 1. Provision the VPS
@@ -57,7 +57,7 @@ chmod +x deploy.sh scripts/backup-db.sh
 ## 3. DNS + GHCR access
 
 - Point **three** A/AAAA records to the VPS IP: the apex `DOMAIN`, `www`, and
-  `app` (e.g. `jawdi.com`, `www.jawdi.com`, `app.jawdi.com`). Caddy issues a cert
+  `app` (e.g. `jawdi.app`, `www.jawdi.app`, `app.jawdi.app`). Caddy issues a cert
   for each. If using Cloudflare, keep them **DNS-only (grey cloud)** until Caddy
   has issued the first certs, then you may enable the proxy (SSL mode **Full (strict)**).
 - If your GHCR packages are **private**, log the VPS into GHCR once:
