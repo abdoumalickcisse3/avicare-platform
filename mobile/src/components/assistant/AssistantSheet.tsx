@@ -95,20 +95,28 @@ export function AssistantSheet({
           ) : (
             <View style={styles.block}>
               <Text style={styles.hint}>
-                {speech.listening ? 'Parlez maintenant…' : 'Appuyez sur le micro et parlez — ex. « dix sont morts ».'}
+                {!speech.supported
+                  ? 'Écrivez votre saisie — ex. « dix sont morts ».'
+                  : speech.listening
+                    ? 'Parlez maintenant…'
+                    : 'Appuyez sur le micro et parlez — ex. « dix sont morts ».'}
               </Text>
 
-              {/* Big mic: tap to listen (on-device FR); the field mirrors the transcript. */}
-              <View style={styles.micRow}>
-                <Pressable
-                  style={({ pressed }) => [styles.micCircle, speech.listening && styles.micCircleOn, pressed && { opacity: 0.85 }]}
-                  onPress={() => (speech.listening ? speech.stop() : speech.start())}
-                  accessibilityRole="button"
-                  accessibilityLabel={speech.listening ? 'Arrêter l’écoute' : 'Parler à Jawdi'}
-                >
-                  <Mic size={30} color={speech.listening ? tokens.colors.neutral[0] : tokens.colors.primary[700]} />
-                </Pressable>
-              </View>
+              {/* Big mic: tap to listen (on-device FR); the field mirrors the
+                  transcript. Hidden when the STT native module isn't in the
+                  build — the text field below is the fallback. */}
+              {speech.supported ? (
+                <View style={styles.micRow}>
+                  <Pressable
+                    style={({ pressed }) => [styles.micCircle, speech.listening && styles.micCircleOn, pressed && { opacity: 0.85 }]}
+                    onPress={() => (speech.listening ? speech.stop() : speech.start())}
+                    accessibilityRole="button"
+                    accessibilityLabel={speech.listening ? 'Arrêter l’écoute' : 'Parler à Jawdi'}
+                  >
+                    <Mic size={30} color={speech.listening ? tokens.colors.neutral[0] : tokens.colors.primary[700]} />
+                  </Pressable>
+                </View>
+              ) : null}
 
               <View style={styles.inputRow}>
                 <TextInput
