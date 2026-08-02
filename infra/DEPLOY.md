@@ -97,15 +97,23 @@ for continuous deployment.
 
 ## 6. Backups (do this before real users)
 
+Nightly `pg_dump` -> gzip, kept 14 days under `~/avicare-backups` (deploy user), with an
+optional offsite copy via rclone. First set up the cron (works local-only immediately):
+
 ```bash
-# nightly pg_dump -> offsite. Configure an rclone remote first (B2/S3/Storage Box):
-rclone config                      # create a remote named e.g. "backup"
-echo 'BACKUP_REMOTE=backup:avicare-db' >> /opt/avicare-platform/infra/.env
 crontab -e
-# 30 2 * * * /opt/avicare-platform/infra/scripts/backup-db.sh >> /var/log/avicare-backup.log 2>&1
+# 30 2 * * * /opt/avicare-platform/infra/scripts/backup-db.sh >> /home/deploy/avicare-backup.log 2>&1
 ```
 
-Restore: `gunzip -c dump.sql.gz | docker compose -f docker-compose.prod.yml exec -T postgres psql -U avicare avicare`.
+Then add offsite durability (survives losing the VPS). Configure an rclone remote
+(Backblaze B2 / S3 / Contabo Object Storage), then point the script at it:
+
+```bash
+rclone config                      # create a remote named e.g. "backup"
+echo 'BACKUP_REMOTE=backup:avicare-db' >> /opt/avicare-platform/infra/.env
+```
+
+Restore: `./scripts/restore-db.sh ~/avicare-backups/avicare_avicare_<stamp>.sql.gz`.
 
 ## 7. Day-2
 
