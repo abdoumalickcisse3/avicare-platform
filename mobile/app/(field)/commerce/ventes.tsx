@@ -78,7 +78,23 @@ export default function VentesScreen() {
         {isLoading ? (
           <Text style={styles.muted}>Chargement…</Text>
         ) : (sales ?? []).length === 0 ? (
-          <Text style={styles.muted}>Aucune vente pour le moment.</Text>
+          <View style={styles.emptyBox}>
+            <View style={styles.emptyDisc}>
+              <ShoppingCart size={28} color={tokens.colors.primary[600]} />
+            </View>
+            <Text style={styles.emptyText}>Aucune vente pour le moment</Text>
+            <Text style={styles.emptySub}>Vendez la production de la ferme (lots de chair, œufs).</Text>
+            {canSell && (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Enregistrer une vente"
+                onPress={() => router.push('/(field)/commerce/vente')}
+                style={styles.emptyCta}
+              >
+                <Text style={styles.emptyCtaLabel}>Enregistrer une vente</Text>
+              </Pressable>
+            )}
+          </View>
         ) : (
           <View style={styles.list}>
             {(sales ?? []).map((s) => (
@@ -153,6 +169,12 @@ const styles = StyleSheet.create({
 
   content: { paddingHorizontal: tokens.layout.screenPadding, paddingTop: tokens.spacing[2], paddingBottom: tokens.spacing[16] },
   muted: { ...tokens.typography.bodyMd, color: tokens.colors.field.textMuted, textAlign: 'center', paddingVertical: tokens.spacing[8] },
+  emptyBox: { alignItems: 'center', gap: tokens.spacing[2], paddingVertical: tokens.spacing[10] },
+  emptyDisc: { width: 60, height: 60, borderRadius: tokens.radii.full, backgroundColor: tokens.colors.primary[50], alignItems: 'center', justifyContent: 'center', marginBottom: tokens.spacing[1] },
+  emptyText: { ...tokens.typography.headingMd, color: tokens.colors.field.text },
+  emptySub: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, textAlign: 'center', paddingHorizontal: tokens.spacing[6] },
+  emptyCta: { marginTop: tokens.spacing[3], minHeight: tokens.touch.primaryButton, borderRadius: tokens.radii.lg, backgroundColor: tokens.colors.accent[400], alignItems: 'center', justifyContent: 'center', paddingHorizontal: tokens.spacing[6] },
+  emptyCtaLabel: { ...tokens.typography.button, fontSize: 15, color: tokens.colors.primary[900] },
   list: { gap: tokens.spacing[3] },
   card: {
     backgroundColor: tokens.colors.neutral[0],
