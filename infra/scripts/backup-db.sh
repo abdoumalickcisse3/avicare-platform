@@ -5,6 +5,9 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."   # -> infra/
 
+# Make a user-space rclone (no root install) discoverable under cron's minimal PATH.
+export PATH="$HOME/.local/bin:$PATH"
+
 COMPOSE="docker compose -f docker-compose.prod.yml"
 
 [ -f .env ] || { echo "ERROR: missing infra/.env"; exit 1; }
