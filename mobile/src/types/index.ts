@@ -299,6 +299,18 @@ export interface SaleLineInput {
   notes?: string;
 }
 
+export interface SaleItem {
+  id: number;
+  articleKey: string;
+  articleSource: ArticleSource;
+  articleLabelSnapshot: string | null;
+  unit: string;
+  quantity: number;
+  unitPriceXof: number;
+  lineTotalXof: number;
+  notes: string | null;
+}
+
 export interface SaleInput {
   clientId?: number | null;
   saleDate?: string;
@@ -319,6 +331,7 @@ export interface Sale {
   salesChannelKey: string | null;
   totalXof: number;
   notes: string | null;
+  items: SaleItem[];
 }
 
 /** Lifecycle of an invoice (mirrors backend InvoiceStatus). */
