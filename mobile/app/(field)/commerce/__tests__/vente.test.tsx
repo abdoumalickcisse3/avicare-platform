@@ -15,7 +15,7 @@ jest.mock('expo-haptics', () => ({
 }));
 
 jest.mock('expo-router', () => ({
-  useRouter: jest.fn(() => ({ back: jest.fn(), push: jest.fn() })),
+  useRouter: jest.fn(() => ({ back: jest.fn(), push: jest.fn(), replace: jest.fn() })),
   Redirect: () => null,
 }));
 jest.mock('react-redux', () => ({
