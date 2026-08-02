@@ -7,6 +7,8 @@
  */
 import { useState } from 'react';
 import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { useRecordPaymentMutation } from '@/store/api/paymentsApi';
 import { PAYMENT_METHOD_LABELS, PAYMENT_METHOD_OPTIONS } from '@/lib/commercial';
@@ -57,7 +59,9 @@ export function PaymentSheet({
 
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} accessibilityLabel="Fermer" onPress={onClose} />
+      <Pressable style={styles.backdrop} accessibilityLabel="Fermer" onPress={onClose}>
+        <BlurView intensity={18} tint="dark" style={StyleSheet.absoluteFill} />
+      </Pressable>
       <View style={styles.sheet}>
         <Text style={styles.title}>Encaisser un paiement</Text>
 
@@ -104,6 +108,12 @@ export function PaymentSheet({
           disabled={!selected || amount <= 0 || isLoading}
           style={[styles.commit, (!selected || amount <= 0 || isLoading) && styles.commitDisabled]}
         >
+          <LinearGradient
+            colors={[tokens.colors.accent[300], tokens.colors.accent[500]]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
           <Text style={styles.commitLabel}>Encaisser {formatCurrency(amount)}</Text>
         </Pressable>
       </View>
@@ -125,7 +135,7 @@ function Chip({ label, active, onPress }: { label: string; active: boolean; onPr
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(18,43,18,0.35)' },
+  backdrop: { flex: 1, backgroundColor: 'rgba(18,43,18,0.25)' },
   sheet: {
     backgroundColor: tokens.colors.neutral[0],
     borderTopLeftRadius: tokens.radii.xl,
@@ -158,6 +168,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: tokens.spacing[2],
+    overflow: 'hidden',
   },
   commitDisabled: { opacity: 0.4 },
   commitLabel: { ...tokens.typography.button, fontSize: 16, color: tokens.colors.primary[900] },

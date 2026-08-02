@@ -6,7 +6,9 @@
  */
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
@@ -57,6 +59,8 @@ export default function ClientDetailScreen() {
   }
 
   const balanceColor = client ? creditColor(client) : tokens.colors.neutral[400];
+  const isDebtor = (client?.currentBalanceXof ?? 0) > 0;
+  const heroTint = isDebtor ? tokens.colors.accent[50] : tokens.colors.primary[50];
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -80,7 +84,12 @@ export default function ClientDetailScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         {/* Encours hero */}
-        <View style={styles.hero}>
+        <LinearGradient
+          colors={[heroTint, tokens.colors.neutral[0]]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={styles.hero}
+        >
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{initials(client?.displayName ?? '') || '?'}</Text>
           </View>
@@ -88,7 +97,7 @@ export default function ClientDetailScreen() {
           <Text style={[styles.heroValue, { color: balanceColor }]}>
             {formatCurrency(client?.currentBalanceXof ?? 0)}
           </Text>
-        </View>
+        </LinearGradient>
 
         <Text style={styles.sectionTitle}>Factures ouvertes</Text>
         {isLoading ? (
@@ -97,8 +106,8 @@ export default function ClientDetailScreen() {
           <Text style={styles.muted}>Aucune facture ouverte.</Text>
         ) : (
           <View style={styles.invoiceList}>
-            {openInvoices.map((inv) => (
-              <View key={inv.id} style={styles.invoiceRow}>
+            {openInvoices.map((inv, i) => (
+              <Animated.View key={inv.id} entering={FadeInDown.delay(i * 40).springify()} style={styles.invoiceRow}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.invoiceNumber}>{inv.invoiceNumber}</Text>
                   <Text style={styles.invoiceStatus}>
@@ -106,7 +115,7 @@ export default function ClientDetailScreen() {
                   </Text>
                 </View>
                 <Text style={styles.invoiceAmount}>{formatCurrency(inv.outstandingXof)}</Text>
-              </View>
+              </Animated.View>
             ))}
           </View>
         )}
@@ -169,8 +178,8 @@ const styles = StyleSheet.create({
     borderRadius: tokens.radii.xl,
     borderWidth: 1,
     borderColor: tokens.colors.neutral[200],
-    backgroundColor: tokens.colors.neutral[0],
     marginBottom: tokens.spacing[5],
+    overflow: 'hidden',
   },
   avatar: {
     width: 56,
