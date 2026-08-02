@@ -25,8 +25,9 @@ export default function MenuScreen() {
   const { data: farms } = useListFarmsQuery();
   const { isAdmin, can } = useFarmAccess();
   const sync = useSyncStatus();
-  const farmName = farms?.find((f) => f.id === selectedFarmId)?.name ?? 'Ferme';
-  const sections = getDrawerItems(isAdmin, can);
+  const selectedFarm = farms?.find((f) => f.id === selectedFarmId);
+  const farmName = selectedFarm?.name ?? 'Ferme';
+  const sections = getDrawerItems(isAdmin, can, selectedFarm?.productionFocus ?? []);
 
   const logout = async () => {
     await clearTokens();

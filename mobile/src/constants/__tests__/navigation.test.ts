@@ -1,18 +1,36 @@
 import { DRAWER_ITEMS, getDrawerItems } from '@/constants/navigation';
 
-describe('commerce navigation', () => {
-  it('exposes a ready Vente rapide entry routed to the vente screen', () => {
-    const commerce = DRAWER_ITEMS.find((i) => i.id === 'commerce');
-    const vente = commerce?.children?.find((c) => c.id === 'ventes');
-    expect(vente?.ready).toBe(true);
-    expect(vente?.route).toBe('/(field)/commerce/vente');
+describe('navigation mirrors the web sidebar', () => {
+  const commercial = DRAWER_ITEMS.find((i) => i.id === 'commercial');
+
+  it('commercial group lists the web pages: Clients, Commandes, Ventes, Factures', () => {
+    expect(commercial?.children?.map((c) => c.label)).toEqual([
+      'Clients',
+      'Commandes',
+      'Ventes',
+      'Factures',
+    ]);
   });
 
-  it('shows the commerce group (with Vente rapide) to a commercial reader', () => {
-    const can = (p: string) => p === 'commercial:read';
-    const commerce = getDrawerItems(false, can).find((i) => i.id === 'commerce');
-    const ventes = commerce?.children?.find((c) => c.id === 'ventes');
-    expect(ventes).toBeTruthy();
-    expect(ventes?.route).toBe('/(field)/commerce/vente');
+  it('hides the commercial group unless commercial:read is granted', () => {
+    const none = () => false;
+    expect(getDrawerItems(false, none, []).some((i) => i.id === 'commercial')).toBe(false);
+    const commercialReader = (p: string) => p === 'commercial:read';
+    expect(getDrawerItems(false, commercialReader, []).some((i) => i.id === 'commercial')).toBe(true);
+  });
+
+  it('filters Œufs out of Élevage on a broiler-only farm (focus)', () => {
+    const poultryReader = (p: string) => p === 'poultry:read';
+    const elevage = getDrawerItems(false, poultryReader, ['broiler']).find((i) => i.id === 'elevage');
+    const labels = elevage?.children?.map((c) => c.label) ?? [];
+    expect(labels).toContain('Poulets de chair');
+    expect(labels).not.toContain('Œufs');
+  });
+
+  it('shows both Élevage leaves when the farm has no declared focus', () => {
+    const poultryReader = (p: string) => p === 'poultry:read';
+    const elevage = getDrawerItems(false, poultryReader, []).find((i) => i.id === 'elevage');
+    const labels = elevage?.children?.map((c) => c.label) ?? [];
+    expect(labels).toEqual(expect.arrayContaining(['Poulets de chair', 'Œufs']));
   });
 });
