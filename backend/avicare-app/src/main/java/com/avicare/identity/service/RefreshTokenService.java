@@ -10,6 +10,8 @@ import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.util.HexFormat;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
  * later optimization PR; correctness here is fully handled in the DB.
  */
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class RefreshTokenService {
 
@@ -61,6 +64,11 @@ public class RefreshTokenService {
             .orElseThrow(() -> invalid("Refresh token not recognized"));
 
     if (stored.getRevokedAt() != null) {
+      // Reuse detection (OAuth refresh-token rotation, RFC 6819 §5.2.2.3): a
+      // single-use token that was already rotated is being replayed — likely
+      // stolen. Revoke the user's whole token family so both attacker and victim
+      // must re-authenticate.
+      revokeAllForUser(stored.getUserId());
       throw invalid("Refresh token has been revoked");
     }
     if (stored.getExpiresAt().isBefore(LocalDateTime.now())) {
@@ -93,6 +101,21 @@ public class RefreshTokenService {
   public void revokeAllForUser(Long userId) {
     LocalDateTime now = LocalDateTime.now();
     refreshTokenRepository.findByUserIdAndRevokedAtIsNull(userId).forEach(t -> t.setRevokedAt(now));
+  }
+
+  /**
+   * Housekeeping: hard-delete refresh tokens past their expiry so {@code refresh_tokens} does not
+   * grow unbounded (rotation adds a row per refresh). Revoked-but-still-valid rows are kept so
+   * reuse detection can still fire within their window. Runs daily; cron overridable via {@code
+   * avicare.security.jwt.cleanup-cron}.
+   */
+  @Scheduled(cron = "${avicare.security.jwt.cleanup-cron:0 30 3 * * *}")
+  @Transactional
+  public void purgeExpired() {
+    int removed = refreshTokenRepository.deleteExpiredBefore(LocalDateTime.now());
+    if (removed > 0) {
+      log.info("Purged {} expired refresh token(s)", removed);
+    }
   }
 
   private Long verifySignature(String rawToken) {

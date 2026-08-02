@@ -13,7 +13,9 @@ avicare:
     jwt:
       issuer: ${JWT_ISSUER:avicare-platform}
       access-token-ttl: 15m
-      refresh-token-ttl: 7d
+      # Sliding window: rotation renews the 30-day clock on every refresh, so an
+      # active user never re-logs in; an idle one re-authenticates after 30 days.
+      refresh-token-ttl: 30d
       # RSA keys are intentionally absent in dev: JwtService boots inert (logs a
       # WARN) until keys are provisioned (Sprint A3 / env vars in prod). The app
       # still starts so the security filter chain and public routes work.
