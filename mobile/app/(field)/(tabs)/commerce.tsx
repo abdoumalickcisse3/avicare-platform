@@ -9,12 +9,13 @@
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Redirect } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
-import { Phone, Search, Users } from 'lucide-react-native';
+import { Phone, Search, ShoppingCart, Users } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { AppHeader } from '@/components/AppHeader';
+import { useFarmAccess } from '@/auth/useSession';
 import { useGetClientsQuery } from '@/store/api/clientsApi';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { formatCurrency, formatNumber } from '@/lib/format';
@@ -24,6 +25,9 @@ import type { Client } from '@/types';
 type Tab = 'all' | 'debtors';
 
 export default function CommerceScreen() {
+  const router = useRouter();
+  const { farmRole } = useFarmAccess();
+  const canSell = farmRole === 'OWNER' || farmRole === 'MANAGER';
   const selectedFarmId = useSelector(selectSelectedFarmId);
   const [tab, setTab] = useState<Tab>('all');
   const [q, setQ] = useState('');
@@ -118,7 +122,13 @@ export default function CommerceScreen() {
               const color = creditColor(c);
               const ratio = creditRatio(c);
               return (
-                <View key={c.id} style={styles.card}>
+                <Pressable
+                  key={c.id}
+                  style={styles.card}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Voir ${c.displayName}`}
+                  onPress={() => router.push(`/(field)/commerce/client/${c.id}`)}
+                >
                   <View style={styles.cardTop}>
                     <View style={styles.avatar}>
                       <Text style={styles.avatarText}>{initials(c.displayName) || '?'}</Text>
@@ -148,12 +158,23 @@ export default function CommerceScreen() {
                   ) : (
                     <Text style={styles.noLimit}>Pas de limite de crédit</Text>
                   )}
-                </View>
+                </Pressable>
               );
             })}
           </View>
         )}
       </ScrollView>
+
+      {canSell && (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Nouvelle vente"
+          onPress={() => router.push('/(field)/commerce/vente')}
+          style={styles.fab}
+        >
+          <ShoppingCart size={24} color={tokens.colors.primary[900]} />
+        </Pressable>
+      )}
     </SafeAreaView>
   );
 }
@@ -161,6 +182,22 @@ export default function CommerceScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: tokens.colors.neutral[50] },
   content: { paddingHorizontal: tokens.layout.screenPadding, paddingTop: tokens.spacing[2], paddingBottom: tokens.spacing[16] },
+  fab: {
+    position: 'absolute',
+    right: tokens.layout.screenPadding,
+    bottom: tokens.spacing[6],
+    width: 56,
+    height: 56,
+    borderRadius: tokens.radii.full,
+    backgroundColor: tokens.colors.accent[400],
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: tokens.colors.primary[900],
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
   title: { ...tokens.typography.displayMd, color: tokens.colors.field.text },
   subtitle: { ...tokens.typography.bodyMd, color: tokens.colors.field.textMuted, marginTop: tokens.spacing[1], marginBottom: tokens.spacing[4] },
 
