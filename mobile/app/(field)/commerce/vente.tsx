@@ -6,7 +6,7 @@
  * (mirrors the backend WRITE_MANAGER gate). Bold polish lands in a later task.
  */
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -15,17 +15,18 @@ import * as Haptics from 'expo-haptics';
 import { Redirect, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
-import { ArrowLeft, Drumstick, Egg, Minus, Plus, Trash2 } from 'lucide-react-native';
+import { ArrowLeft, Check, ChevronDown, Drumstick, Egg, Minus, Plus, Trash2 } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { useFarmAccess } from '@/auth/useSession';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { useProductionAvailability } from '@/commerce/useProductionAvailability';
 import { useCreateSaleMutation } from '@/store/api/salesApi';
+import { useCreateInvoiceFromSaleMutation } from '@/store/api/invoicesApi';
 import { useGetClientsQuery } from '@/store/api/clientsApi';
 import { useGetCatalogQuery } from '@/store/api/catalogApi';
 import { PAYMENT_METHOD_LABELS, PAYMENT_METHOD_OPTIONS } from '@/lib/commercial';
 import { formatCurrency } from '@/lib/format';
-import type { ArticleSource, PaymentMethod, ProductType, SaleInput } from '@/types';
+import type { ArticleSource, PaymentMethod, ProductType, Sale, SaleInput } from '@/types';
 
 const WALK_IN = '__walk_in__';
 
@@ -80,11 +81,18 @@ export default function VenteScreen() {
     selectedFarmId === null ? skipToken : { farmId: selectedFarmId, category: 'sales_channels' },
   );
   const [createSale, { isLoading: saving }] = useCreateSaleMutation();
+  const [createInvoiceFromSale] = useCreateInvoiceFromSaleMutation();
 
   const [lines, setLines] = useState<Line[]>([]);
   const [clientId, setClientId] = useState<string>(WALK_IN);
+  const [clientPickerOpen, setClientPickerOpen] = useState(false);
   const [method, setMethod] = useState<PaymentMethod>('CASH');
   const [channel, setChannel] = useState<string>('');
+
+  const selectedClientLabel =
+    clientId === WALK_IN
+      ? 'Client de passage'
+      : (clients?.find((c) => String(c.id) === clientId)?.displayName ?? 'Client');
 
   const total = lines.reduce((s, l) => s + l.quantity * l.unitPriceXof, 0);
   const hasOverMax = lines.some((l) => l.max != null && l.quantity > l.max);
@@ -155,17 +163,43 @@ export default function VenteScreen() {
   const submit = async () => {
     if (selectedFarmId === null || lines.length === 0) return;
     try {
-      await createSale({ farmId: selectedFarmId, body: buildSaleInput(lines, clientId, method, channel) }).unwrap();
+      const sale = await createSale({
+        farmId: selectedFarmId,
+        body: buildSaleInput(lines, clientId, method, channel),
+      }).unwrap();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      // Land on the Ventes list so the new sale is visible (clear confirmation),
-      // instead of silently popping back to wherever the flow was opened from.
-      router.replace('/(field)/commerce/ventes');
+      // Offer to turn the sale into an invoice right away (web createInvoiceFromSale).
+      Alert.alert(
+        'Vente enregistrée',
+        `Total ${formatCurrency(total)}. Créer une facture pour cette vente ?`,
+        [
+          { text: 'Plus tard', style: 'cancel', onPress: () => router.replace('/(field)/commerce/ventes') },
+          { text: 'Créer la facture', onPress: () => makeInvoice(sale) },
+        ],
+      );
     } catch (err) {
       const message =
         (err as { data?: { detail?: string; message?: string } })?.data?.detail ??
         (err as { data?: { message?: string } })?.data?.message ??
         'La vente n’a pas pu être enregistrée. Réessayez.';
       Alert.alert('Vente', message);
+    }
+  };
+
+  const makeInvoice = async (sale: Sale) => {
+    if (selectedFarmId === null) return;
+    try {
+      await createInvoiceFromSale({ farmId: selectedFarmId, saleId: sale.id }).unwrap();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      // Named client → their fiche shows the new invoice + encours; walk-in → Ventes.
+      if (clientId !== WALK_IN) {
+        router.replace(`/(field)/commerce/client/${Number(clientId)}`);
+      } else {
+        router.replace('/(field)/commerce/ventes');
+      }
+    } catch {
+      Alert.alert('Facture', "La facture n’a pas pu être créée. La vente est bien enregistrée.");
+      router.replace('/(field)/commerce/ventes');
     }
   };
 
@@ -198,22 +232,21 @@ export default function VenteScreen() {
         </View>
       </View>
 
-      {/* Client selector */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.clientRow}
+      {/* Client selector (select) */}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Choisir le client"
+        onPress={() => setClientPickerOpen(true)}
+        style={styles.selectField}
       >
-        <Chip label="Client de passage" active={clientId === WALK_IN} onPress={() => setClientId(WALK_IN)} />
-        {(clients ?? []).map((c) => (
-          <Chip
-            key={c.id}
-            label={c.displayName}
-            active={clientId === String(c.id)}
-            onPress={() => setClientId(String(c.id))}
-          />
-        ))}
-      </ScrollView>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.selectLabel}>Client</Text>
+          <Text style={styles.selectValue} numberOfLines={1}>
+            {selectedClientLabel}
+          </Text>
+        </View>
+        <ChevronDown size={18} color={tokens.colors.field.textMuted} />
+      </Pressable>
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {loading && <Text style={styles.muted}>Chargement de la production…</Text>}
@@ -381,7 +414,55 @@ export default function VenteScreen() {
           </Pressable>
         </View>
       </BlurView>
+
+      {/* Client picker */}
+      <Modal
+        visible={clientPickerOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setClientPickerOpen(false)}
+      >
+        <Pressable style={styles.pickerBackdrop} accessibilityLabel="Fermer" onPress={() => setClientPickerOpen(false)} />
+        <View style={styles.pickerSheet}>
+          <Text style={styles.pickerTitle}>Choisir le client</Text>
+          <ScrollView style={{ maxHeight: 380 }}>
+            <ClientOption
+              label="Client de passage"
+              active={clientId === WALK_IN}
+              onPress={() => {
+                setClientId(WALK_IN);
+                setClientPickerOpen(false);
+              }}
+            />
+            {(clients ?? []).map((c) => (
+              <ClientOption
+                key={c.id}
+                label={c.displayName}
+                active={clientId === String(c.id)}
+                onPress={() => {
+                  setClientId(String(c.id));
+                  setClientPickerOpen(false);
+                }}
+              />
+            ))}
+          </ScrollView>
+        </View>
+      </Modal>
     </SafeAreaView>
+  );
+}
+
+function ClientOption({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={styles.optionRow}
+    >
+      <Text style={[styles.optionLabel, active && styles.optionLabelActive]}>{label}</Text>
+      {active && <Check size={18} color={tokens.colors.primary[600]} />}
+    </Pressable>
   );
 }
 
@@ -421,7 +502,42 @@ const styles = StyleSheet.create({
   title: { ...tokens.typography.displayMd, color: tokens.colors.field.text },
   subtitle: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginTop: 2 },
 
-  clientRow: { gap: tokens.spacing[2], paddingHorizontal: tokens.layout.screenPadding, paddingBottom: tokens.spacing[2] },
+  selectField: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.spacing[2],
+    marginHorizontal: tokens.layout.screenPadding,
+    marginBottom: tokens.spacing[2],
+    paddingHorizontal: tokens.spacing[3],
+    paddingVertical: tokens.spacing[2],
+    minHeight: 52,
+    borderRadius: tokens.radii.lg,
+    borderWidth: 1,
+    borderColor: tokens.colors.neutral[300],
+    backgroundColor: tokens.colors.neutral[0],
+  },
+  selectLabel: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted },
+  selectValue: { ...tokens.typography.bodyMd, fontWeight: '600', color: tokens.colors.field.text },
+  pickerBackdrop: { flex: 1, backgroundColor: 'rgba(18,43,18,0.35)' },
+  pickerSheet: {
+    backgroundColor: tokens.colors.neutral[0],
+    borderTopLeftRadius: tokens.radii.xl,
+    borderTopRightRadius: tokens.radii.xl,
+    padding: tokens.layout.screenPadding,
+    paddingBottom: tokens.spacing[8],
+    gap: tokens.spacing[2],
+  },
+  pickerTitle: { ...tokens.typography.headingMd, color: tokens.colors.field.text, marginBottom: tokens.spacing[1] },
+  optionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: tokens.spacing[3],
+    borderBottomWidth: 1,
+    borderBottomColor: tokens.colors.neutral[100],
+  },
+  optionLabel: { ...tokens.typography.bodyMd, color: tokens.colors.field.text },
+  optionLabelActive: { fontWeight: '700', color: tokens.colors.primary[700] },
 
   content: {
     paddingHorizontal: tokens.layout.screenPadding,
