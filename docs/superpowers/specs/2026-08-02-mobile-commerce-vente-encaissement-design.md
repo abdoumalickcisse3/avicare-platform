@@ -125,6 +125,50 @@ Add `PAYMENT_METHOD_LABELS` / `PAYMENT_METHOD_OPTIONS`
 (`CASH`→Espèces, `MOBILE_MONEY`→Mobile Money, `BANK_TRANSFER`→Virement) if not
 already present. Reuse existing `creditColor`, `CLIENT_TYPE_LABELS`, `initials`.
 
+## Design direction (bold & modern — non-negotiable)
+
+The user insists on a "design de folie et moderne". These screens must feel
+premium and tactile, not utilitarian — while staying **coherent with the existing
+mobile design system** (`src/theme/tokens.ts`, "Terroir vivant"). No one-off
+colors: everything derives from tokens.
+
+**Action language (already in the design system — use it literally):**
+- **`accumulate`** (green `primary[600]`, white text) = repeated, reversible acts
+  → production picker cards, qty `+/−` steppers, add-to-cart.
+- **`commit`** (orange `accent[400]`, `earth` text, once per screen) = the single
+  decisive act → **"Valider la vente"** and **"Encaisser"**. Exactly one commit
+  button per screen.
+
+**Palette / typography:** `primary` (green), `accent` (orange), `earth` deep
+green; bold display weights for headers and the running total; **tabular-nums**
+mono for every money value.
+
+**Motion (react-native-reanimated 4):**
+- Production cards + cart lines enter with `FadeInDown` stagger.
+- Add-to-cart / qty change: spring scale-bounce on the line; the **running total
+  animates** (count-up / slide) on every change.
+- Validate: button morph → success **checkmark draw** + brief celebratory pulse,
+  then dismiss.
+
+**Haptics (expo-haptics):** light impact on each stepper/add; success
+notification on a completed sale/payment; warning on over-max.
+
+**Depth & texture:**
+- `expo-linear-gradient` hero: the client **encours** header and the production
+  picker cards use subtle token-derived gradients.
+- `expo-blur` for the sticky footer (Total + Valider) and the payment sheet
+  backdrop — content scrolls under a frosted bar.
+- `lucide-react-native` iconography (Egg, Drumstick, Wallet, Banknote…) matching
+  the web's visual language.
+
+**Layout feel:** generous rounded cards (radius from tokens), large thumb-reach
+touch targets, a **sticky frosted footer** carrying the animated Total and the
+single orange commit button — the "hero" of each screen.
+
+This direction applies to both `vente.tsx` and `client/[clientId].tsx` (+ payment
+sheet). The plan must include explicit polish/animation tasks, not treat design
+as an afterthought.
+
 ## RBAC & visibility
 
 - The FAB and the "Encaisser" button render only when the user is OWNER or
