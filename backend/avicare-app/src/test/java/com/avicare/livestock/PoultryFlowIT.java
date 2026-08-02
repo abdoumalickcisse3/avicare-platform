@@ -1,5 +1,6 @@
 package com.avicare.livestock;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -74,7 +75,11 @@ class PoultryFlowIT {
             + ",\"name\":\"Lot A\",\"startDate\":\"2026-05-01\",\"targetWeightG\":2200,"
             + "\"targetAgeDays\":42,\"initialCount\":1000}";
 
-    // Feature gate: poultry endpoints are 403 until the module is enabled.
+    // Farm creation auto-provisions every V1 module (ADR-009); remove broiler so the
+    // feature gate is exercised in its closed state.
+    disableBroilerModule(owner, farmId);
+
+    // Feature gate: poultry endpoints are 403 while the module is off.
     mockMvc
         .perform(
             post("/api/v1/farms/" + farmId + "/poultry-batches")
@@ -184,6 +189,14 @@ class PoultryFlowIT {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"moduleKey\":\"module.poultry.broiler\",\"mode\":\"HARD\"}"))
         .andExpect(status().isCreated());
+  }
+
+  private void disableBroilerModule(String access, long farmId) throws Exception {
+    mockMvc
+        .perform(
+            delete("/api/v1/farms/" + farmId + "/subscription/modules/module.poultry.broiler")
+                .header("Authorization", "Bearer " + access))
+        .andExpect(status().isNoContent());
   }
 
   private long createFarm(String access, String name) throws Exception {

@@ -59,7 +59,7 @@ public class SecurityConfig {
    * {@code app.cors.allowed-origins} (see application-prod.yml) to the deployed web origin.
    */
   @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:19006}")
-  private List<String> allowedOrigins;
+  private List<String> allowedOrigins = List.of("http://localhost:3000", "http://localhost:19006");
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {

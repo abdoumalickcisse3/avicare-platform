@@ -224,7 +224,8 @@ class InventoryApiIT {
     String owner = onboardOwner("inv-gate");
     long farmId = createFarm(owner, "Ferme Sans Module");
     owner = relogin("inv-gate");
-    // module.inventory NOT enabled.
+    // Farm creation auto-provisions every V1 module (ADR-009); turn inventory off.
+    disableModule(owner, farmId, "module.inventory");
     mockMvc
         .perform(
             get("/api/v1/farms/" + farmId + "/inventory/stock-items")

@@ -1,5 +1,6 @@
 package com.avicare.livestock;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -74,7 +75,11 @@ class LayerFlowIT {
 
     String base = "/api/v1/farms/" + farmId + "/egg-production";
 
-    // Feature gate denies before the module is enabled.
+    // Farm creation auto-provisions every V1 module (ADR-009); remove layer so the
+    // feature gate is exercised in its closed state.
+    disableLayerModule(owner, farmId);
+
+    // Feature gate denies while the module is off.
     mockMvc
         .perform(get(base + "/tray-stock").header("Authorization", "Bearer " + owner))
         .andExpect(status().isForbidden());
@@ -273,6 +278,14 @@ class LayerFlowIT {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"moduleKey\":\"module.poultry.layer\",\"mode\":\"HARD\"}"))
         .andExpect(status().isCreated());
+  }
+
+  private void disableLayerModule(String access, long farmId) throws Exception {
+    mockMvc
+        .perform(
+            delete("/api/v1/farms/" + farmId + "/subscription/modules/module.poultry.layer")
+                .header("Authorization", "Bearer " + access))
+        .andExpect(status().isNoContent());
   }
 
   private long createFarm(String access, String name) throws Exception {

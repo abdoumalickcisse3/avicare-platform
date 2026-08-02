@@ -1,6 +1,7 @@
 package com.avicare.livestock.commercial;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -134,6 +135,8 @@ class InvoicePaymentApiIT {
     String owner = onboardOwner("ip-gate");
     long farmId = createFarm(owner, "Ferme Sans Module");
     owner = relogin("ip-gate");
+    // Farm creation auto-provisions every V1 module (ADR-009); turn commercial off.
+    disableModule(owner, farmId, "module.commercial.basic");
     mockMvc
         .perform(
             get("/api/v1/farms/" + farmId + "/commercial/invoices")
@@ -296,6 +299,14 @@ class InvoicePaymentApiIT {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"moduleKey\":\"" + moduleKey + "\",\"mode\":\"HARD\"}"))
         .andExpect(status().isCreated());
+  }
+
+  private void disableModule(String token, long farmId, String moduleKey) throws Exception {
+    mockMvc
+        .perform(
+            delete("/api/v1/farms/" + farmId + "/subscription/modules/" + moduleKey)
+                .header("Authorization", "Bearer " + token))
+        .andExpect(status().isNoContent());
   }
 
   private String addMember(
