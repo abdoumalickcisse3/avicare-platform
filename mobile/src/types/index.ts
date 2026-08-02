@@ -277,3 +277,84 @@ export interface Client {
   active: boolean;
   notes: string | null;
 }
+
+/* --- Commercial write: sales, invoices, payments (mirrors the web) -------- */
+
+/** How a payment was tendered (mirrors backend PaymentMethod). */
+export type PaymentMethod = 'CASH' | 'MOBILE_MONEY' | 'BANK_TRANSFER';
+
+/** Sellable production kind (mirrors the web `ProductType`). */
+export type ProductType = 'BROILER' | 'EGGS';
+
+/** Lifecycle of a direct sale (mirrors backend SaleStatus). */
+export type SaleStatus = 'COMPLETED' | 'CANCELLED';
+
+export interface SaleLineInput {
+  articleKey: string;
+  articleSource: ArticleSource;
+  quantity: number;
+  unitPriceXof: number;
+  productType?: ProductType;
+  productionUnitId?: number;
+  notes?: string;
+}
+
+export interface SaleInput {
+  clientId?: number | null;
+  saleDate?: string;
+  paymentMethod?: string;
+  salesChannelKey?: string;
+  notes?: string;
+  lines: SaleLineInput[];
+}
+
+export interface Sale {
+  id: number;
+  farmId: number;
+  saleNumber: string;
+  clientId: number | null;
+  status: SaleStatus;
+  saleDate: string;
+  paymentMethod: string | null;
+  salesChannelKey: string | null;
+  totalXof: number;
+  notes: string | null;
+}
+
+/** Lifecycle of an invoice (mirrors backend InvoiceStatus). */
+export type InvoiceStatus = 'ISSUED' | 'PARTIALLY_PAID' | 'PAID' | 'CANCELLED';
+
+/** An invoice; `outstandingXof` is the remaining balance to collect. */
+export interface Invoice {
+  id: number;
+  farmId: number;
+  invoiceNumber: string;
+  clientId: number | null;
+  status: InvoiceStatus;
+  issueDate: string;
+  dueDate: string | null;
+  totalXof: number;
+  amountPaidXof: number;
+  outstandingXof: number;
+}
+
+export interface Payment {
+  id: number;
+  farmId: number;
+  paymentNumber: string;
+  invoiceId: number;
+  clientId: number | null;
+  amountXof: number;
+  method: PaymentMethod;
+  paymentDate: string;
+  reference: string | null;
+}
+
+export interface PaymentInput {
+  invoiceId: number;
+  amountXof: number;
+  method: PaymentMethod;
+  paymentDate?: string;
+  reference?: string;
+  notes?: string;
+}

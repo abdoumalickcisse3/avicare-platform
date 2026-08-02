@@ -4,13 +4,21 @@
  * client's running balance against their credit limit.
  */
 import { tokens } from '@/theme';
-import type { Client, ClientType } from '@/types';
+import type { Client, ClientType, PaymentMethod } from '@/types';
 
 export const CLIENT_TYPE_LABELS: Record<ClientType, string> = {
   INDIVIDUAL: 'Particulier',
   BUSINESS: 'Entreprise',
   WHOLESALER: 'Grossiste',
 };
+
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  CASH: 'Espèces',
+  MOBILE_MONEY: 'Mobile Money',
+  BANK_TRANSFER: 'Virement',
+};
+
+export const PAYMENT_METHOD_OPTIONS: PaymentMethod[] = ['CASH', 'MOBILE_MONEY', 'BANK_TRANSFER'];
 
 export function initials(name: string): string {
   return name
