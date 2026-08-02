@@ -7,6 +7,13 @@ const press = (el: Parameters<typeof fireEvent.press>[0]): Promise<void> =>
 
 const mockCreateSale = jest.fn(() => ({ unwrap: () => Promise.resolve({ id: 1, totalXof: 0 }) }));
 
+jest.mock('expo-haptics', () => ({
+  impactAsync: jest.fn(),
+  notificationAsync: jest.fn(),
+  ImpactFeedbackStyle: { Light: 'light', Medium: 'medium' },
+  NotificationFeedbackType: { Success: 'success', Warning: 'warning' },
+}));
+
 jest.mock('expo-router', () => ({
   useRouter: jest.fn(() => ({ back: jest.fn(), push: jest.fn() })),
   Redirect: () => null,
