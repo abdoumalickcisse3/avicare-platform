@@ -5,7 +5,7 @@
  * trays), so the production, client and dashboard caches are invalidated too.
  */
 import { baseApi } from './baseApi';
-import type { Sale, SaleInput } from '@/types';
+import type { Sale, SaleInput, SaleStatus } from '@/types';
 
 interface ApiEnvelope<T> {
   data: T;
@@ -13,21 +13,40 @@ interface ApiEnvelope<T> {
 
 const base = (farmId: number) => `/api/v1/farms/${farmId}/commercial/sales`;
 
+// A sale touches production stock; a create or a cancel (which reverses stock)
+// invalidates the same production + client + dashboard caches.
+const saleStockTags = (farmId: number) =>
+  [
+    { type: 'Sale', id: 'list' },
+    { type: 'Client', id: 'list' },
+    { type: 'PoultryBatch', id: 'LIST' },
+    { type: 'ProductionUnit', id: `LIST-${farmId}` },
+    { type: 'TrayStock', id: 'CURRENT' },
+    { type: 'Dashboard', id: 'current' },
+  ] as const;
+
 export const salesApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
+    getSales: build.query<Sale[], { farmId: number; status?: SaleStatus }>({
+      query: ({ farmId, status }) => (status ? `${base(farmId)}?status=${status}` : base(farmId)),
+      transformResponse: (r: ApiEnvelope<Sale[]>) => r.data,
+      providesTags: [{ type: 'Sale', id: 'list' }],
+    }),
     createSale: build.mutation<Sale, { farmId: number; body: SaleInput }>({
       query: ({ farmId, body }) => ({ url: base(farmId), method: 'POST', body }),
       transformResponse: (r: ApiEnvelope<Sale>) => r.data,
-      invalidatesTags: (_r, _e, { farmId }) => [
-        { type: 'Sale', id: 'list' },
-        { type: 'Client', id: 'list' },
-        { type: 'PoultryBatch', id: 'LIST' },
-        { type: 'ProductionUnit', id: `LIST-${farmId}` },
-        { type: 'TrayStock', id: 'CURRENT' },
-        { type: 'Dashboard', id: 'current' },
-      ],
+      invalidatesTags: (_r, _e, { farmId }) => [...saleStockTags(farmId)],
+    }),
+    cancelSale: build.mutation<Sale, { farmId: number; id: number; reason?: string }>({
+      query: ({ farmId, id, reason }) => ({
+        url: `${base(farmId)}/${id}/cancel`,
+        method: 'POST',
+        body: { reason },
+      }),
+      transformResponse: (r: ApiEnvelope<Sale>) => r.data,
+      invalidatesTags: (_r, _e, { farmId }) => [...saleStockTags(farmId)],
     }),
   }),
 });
 
-export const { useCreateSaleMutation } = salesApi;
+export const { useGetSalesQuery, useCreateSaleMutation, useCancelSaleMutation } = salesApi;

@@ -111,7 +111,7 @@ export const DRAWER_ITEMS: NavItem[] = [
     children: [
       { id: 'clients', label: 'Clients', icon: Users, route: '/(field)/(tabs)/commerce', requiredPermission: 'commercial:read', ready: true },
       { id: 'commandes', label: 'Commandes', icon: ShoppingBag, requiredPermission: 'commercial:read', ready: false },
-      { id: 'ventes', label: 'Ventes', icon: Receipt, requiredPermission: 'commercial:read', ready: false },
+      { id: 'ventes', label: 'Ventes', icon: Receipt, route: '/(field)/commerce/ventes', requiredPermission: 'commercial:read', ready: true },
       { id: 'factures', label: 'Factures', icon: FileText, requiredPermission: 'commercial:read', ready: false },
     ],
   },
@@ -166,6 +166,7 @@ export const SCREEN_TO_TAB: Record<string, string> = {
   vaccination: 'elevage',
   observation: 'elevage',
   vente: 'commerce',
+  ventes: 'commerce',
   '[clientId]': 'commerce',
   file: 'home',
 };
