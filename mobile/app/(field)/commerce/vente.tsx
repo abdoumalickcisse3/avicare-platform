@@ -70,7 +70,7 @@ export function buildSaleInput(
 export default function VenteScreen() {
   const router = useRouter();
   const selectedFarmId = useSelector(selectSelectedFarmId);
-  const { farmRole } = useFarmAccess();
+  const { farmRole, session } = useFarmAccess();
 
   const { broilerLots, eggsAvailable, loading } = useProductionAvailability(selectedFarmId);
   const { data: clients } = useGetClientsQuery(
@@ -157,7 +157,9 @@ export default function VenteScreen() {
     try {
       await createSale({ farmId: selectedFarmId, body: buildSaleInput(lines, clientId, method, channel) }).unwrap();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      router.back();
+      // Land on the Ventes list so the new sale is visible (clear confirmation),
+      // instead of silently popping back to wherever the flow was opened from.
+      router.replace('/(field)/commerce/ventes');
     } catch (err) {
       const message =
         (err as { data?: { detail?: string; message?: string } })?.data?.detail ??
@@ -171,7 +173,10 @@ export default function VenteScreen() {
   if (selectedFarmId === null) {
     return <Redirect href="/(field)" />;
   }
-  if (farmRole !== 'OWNER' && farmRole !== 'MANAGER') {
+  // Only bounce once the session is loaded and the role is truly insufficient —
+  // farmRole is undefined while the token is still being read (async), and we
+  // must not flash-redirect an authorized OWNER/MANAGER during that window.
+  if (session && farmRole !== 'OWNER' && farmRole !== 'MANAGER') {
     return <Redirect href="/(field)/(tabs)/commerce" />;
   }
 
