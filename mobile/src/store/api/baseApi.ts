@@ -74,6 +74,7 @@ export const baseApi = createApi({
     'HealthAlert', 'HealthCatalog',
     'StockItem', 'InventoryAlert', 'FeedFormula',
     'Client', 'Catalog', 'Supplier',
+    'Sale', 'Invoice', 'Payment',
   ],
   endpoints: () => ({}),
 });
