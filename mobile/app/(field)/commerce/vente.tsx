@@ -7,7 +7,11 @@
  */
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
 import { Redirect, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
@@ -152,6 +156,7 @@ export default function VenteScreen() {
     if (selectedFarmId === null || lines.length === 0) return;
     try {
       await createSale({ farmId: selectedFarmId, body: buildSaleInput(lines, clientId, method, channel) }).unwrap();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.back();
     } catch (err) {
       const message =
@@ -218,30 +223,54 @@ export default function VenteScreen() {
           <>
             <Text style={styles.overline}>Production de la ferme</Text>
             <View style={styles.pickerGrid}>
-              {broilerLots.map((lot) => (
-                <Pressable
+              {broilerLots.map((lot, i) => (
+                <Animated.View
                   key={lot.unitId}
-                  onPress={() => addBroilerLot(lot.unitId, lot.label, lot.heads)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Ajouter ${lot.label} à la vente`}
-                  style={styles.pickerCard}
+                  entering={FadeInDown.delay(i * 40).springify()}
+                  style={styles.pickerCardWrap}
                 >
-                  <Drumstick size={20} color={tokens.colors.accent[600]} />
-                  <Text style={styles.pickerLabel}>{lot.label}</Text>
-                  <Text style={styles.pickerMeta}>{lot.heads} têtes</Text>
-                </Pressable>
+                  <Pressable
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      addBroilerLot(lot.unitId, lot.label, lot.heads);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Ajouter ${lot.label} à la vente`}
+                    style={styles.pickerCard}
+                  >
+                    <LinearGradient
+                      colors={[tokens.colors.accent[100], tokens.colors.neutral[0]]}
+                      style={StyleSheet.absoluteFill}
+                    />
+                    <Drumstick size={20} color={tokens.colors.accent[600]} />
+                    <Text style={styles.pickerLabel}>{lot.label}</Text>
+                    <Text style={styles.pickerMeta}>{lot.heads} têtes</Text>
+                  </Pressable>
+                </Animated.View>
               ))}
               {eggsAvailable > 0 && (
-                <Pressable
-                  onPress={addEggs}
-                  accessibilityRole="button"
-                  accessibilityLabel="Ajouter Œufs à la vente"
-                  style={styles.pickerCard}
+                <Animated.View
+                  entering={FadeInDown.delay(broilerLots.length * 40).springify()}
+                  style={styles.pickerCardWrap}
                 >
-                  <Egg size={20} color={tokens.colors.accent[600]} />
-                  <Text style={styles.pickerLabel}>Œufs</Text>
-                  <Text style={styles.pickerMeta}>{eggsAvailable} plateaux</Text>
-                </Pressable>
+                  <Pressable
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      addEggs();
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Ajouter Œufs à la vente"
+                    style={styles.pickerCard}
+                  >
+                    <LinearGradient
+                      colors={[tokens.colors.primary[100], tokens.colors.neutral[0]]}
+                      style={StyleSheet.absoluteFill}
+                    />
+                    <Egg size={20} color={tokens.colors.primary[600]} />
+                    <Text style={styles.pickerLabel}>Œufs</Text>
+                    <Text style={styles.pickerMeta}>{eggsAvailable} plateaux</Text>
+                  </Pressable>
+                </Animated.View>
               )}
             </View>
           </>
@@ -250,7 +279,7 @@ export default function VenteScreen() {
         {lines.length > 0 && (
           <View style={styles.cart}>
             {lines.map((l) => (
-              <View key={l.key} style={styles.cartRow}>
+              <Animated.View key={l.key} entering={FadeInDown.springify()} style={styles.cartRow}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.cartLabel}>{l.label}</Text>
                   <Text style={styles.cartUnit}>{l.unit}</Text>
@@ -262,7 +291,10 @@ export default function VenteScreen() {
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={`Diminuer ${l.label}`}
-                    onPress={() => setQty(l.key, l.quantity - 1)}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setQty(l.key, l.quantity - 1);
+                    }}
                     style={styles.stepBtn}
                   >
                     <Minus size={16} color={tokens.colors.primary[700]} />
@@ -271,7 +303,10 @@ export default function VenteScreen() {
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={`Augmenter ${l.label}`}
-                    onPress={() => setQty(l.key, l.quantity + 1)}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setQty(l.key, l.quantity + 1);
+                    }}
                     style={styles.stepBtn}
                   >
                     <Plus size={16} color={tokens.colors.primary[700]} />
@@ -293,14 +328,14 @@ export default function VenteScreen() {
                 >
                   <Trash2 size={16} color={tokens.colors.error} />
                 </Pressable>
-              </View>
+              </Animated.View>
             ))}
           </View>
         )}
       </ScrollView>
 
-      {/* Sticky footer */}
-      <View style={styles.footer}>
+      {/* Sticky frosted footer */}
+      <BlurView intensity={30} tint="light" style={styles.footer}>
         <View style={styles.methodRow}>
           {PAYMENT_METHOD_OPTIONS.map((m) => (
             <Chip key={m} label={PAYMENT_METHOD_LABELS[m]} active={method === m} onPress={() => setMethod(m)} />
@@ -331,10 +366,16 @@ export default function VenteScreen() {
             disabled={lines.length === 0 || saving || hasOverMax}
             style={[styles.commit, (lines.length === 0 || saving || hasOverMax) && styles.commitDisabled]}
           >
+            <LinearGradient
+              colors={[tokens.colors.accent[300], tokens.colors.accent[500]]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
             <Text style={styles.commitLabel}>Valider la vente</Text>
           </Pressable>
         </View>
-      </View>
+      </BlurView>
     </SafeAreaView>
   );
 }
@@ -386,15 +427,15 @@ const styles = StyleSheet.create({
   muted: { ...tokens.typography.bodyMd, color: tokens.colors.field.textMuted },
   overline: { ...tokens.typography.bodySm, color: tokens.colors.neutral[500], textTransform: 'uppercase' },
   pickerGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.spacing[2] },
+  pickerCardWrap: { width: '31%', minWidth: 100 },
   pickerCard: {
-    width: '31%',
-    minWidth: 100,
     gap: 4,
     padding: tokens.spacing[3],
     borderRadius: tokens.radii.lg,
     borderWidth: 1,
     borderColor: tokens.colors.neutral[200],
     backgroundColor: tokens.colors.neutral[0],
+    overflow: 'hidden',
   },
   pickerLabel: { ...tokens.typography.bodyMd, fontWeight: '600', color: tokens.colors.field.text },
   pickerMeta: { ...tokens.typography.bodySm, color: tokens.colors.neutral[500] },
@@ -440,7 +481,7 @@ const styles = StyleSheet.create({
     paddingBottom: tokens.spacing[4],
     borderTopWidth: tokens.layout.ruleWidth,
     borderTopColor: tokens.colors.neutral[200],
-    backgroundColor: tokens.colors.neutral[0],
+    backgroundColor: 'rgba(255,255,255,0.75)',
     gap: tokens.spacing[2],
   },
   methodRow: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.spacing[2] },
@@ -454,6 +495,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: tokens.spacing[6],
+    overflow: 'hidden',
   },
   commitDisabled: { opacity: 0.4 },
   commitLabel: { ...tokens.typography.button, fontSize: 16, color: tokens.colors.primary[900] },
