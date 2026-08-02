@@ -1,6 +1,7 @@
 package com.avicare.finance;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -254,10 +255,11 @@ class FinanceModuleIT {
                 .header("Authorization", "Bearer " + farmer))
         .andExpect(status().isForbidden());
 
-    // A second farm, owner, module.finance NOT enabled.
+    // A second farm, owner, module.finance turned off (creation auto-provisions it, ADR-009).
     String owner2 = onboardOwner("fin-rbac-nomod");
     long farmId2 = createFarm(owner2, "Ferme Sans Module Finance");
     owner2 = relogin("fin-rbac-nomod");
+    disableModule(owner2, farmId2, "module.finance");
 
     mockMvc
         .perform(
@@ -355,6 +357,14 @@ class FinanceModuleIT {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"moduleKey\":\"" + moduleKey + "\",\"mode\":\"HARD\"}"))
         .andExpect(status().isCreated());
+  }
+
+  private void disableModule(String token, long farmId, String moduleKey) throws Exception {
+    mockMvc
+        .perform(
+            delete("/api/v1/farms/" + farmId + "/subscription/modules/" + moduleKey)
+                .header("Authorization", "Bearer " + token))
+        .andExpect(status().isNoContent());
   }
 
   private String addMember(

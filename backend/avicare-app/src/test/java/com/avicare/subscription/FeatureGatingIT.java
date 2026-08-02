@@ -66,7 +66,11 @@ class FeatureGatingIT {
     // A fresh login carries the OWNER membership in the JWT (so @farmAccess passes).
     String owner = login("gate@farm.io", "password123");
 
-    // Module not enabled yet -> feature gate denies (403).
+    // Farm creation auto-provisions every V1 module (ADR-009 free pilot), so remove
+    // the one under test to exercise the gate's closed state.
+    subscriptionService.disableModule(farmId, "module.poultry.broiler");
+
+    // Module not enabled -> feature gate denies (403).
     mockMvc
         .perform(
             get("/api/v1/farms/" + farmId + "/gated").header("Authorization", "Bearer " + owner))
