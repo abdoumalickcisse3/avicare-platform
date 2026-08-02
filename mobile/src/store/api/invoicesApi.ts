@@ -20,7 +20,20 @@ export const invoicesApi = baseApi.injectEndpoints({
       transformResponse: (r: ApiEnvelope<Invoice[]>) => r.data,
       providesTags: [{ type: 'Invoice', id: 'list' }],
     }),
+    createInvoiceFromSale: build.mutation<Invoice, { farmId: number; saleId: number; dueDate?: string }>({
+      query: ({ farmId, saleId, dueDate }) => ({
+        url: `${base(farmId)}/from-sale`,
+        method: 'POST',
+        body: { saleId, dueDate },
+      }),
+      transformResponse: (r: ApiEnvelope<Invoice>) => r.data,
+      invalidatesTags: [
+        { type: 'Invoice', id: 'list' },
+        { type: 'Client', id: 'list' },
+        { type: 'Dashboard', id: 'current' },
+      ],
+    }),
   }),
 });
 
-export const { useGetInvoicesQuery } = invoicesApi;
+export const { useGetInvoicesQuery, useCreateInvoiceFromSaleMutation } = invoicesApi;
