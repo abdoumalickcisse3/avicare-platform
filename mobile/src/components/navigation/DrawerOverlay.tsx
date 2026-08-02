@@ -40,9 +40,10 @@ export function DrawerOverlay({ visible, onClose }: { visible: boolean; onClose:
   const { isAdmin, can, farmRole } = useFarmAccess();
   const selectedFarmId = useSelector(selectSelectedFarmId);
   const { data: farms } = useListFarmsQuery();
-  const farmName = farms?.find((f) => f.id === selectedFarmId)?.name ?? 'Ferme';
+  const selectedFarm = farms?.find((f) => f.id === selectedFarmId);
+  const farmName = selectedFarm?.name ?? 'Ferme';
 
-  const items = getDrawerItems(isAdmin, can);
+  const items = getDrawerItems(isAdmin, can, selectedFarm?.productionFocus ?? []);
   const [expanded, setExpanded] = useState<string[]>([]);
 
   const slide = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
