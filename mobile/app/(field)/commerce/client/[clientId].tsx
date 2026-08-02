@@ -16,6 +16,7 @@ import { useFarmAccess } from '@/auth/useSession';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { useGetClientsQuery } from '@/store/api/clientsApi';
 import { useGetInvoicesQuery } from '@/store/api/invoicesApi';
+import { PaymentSheet } from '@/commerce/PaymentSheet';
 import { CLIENT_TYPE_LABELS, creditColor, initials } from '@/lib/commercial';
 import { formatCurrency } from '@/lib/format';
 import type { Invoice } from '@/types';
@@ -124,8 +125,15 @@ export default function ClientDetailScreen() {
         </View>
       )}
 
-      {/* Payment sheet is wired in the next task. */}
-      {sheetOpen && <View accessibilityLabel="payment-sheet-placeholder" />}
+      {sheetOpen && (
+        <PaymentSheet
+          farmId={selectedFarmId}
+          invoices={openInvoices}
+          open={sheetOpen}
+          onClose={() => setSheetOpen(false)}
+          onDone={() => setSheetOpen(false)}
+        />
+      )}
     </SafeAreaView>
   );
 }
