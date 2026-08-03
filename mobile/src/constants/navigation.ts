@@ -112,7 +112,7 @@ export const DRAWER_ITEMS: NavItem[] = [
       { id: 'clients', label: 'Clients', icon: Users, route: '/(field)/(tabs)/commerce', requiredPermission: 'commercial:read', ready: true },
       { id: 'commandes', label: 'Commandes', icon: ShoppingBag, requiredPermission: 'commercial:read', ready: false },
       { id: 'ventes', label: 'Ventes', icon: Receipt, route: '/(field)/commerce/ventes', requiredPermission: 'commercial:read', ready: true },
-      { id: 'factures', label: 'Factures', icon: FileText, requiredPermission: 'commercial:read', ready: false },
+      { id: 'factures', label: 'Factures', icon: FileText, route: '/(field)/commerce/factures', requiredPermission: 'commercial:read', ready: true },
     ],
   },
   {
@@ -167,7 +167,9 @@ export const SCREEN_TO_TAB: Record<string, string> = {
   observation: 'elevage',
   vente: 'commerce',
   ventes: 'commerce',
+  factures: 'commerce',
   '[clientId]': 'commerce',
+  '[id]': 'commerce',
   file: 'home',
 };
 

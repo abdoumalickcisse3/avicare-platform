@@ -337,6 +337,17 @@ export interface Sale {
 /** Lifecycle of an invoice (mirrors backend InvoiceStatus). */
 export type InvoiceStatus = 'ISSUED' | 'PARTIALLY_PAID' | 'PAID' | 'CANCELLED';
 
+export interface InvoiceItem {
+  id: number;
+  articleKey: string;
+  articleSource: ArticleSource;
+  articleLabelSnapshot: string | null;
+  unit: string;
+  quantity: number;
+  unitPriceXof: number;
+  lineTotalXof: number;
+}
+
 /** An invoice; `outstandingXof` is the remaining balance to collect. */
 export interface Invoice {
   id: number;
@@ -349,6 +360,7 @@ export interface Invoice {
   totalXof: number;
   amountPaidXof: number;
   outstandingXof: number;
+  items?: InvoiceItem[];
 }
 
 export interface Payment {

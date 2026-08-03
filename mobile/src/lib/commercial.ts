@@ -4,7 +4,7 @@
  * client's running balance against their credit limit.
  */
 import { tokens } from '@/theme';
-import type { Client, ClientType, PaymentMethod, SaleStatus } from '@/types';
+import type { Client, ClientType, InvoiceStatus, PaymentMethod, SaleStatus } from '@/types';
 
 export const SALE_STATUS_LABELS: Record<SaleStatus, string> = {
   COMPLETED: 'Terminée',
@@ -13,6 +13,26 @@ export const SALE_STATUS_LABELS: Record<SaleStatus, string> = {
 
 export function saleStatusColor(status: SaleStatus): string {
   return status === 'CANCELLED' ? tokens.colors.neutral[400] : tokens.colors.success;
+}
+
+export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
+  ISSUED: 'Émise',
+  PARTIALLY_PAID: 'Partielle',
+  PAID: 'Payée',
+  CANCELLED: 'Annulée',
+};
+
+export function invoiceStatusColor(status: InvoiceStatus): string {
+  switch (status) {
+    case 'PAID':
+      return tokens.colors.success;
+    case 'PARTIALLY_PAID':
+      return tokens.colors.accent[500];
+    case 'CANCELLED':
+      return tokens.colors.neutral[400];
+    default:
+      return tokens.colors.accent[700]; // ISSUED
+  }
 }
 
 export const CLIENT_TYPE_LABELS: Record<ClientType, string> = {
