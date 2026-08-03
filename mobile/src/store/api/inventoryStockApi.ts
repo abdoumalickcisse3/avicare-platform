@@ -7,7 +7,7 @@
  * Gated behind `module.inventory` on the backend (403 when inactive).
  */
 import { baseApi } from './baseApi';
-import type { StockItem, StockValuation } from '@/types';
+import type { StockItem, StockMovementInput, StockValuation } from '@/types';
 
 interface ApiEnvelope<T> {
   data: T;
@@ -32,6 +32,16 @@ export const inventoryStockApi = baseApi.injectEndpoints({
       transformResponse: (r: ApiEnvelope<StockValuation>) => r.data,
       providesTags: [{ type: 'StockItem', id: 'valuation' }],
     }),
+    recordMovement: build.mutation<unknown, { farmId: number; body: StockMovementInput }>({
+      query: ({ farmId, body }) => ({ url: `${base(farmId)}/stock-items/movements`, method: 'POST', body }),
+      invalidatesTags: [
+        { type: 'StockItem', id: 'list' },
+        { type: 'StockItem', id: 'low-stock' },
+        { type: 'StockItem', id: 'valuation' },
+        { type: 'InventoryAlert', id: 'farm' },
+        { type: 'Dashboard', id: 'current' },
+      ],
+    }),
   }),
 });
 
@@ -39,4 +49,5 @@ export const {
   useGetStockItemsQuery,
   useGetLowStockItemsQuery,
   useGetStockValuationQuery,
+  useRecordMovementMutation,
 } = inventoryStockApi;
