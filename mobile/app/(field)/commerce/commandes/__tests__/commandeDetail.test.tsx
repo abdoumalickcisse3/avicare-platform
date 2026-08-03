@@ -29,6 +29,9 @@ jest.mock('@/store/api/ordersApi', () => ({
   useStartOrderPreparationMutation: jest.fn(() => [jest.fn(), { isLoading: false }]),
   useCancelOrderMutation: jest.fn(() => [jest.fn(), { isLoading: false }]),
 }));
+jest.mock('@/store/api/deliveriesApi', () => ({
+  useCreateDeliveryFromOrderMutation: jest.fn(() => [jest.fn(), { isLoading: false }]),
+}));
 
 import CommandeDetailScreen from '../[id]';
 

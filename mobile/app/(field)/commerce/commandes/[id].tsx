@@ -20,6 +20,7 @@ import {
   useGetOrderQuery,
   useStartOrderPreparationMutation,
 } from '@/store/api/ordersApi';
+import { useCreateDeliveryFromOrderMutation } from '@/store/api/deliveriesApi';
 import { useGetClientsQuery } from '@/store/api/clientsApi';
 import { ORDER_STATUS_LABELS, orderStatusColor } from '@/lib/commercial';
 import { formatCurrency, formatNumber } from '@/lib/format';
@@ -45,6 +46,7 @@ export default function CommandeDetailScreen() {
   const [confirmOrder, { isLoading: confirming }] = useConfirmOrderMutation();
   const [startPreparation, { isLoading: preparing }] = useStartOrderPreparationMutation();
   const [cancelOrder] = useCancelOrderMutation();
+  const [createDelivery, { isLoading: delivering }] = useCreateDeliveryFromOrderMutation();
 
   if (selectedFarmId === null) {
     return <Redirect href="/(field)" />;
@@ -65,6 +67,14 @@ export default function CommandeDetailScreen() {
 
   const doConfirm = () => run(() => confirmOrder({ farmId: selectedFarmId, id: orderId }).unwrap(), 'Confirmer');
   const doPrepare = () => run(() => startPreparation({ farmId: selectedFarmId, id: orderId }).unwrap(), 'Préparer');
+  const doDeliver = () =>
+    Alert.alert('Livrer la commande', `Créer la livraison de ${order?.orderNumber} ? Le stock sera décrémenté.`, [
+      { text: 'Retour', style: 'cancel' },
+      {
+        text: 'Livrer',
+        onPress: () => run(() => createDelivery({ farmId: selectedFarmId, body: { orderId } }).unwrap(), 'Livrer'),
+      },
+    ]);
   const doCancel = () =>
     Alert.alert('Annuler la commande', `Annuler ${order?.orderNumber} ?`, [
       { text: 'Retour', style: 'cancel' },
@@ -75,7 +85,7 @@ export default function CommandeDetailScreen() {
       },
     ]);
 
-  const busy = confirming || preparing;
+  const busy = confirming || preparing || delivering;
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -136,6 +146,11 @@ export default function CommandeDetailScreen() {
           {order.status === 'CONFIRMED' && canAdvance && (
             <Pressable accessibilityRole="button" accessibilityLabel="Préparer la commande" onPress={doPrepare} disabled={busy} style={[styles.commit, busy && styles.commitDisabled]}>
               <Text style={styles.commitLabel}>Préparer</Text>
+            </Pressable>
+          )}
+          {order.status === 'IN_PROGRESS' && canAdvance && (
+            <Pressable accessibilityRole="button" accessibilityLabel="Livrer la commande" onPress={doDeliver} disabled={busy} style={[styles.commit, busy && styles.commitDisabled]}>
+              <Text style={styles.commitLabel}>Livrer</Text>
             </Pressable>
           )}
           {canCancel && (

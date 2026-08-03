@@ -5,7 +5,7 @@
  * order ("Livrer") is a follow-up.
  */
 import { baseApi } from './baseApi';
-import type { Delivery, DeliveryStatus } from '@/types';
+import type { Delivery, DeliveryFromOrderInput, DeliveryStatus } from '@/types';
 
 interface ApiEnvelope<T> {
   data: T;
@@ -20,7 +20,17 @@ export const deliveriesApi = baseApi.injectEndpoints({
       transformResponse: (r: ApiEnvelope<Delivery[]>) => r.data,
       providesTags: [{ type: 'Delivery', id: 'list' }],
     }),
+    createDeliveryFromOrder: build.mutation<Delivery, { farmId: number; body: DeliveryFromOrderInput }>({
+      query: ({ farmId, body }) => ({ url: base(farmId), method: 'POST', body }),
+      transformResponse: (r: ApiEnvelope<Delivery>) => r.data,
+      invalidatesTags: (_r, _e, { body }) => [
+        { type: 'Delivery', id: 'list' },
+        { type: 'Order', id: 'list' },
+        { type: 'Order', id: body.orderId },
+        { type: 'Dashboard', id: 'current' },
+      ],
+    }),
   }),
 });
 
-export const { useGetDeliveriesQuery } = deliveriesApi;
+export const { useGetDeliveriesQuery, useCreateDeliveryFromOrderMutation } = deliveriesApi;
