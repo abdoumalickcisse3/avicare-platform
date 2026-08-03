@@ -38,8 +38,26 @@ export const invoicesApi = baseApi.injectEndpoints({
         { type: 'Dashboard', id: 'current' },
       ],
     }),
+    createInvoiceFromDelivery: build.mutation<Invoice, { farmId: number; deliveryId: number; dueDate?: string }>({
+      query: ({ farmId, deliveryId, dueDate }) => ({
+        url: `${base(farmId)}/from-delivery`,
+        method: 'POST',
+        body: { deliveryId, dueDate },
+      }),
+      transformResponse: (r: ApiEnvelope<Invoice>) => r.data,
+      invalidatesTags: [
+        { type: 'Invoice', id: 'list' },
+        { type: 'Delivery', id: 'list' },
+        { type: 'Client', id: 'list' },
+        { type: 'Dashboard', id: 'current' },
+      ],
+    }),
   }),
 });
 
-export const { useGetInvoicesQuery, useGetInvoiceQuery, useCreateInvoiceFromSaleMutation } =
-  invoicesApi;
+export const {
+  useGetInvoicesQuery,
+  useGetInvoiceQuery,
+  useCreateInvoiceFromSaleMutation,
+  useCreateInvoiceFromDeliveryMutation,
+} = invoicesApi;

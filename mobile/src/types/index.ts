@@ -407,12 +407,28 @@ export interface Invoice {
   invoiceNumber: string;
   clientId: number | null;
   status: InvoiceStatus;
+  saleId?: number | null;
+  deliveryId?: number | null;
   issueDate: string;
   dueDate: string | null;
   totalXof: number;
   amountPaidXof: number;
   outstandingXof: number;
   items?: InvoiceItem[];
+}
+
+/** Lifecycle of a delivery (mirrors backend DeliveryStatus). */
+export type DeliveryStatus = 'DELIVERED' | 'CANCELLED';
+
+export interface Delivery {
+  id: number;
+  farmId: number;
+  deliveryNumber: string;
+  orderId: number | null;
+  clientId: number | null;
+  status: DeliveryStatus;
+  deliveryDate: string;
+  totalXof: number;
 }
 
 export interface Payment {
