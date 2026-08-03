@@ -204,6 +204,33 @@ export interface RollingRate {
 
 export type ArticleSource = 'INVENTORY' | 'TREATMENT' | 'PRODUCTION';
 
+/** Direction of a stock movement (mirrors the web `MovementType`). */
+export type MovementType = 'IN' | 'OUT' | 'ADJUSTMENT';
+
+/** Why a movement happened (mirrors the web `MovementReason`). */
+export type MovementReason =
+  | 'RECEPTION_PURCHASE'
+  | 'GIFT'
+  | 'RETURN_SUPPLIER'
+  | 'CONSUMPTION_LOT'
+  | 'CONSUMPTION_VACCINATION'
+  | 'CONSUMPTION_TREATMENT'
+  | 'LOSS'
+  | 'SALE'
+  | 'THEFT'
+  | 'INVENTORY_PHYSICAL'
+  | 'ERROR_CORRECTION';
+
+export interface StockMovementInput {
+  stockItemId: number;
+  movementType: MovementType;
+  quantity: number;
+  reason: MovementReason;
+  movementDate?: string;
+  unitPriceXof?: number | null;
+  notes?: string;
+}
+
 /** A stock item (mirrors the web `StockItem`). */
 export interface StockItem {
   id: number;
