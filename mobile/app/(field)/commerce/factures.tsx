@@ -10,11 +10,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, Plus } from 'lucide-react-native';
 import { tokens } from '@/theme';
+import { useFarmAccess } from '@/auth/useSession';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { useGetInvoicesQuery } from '@/store/api/invoicesApi';
 import { useGetClientsQuery } from '@/store/api/clientsApi';
+import { GenerateInvoiceSheet } from '@/commerce/GenerateInvoiceSheet';
 import { INVOICE_STATUS_LABELS, invoiceStatusColor } from '@/lib/commercial';
 import { formatCurrency } from '@/lib/format';
 import type { Invoice } from '@/types';
@@ -23,8 +25,11 @@ type Filter = 'all' | 'unpaid';
 
 export default function FacturesScreen() {
   const router = useRouter();
+  const { farmRole } = useFarmAccess();
+  const canGenerate = farmRole === 'OWNER' || farmRole === 'MANAGER';
   const selectedFarmId = useSelector(selectSelectedFarmId);
   const [filter, setFilter] = useState<Filter>('all');
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const arg = selectedFarmId === null ? skipToken : { farmId: selectedFarmId };
   const { data: invoices, isLoading } = useGetInvoicesQuery(arg);
@@ -108,12 +113,48 @@ export default function FacturesScreen() {
           </View>
         )}
       </ScrollView>
+
+      {canGenerate && (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Générer une facture"
+          onPress={() => setSheetOpen(true)}
+          style={styles.fab}
+        >
+          <Plus size={24} color={tokens.colors.primary[900]} />
+        </Pressable>
+      )}
+
+      {sheetOpen && selectedFarmId !== null && (
+        <GenerateInvoiceSheet
+          farmId={selectedFarmId}
+          open={sheetOpen}
+          onClose={() => setSheetOpen(false)}
+          onDone={() => setSheetOpen(false)}
+        />
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: tokens.colors.neutral[50] },
+  fab: {
+    position: 'absolute',
+    right: tokens.layout.screenPadding,
+    bottom: tokens.spacing[6],
+    width: 56,
+    height: 56,
+    borderRadius: tokens.radii.full,
+    backgroundColor: tokens.colors.accent[400],
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: tokens.colors.primary[900],
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
