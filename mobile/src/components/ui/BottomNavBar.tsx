@@ -17,9 +17,9 @@ export function BottomNavBar() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const segments = useSegments() as string[];
-  const { isAdmin, can } = useFarmAccess();
+  const { isAdmin, farmRole } = useFarmAccess();
 
-  const tabs = getVisibleTabs(isAdmin, can);
+  const tabs = getVisibleTabs(farmRole, isAdmin);
 
   // Active tab: a tab id in the path, or a detail screen mapped to its tab.
   let active = '';
