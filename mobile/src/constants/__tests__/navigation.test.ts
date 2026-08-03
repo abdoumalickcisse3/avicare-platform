@@ -1,4 +1,24 @@
-import { DRAWER_ITEMS, getDrawerItems } from '@/constants/navigation';
+import { DRAWER_ITEMS, getDrawerItems, getVisibleTabs } from '@/constants/navigation';
+
+describe('role-specific tab bar', () => {
+  const ids = (role: string | undefined, isAdmin = false) => getVisibleTabs(role, isAdmin).map((t) => t.id);
+
+  it('FARMER: Accueil, Poulets, Œufs, Sanitaire, Profil', () => {
+    expect(ids('FARMER')).toEqual(['home', 'elevage', 'oeufs', 'sanitaire', 'profil']);
+  });
+  it('VETERINARIAN: Accueil, Poulets, Sanitaire, Profil', () => {
+    expect(ids('VETERINARIAN')).toEqual(['home', 'elevage', 'sanitaire', 'profil']);
+  });
+  it('MANAGER: Accueil, Stock, Commerce, Profil (Finance hidden until built)', () => {
+    expect(ids('MANAGER')).toEqual(['home', 'stocks', 'commerce', 'profil']);
+  });
+  it('OWNER / platform ADMIN get the OWNER set', () => {
+    expect(ids(undefined, true)).toEqual(['home', 'stocks', 'commerce', 'profil']);
+  });
+  it('unknown role falls back to FARMER', () => {
+    expect(ids('BUYER')).toEqual(['home', 'elevage', 'oeufs', 'sanitaire', 'profil']);
+  });
+});
 
 describe('navigation mirrors the web sidebar', () => {
   const commercial = DRAWER_ITEMS.find((i) => i.id === 'commercial');

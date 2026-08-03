@@ -34,6 +34,7 @@ import {
   Sprout,
   TrendingUp,
   Truck,
+  User,
   Users,
   Wallet,
   Wheat,
@@ -60,14 +61,37 @@ export type NavItem = {
   children?: NavItem[];
 };
 
-/** Bottom tab-bar destinations — role/access-gated quick access. */
+/**
+ * All possible bottom-tab destinations, keyed by id. The bottom bar is NOT the
+ * union of these — each role shows its own fixed set (`ROLE_TAB_IDS`); anything
+ * else a role can reach lives in the Profil/drawer (getDrawerItems), so extra
+ * grants never crowd the bar.
+ */
 export const TAB_ITEMS: NavItem[] = [
   { id: 'home', label: 'Accueil', icon: Home, route: '/(field)/(tabs)/home', tab: true, ready: true },
-  { id: 'elevage', label: 'Élevage', icon: Bird, route: '/(field)/(tabs)/elevage', requiredPermission: 'poultry:read', tab: true, ready: true },
-  { id: 'commerce', label: 'Commercial', icon: ShoppingCart, route: '/(field)/(tabs)/commerce', requiredPermission: 'commercial:read', tab: true, ready: true },
-  { id: 'stocks', label: 'Stocks', icon: PackageOpen, route: '/(field)/(tabs)/stocks', requiredPermission: 'inventory:read', tab: true, ready: true },
-  { id: 'menu', label: 'Menu', icon: MenuIcon, route: '/(field)/(tabs)/menu', tab: true, ready: true },
+  { id: 'elevage', label: 'Poulets', icon: Bird, route: '/(field)/(tabs)/elevage', tab: true, ready: true },
+  { id: 'oeufs', label: 'Œufs', icon: Egg, route: '/(field)/oeufs', tab: true, ready: true },
+  { id: 'sanitaire', label: 'Sanitaire', icon: HeartPulse, route: '/(field)/sanitaire', tab: true, ready: true },
+  { id: 'commerce', label: 'Commerce', icon: ShoppingCart, route: '/(field)/(tabs)/commerce', tab: true, ready: true },
+  { id: 'stocks', label: 'Stock', icon: PackageOpen, route: '/(field)/(tabs)/stocks', tab: true, ready: true },
+  { id: 'finance', label: 'Finance', icon: Wallet, route: '/(field)/finance', tab: true, ready: false },
+  { id: 'profil', label: 'Profil', icon: User, route: '/(field)/(tabs)/menu', tab: true, ready: true },
 ];
+
+const TAB_BY_ID: Record<string, NavItem> = Object.fromEntries(TAB_ITEMS.map((t) => [t.id, t]));
+
+/**
+ * Fixed bottom-bar set per farm role (the user's spec). Anything a role can also
+ * reach shows up in the Profil/drawer, not the bar. `finance` is filtered until
+ * its screen ships (`ready:false`). Platform ADMIN / farm OWNER share the OWNER
+ * set. Unbuilt OWNER tabs (Fermes/Finance/Réglages) use an interim set for now.
+ */
+const ROLE_TAB_IDS: Record<string, string[]> = {
+  OWNER: ['home', 'stocks', 'commerce', 'finance', 'profil'],
+  MANAGER: ['home', 'stocks', 'commerce', 'finance', 'profil'],
+  FARMER: ['home', 'elevage', 'oeufs', 'sanitaire', 'profil'],
+  VETERINARIAN: ['home', 'elevage', 'sanitaire', 'profil'],
+};
 
 /**
  * Drawer / Menu sections — a 1:1 mirror of the web sidebar `NAV`. Module groups
@@ -138,10 +162,19 @@ function isVisible(item: NavItem, isAdmin: boolean, can: (p: string) => boolean,
   return true;
 }
 
-/** Tab-bar destinations for the current access level (home first, capped at 5). */
-export function getVisibleTabs(isAdmin: boolean, can: (p: string) => boolean): NavItem[] {
-  const tabs = TAB_ITEMS.filter((i) => (i.id === 'menu' ? !isAdmin : isVisible(i, isAdmin, can, [])));
-  return tabs.slice(0, 5);
+/**
+ * The fixed bottom-bar set for the current farm role (the user's per-role spec).
+ * Platform ADMIN / farm OWNER get the OWNER set; unknown roles fall back to
+ * FARMER. Tabs whose screen isn't built yet (`ready:false`) are filtered out
+ * until they ship. Capped at 5.
+ */
+export function getVisibleTabs(farmRole: string | undefined, isAdmin: boolean): NavItem[] {
+  const roleKey = isAdmin ? 'OWNER' : farmRole && ROLE_TAB_IDS[farmRole] ? farmRole : 'FARMER';
+  const ids = ROLE_TAB_IDS[roleKey] ?? ROLE_TAB_IDS.FARMER!;
+  return ids
+    .map((id) => TAB_BY_ID[id])
+    .filter((t): t is NavItem => !!t && t.ready !== false)
+    .slice(0, 5);
 }
 
 /** Drawer sections for the current access level, with children filtered too (permission + focus). */
