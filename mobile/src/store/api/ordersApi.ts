@@ -5,7 +5,7 @@
  * (delivery creation is a separate flow); CANCELLED is terminal.
  */
 import { baseApi } from './baseApi';
-import type { Order, OrderStatus } from '@/types';
+import type { Order, OrderInput, OrderStatus } from '@/types';
 
 interface ApiEnvelope<T> {
   data: T;
@@ -37,6 +37,14 @@ export const ordersApi = baseApi.injectEndpoints({
       transformResponse: (r: ApiEnvelope<Order>) => r.data,
       providesTags: (_r, _e, { id }) => [{ type: 'Order', id }],
     }),
+    createOrder: build.mutation<Order, { farmId: number; body: OrderInput }>({
+      query: ({ farmId, body }) => ({ url: base(farmId), method: 'POST', body }),
+      transformResponse: (r: ApiEnvelope<Order>) => r.data,
+      invalidatesTags: [
+        { type: 'Order', id: 'list' },
+        { type: 'Client', id: 'list' },
+      ],
+    }),
     confirmOrder: build.mutation<Order, { farmId: number; id: number }>({
       query: ({ farmId, id }) => ({ url: `${base(farmId)}/${id}/confirm`, method: 'POST' }),
       transformResponse: (r: ApiEnvelope<Order>) => r.data,
@@ -62,6 +70,7 @@ export const ordersApi = baseApi.injectEndpoints({
 export const {
   useGetOrdersQuery,
   useGetOrderQuery,
+  useCreateOrderMutation,
   useConfirmOrderMutation,
   useStartOrderPreparationMutation,
   useCancelOrderMutation,

@@ -169,6 +169,7 @@ export const SCREEN_TO_TAB: Record<string, string> = {
   ventes: 'commerce',
   factures: 'commerce',
   commandes: 'commerce',
+  'commande-nouvelle': 'commerce',
   '[clientId]': 'commerce',
   '[id]': 'commerce',
   file: 'home',

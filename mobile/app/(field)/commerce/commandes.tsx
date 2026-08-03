@@ -9,8 +9,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, Plus } from 'lucide-react-native';
 import { tokens } from '@/theme';
+import { useFarmAccess } from '@/auth/useSession';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { useGetOrdersQuery } from '@/store/api/ordersApi';
 import { useGetClientsQuery } from '@/store/api/clientsApi';
@@ -22,6 +23,8 @@ type Filter = 'active' | 'all';
 
 export default function CommandesScreen() {
   const router = useRouter();
+  const { farmRole } = useFarmAccess();
+  const canCreate = farmRole === 'OWNER' || farmRole === 'MANAGER' || farmRole === 'FARMER';
   const selectedFarmId = useSelector(selectSelectedFarmId);
   const [filter, setFilter] = useState<Filter>('active');
 
@@ -99,12 +102,39 @@ export default function CommandesScreen() {
           </View>
         )}
       </ScrollView>
+
+      {canCreate && (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Nouvelle commande"
+          onPress={() => router.push('/(field)/commerce/commande-nouvelle')}
+          style={styles.fab}
+        >
+          <Plus size={24} color={tokens.colors.primary[900]} />
+        </Pressable>
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: tokens.colors.neutral[50] },
+  fab: {
+    position: 'absolute',
+    right: tokens.layout.screenPadding,
+    bottom: tokens.spacing[6],
+    width: 56,
+    height: 56,
+    borderRadius: tokens.radii.full,
+    backgroundColor: tokens.colors.accent[400],
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: tokens.colors.primary[900],
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

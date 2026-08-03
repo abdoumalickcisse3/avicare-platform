@@ -349,6 +349,28 @@ export interface OrderItem {
   notes: string | null;
 }
 
+export interface OrderLineInput {
+  articleKey: string;
+  articleSource: ArticleSource;
+  quantity: number;
+  unitPriceXof: number;
+  productType?: ProductType;
+  productionUnitId?: number;
+  notes?: string;
+}
+
+export interface OrderInput {
+  clientId: number;
+  orderDate?: string;
+  expectedDeliveryDate?: string;
+  deliveryAddress?: string;
+  deliveryNotes?: string;
+  expectedPaymentMethod?: string;
+  salesChannelKey?: string;
+  notes?: string;
+  lines: OrderLineInput[];
+}
+
 export interface Order {
   id: number;
   farmId: number;
