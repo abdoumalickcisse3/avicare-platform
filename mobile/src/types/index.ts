@@ -431,6 +431,13 @@ export interface Delivery {
   totalXof: number;
 }
 
+export interface DeliveryFromOrderInput {
+  orderId: number;
+  deliveryDate?: string;
+  carrier?: string;
+  notes?: string;
+}
+
 export interface Payment {
   id: number;
   farmId: number;
