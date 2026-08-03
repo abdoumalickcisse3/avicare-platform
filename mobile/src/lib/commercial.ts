@@ -4,7 +4,35 @@
  * client's running balance against their credit limit.
  */
 import { tokens } from '@/theme';
-import type { Client, ClientType, InvoiceStatus, OrderStatus, PaymentMethod, SaleStatus } from '@/types';
+import type {
+  Client,
+  ClientType,
+  InvoiceStatus,
+  OrderStatus,
+  PaymentMethod,
+  PurchaseOrderStatus,
+  SaleStatus,
+} from '@/types';
+
+export const PURCHASE_ORDER_STATUS_LABELS: Record<PurchaseOrderStatus, string> = {
+  DRAFT: 'Brouillon',
+  SENT: 'Envoyée',
+  RECEIVED: 'Reçue',
+  CANCELLED: 'Annulée',
+};
+
+export function purchaseOrderStatusColor(status: PurchaseOrderStatus): string {
+  switch (status) {
+    case 'RECEIVED':
+      return tokens.colors.success;
+    case 'SENT':
+      return tokens.colors.accent[500];
+    case 'CANCELLED':
+      return tokens.colors.neutral[400];
+    default:
+      return tokens.colors.neutral[600]; // DRAFT
+  }
+}
 
 export const SALE_STATUS_LABELS: Record<SaleStatus, string> = {
   COMPLETED: 'Terminée',
