@@ -4,7 +4,7 @@
  * client's running balance against their credit limit.
  */
 import { tokens } from '@/theme';
-import type { Client, ClientType, InvoiceStatus, PaymentMethod, SaleStatus } from '@/types';
+import type { Client, ClientType, InvoiceStatus, OrderStatus, PaymentMethod, SaleStatus } from '@/types';
 
 export const SALE_STATUS_LABELS: Record<SaleStatus, string> = {
   COMPLETED: 'Terminée',
@@ -32,6 +32,29 @@ export function invoiceStatusColor(status: InvoiceStatus): string {
       return tokens.colors.neutral[400];
     default:
       return tokens.colors.accent[700]; // ISSUED
+  }
+}
+
+export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
+  PENDING: 'En attente',
+  CONFIRMED: 'Confirmée',
+  IN_PROGRESS: 'En préparation',
+  DELIVERED: 'Livrée',
+  CANCELLED: 'Annulée',
+};
+
+export function orderStatusColor(status: OrderStatus): string {
+  switch (status) {
+    case 'DELIVERED':
+      return tokens.colors.success;
+    case 'IN_PROGRESS':
+      return tokens.colors.accent[700];
+    case 'CONFIRMED':
+      return tokens.colors.accent[500];
+    case 'CANCELLED':
+      return tokens.colors.neutral[400];
+    default:
+      return tokens.colors.neutral[600]; // PENDING
   }
 }
 

@@ -334,6 +334,36 @@ export interface Sale {
   items: SaleItem[];
 }
 
+/** Lifecycle of a client order (mirrors backend OrderStatus). */
+export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'DELIVERED' | 'CANCELLED';
+
+export interface OrderItem {
+  id: number;
+  articleKey: string;
+  articleSource: ArticleSource;
+  articleLabelSnapshot: string | null;
+  unit: string;
+  quantity: number;
+  unitPriceXof: number;
+  lineTotalXof: number;
+  notes: string | null;
+}
+
+export interface Order {
+  id: number;
+  farmId: number;
+  orderNumber: string;
+  clientId: number | null;
+  status: OrderStatus;
+  orderDate: string;
+  expectedDeliveryDate: string | null;
+  actualDeliveryDate: string | null;
+  expectedPaymentMethod: string | null;
+  totalXof: number;
+  notes: string | null;
+  items: OrderItem[];
+}
+
 /** Lifecycle of an invoice (mirrors backend InvoiceStatus). */
 export type InvoiceStatus = 'ISSUED' | 'PARTIALLY_PAID' | 'PAID' | 'CANCELLED';
 
