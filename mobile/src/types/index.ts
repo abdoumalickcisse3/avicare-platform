@@ -204,6 +204,57 @@ export interface RollingRate {
 
 export type ArticleSource = 'INVENTORY' | 'TREATMENT' | 'PRODUCTION';
 
+/** Lifecycle of a purchase order (mirrors the web `PurchaseOrderStatus`). */
+export type PurchaseOrderStatus = 'DRAFT' | 'SENT' | 'RECEIVED' | 'CANCELLED';
+
+export interface PurchaseOrderLine {
+  id: number;
+  articleKey: string;
+  articleSource: ArticleSource;
+  articleLabelSnapshot: string | null;
+  unit: string | null;
+  orderedQuantity: number;
+  receivedQuantity: number;
+  unitPriceXof: number;
+  lineTotalXof: number;
+  notes: string | null;
+}
+
+export interface PurchaseOrder {
+  id: number;
+  farmId: number;
+  orderNumber: string;
+  supplierId: number;
+  supplierName: string;
+  status: PurchaseOrderStatus;
+  orderDate: string;
+  expectedDeliveryDate: string | null;
+  actualDeliveryDate: string | null;
+  totalXof: number | null;
+  notes: string | null;
+  items: PurchaseOrderLine[];
+}
+
+export interface PurchaseOrderLineInput {
+  articleKey: string;
+  articleSource: ArticleSource;
+  orderedQuantity: number;
+  unitPriceXof: number;
+  notes?: string;
+}
+
+export interface PurchaseOrderInput {
+  supplierId: number;
+  expectedDeliveryDate?: string;
+  notes?: string;
+  lines: PurchaseOrderLineInput[];
+}
+
+export interface PurchaseOrderReceiveInput {
+  actualDeliveryDate?: string;
+  lines: { itemId: number; receivedQuantity: number }[];
+}
+
 /** Direction of a stock movement (mirrors the web `MovementType`). */
 export type MovementType = 'IN' | 'OUT' | 'ADJUSTMENT';
 

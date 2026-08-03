@@ -1,0 +1,39 @@
+import { render, screen } from '@testing-library/react-native';
+
+jest.mock('expo-router', () => ({
+  useLocalSearchParams: jest.fn(() => ({ id: '4' })),
+  useRouter: jest.fn(() => ({ back: jest.fn() })),
+  Redirect: () => null,
+}));
+jest.mock('react-redux', () => ({
+  useSelector: jest.fn(() => 7),
+  useDispatch: jest.fn(() => jest.fn()),
+  useStore: jest.fn(() => ({})),
+}));
+jest.mock('@/auth/useSession', () => ({
+  useFarmAccess: jest.fn(() => ({ farmRole: 'OWNER', can: () => true, isAdmin: true, session: null })),
+}));
+jest.mock('@/store/api/purchaseOrdersApi', () => ({
+  useGetPurchaseOrderQuery: jest.fn(() => ({
+    data: {
+      id: 4, farmId: 7, orderNumber: 'BA-001', supplierId: 2, supplierName: 'Sénégal Aliments', status: 'SENT',
+      orderDate: '2026-08-01', expectedDeliveryDate: '2026-08-05', actualDeliveryDate: null, totalXof: 150000, notes: null,
+      items: [{ id: 11, articleKey: 'FEED_STARTER', articleSource: 'INVENTORY', articleLabelSnapshot: 'Aliment démarrage', unit: 'kg', orderedQuantity: 500, receivedQuantity: 0, unitPriceXof: 300, lineTotalXof: 150000, notes: null }],
+    },
+    isLoading: false,
+  })),
+  useSubmitPurchaseOrderMutation: jest.fn(() => [jest.fn(), { isLoading: false }]),
+  useReceivePurchaseOrderMutation: jest.fn(() => [jest.fn(), { isLoading: false }]),
+  useCancelPurchaseOrderMutation: jest.fn(() => [jest.fn(), { isLoading: false }]),
+}));
+
+import AchatDetailScreen from '../[id]';
+
+describe('Bon d\'achat detail', () => {
+  it('shows a SENT order and a Réceptionner action (inventory:write)', async () => {
+    await render(<AchatDetailScreen />);
+    expect(screen.getByText('BA-001')).toBeTruthy();
+    expect(screen.getByText('Sénégal Aliments')).toBeTruthy();
+    expect(screen.getByLabelText('Réceptionner le bon d\'achat')).toBeTruthy();
+  });
+});
