@@ -39,9 +39,11 @@ const CATEGORIES: SettingCategory[] = [
 
 export default function ReglagesScreen() {
   const router = useRouter();
-  const { isAdmin, can } = useFarmAccess();
+  const { isAdmin, can, session } = useFarmAccess();
 
-  if (!isAdmin && !can('settings:read')) return <Redirect href="/(field)" />;
+  // Token loads async — only enforce the guard once `session` resolves, else
+  // it flash-redirects to Accueil before permissions are known.
+  if (session && !isAdmin && !can('settings:read')) return <Redirect href="/(field)" />;
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>

@@ -18,10 +18,17 @@ jest.mock('@/store/api/healthApi', () => ({
   useGetTreatmentCatalogQuery: jest.fn(() => ({ data: [] })),
 }));
 
+import { useFarmAccess } from '@/auth/useSession';
 import ReglagesHub from '../index';
 import ReglagesCategory from '../[category]';
 
 describe('Réglages', () => {
+  it('hub renders while the session is still loading (no flash-redirect)', async () => {
+    (useFarmAccess as jest.Mock).mockReturnValueOnce({ isAdmin: false, can: () => false, farmRole: undefined, session: null });
+    await render(<ReglagesHub />);
+    expect(screen.getByText('Stock')).toBeTruthy();
+  });
+
   it('hub lists the five settings categories', async () => {
     await render(<ReglagesHub />);
     for (const name of ['Stock', 'Lots', 'Sanitaire', 'Ventes', 'Comptabilité']) {
