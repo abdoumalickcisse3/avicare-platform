@@ -9,6 +9,22 @@ export interface ActivityItem {
   detail: string | null;
 }
 
+/** Farm membership roles (mirrors the web `FarmRole`). */
+export type FarmRole = 'OWNER' | 'MANAGER' | 'FARMER' | 'VETERINARIAN' | 'BUYER';
+
+/** A farm team member, enriched (mirrors backend MemberResponse). */
+export interface Member {
+  id: number;
+  userId: number;
+  farmId: number;
+  fullName: string;
+  email: string;
+  phone: string | null;
+  role: FarmRole;
+  permissions: string[];
+  active: boolean;
+}
+
 /** Broiler batch status (mirrors the web `BatchStatus`). */
 export type BatchStatus = 'PLANNED' | 'ACTIVE' | 'CLOSED' | 'CANCELLED';
 

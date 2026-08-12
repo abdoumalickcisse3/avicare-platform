@@ -12,8 +12,8 @@ describe('role-specific tab bar', () => {
   it('MANAGER: Accueil, Stock, Commerce, Finance, Profil', () => {
     expect(ids('MANAGER')).toEqual(['home', 'stocks', 'commerce', 'finance', 'profil']);
   });
-  it('OWNER / platform ADMIN get the OWNER set', () => {
-    expect(ids(undefined, true)).toEqual(['home', 'stocks', 'commerce', 'finance', 'profil']);
+  it('OWNER / platform ADMIN get the OWNER set (Accueil, Fermes, Stock, Finance, Réglages)', () => {
+    expect(ids(undefined, true)).toEqual(['home', 'fermes', 'stocks', 'finance', 'reglages']);
   });
   it('unknown role falls back to FARMER', () => {
     expect(ids('BUYER')).toEqual(['home', 'elevage', 'oeufs', 'sanitaire', 'profil']);

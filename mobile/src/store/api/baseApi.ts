@@ -75,7 +75,7 @@ export const baseApi = createApi({
     'StockItem', 'InventoryAlert', 'FeedFormula', 'PurchaseOrder',
     'Client', 'Catalog', 'Supplier',
     'Sale', 'Invoice', 'Payment', 'Order', 'Delivery',
-    'Expense', 'Salary',
+    'Expense', 'Salary', 'Member',
   ],
   endpoints: () => ({}),
 });
