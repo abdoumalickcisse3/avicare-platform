@@ -151,7 +151,7 @@ export const DRAWER_ITEMS: NavItem[] = [
       { id: 'analytique', label: 'Analytique', icon: TrendingUp, requiredPermission: 'finance:read', ready: false },
     ],
   },
-  { id: 'reglages', label: 'Réglages', icon: Cog, requiredPermission: 'settings:read', ready: false },
+  { id: 'reglages', label: 'Réglages', icon: Cog, route: '/(field)/reglages', requiredPermission: 'settings:read', ready: true },
 ];
 
 /** Web `childVisible`: permission + focus (module always active per ADR-009). */
@@ -207,6 +207,8 @@ export const SCREEN_TO_TAB: Record<string, string> = {
   commandes: 'commerce',
   'commande-nouvelle': 'commerce',
   finance: 'finance',
+  reglages: 'reglages',
+  '[category]': 'reglages',
   '[clientId]': 'commerce',
   '[id]': 'commerce',
   file: 'home',
