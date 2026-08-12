@@ -74,7 +74,7 @@ export const TAB_ITEMS: NavItem[] = [
   { id: 'sanitaire', label: 'Sanitaire', icon: HeartPulse, route: '/(field)/sanitaire', tab: true, ready: true },
   { id: 'commerce', label: 'Commerce', icon: ShoppingCart, route: '/(field)/(tabs)/commerce', tab: true, ready: true },
   { id: 'stocks', label: 'Stock', icon: PackageOpen, route: '/(field)/(tabs)/stocks', tab: true, ready: true },
-  { id: 'finance', label: 'Finance', icon: Wallet, route: '/(field)/finance', tab: true, ready: false },
+  { id: 'finance', label: 'Finance', icon: Wallet, route: '/(field)/finance', tab: true, ready: true },
   { id: 'profil', label: 'Profil', icon: User, route: '/(field)/(tabs)/menu', tab: true, ready: true },
 ];
 
@@ -82,9 +82,9 @@ const TAB_BY_ID: Record<string, NavItem> = Object.fromEntries(TAB_ITEMS.map((t) 
 
 /**
  * Fixed bottom-bar set per farm role (the user's spec). Anything a role can also
- * reach shows up in the Profil/drawer, not the bar. `finance` is filtered until
- * its screen ships (`ready:false`). Platform ADMIN / farm OWNER share the OWNER
- * set. Unbuilt OWNER tabs (Fermes/Finance/Réglages) use an interim set for now.
+ * reach shows up in the Profil/drawer, not the bar. Platform ADMIN / farm OWNER
+ * share the OWNER set. Tabs whose screen isn't built yet (`ready:false`, e.g.
+ * the OWNER Fermes/Réglages) are filtered out until they ship.
  */
 const ROLE_TAB_IDS: Record<string, string[]> = {
   OWNER: ['home', 'stocks', 'commerce', 'finance', 'profil'],
@@ -146,9 +146,9 @@ export const DRAWER_ITEMS: NavItem[] = [
     requiredModule: 'module.finance',
     requiredPermission: 'finance:read',
     children: [
-      { id: 'depenses', label: 'Dépenses', icon: Receipt, requiredPermission: 'finance:read', ready: false },
+      { id: 'depenses', label: 'Dépenses', icon: Receipt, route: '/(field)/finance', requiredPermission: 'finance:read', ready: true },
+      { id: 'salaires', label: 'Salaires', icon: Users, route: '/(field)/finance', requiredPermission: 'finance:read', ready: true },
       { id: 'analytique', label: 'Analytique', icon: TrendingUp, requiredPermission: 'finance:read', ready: false },
-      { id: 'salaires', label: 'Salaires', icon: Users, requiredPermission: 'finance:read', ready: false },
     ],
   },
   { id: 'reglages', label: 'Réglages', icon: Cog, requiredPermission: 'settings:read', ready: false },
@@ -206,6 +206,7 @@ export const SCREEN_TO_TAB: Record<string, string> = {
   factures: 'commerce',
   commandes: 'commerce',
   'commande-nouvelle': 'commerce',
+  finance: 'finance',
   '[clientId]': 'commerce',
   '[id]': 'commerce',
   file: 'home',

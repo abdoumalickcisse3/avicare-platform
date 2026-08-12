@@ -412,6 +412,43 @@ export interface Sale {
   items: SaleItem[];
 }
 
+/* --- Finance (mirrors the web finance module) --------------------------- */
+
+export type ExpenseSource = 'MANUAL' | 'PURCHASE' | 'STOCK_ENTRY' | 'SALARY';
+
+export interface Expense {
+  id: number;
+  categoryKey: string;
+  amountXof: number;
+  expenseDate: string;
+  label: string;
+  notes: string | null;
+  productionUnitId: number | null;
+  source: ExpenseSource;
+}
+
+export interface ExpenseInput {
+  categoryKey: string;
+  amountXof: number;
+  expenseDate: string;
+  label: string;
+  notes?: string;
+  productionUnitId?: number;
+}
+
+export type SalaryStatus = 'DUE' | 'PAID';
+
+export interface Salary {
+  id: number;
+  userId: number;
+  period: string;
+  grossXof: number;
+  advanceDeductedXof: number;
+  netXof: number;
+  status: SalaryStatus;
+  paidAt: string | null;
+}
+
 /** Lifecycle of a client order (mirrors backend OrderStatus). */
 export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'DELIVERED' | 'CANCELLED';
 
