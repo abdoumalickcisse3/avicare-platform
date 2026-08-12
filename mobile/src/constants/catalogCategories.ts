@@ -6,7 +6,7 @@ export interface CatalogField {
   const?: string;
 }
 export interface CategoryConfig {
-  slug: 'stock' | 'ventes' | 'comptabilite';
+  slug: 'stock' | 'lots' | 'ventes' | 'comptabilite';
   backendCategory: string;
   title: string;
   labelField: string;
@@ -14,6 +14,25 @@ export interface CategoryConfig {
 }
 
 export const CATALOG_CATEGORIES: CategoryConfig[] = [
+  {
+    slug: 'lots',
+    backendCategory: 'breeds',
+    title: 'Lots',
+    labelField: 'label',
+    fields: [
+      { name: 'label', label: 'Nom', kind: 'text' },
+      {
+        name: 'type',
+        label: 'Type',
+        kind: 'select',
+        options: [
+          { value: 'broiler', label: 'Chair' },
+          { value: 'layer', label: 'Ponte' },
+        ],
+      },
+      { name: 'species', label: 'Espèce', kind: 'text', const: 'poultry' },
+    ],
+  },
   {
     slug: 'stock',
     backendCategory: 'inventory_items',
