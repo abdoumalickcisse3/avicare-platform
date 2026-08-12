@@ -69,14 +69,15 @@ export default function ReglagesCategoryScreen() {
   const router = useRouter();
   const { category } = useLocalSearchParams<{ category: string }>();
   const selectedFarmId = useSelector(selectSelectedFarmId);
-  const { isAdmin, can } = useFarmAccess();
+  const { isAdmin, can, session } = useFarmAccess();
 
   const slug = String(category ?? '');
   const config = getCategoryConfig(slug);
   const name = config?.title ?? CATEGORY_NAMES[slug] ?? slug;
 
-  if (!isAdmin && !can('settings:read')) return <Redirect href="/(field)" />;
   if (selectedFarmId === null) return <Redirect href="/(field)" />;
+  // Token loads async — only enforce the guard once `session` resolves.
+  if (session && !isAdmin && !can('settings:read')) return <Redirect href="/(field)" />;
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>

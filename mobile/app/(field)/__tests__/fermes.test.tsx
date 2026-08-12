@@ -18,9 +18,18 @@ jest.mock('@/store/api/membersApi', () => ({
   useGetMembersQuery: jest.fn(() => ({ data: [{ id: 1, userId: 3, farmId: 7, fullName: 'Awa Ndiaye', email: 'awa@test.sn', phone: null, role: 'FARMER', permissions: [], active: true }], isLoading: false })),
 }));
 
+import { useFarmAccess } from '@/auth/useSession';
 import FermesScreen from '../fermes';
 
 describe('Fermes', () => {
+  it('renders while the session is still loading (no flash-redirect before isAdmin is known)', async () => {
+    // Token not yet decoded: session null, isAdmin false. The guard must wait
+    // for the session before redirecting, so the screen still renders.
+    (useFarmAccess as jest.Mock).mockReturnValueOnce({ isAdmin: false, can: () => false, farmRole: undefined, session: null });
+    await render(<FermesScreen />);
+    expect(screen.getByText('Ferme Test')).toBeTruthy();
+  });
+
   it('shows the farm hero, overview KPIs and activity, then the team members', async () => {
     await render(<FermesScreen />);
     expect(screen.getByText('Ferme Test')).toBeTruthy();

@@ -35,7 +35,7 @@ const fr = (iso: string) => new Date(iso).toLocaleString('fr-FR');
 
 export default function FermesScreen() {
   const selectedFarmId = useSelector(selectSelectedFarmId);
-  const { isAdmin } = useFarmAccess();
+  const { isAdmin, session } = useFarmAccess();
   const [seg, setSeg] = useState<Segment>('overview');
 
   const { data: farms } = useListFarmsQuery();
@@ -63,7 +63,10 @@ export default function FermesScreen() {
   );
 
   if (selectedFarmId === null) return <Redirect href="/(field)" />;
-  if (!isAdmin) return <Redirect href="/(field)" />;
+  // The token loads async — `session` is null on the first render, so only
+  // enforce the admin guard once it has resolved (else it flash-redirects to
+  // Accueil before isAdmin is known).
+  if (session && !isAdmin) return <Redirect href="/(field)" />;
 
   const roleLabel = (r: FarmRole) => FARM_ROLE_LABELS[r] ?? r;
 
