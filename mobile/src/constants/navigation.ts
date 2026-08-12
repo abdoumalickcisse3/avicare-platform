@@ -69,12 +69,14 @@ export type NavItem = {
  */
 export const TAB_ITEMS: NavItem[] = [
   { id: 'home', label: 'Accueil', icon: Home, route: '/(field)/(tabs)/home', tab: true, ready: true },
+  { id: 'fermes', label: 'Fermes', icon: LayoutGrid, route: '/(field)/fermes', tab: true, ready: true },
   { id: 'elevage', label: 'Poulets', icon: Bird, route: '/(field)/(tabs)/elevage', tab: true, ready: true },
   { id: 'oeufs', label: 'Œufs', icon: Egg, route: '/(field)/oeufs', tab: true, ready: true },
   { id: 'sanitaire', label: 'Sanitaire', icon: HeartPulse, route: '/(field)/sanitaire', tab: true, ready: true },
   { id: 'commerce', label: 'Commerce', icon: ShoppingCart, route: '/(field)/(tabs)/commerce', tab: true, ready: true },
   { id: 'stocks', label: 'Stock', icon: PackageOpen, route: '/(field)/(tabs)/stocks', tab: true, ready: true },
   { id: 'finance', label: 'Finance', icon: Wallet, route: '/(field)/finance', tab: true, ready: true },
+  { id: 'reglages', label: 'Réglages', icon: Cog, route: '/(field)/reglages', tab: true, ready: true },
   { id: 'profil', label: 'Profil', icon: User, route: '/(field)/(tabs)/menu', tab: true, ready: true },
 ];
 
@@ -82,12 +84,12 @@ const TAB_BY_ID: Record<string, NavItem> = Object.fromEntries(TAB_ITEMS.map((t) 
 
 /**
  * Fixed bottom-bar set per farm role (the user's spec). Anything a role can also
- * reach shows up in the Profil/drawer, not the bar. Platform ADMIN / farm OWNER
- * share the OWNER set. Tabs whose screen isn't built yet (`ready:false`, e.g.
- * the OWNER Fermes/Réglages) are filtered out until they ship.
+ * reach shows up in the drawer, not the bar. Platform ADMIN / farm OWNER share
+ * the OWNER set and reach the drawer via the header hamburger (so no Profil tab);
+ * the other roles carry a Profil tab for drawer/settings access.
  */
 const ROLE_TAB_IDS: Record<string, string[]> = {
-  OWNER: ['home', 'stocks', 'commerce', 'finance', 'profil'],
+  OWNER: ['home', 'fermes', 'stocks', 'finance', 'reglages'],
   MANAGER: ['home', 'stocks', 'commerce', 'finance', 'profil'],
   FARMER: ['home', 'elevage', 'oeufs', 'sanitaire', 'profil'],
   VETERINARIAN: ['home', 'elevage', 'sanitaire', 'profil'],
@@ -99,7 +101,7 @@ const ROLE_TAB_IDS: Record<string, string[]> = {
  */
 export const DRAWER_ITEMS: NavItem[] = [
   { id: 'home', label: 'Tableau de bord', icon: Home, route: '/(field)/(tabs)/home', ready: true },
-  { id: 'fermes', label: 'Fermes', icon: LayoutGrid, route: '/(field)', adminOnly: true, ready: true },
+  { id: 'fermes', label: 'Fermes', icon: LayoutGrid, route: '/(field)/fermes', adminOnly: true, ready: true },
   {
     id: 'elevage',
     label: 'Élevage',
@@ -207,6 +209,7 @@ export const SCREEN_TO_TAB: Record<string, string> = {
   commandes: 'commerce',
   'commande-nouvelle': 'commerce',
   finance: 'finance',
+  fermes: 'fermes',
   reglages: 'reglages',
   '[category]': 'reglages',
   '[clientId]': 'commerce',
