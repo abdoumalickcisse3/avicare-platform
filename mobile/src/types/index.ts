@@ -336,18 +336,67 @@ export interface FeedFormulaRef {
   notes?: string;
 }
 
-/** Minimal shapes of the available formulas (only the fields the picker uses). */
+/** Feed phase a formula targets (mirrors the web `FeedPhase`). */
+export type FeedPhase =
+  | 'STARTER'
+  | 'GROWER'
+  | 'FINISHER'
+  | 'PRE_LAYER'
+  | 'LAYER'
+  | 'BREEDER'
+  | 'OTHER';
+
+/** One ingredient line of a feed formula (mirrors the web `FormulaIngredient`). */
+export interface FormulaIngredient {
+  articleKey: string;
+  articleSource: ArticleSource;
+  percentage: number;
+}
+
+/** A platform feed-formula template (clone source; mirrors web `PlatformFormula`). */
 export interface PlatformFeedFormula {
   key: string;
   label: string;
+  targetBreedKeys: string[];
+  targetPhase: string;
+  targetAgeDaysMin: number | null;
+  targetAgeDaysMax: number | null;
+  ingredients: FormulaIngredient[];
+  estimatedCostPer100kgXof: number | null;
 }
+
+/** A farm's own feed formula (mirrors the web `FeedFormula`). */
 export interface FarmFeedFormula {
   id: number;
+  farmId: number;
   name: string;
+  description: string | null;
+  sourceFormulaKey: string | null;
+  targetBreedKeys: string[];
+  targetPhase: FeedPhase;
+  targetAgeDaysMin: number | null;
+  targetAgeDaysMax: number | null;
+  ingredients: FormulaIngredient[];
+  totalPercentage: number | null;
+  estimatedCostPer100kgXof: number | null;
+  estimatedCostCalculatedAt: string | null;
+  active: boolean;
+  notes: string | null;
 }
 export interface AvailableFeedFormulas {
   platformFormulas: PlatformFeedFormula[];
   farmFormulas: FarmFeedFormula[];
+}
+
+/** A stockable article from the inventory catalog (mirrors web `InventoryCatalogItem`). */
+export interface InventoryCatalogItem {
+  articleKey: string;
+  articleSource: ArticleSource;
+  label: string;
+  subcategory: string | null;
+  unit: string | null;
+  typicalUnitPriceXof: number | null;
+  custom: boolean;
 }
 
 /* --- Commercial / clients (mirrors the web commercial slice) ------------- */

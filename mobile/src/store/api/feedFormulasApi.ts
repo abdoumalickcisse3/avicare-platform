@@ -1,14 +1,22 @@
 /**
  * Feed formulas — ported from `web/src/store/api/feedFormulasApi.ts`. Mobile
- * only needs the "available formulas" read (platform + farm) that feeds the
- * daily-entry feed-source picker. Gated behind `module.inventory` on the
- * backend (403 when inactive).
+ * reads the "available formulas" list (platform + farm) that feeds both the
+ * daily-entry feed-source picker and the Formules screen, and supports the
+ * lightweight write actions the field needs: clone a platform template,
+ * recompute a formula's cost, and deactivate (delete) a farm formula. Composing
+ * a formula from scratch (ingredient editor) stays on the web. Gated behind
+ * `module.inventory` on the backend (403 when inactive).
  */
 import { baseApi } from './baseApi';
-import type { AvailableFeedFormulas } from '@/types';
+import type { AvailableFeedFormulas, FarmFeedFormula } from '@/types';
 
 interface ApiEnvelope<T> {
   data: T;
+}
+
+interface CloneFormulaInput {
+  sourceFormulaKey: string;
+  newName?: string;
 }
 
 const base = (farmId: number) => `/api/v1/farms/${farmId}/inventory/feed-formulas`;
@@ -20,7 +28,26 @@ export const feedFormulasApi = baseApi.injectEndpoints({
       transformResponse: (r: ApiEnvelope<AvailableFeedFormulas>) => r.data,
       providesTags: [{ type: 'FeedFormula', id: 'available' }],
     }),
+    cloneFeedFormula: build.mutation<FarmFeedFormula, { farmId: number; body: CloneFormulaInput }>({
+      query: ({ farmId, body }) => ({ url: `${base(farmId)}/clone`, method: 'POST', body }),
+      transformResponse: (r: ApiEnvelope<FarmFeedFormula>) => r.data,
+      invalidatesTags: [{ type: 'FeedFormula', id: 'available' }],
+    }),
+    recomputeFormulaCost: build.mutation<FarmFeedFormula, { farmId: number; id: number }>({
+      query: ({ farmId, id }) => ({ url: `${base(farmId)}/${id}/recompute-cost`, method: 'POST' }),
+      transformResponse: (r: ApiEnvelope<FarmFeedFormula>) => r.data,
+      invalidatesTags: [{ type: 'FeedFormula', id: 'available' }],
+    }),
+    deactivateFeedFormula: build.mutation<void, { farmId: number; id: number }>({
+      query: ({ farmId, id }) => ({ url: `${base(farmId)}/${id}/deactivate`, method: 'POST' }),
+      invalidatesTags: [{ type: 'FeedFormula', id: 'available' }],
+    }),
   }),
 });
 
-export const { useGetAvailableFormulasQuery } = feedFormulasApi;
+export const {
+  useGetAvailableFormulasQuery,
+  useCloneFeedFormulaMutation,
+  useRecomputeFormulaCostMutation,
+  useDeactivateFeedFormulaMutation,
+} = feedFormulasApi;
