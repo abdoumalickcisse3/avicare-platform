@@ -32,6 +32,7 @@
         <testcontainers.version>1.20.4</testcontainers.version>
         <spotless.version>2.44.0</spotless.version>
         <jacoco.version>0.8.12</jacoco.version>
+        <anthropic-sdk.version>2.34.0</anthropic-sdk.version>
     </properties>
 
     <modules>
@@ -89,6 +90,11 @@
                 <version>${testcontainers.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.anthropic</groupId>
+                <artifactId>anthropic-java</artifactId>
+                <version>${anthropic-sdk.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -36,3 +36,13 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+# Jawdi IA — assistant LLM. `api-key` is intentionally NOT declared here: it is
+# supplied only via the ANTHROPIC_API_KEY env var in prod (relaxed-binds to
+# anthropic.api-key). When the env var is absent (dev, CI, tests) the property
+# is missing, AnthropicLlmClient's @ConditionalOnProperty is false, and the
+# deterministic MockLlmClient is used — so nothing here needs a secret.
+anthropic:
+  model: ${ANTHROPIC_MODEL:claude-haiku-4-5}
+  max-tokens: ${ANTHROPIC_MAX_TOKENS:512}
+  timeout-seconds: ${ANTHROPIC_TIMEOUT_SECONDS:12}
