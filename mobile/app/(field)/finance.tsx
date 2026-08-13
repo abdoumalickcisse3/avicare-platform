@@ -28,9 +28,10 @@ import {
 } from '@/store/api/financeApi';
 import { formatCurrency } from '@/lib/format';
 import { ExpenseSheet } from '@/finance/ExpenseSheet';
+import { FinanceAnalytics } from '@/finance/FinanceAnalytics';
 import type { Expense, ExpenseSource, Salary, SalaryStatus } from '@/types';
 
-type Tab = 'expenses' | 'salaries';
+type Tab = 'expenses' | 'salaries' | 'analytics';
 
 const SOURCE_LABELS: Record<ExpenseSource, string> = {
   MANUAL: 'Manuelle',
@@ -111,26 +112,28 @@ export default function FinanceScreen() {
       <AppHeader />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Finance</Text>
-        <Text style={styles.subtitle}>Dépenses et salaires de la ferme.</Text>
+        <Text style={styles.subtitle}>Dépenses, salaires et rentabilité de la ferme.</Text>
 
-        {/* Hero KPI */}
-        <Animated.View entering={FadeInDown.springify().damping(18)} style={styles.hero}>
-          <LinearGradient
-            colors={[tokens.colors.primary[600], tokens.colors.primary[900]]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={StyleSheet.absoluteFill}
-          />
-          <View style={styles.heroIcon}>
-            {tab === 'expenses' ? (
-              <Receipt size={20} color={tokens.colors.neutral[0]} />
-            ) : (
-              <Wallet size={20} color={tokens.colors.neutral[0]} />
-            )}
-          </View>
-          <Text style={styles.heroLabel}>{heroLabel}</Text>
-          <Text style={styles.heroValue}>{formatCurrency(heroValue)}</Text>
-        </Animated.View>
+        {/* Hero KPI (hidden on Analytique — that view has its own margin hero) */}
+        {tab !== 'analytics' && (
+          <Animated.View entering={FadeInDown.springify().damping(18)} style={styles.hero}>
+            <LinearGradient
+              colors={[tokens.colors.primary[600], tokens.colors.primary[900]]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
+            <View style={styles.heroIcon}>
+              {tab === 'expenses' ? (
+                <Receipt size={20} color={tokens.colors.neutral[0]} />
+              ) : (
+                <Wallet size={20} color={tokens.colors.neutral[0]} />
+              )}
+            </View>
+            <Text style={styles.heroLabel}>{heroLabel}</Text>
+            <Text style={styles.heroValue}>{formatCurrency(heroValue)}</Text>
+          </Animated.View>
+        )}
 
         {/* Segmented control */}
         <View style={styles.segment}>
@@ -149,6 +152,14 @@ export default function FinanceScreen() {
             style={[styles.segmentBtn, tab === 'salaries' && styles.segmentBtnOn]}
           >
             <Text style={[styles.segmentText, tab === 'salaries' && styles.segmentTextOn]}>Salaires</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Onglet Analytique"
+            onPress={() => setTab('analytics')}
+            style={[styles.segmentBtn, tab === 'analytics' && styles.segmentBtnOn]}
+          >
+            <Text style={[styles.segmentText, tab === 'analytics' && styles.segmentTextOn]}>Analytique</Text>
           </Pressable>
         </View>
 
@@ -195,6 +206,8 @@ export default function FinanceScreen() {
               ))}
             </View>
           )
+        ) : tab === 'analytics' ? (
+          <FinanceAnalytics farmId={selectedFarmId} />
         ) : salariesLoading ? (
           <Text style={styles.muted}>Chargement…</Text>
         ) : (salaries ?? []).length === 0 ? (

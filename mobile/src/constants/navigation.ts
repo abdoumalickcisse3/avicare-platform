@@ -150,7 +150,7 @@ export const DRAWER_ITEMS: NavItem[] = [
     children: [
       { id: 'depenses', label: 'Dépenses', icon: Receipt, route: '/(field)/finance', requiredPermission: 'finance:read', ready: true },
       { id: 'salaires', label: 'Salaires', icon: Users, route: '/(field)/finance', requiredPermission: 'finance:read', ready: true },
-      { id: 'analytique', label: 'Analytique', icon: TrendingUp, requiredPermission: 'finance:read', ready: false },
+      { id: 'analytique', label: 'Analytique', icon: TrendingUp, route: '/(field)/finance', requiredPermission: 'finance:read', ready: true },
     ],
   },
   { id: 'reglages', label: 'Réglages', icon: Cog, route: '/(field)/reglages', requiredPermission: 'settings:read', ready: true },
