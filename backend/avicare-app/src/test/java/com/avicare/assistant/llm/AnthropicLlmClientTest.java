@@ -100,4 +100,40 @@ class AnthropicLlmClientTest {
     assertThat(sut.interpret("   ", MORTALITY_TOOLS)).isEmpty();
     assertThat(sut.interpret("dix sont morts", List.of())).isEmpty();
   }
+
+  private static final List<ToolSpec> READ_TOOLS =
+      List.of(new ToolSpec("STOCK_QUERY", "Consulter le stock.", List.of()));
+
+  @Test
+  void converse_mapsToolUseBlocksToInvocations() {
+    ToolUseBlock toolUse =
+        ToolUseBlock.builder()
+            .id("toolu_9")
+            .name("STOCK_QUERY")
+            .input(JsonValue.from(Map.of("article", "aliment")))
+            .caller(DirectCaller.builder().build())
+            .build();
+    AnthropicLlmClient sut = clientReturning(messageWith(ContentBlock.ofToolUse(toolUse)));
+
+    LlmTurn turn = sut.converse(List.of(LlmMessage.user("quel stock ?")), READ_TOOLS);
+
+    assertThat(turn.hasToolCalls()).isTrue();
+    assertThat(turn.toolCalls()).hasSize(1);
+    assertThat(turn.toolCalls().get(0).id()).isEqualTo("toolu_9");
+    assertThat(turn.toolCalls().get(0).name()).isEqualTo("STOCK_QUERY");
+    assertThat(turn.toolCalls().get(0).args()).containsEntry("article", "aliment");
+  }
+
+  @Test
+  void converse_returnsTheTextAnswerWhenNoToolIsInvoked() {
+    ContentBlock textOnly =
+        ContentBlock.ofText(
+            TextBlock.builder().text("Il reste 40 sacs.").citations(List.of()).build());
+    AnthropicLlmClient sut = clientReturning(messageWith(textOnly));
+
+    LlmTurn turn = sut.converse(List.of(LlmMessage.user("stock ?")), READ_TOOLS);
+
+    assertThat(turn.hasToolCalls()).isFalse();
+    assertThat(turn.text()).isEqualTo("Il reste 40 sacs.");
+  }
 }

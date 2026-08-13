@@ -10,7 +10,11 @@ import static org.mockito.Mockito.when;
 
 import com.avicare.assistant.dto.InterpretResponse;
 import com.avicare.assistant.llm.LlmClient;
+import com.avicare.assistant.llm.LlmTurn;
 import com.avicare.assistant.llm.ToolCall;
+import com.avicare.assistant.llm.ToolInvocation;
+import com.avicare.assistant.read.ReadTool;
+import com.avicare.assistant.read.ReadToolRegistry;
 import com.avicare.assistant.tool.AssistantTool;
 import com.avicare.assistant.tool.ToolRegistry;
 import com.avicare.assistant.tool.ToolSpec;
@@ -33,11 +37,19 @@ class InterpretServiceTest {
 
   @Mock private LlmClient llm;
   @Mock private ToolRegistry registry;
+  @Mock private ReadToolRegistry readRegistry;
   @Mock private FarmAccessChecker access;
   @InjectMocks private InterpretService service;
 
   private static AssistantTool tool(String name, String permission) {
     AssistantTool t = mock(AssistantTool.class);
+    lenient().when(t.spec()).thenReturn(new ToolSpec(name, name, List.of()));
+    lenient().when(t.requiredPermission()).thenReturn(permission);
+    return t;
+  }
+
+  private static ReadTool readTool(String name, String permission) {
+    ReadTool t = mock(ReadTool.class);
     lenient().when(t.spec()).thenReturn(new ToolSpec(name, name, List.of()));
     lenient().when(t.requiredPermission()).thenReturn(permission);
     return t;
@@ -112,5 +124,53 @@ class InterpretServiceTest {
 
     assertThat(r.kind()).isEqualTo("CLARIFICATION");
     assertThat(r.message()).contains("non prise en charge");
+  }
+
+  @Test
+  void readQuestion_runsTheLoop_executesTheTool_andAnswers() {
+    // No write tool matched → the read loop runs (write registry empty by default).
+    ReadTool stock = readTool("STOCK_QUERY", "inventory:read");
+    when(readRegistry.all()).thenReturn(List.of(stock));
+    when(access.hasPermission(1L, "inventory:read")).thenReturn(true);
+    when(stock.read(eq(1L), any(), eq(2L))).thenReturn("aliment : 40 sac");
+    when(llm.converse(any(), any()))
+        .thenReturn(
+            LlmTurn.calls(List.of(new ToolInvocation("u1", "STOCK_QUERY", Map.of())), null),
+            LlmTurn.answer("Il vous reste 40 sacs d'aliment."));
+
+    InterpretResponse r = service.interpret(1L, "quel est mon stock d'aliment ?", 2L);
+
+    assertThat(r.kind()).isEqualTo("ANSWER");
+    assertThat(r.message()).isEqualTo("Il vous reste 40 sacs d'aliment.");
+    verify(stock).read(eq(1L), any(), eq(2L));
+  }
+
+  @Test
+  void readLoop_neverOffersToolsAbovePermissions() {
+    ReadTool stock = readTool("STOCK_QUERY", "inventory:read");
+    ReadTool mortality = readTool("MORTALITY_QUERY", "poultry:read");
+    when(readRegistry.all()).thenReturn(List.of(stock, mortality));
+    when(access.hasPermission(1L, "inventory:read")).thenReturn(true);
+    when(access.hasPermission(1L, "poultry:read")).thenReturn(false); // not allowed
+    when(llm.converse(any(), any())).thenReturn(LlmTurn.answer("")); // no answer → clarification
+
+    service.interpret(1L, "combien de morts cette semaine ?", null);
+
+    @SuppressWarnings("unchecked")
+    ArgumentCaptor<List<ToolSpec>> specs = ArgumentCaptor.forClass(List.class);
+    verify(llm).converse(any(), specs.capture());
+    assertThat(specs.getValue()).extracting(ToolSpec::name).containsExactly("STOCK_QUERY");
+  }
+
+  @Test
+  void readLoop_withoutAnswer_fallsBackToClarification() {
+    ReadTool stock = readTool("STOCK_QUERY", "inventory:read");
+    when(readRegistry.all()).thenReturn(List.of(stock));
+    when(access.hasPermission(1L, "inventory:read")).thenReturn(true);
+    when(llm.converse(any(), any())).thenReturn(LlmTurn.answer(""));
+
+    InterpretResponse r = service.interpret(1L, "raconte une blague", null);
+
+    assertThat(r.kind()).isEqualTo("CLARIFICATION");
   }
 }

@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
 /**
@@ -22,6 +23,9 @@ public class MockLlmClient implements LlmClient {
 
   private static final Pattern MORTALITY = Pattern.compile("mort|deces|décès|perdu|crev|mortalit");
   private static final Pattern COUNT = Pattern.compile("(\\d+)");
+  private static final Pattern STOCK = Pattern.compile("stock|reste.*(aliment|mais|maïs)|aliment");
+  private static final Pattern HEADCOUNT =
+      Pattern.compile("effectif|combien.*(poulet|sujet|tête|tete)");
 
   @Override
   public Optional<ToolCall> interpret(String text, List<ToolSpec> tools) {
@@ -38,5 +42,49 @@ public class MockLlmClient implements LlmClient {
       }
     }
     return Optional.empty();
+  }
+
+  /**
+   * Deterministic READ loop: on the first (USER) turn, keyword-match the question to one offered
+   * read tool and invoke it; once a TOOL result is in the history, phrase it as the final answer.
+   * Intentionally dumb — it proves the loop plumbing without a key.
+   */
+  @Override
+  public LlmTurn converse(List<LlmMessage> history, List<ToolSpec> tools) {
+    if (history.isEmpty()) {
+      return LlmTurn.answer("");
+    }
+    LlmMessage last = history.get(history.size() - 1);
+    if (last.role() == LlmMessage.Role.TOOL) {
+      String answer =
+          last.toolResults().stream().map(ToolResult::content).collect(Collectors.joining(" "));
+      return LlmTurn.answer(answer);
+    }
+    // First turn: pick a read tool by keyword among those offered.
+    String question = firstUserText(history).toLowerCase();
+    String tool = null;
+    if (offered(tools, "MORTALITY_QUERY") && MORTALITY.matcher(question).find()) {
+      tool = "MORTALITY_QUERY";
+    } else if (offered(tools, "STOCK_QUERY") && STOCK.matcher(question).find()) {
+      tool = "STOCK_QUERY";
+    } else if (offered(tools, "FLOCK_HEADCOUNT") && HEADCOUNT.matcher(question).find()) {
+      tool = "FLOCK_HEADCOUNT";
+    }
+    if (tool == null) {
+      return LlmTurn.answer("");
+    }
+    return LlmTurn.calls(List.of(new ToolInvocation("mock-1", tool, Map.of())), null);
+  }
+
+  private static boolean offered(List<ToolSpec> tools, String name) {
+    return tools.stream().anyMatch(t -> name.equals(t.name()));
+  }
+
+  private static String firstUserText(List<LlmMessage> history) {
+    return history.stream()
+        .filter(m -> m.role() == LlmMessage.Role.USER)
+        .map(LlmMessage::text)
+        .findFirst()
+        .orElse("");
   }
 }
