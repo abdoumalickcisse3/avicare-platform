@@ -17,6 +17,7 @@ import com.avicare.assistant.tool.ToolParam;
 import com.avicare.assistant.tool.ToolSpec;
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -48,20 +49,36 @@ public class AnthropicLlmClient implements LlmClient {
 
   private static final Logger log = LoggerFactory.getLogger(AnthropicLlmClient.class);
 
-  private static final String SYSTEM_PROMPT =
-      "Tu es l'assistant de saisie d'une application d'élevage avicole. L'ouvrier de terrain parle"
-          + " en français, souvent brièvement. À partir de sa phrase, choisis AU PLUS UNE action"
-          + " parmi les outils disponibles et remplis ses champs. Tu extrais uniquement l'intention"
-          + " et les entités (quantités, motif, lot…) : tu ne calcules jamais et ne décides jamais"
-          + " un montant, un stock ou un solde — le système s'en charge. Si la phrase ne correspond"
-          + " à aucune action, ou qu'un nombre requis est absent, n'appelle aucun outil.";
+  /**
+   * Write-intent extraction prompt. Bounded (intent + entities only, never a computed figure) and
+   * dated so relative wording ("hier", "aujourd'hui") resolves without a clarifying round-trip.
+   */
+  private static String writeSystem() {
+    return "Tu es l'assistant de saisie d'une application d'élevage avicole. Nous sommes le "
+        + LocalDate.now()
+        + ". L'ouvrier de terrain parle en français, souvent brièvement. À partir de sa phrase,"
+        + " choisis AU PLUS UNE action parmi les outils disponibles et remplis ses champs. Tu"
+        + " extrais uniquement l'intention et les entités (quantités, motif, lot, dates…) : tu ne"
+        + " calcules jamais et ne décides jamais un montant, un stock ou un solde — le système s'en"
+        + " charge. Si la phrase ne correspond à aucune action, ou qu'un nombre requis est absent,"
+        + " n'appelle aucun outil.";
+  }
 
-  private static final String READ_SYSTEM_PROMPT =
-      "Tu es l'assistant de consultation d'une application d'élevage avicole. L'ouvrier pose une"
-          + " question en français. Utilise les outils de consultation fournis pour obtenir les"
-          + " chiffres RÉELS — n'invente jamais un chiffre. Appelle les outils nécessaires, puis"
-          + " donne une réponse courte, factuelle et en français. Si la question sort du périmètre"
-          + " des outils, dis-le brièvement.";
+  /**
+   * Read/consultation prompt. Encourages a SINGLE parallel tool turn (all needed tools at once) so
+   * a multi-part question resolves in one round-trip instead of several — the main latency lever —
+   * and a short, factual, invention-free French answer. Dated for relative periods.
+   */
+  private static String readSystem() {
+    return "Tu es l'assistant de consultation d'une application d'élevage avicole. Nous sommes le "
+        + LocalDate.now()
+        + ". L'ouvrier pose une question en français. Utilise les outils de consultation fournis"
+        + " pour obtenir les chiffres RÉELS — n'invente JAMAIS un chiffre. Si la question porte sur"
+        + " plusieurs éléments, appelle TOUS les outils nécessaires EN UNE SEULE FOIS (en parallèle),"
+        + " puis, dès que tu as les données, donne une réponse courte et factuelle en français (une"
+        + " à deux phrases, montants en F CFA). Si la question sort du périmètre des outils,"
+        + " dis-le brièvement sans appeler d'outil.";
+  }
 
   private final AnthropicClient client;
   private final String model;
@@ -99,7 +116,7 @@ public class AnthropicLlmClient implements LlmClient {
           MessageCreateParams.builder()
               .model(model)
               .maxTokens(maxTokens)
-              .system(SYSTEM_PROMPT)
+              .system(writeSystem())
               .addUserMessage(text);
       for (ToolSpec spec : tools) {
         params.addTool(toSdkTool(spec));
@@ -119,10 +136,7 @@ public class AnthropicLlmClient implements LlmClient {
     }
     try {
       MessageCreateParams.Builder params =
-          MessageCreateParams.builder()
-              .model(model)
-              .maxTokens(maxTokens)
-              .system(READ_SYSTEM_PROMPT);
+          MessageCreateParams.builder().model(model).maxTokens(maxTokens).system(readSystem());
       for (LlmMessage message : history) {
         params.addMessage(toSdkMessage(message));
       }
