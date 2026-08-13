@@ -72,7 +72,7 @@ export const baseApi = createApi({
     'EggCollection', 'TrayStock', 'DailyProduction',
     'Vaccination', 'Observation',
     'HealthAlert', 'HealthCatalog',
-    'StockItem', 'InventoryAlert', 'FeedFormula', 'PurchaseOrder',
+    'StockItem', 'InventoryAlert', 'FeedFormula', 'InventoryCatalog', 'PurchaseOrder',
     'Client', 'Catalog', 'Supplier',
     'Sale', 'Invoice', 'Payment', 'Order', 'Delivery',
     'Expense', 'Salary', 'Member',

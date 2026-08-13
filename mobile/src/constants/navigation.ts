@@ -122,10 +122,10 @@ export const DRAWER_ITEMS: NavItem[] = [
     requiredPermission: 'inventory:read',
     children: [
       { id: 'stocks-overview', label: "Vue d'ensemble", icon: LayoutGrid, route: '/(field)/(tabs)/stocks', requiredPermission: 'inventory:read', ready: true },
-      { id: 'articles', label: 'Bibliothèque', icon: BookOpen, requiredPermission: 'inventory:read', ready: false },
+      { id: 'articles', label: 'Bibliothèque', icon: BookOpen, route: '/(field)/stocks/bibliotheque', requiredPermission: 'inventory:read', ready: true },
       { id: 'fournisseurs', label: 'Fournisseurs', icon: Truck, route: '/(field)/stocks/fournisseurs', requiredPermission: 'inventory:read', ready: true },
       { id: 'achats', label: "Bons d'achat", icon: ClipboardList, route: '/(field)/stocks/achats', requiredPermission: 'inventory:read', ready: true },
-      { id: 'formules', label: "Formules d'aliment", icon: Wheat, requiredPermission: 'inventory:read', ready: false },
+      { id: 'formules', label: "Formules d'aliment", icon: Wheat, route: '/(field)/stocks/formules', requiredPermission: 'inventory:read', ready: true },
     ],
   },
   {
@@ -205,6 +205,8 @@ export const SCREEN_TO_TAB: Record<string, string> = {
   fournisseurs: 'stocks',
   achats: 'stocks',
   'achat-nouveau': 'stocks',
+  bibliotheque: 'stocks',
+  formules: 'stocks',
   factures: 'commerce',
   commandes: 'commerce',
   'commande-nouvelle': 'commerce',
