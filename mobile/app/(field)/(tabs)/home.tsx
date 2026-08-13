@@ -137,7 +137,6 @@ function buildTiles(d: DashboardResponse): Tile[] {
       value: formatNumber(l.deaths),
       icon: HeartPulse,
       tint: tokens.colors.error,
-      series: mort,
       trend: trendOf(mort),
       invertTrend: true,
       alert: l.deaths > 0,
@@ -241,7 +240,6 @@ export default function HomeScreen() {
     const out: Alert[] = [];
     if (c?.ordersToDeliver) out.push({ key: 'deliver', label: 'À livrer', count: c.ordersToDeliver, icon: Truck, tint: tokens.colors.info, onPress: () => router.push('/(field)/commerce/commandes') });
     if (c?.invoicesToCollect) out.push({ key: 'collect', label: 'À encaisser', count: c.invoicesToCollect, icon: Receipt, tint: tokens.colors.warning, onPress: () => router.push('/(field)/commerce/factures') });
-    if (l?.deaths) out.push({ key: 'mort', label: 'Mortalité', count: l.deaths, icon: HeartPulse, tint: tokens.colors.error, onPress: goElevage });
     return out;
   }, [data, router]);
 
