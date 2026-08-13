@@ -1,8 +1,10 @@
 package com.avicare.finance.service;
 
+import com.avicare.finance.api.FarmPnl;
 import com.avicare.finance.api.FinanceFacade;
 import com.avicare.finance.domain.Expense;
 import com.avicare.finance.domain.ExpenseSource;
+import com.avicare.finance.dto.response.FarmAnalyticsResponse;
 import com.avicare.finance.repository.ExpenseRepository;
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
@@ -22,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class FinanceFacadeImpl implements FinanceFacade {
 
   private final ExpenseRepository expenseRepository;
+  private final FinanceAnalyticsService financeAnalyticsService;
 
   @Override
   @Transactional
@@ -114,5 +117,12 @@ public class FinanceFacadeImpl implements FinanceFacade {
     expenseRepository
         .findByFarmIdAndVetVisitId(farmId, vetVisitId)
         .ifPresent(expenseRepository::delete);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public FarmPnl farmPnl(Long farmId) {
+    FarmAnalyticsResponse a = financeAnalyticsService.farmAnalytics(farmId);
+    return new FarmPnl(a.totalRevenueXof(), a.totalExpenseXof(), a.marginXof());
   }
 }

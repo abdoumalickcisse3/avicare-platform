@@ -26,6 +26,11 @@ public class MockLlmClient implements LlmClient {
   private static final Pattern STOCK = Pattern.compile("stock|reste.*(aliment|mais|maïs)|aliment");
   private static final Pattern HEADCOUNT =
       Pattern.compile("effectif|combien.*(poulet|sujet|tête|tete)");
+  private static final Pattern PNL =
+      Pattern.compile("resultat|résultat|marge|benefice|bénéfice|rentab|p&l|pnl");
+  private static final Pattern SALES = Pattern.compile("chiffre|vente|vendu|\\bca\\b");
+  private static final Pattern OUTSTANDING =
+      Pattern.compile("doit|dette|encours|creance|créance|debiteur|débiteur");
 
   @Override
   public Optional<ToolCall> interpret(String text, List<ToolSpec> tools) {
@@ -69,6 +74,12 @@ public class MockLlmClient implements LlmClient {
       tool = "STOCK_QUERY";
     } else if (offered(tools, "FLOCK_HEADCOUNT") && HEADCOUNT.matcher(question).find()) {
       tool = "FLOCK_HEADCOUNT";
+    } else if (offered(tools, "CLIENT_OUTSTANDING") && OUTSTANDING.matcher(question).find()) {
+      tool = "CLIENT_OUTSTANDING";
+    } else if (offered(tools, "FARM_PNL") && PNL.matcher(question).find()) {
+      tool = "FARM_PNL";
+    } else if (offered(tools, "SALES_SUMMARY") && SALES.matcher(question).find()) {
+      tool = "SALES_SUMMARY";
     }
     if (tool == null) {
       return LlmTurn.answer("");

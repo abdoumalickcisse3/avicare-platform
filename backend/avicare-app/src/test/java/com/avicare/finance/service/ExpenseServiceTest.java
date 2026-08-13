@@ -35,7 +35,8 @@ class ExpenseServiceTest {
   void setUp() {
     expenseRepository = Mockito.mock(ExpenseRepository.class);
     expenseService = new ExpenseService(expenseRepository);
-    financeFacade = new FinanceFacadeImpl(expenseRepository);
+    financeFacade =
+        new FinanceFacadeImpl(expenseRepository, Mockito.mock(FinanceAnalyticsService.class));
   }
 
   @Test

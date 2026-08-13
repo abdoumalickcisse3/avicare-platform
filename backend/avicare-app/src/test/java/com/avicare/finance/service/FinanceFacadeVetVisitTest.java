@@ -25,7 +25,7 @@ class FinanceFacadeVetVisitTest {
   @BeforeEach
   void setUp() {
     expenseRepository = Mockito.mock(ExpenseRepository.class);
-    facade = new FinanceFacadeImpl(expenseRepository);
+    facade = new FinanceFacadeImpl(expenseRepository, Mockito.mock(FinanceAnalyticsService.class));
   }
 
   @Test

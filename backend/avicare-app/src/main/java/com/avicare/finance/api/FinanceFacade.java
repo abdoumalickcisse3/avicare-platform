@@ -51,4 +51,10 @@ public interface FinanceFacade {
 
   /** Réverse (soft-delete) la dépense liée à une visite supprimée. No-op si absente. */
   void reverseVetVisitExpense(Long farmId, Long vetVisitId);
+
+  /**
+   * Read-only farm P&amp;L (revenue, expenses, margin) — the same figures as the finance dashboard.
+   * Serves the assistant's consultation loop.
+   */
+  FarmPnl farmPnl(Long farmId);
 }
