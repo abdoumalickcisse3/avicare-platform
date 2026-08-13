@@ -23,6 +23,9 @@ public class MockLlmClient implements LlmClient {
 
   private static final Pattern MORTALITY = Pattern.compile("mort|deces|décès|perdu|crev|mortalit");
   private static final Pattern COUNT = Pattern.compile("(\\d+)");
+  private static final Pattern VACCINE = Pattern.compile("vaccin");
+  private static final Pattern OBSERVATION =
+      Pattern.compile("observ|sympt|tousse|malade|boite|diarrh|éternu|eternu");
   private static final Pattern STOCK = Pattern.compile("stock|reste.*(aliment|mais|maïs)|aliment");
   private static final Pattern HEADCOUNT =
       Pattern.compile("effectif|combien.*(poulet|sujet|tête|tete)");
@@ -40,14 +43,19 @@ public class MockLlmClient implements LlmClient {
     if (text == null) {
       return Optional.empty();
     }
-    boolean mortalityOffered = tools.stream().anyMatch(t -> "MORTALITY".equals(t.name()));
     String lower = text.toLowerCase();
-    if (mortalityOffered && MORTALITY.matcher(lower).find()) {
+    if (offered(tools, "MORTALITY") && MORTALITY.matcher(lower).find()) {
       Matcher m = COUNT.matcher(lower);
       if (m.find()) {
         int count = Integer.parseInt(m.group(1));
         return Optional.of(new ToolCall("MORTALITY", Map.of("count", count)));
       }
+    }
+    if (offered(tools, "VACCINATION") && VACCINE.matcher(lower).find()) {
+      return Optional.of(new ToolCall("VACCINATION", Map.of("vaccine", text)));
+    }
+    if (offered(tools, "HEALTH_OBSERVATION") && OBSERVATION.matcher(lower).find()) {
+      return Optional.of(new ToolCall("HEALTH_OBSERVATION", Map.of("observation", text)));
     }
     return Optional.empty();
   }
