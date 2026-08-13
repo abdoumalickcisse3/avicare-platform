@@ -31,6 +31,9 @@ public class MockLlmClient implements LlmClient {
   private static final Pattern SALES = Pattern.compile("chiffre|vente|vendu|\\bca\\b");
   private static final Pattern OUTSTANDING =
       Pattern.compile("doit|dette|encours|creance|créance|debiteur|débiteur");
+  private static final Pattern EGGS = Pattern.compile("œuf|oeuf|ponte|pondu|pondus");
+  private static final Pattern GROWTH = Pattern.compile("gmq|croissance|gain|poids moyen");
+  private static final Pattern OVERDUE = Pattern.compile("retard|impayé|impaye|en retard");
 
   @Override
   public Optional<ToolCall> interpret(String text, List<ToolSpec> tools) {
@@ -80,6 +83,12 @@ public class MockLlmClient implements LlmClient {
       tool = "FARM_PNL";
     } else if (offered(tools, "SALES_SUMMARY") && SALES.matcher(question).find()) {
       tool = "SALES_SUMMARY";
+    } else if (offered(tools, "OVERDUE_INVOICES") && OVERDUE.matcher(question).find()) {
+      tool = "OVERDUE_INVOICES";
+    } else if (offered(tools, "EGG_PRODUCTION_QUERY") && EGGS.matcher(question).find()) {
+      tool = "EGG_PRODUCTION_QUERY";
+    } else if (offered(tools, "GROWTH_QUERY") && GROWTH.matcher(question).find()) {
+      tool = "GROWTH_QUERY";
     }
     if (tool == null) {
       return LlmTurn.answer("");
