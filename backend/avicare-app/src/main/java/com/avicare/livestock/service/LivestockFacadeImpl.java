@@ -8,7 +8,6 @@ import com.avicare.livestock.api.LivestockFacade;
 import com.avicare.livestock.api.ProductType;
 import com.avicare.livestock.api.dto.LivestockStats;
 import com.avicare.livestock.api.dto.ProductionUnitInfo;
-import com.avicare.livestock.api.dto.TimeslotInfo;
 import com.avicare.livestock.domain.LifecycleEvent;
 import com.avicare.livestock.domain.PoultryBatch;
 import com.avicare.livestock.domain.ProductionUnit;
@@ -25,8 +24,6 @@ import com.avicare.livestock.repository.StockMovementRepository;
 import com.avicare.livestock.repository.TreatmentExecutedRepository;
 import com.avicare.livestock.repository.VaccinationRepository;
 import com.avicare.livestock.repository.WeighingSampleRepository;
-import com.avicare.parameters.api.ParametersFacade;
-import com.avicare.parameters.api.dto.CatalogEntryInfo;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
@@ -55,9 +52,6 @@ public class LivestockFacadeImpl implements LivestockFacade {
   private final EggTrayStockService eggTrayStockService;
   private final EggTrayStockRepository eggTrayStockRepository;
   private final StockMovementRepository stockMovementRepository;
-  private final ParametersFacade parametersFacade;
-
-  private static final String CATEGORY_TIMESLOTS = "egg_timeslots";
 
   private static final Set<String> ACTIVITY_EVENT_TYPES =
       Set.of(
@@ -88,24 +82,6 @@ public class LivestockFacadeImpl implements LivestockFacade {
         .filter(u -> u.getSpecies() == Species.POULTRY && !(u instanceof PoultryBatch))
         .map(LivestockFacadeImpl::toInfo)
         .toList();
-  }
-
-  @Override
-  public List<TimeslotInfo> layerTimeslots(Long farmId) {
-    return parametersFacade.listForFarm(farmId, CATEGORY_TIMESLOTS).stream()
-        .sorted(Comparator.comparingInt(LivestockFacadeImpl::timeslotOrder))
-        .map(e -> new TimeslotInfo(e.key(), timeslotLabel(e)))
-        .toList();
-  }
-
-  private static int timeslotOrder(CatalogEntryInfo entry) {
-    Object order = entry.value().get("order");
-    return order instanceof Number n ? n.intValue() : Integer.MAX_VALUE;
-  }
-
-  private static String timeslotLabel(CatalogEntryInfo entry) {
-    Object label = entry.value().get("label");
-    return label != null ? label.toString() : entry.key();
   }
 
   @Override
