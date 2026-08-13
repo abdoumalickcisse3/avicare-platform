@@ -6,6 +6,7 @@ import com.avicare.common.api.dto.NamedValue;
 import com.avicare.livestock.commercial.dto.CommercialStats;
 import com.avicare.livestock.domain.Client;
 import com.avicare.livestock.domain.Invoice;
+import com.avicare.livestock.domain.InvoiceStatus;
 import com.avicare.livestock.domain.Payment;
 import com.avicare.livestock.domain.Sale;
 import com.avicare.livestock.domain.SaleStatus;
@@ -17,6 +18,7 @@ import com.avicare.livestock.repository.SaleRepository;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -53,6 +55,36 @@ public class CommercialFacadeImpl implements CommercialFacade {
         client.getCurrentBalanceXof(),
         credit.overLimit(),
         credit.overLimitPercent());
+  }
+
+  @Override
+  public List<ClientLite> listClients(Long farmId) {
+    return clientService.listForFarm(farmId).stream()
+        .map(c -> new ClientLite(c.getId(), c.getDisplayName(), c.getCurrentBalanceXof()))
+        .toList();
+  }
+
+  @Override
+  public Optional<OpenInvoiceInfo> oldestOpenInvoiceForClient(Long farmId, Long clientId) {
+    // Repository returns issue-date DESC, id DESC → the oldest open one is the last match.
+    List<Invoice> open =
+        invoiceRepository
+            .findByFarmIdAndClientIdOrderByIssueDateDescIdDesc(farmId, clientId)
+            .stream()
+            .filter(CommercialFacadeImpl::isOpen)
+            .toList();
+    if (open.isEmpty()) {
+      return Optional.empty();
+    }
+    Invoice oldest = open.get(open.size() - 1);
+    return Optional.of(
+        new OpenInvoiceInfo(oldest.getId(), oldest.getInvoiceNumber(), oldest.outstandingXof()));
+  }
+
+  private static boolean isOpen(Invoice invoice) {
+    return (invoice.getStatus() == InvoiceStatus.ISSUED
+            || invoice.getStatus() == InvoiceStatus.PARTIALLY_PAID)
+        && invoice.outstandingXof() > 0;
   }
 
   @Override
