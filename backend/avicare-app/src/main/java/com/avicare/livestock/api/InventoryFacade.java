@@ -1,6 +1,7 @@
 package com.avicare.livestock.api;
 
 import com.avicare.livestock.api.dto.InventoryStockInfo;
+import com.avicare.livestock.api.dto.LowStockInfo;
 import com.avicare.livestock.api.dto.SupplierInfo;
 import java.util.List;
 import java.util.Optional;
@@ -20,4 +21,7 @@ public interface InventoryFacade {
 
   /** Active suppliers of the farm (for resolving a spoken supplier name), ordered by name. */
   List<SupplierInfo> listSuppliers(Long farmId);
+
+  /** Articles at or below their alert threshold on the farm (low-stock consultation). */
+  List<LowStockInfo> lowStock(Long farmId);
 }
