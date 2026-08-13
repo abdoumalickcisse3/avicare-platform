@@ -14,6 +14,8 @@ import com.anthropic.models.messages.MessageCreateParams;
 import com.anthropic.models.messages.TextBlock;
 import com.anthropic.models.messages.ToolUseBlock;
 import com.anthropic.services.blocking.MessageService;
+import com.avicare.assistant.tool.ToolParam;
+import com.avicare.assistant.tool.ToolSpec;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -25,6 +27,15 @@ import org.junit.jupiter.api.Test;
  * MockLlmClient}; this only proves the Anthropic client's parsing and error handling.
  */
 class AnthropicLlmClientTest {
+
+  private static final List<ToolSpec> MORTALITY_TOOLS =
+      List.of(
+          new ToolSpec(
+              "MORTALITY",
+              "Enregistrer une mortalité.",
+              List.of(
+                  ToolParam.required("count", ToolParam.Type.INTEGER, "Nombre de sujets morts"),
+                  ToolParam.optional("reason", ToolParam.Type.STRING, "Cause"))));
 
   private AnthropicLlmClient clientReturning(Message response) {
     AnthropicClient sdk = mock(AnthropicClient.class);
@@ -52,7 +63,7 @@ class AnthropicLlmClientTest {
     AnthropicLlmClient sut = clientReturning(messageWith(ContentBlock.ofToolUse(toolUse)));
 
     Optional<ToolCall> call =
-        sut.interpret("douze sont morts à cause de la chaleur", List.of("MORTALITY"));
+        sut.interpret("douze sont morts à cause de la chaleur", MORTALITY_TOOLS);
 
     assertThat(call).isPresent();
     assertThat(call.get().action()).isEqualTo("MORTALITY");
@@ -66,7 +77,7 @@ class AnthropicLlmClientTest {
             TextBlock.builder().text("Je n'ai pas compris.").citations(List.of()).build());
     AnthropicLlmClient sut = clientReturning(messageWith(textOnly));
 
-    assertThat(sut.interpret("bonjour", List.of("MORTALITY"))).isEmpty();
+    assertThat(sut.interpret("bonjour", MORTALITY_TOOLS)).isEmpty();
   }
 
   @Test
@@ -78,7 +89,7 @@ class AnthropicLlmClientTest {
         .thenThrow(new RuntimeException("network down"));
     AnthropicLlmClient sut = new AnthropicLlmClient(sdk, "claude-haiku-4-5", 512L);
 
-    assertThat(sut.interpret("dix sont morts", List.of("MORTALITY"))).isEmpty();
+    assertThat(sut.interpret("dix sont morts", MORTALITY_TOOLS)).isEmpty();
   }
 
   @Test
@@ -86,7 +97,7 @@ class AnthropicLlmClientTest {
     AnthropicClient sdk = mock(AnthropicClient.class);
     AnthropicLlmClient sut = new AnthropicLlmClient(sdk, "claude-haiku-4-5", 512L);
 
-    assertThat(sut.interpret("   ", List.of("MORTALITY"))).isEmpty();
+    assertThat(sut.interpret("   ", MORTALITY_TOOLS)).isEmpty();
     assertThat(sut.interpret("dix sont morts", List.of())).isEmpty();
   }
 }

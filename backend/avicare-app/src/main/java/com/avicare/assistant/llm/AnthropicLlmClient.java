@@ -8,8 +8,11 @@ import com.anthropic.models.messages.Message;
 import com.anthropic.models.messages.MessageCreateParams;
 import com.anthropic.models.messages.Tool;
 import com.anthropic.models.messages.ToolUseBlock;
+import com.avicare.assistant.tool.ToolParam;
+import com.avicare.assistant.tool.ToolSpec;
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.time.Duration;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -74,8 +77,8 @@ public class AnthropicLlmClient implements LlmClient {
   }
 
   @Override
-  public Optional<ToolCall> interpret(String text, List<String> availableActions) {
-    if (text == null || text.isBlank() || availableActions.isEmpty()) {
+  public Optional<ToolCall> interpret(String text, List<ToolSpec> tools) {
+    if (text == null || text.isBlank() || tools.isEmpty()) {
       return Optional.empty();
     }
     try {
@@ -85,8 +88,8 @@ public class AnthropicLlmClient implements LlmClient {
               .maxTokens(maxTokens)
               .system(SYSTEM_PROMPT)
               .addUserMessage(text);
-      for (String action : availableActions) {
-        params.addTool(toolFor(action));
+      for (ToolSpec spec : tools) {
+        params.addTool(toSdkTool(spec));
       }
       return firstToolCall(client.messages().create(params.build()));
     } catch (RuntimeException e) {
@@ -109,44 +112,36 @@ public class AnthropicLlmClient implements LlmClient {
     return Optional.empty();
   }
 
-  /**
-   * The tool schema for an action. Phase 1 only needs MORTALITY; other actions fall back to a bare
-   * tool so the model can still select them (their schemas land with the tool registry, PR2).
-   */
-  private static Tool toolFor(String action) {
-    if ("MORTALITY".equals(action)) {
-      return Tool.builder()
-          .name("MORTALITY")
-          .description("Enregistrer une mortalité : des sujets (poulets) sont morts sur un lot.")
-          .inputSchema(
-              Tool.InputSchema.builder()
-                  .properties(
-                      Tool.InputSchema.Properties.builder()
-                          .putAdditionalProperty(
-                              "count",
-                              JsonValue.from(
-                                  Map.of(
-                                      "type", "integer", "description", "Nombre de sujets morts")))
-                          .putAdditionalProperty(
-                              "reason",
-                              JsonValue.from(
-                                  Map.of(
-                                      "type",
-                                      "string",
-                                      "description",
-                                      "Cause éventuelle (optionnel)")))
-                          .build())
-                  .addRequired("count")
-                  .build())
-          .build();
+  /** Build the provider tool schema from a neutral {@link ToolSpec}. */
+  private static Tool toSdkTool(ToolSpec spec) {
+    Tool.InputSchema.Properties.Builder properties = Tool.InputSchema.Properties.builder();
+    Tool.InputSchema.Builder schema = Tool.InputSchema.builder();
+    for (ToolParam param : spec.parameters()) {
+      properties.putAdditionalProperty(param.name(), JsonValue.from(schemaFor(param)));
+      if (param.required()) {
+        schema.addRequired(param.name());
+      }
     }
     return Tool.builder()
-        .name(action)
-        .description("Action " + action)
-        .inputSchema(
-            Tool.InputSchema.builder()
-                .properties(Tool.InputSchema.Properties.builder().build())
-                .build())
+        .name(spec.name())
+        .description(spec.description())
+        .inputSchema(schema.properties(properties.build()).build())
         .build();
+  }
+
+  /** JSON-schema fragment for one parameter. */
+  private static Map<String, Object> schemaFor(ToolParam param) {
+    Map<String, Object> node = new LinkedHashMap<>();
+    switch (param.type()) {
+      case STRING -> node.put("type", "string");
+      case INTEGER -> node.put("type", "integer");
+      case NUMBER -> node.put("type", "number");
+      case INTEGER_ARRAY -> {
+        node.put("type", "array");
+        node.put("items", Map.of("type", "integer"));
+      }
+    }
+    node.put("description", param.description());
+    return node;
   }
 }
