@@ -2,9 +2,11 @@ package com.avicare.livestock.inventory;
 
 import com.avicare.livestock.api.InventoryFacade;
 import com.avicare.livestock.api.dto.InventoryStockInfo;
+import com.avicare.livestock.api.dto.LowStockInfo;
 import com.avicare.livestock.api.dto.SupplierInfo;
 import com.avicare.livestock.domain.StockItem;
 import com.avicare.livestock.domain.Supplier;
+import com.avicare.livestock.inventory.StockAlertsResponse.LowStockItem;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,7 @@ public class InventoryFacadeImpl implements InventoryFacade {
 
   private final StockItemService stockItems;
   private final SupplierService suppliers;
+  private final InventoryAlertService inventoryAlertService;
 
   @Override
   public List<InventoryStockInfo> listStock(Long farmId) {
@@ -40,6 +43,22 @@ public class InventoryFacadeImpl implements InventoryFacade {
   @Override
   public List<SupplierInfo> listSuppliers(Long farmId) {
     return suppliers.listForFarm(farmId).stream().map(InventoryFacadeImpl::toInfo).toList();
+  }
+
+  @Override
+  public List<LowStockInfo> lowStock(Long farmId) {
+    return inventoryAlertService.computeStockAlertsForFarm(farmId).lowStockItems().stream()
+        .map(InventoryFacadeImpl::toInfo)
+        .toList();
+  }
+
+  private static LowStockInfo toInfo(LowStockItem item) {
+    return new LowStockInfo(
+        item.articleKey(),
+        item.label(),
+        item.currentQuantity() == null ? 0L : item.currentQuantity().longValue(),
+        item.alertThreshold() == null ? 0L : item.alertThreshold().longValue(),
+        item.unit());
   }
 
   private static InventoryStockInfo toInfo(StockItem item) {

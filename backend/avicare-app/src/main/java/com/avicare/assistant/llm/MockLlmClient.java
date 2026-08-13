@@ -26,6 +26,8 @@ public class MockLlmClient implements LlmClient {
   private static final Pattern VACCINE = Pattern.compile("vaccin");
   private static final Pattern OBSERVATION =
       Pattern.compile("observ|sympt|tousse|malade|boite|diarrh|éternu|eternu");
+  private static final Pattern NEW_CLIENT =
+      Pattern.compile("nouveau client|créer.*client|creer.*client|ajouter.*client");
   private static final Pattern STOCK = Pattern.compile("stock|reste.*(aliment|mais|maïs)|aliment");
   private static final Pattern HEADCOUNT =
       Pattern.compile("effectif|combien.*(poulet|sujet|tête|tete)");
@@ -37,6 +39,8 @@ public class MockLlmClient implements LlmClient {
   private static final Pattern EGGS = Pattern.compile("œuf|oeuf|ponte|pondu|pondus");
   private static final Pattern GROWTH = Pattern.compile("gmq|croissance|gain|poids moyen");
   private static final Pattern OVERDUE = Pattern.compile("retard|impayé|impaye|en retard");
+  private static final Pattern LOW_STOCK = Pattern.compile("stock bas|seuil|manque|rupture");
+  private static final Pattern FEED = Pattern.compile("consomm|nourriture|mange");
 
   @Override
   public Optional<ToolCall> interpret(String text, List<ToolSpec> tools) {
@@ -56,6 +60,9 @@ public class MockLlmClient implements LlmClient {
     }
     if (offered(tools, "HEALTH_OBSERVATION") && OBSERVATION.matcher(lower).find()) {
       return Optional.of(new ToolCall("HEALTH_OBSERVATION", Map.of("observation", text)));
+    }
+    if (offered(tools, "CREATE_CLIENT") && NEW_CLIENT.matcher(lower).find()) {
+      return Optional.of(new ToolCall("CREATE_CLIENT", Map.of("name", text)));
     }
     return Optional.empty();
   }
@@ -81,6 +88,10 @@ public class MockLlmClient implements LlmClient {
     String tool = null;
     if (offered(tools, "MORTALITY_QUERY") && MORTALITY.matcher(question).find()) {
       tool = "MORTALITY_QUERY";
+    } else if (offered(tools, "LOW_STOCK") && LOW_STOCK.matcher(question).find()) {
+      tool = "LOW_STOCK";
+    } else if (offered(tools, "FEED_CONSUMPTION") && FEED.matcher(question).find()) {
+      tool = "FEED_CONSUMPTION";
     } else if (offered(tools, "STOCK_QUERY") && STOCK.matcher(question).find()) {
       tool = "STOCK_QUERY";
     } else if (offered(tools, "FLOCK_HEADCOUNT") && HEADCOUNT.matcher(question).find()) {
