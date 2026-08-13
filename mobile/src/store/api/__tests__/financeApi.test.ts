@@ -7,6 +7,11 @@ it('exposes the expense endpoints and their hooks', () => {
   expect(typeof financeApi.useCreateExpenseMutation).toBe('function');
 });
 
+it('exposes the farm analytics endpoint and its hook', () => {
+  expect(financeApi.endpoints.getFarmAnalytics.name).toBe('getFarmAnalytics');
+  expect(typeof financeApi.useGetFarmAnalyticsQuery).toBe('function');
+});
+
 it('exposes the salary endpoints and their hooks', () => {
   expect(financeApi.endpoints.getSalaries.name).toBe('getSalaries');
   expect(financeApi.endpoints.paySalary.name).toBe('paySalary');

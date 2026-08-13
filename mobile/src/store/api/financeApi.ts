@@ -5,7 +5,7 @@
  * `module.finance`; writes are OWNER/MANAGER.
  */
 import { baseApi } from './baseApi';
-import type { Expense, ExpenseInput, Salary } from '@/types';
+import type { Expense, ExpenseInput, FarmAnalytics, Salary } from '@/types';
 
 interface ApiEnvelope<T> {
   data: T;
@@ -34,6 +34,14 @@ export const financeApi = baseApi.injectEndpoints({
         { type: 'Dashboard', id: 'current' },
       ],
     }),
+    getFarmAnalytics: build.query<FarmAnalytics, { farmId: number }>({
+      query: ({ farmId }) => `${base(farmId)}/analytics`,
+      transformResponse: (r: ApiEnvelope<FarmAnalytics>) => r.data,
+      providesTags: [
+        { type: 'Expense', id: 'list' },
+        { type: 'Sale', id: 'list' },
+      ],
+    }),
     getSalaries: build.query<Salary[], { farmId: number; period?: string }>({
       query: ({ farmId, period }) => (period ? `${base(farmId)}/salaries?period=${period}` : `${base(farmId)}/salaries`),
       transformResponse: (r: ApiEnvelope<Salary[]>) => r.data,
@@ -51,5 +59,10 @@ export const financeApi = baseApi.injectEndpoints({
   }),
 });
 
-export const { useGetExpensesQuery, useCreateExpenseMutation, useGetSalariesQuery, usePaySalaryMutation } =
-  financeApi;
+export const {
+  useGetExpensesQuery,
+  useCreateExpenseMutation,
+  useGetFarmAnalyticsQuery,
+  useGetSalariesQuery,
+  usePaySalaryMutation,
+} = financeApi;

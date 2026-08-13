@@ -16,6 +16,18 @@ jest.mock('@/store/api/financeApi', () => ({
   useCreateExpenseMutation: jest.fn(() => [jest.fn(() => ({ unwrap: () => Promise.resolve({}) })), { isLoading: false }]),
   useGetSalariesQuery: jest.fn(() => ({ data: [], isLoading: false })),
   usePaySalaryMutation: jest.fn(() => [jest.fn(), { isLoading: false }]),
+  useGetFarmAnalyticsQuery: jest.fn(() => ({
+    data: {
+      totalRevenueXof: 800000,
+      directSalesXof: 500000,
+      paidOrdersXof: 300000,
+      totalExpenseXof: 300000,
+      marginXof: 500000,
+      expensesByCategory: [{ categoryKey: 'feed', label: 'Aliment', amountXof: 200000 }],
+      revenueByUnit: [{ unitId: 1, unitName: 'Lot A', revenueXof: 500000 }],
+    },
+    isLoading: false,
+  })),
 }));
 
 import FinanceScreen from '../finance';
@@ -28,5 +40,15 @@ describe('Finance', () => {
     // switch to Salaires tab
     await press(screen.getByLabelText('Onglet Salaires'));
     expect(screen.getByText('Aucun salaire.')).toBeTruthy();
+  });
+
+  it('shows the Analytique tab with the P&L margin and breakdowns', async () => {
+    await render(<FinanceScreen />);
+    await press(screen.getByLabelText('Onglet Analytique'));
+    expect(screen.getByText('Marge cumulée')).toBeTruthy();
+    expect(screen.getByText('Revenus vs Dépenses')).toBeTruthy();
+    expect(screen.getByText('Dépenses par catégorie')).toBeTruthy();
+    expect(screen.getByText('Revenu par lot')).toBeTruthy();
+    expect(screen.getByText('Lot A')).toBeTruthy();
   });
 });

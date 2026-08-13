@@ -501,6 +501,17 @@ export interface ExpenseInput {
   productionUnitId?: number;
 }
 
+/** Farm P&L analytics (mirrors the web `FarmAnalytics`). Totals are cumulative. */
+export interface FarmAnalytics {
+  totalRevenueXof: number;
+  directSalesXof: number;
+  paidOrdersXof: number;
+  totalExpenseXof: number;
+  marginXof: number;
+  expensesByCategory: { categoryKey: string; label: string; amountXof: number }[];
+  revenueByUnit: { unitId: number; unitName: string; revenueXof: number }[];
+}
+
 export type SalaryStatus = 'DUE' | 'PAID';
 
 export interface Salary {
