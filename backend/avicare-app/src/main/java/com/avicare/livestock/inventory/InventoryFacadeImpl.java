@@ -2,7 +2,9 @@ package com.avicare.livestock.inventory;
 
 import com.avicare.livestock.api.InventoryFacade;
 import com.avicare.livestock.api.dto.InventoryStockInfo;
+import com.avicare.livestock.api.dto.SupplierInfo;
 import com.avicare.livestock.domain.StockItem;
+import com.avicare.livestock.domain.Supplier;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -10,8 +12,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Read-only inventory facade, delegating to {@link StockItemService}. Maps the {@code StockItem}
- * entity to the public {@link InventoryStockInfo} so transverse contexts never touch the entity.
+ * Read-only inventory facade, delegating to {@link StockItemService} and {@link SupplierService}.
+ * Maps the {@code StockItem} / {@code Supplier} entities to the public {@link InventoryStockInfo} /
+ * {@link SupplierInfo} so transverse contexts never touch the entities.
  */
 @Service
 @RequiredArgsConstructor
@@ -19,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class InventoryFacadeImpl implements InventoryFacade {
 
   private final StockItemService stockItems;
+  private final SupplierService suppliers;
 
   @Override
   public List<InventoryStockInfo> listStock(Long farmId) {
@@ -33,8 +37,18 @@ public class InventoryFacadeImpl implements InventoryFacade {
         .map(InventoryFacadeImpl::toInfo);
   }
 
+  @Override
+  public List<SupplierInfo> listSuppliers(Long farmId) {
+    return suppliers.listForFarm(farmId).stream().map(InventoryFacadeImpl::toInfo).toList();
+  }
+
   private static InventoryStockInfo toInfo(StockItem item) {
     long qty = item.getCurrentQuantity() == null ? 0L : item.getCurrentQuantity().longValue();
-    return new InventoryStockInfo(item.getArticleKey(), item.getUnit(), qty);
+    return new InventoryStockInfo(
+        item.getArticleKey(), item.getArticleSource().name(), item.getUnit(), qty);
+  }
+
+  private static SupplierInfo toInfo(Supplier supplier) {
+    return new SupplierInfo(supplier.getId(), supplier.getCommercialName());
   }
 }
