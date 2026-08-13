@@ -1,6 +1,7 @@
 package com.avicare.livestock.api;
 
 import com.avicare.livestock.api.dto.InventoryStockInfo;
+import com.avicare.livestock.api.dto.SupplierInfo;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,4 +17,7 @@ public interface InventoryFacade {
 
   /** Current stock for one article key, if the farm carries it. */
   Optional<InventoryStockInfo> findStock(Long farmId, String articleKey);
+
+  /** Active suppliers of the farm (for resolving a spoken supplier name), ordered by name. */
+  List<SupplierInfo> listSuppliers(Long farmId);
 }
