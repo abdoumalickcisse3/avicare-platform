@@ -15,5 +15,17 @@ import java.util.Optional;
  */
 public interface LlmClient {
 
+  /**
+   * Write single-shot: turn free text into at most one {@link ToolCall} among the offered (write)
+   * tools, or empty when it can't tell. Used to prepare a confirmable draft — no agentic loop.
+   */
   Optional<ToolCall> interpret(String text, List<ToolSpec> tools);
+
+  /**
+   * One turn of the agentic READ loop: given the conversation so far and the offered (read-only)
+   * tools, the model either invokes tools (to be executed and fed back) or answers in text. The
+   * orchestrator ({@code InterpretService}) runs the loop and executes the tools — this seam only
+   * does one model round-trip and never touches the domain.
+   */
+  LlmTurn converse(List<LlmMessage> history, List<ToolSpec> tools);
 }
