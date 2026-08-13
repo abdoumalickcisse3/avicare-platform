@@ -4,6 +4,7 @@ import com.avicare.common.api.dto.ActivityItem;
 import com.avicare.livestock.commercial.dto.CommercialStats;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Public contract of the {@code commercial} sub-domain (doc 03 §4.9). Other parts of the app —
@@ -15,6 +16,16 @@ public interface CommercialFacade {
 
   /** Credit standing of a client, for credit-overshoot alerts. */
   ClientCreditInfo getClientCredit(Long farmId, Long clientId);
+
+  /** Active clients of a farm (for resolving a spoken client name), ordered by display name. */
+  List<ClientLite> listClients(Long farmId);
+
+  /**
+   * The client's oldest still-payable invoice (status ISSUED/PARTIALLY_PAID with a non-zero
+   * outstanding), for an encaissement that clears the oldest debt first. Empty when the client has
+   * no open invoice.
+   */
+  Optional<OpenInvoiceInfo> oldestOpenInvoiceForClient(Long farmId, Long clientId);
 
   /** Summary of an invoice (totals, status, outstanding). */
   InvoiceInfo findInvoiceById(Long farmId, Long invoiceId);

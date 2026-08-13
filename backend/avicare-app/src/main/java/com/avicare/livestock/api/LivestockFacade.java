@@ -3,6 +3,7 @@ package com.avicare.livestock.api;
 import com.avicare.common.api.dto.ActivityItem;
 import com.avicare.livestock.api.dto.LivestockStats;
 import com.avicare.livestock.api.dto.ProductionUnitInfo;
+import com.avicare.livestock.api.dto.TimeslotInfo;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -15,6 +16,19 @@ public interface LivestockFacade {
   List<ProductionUnitInfo> listFarmUnits(Long farmId);
 
   long countActiveUnits(Long farmId);
+
+  /**
+   * Active layer flocks of {@code farmId}: POULTRY units that are NOT broiler batches (a layer lot
+   * is a plain {@code ProductionUnit} row, a broiler lot is a {@code PoultryBatch} subtype). Used
+   * to resolve the target flock of an egg collection.
+   */
+  List<ProductionUnitInfo> activeLayerUnits(Long farmId);
+
+  /**
+   * The egg-collection time-slots effective for {@code farmId} (platform defaults + farm
+   * overrides), ordered as configured. Empty when the layer catalog is not provisioned.
+   */
+  List<TimeslotInfo> layerTimeslots(Long farmId);
 
   /**
    * Aggregated livestock dashboard stats for {@code farmId}. Snapshot KPIs ({@code activeBatches},
