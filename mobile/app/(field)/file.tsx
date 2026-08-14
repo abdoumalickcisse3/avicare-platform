@@ -31,6 +31,7 @@ const KIND_LABELS: Record<MutationKind, string> = {
   VACCINATION: 'Vaccination',
   HEALTH_OBSERVATION: 'Observation santé',
   CREATE_CLIENT: 'Nouveau client',
+  STOCK_ADJUSTMENT: 'Ajustement stock',
 };
 
 export default function QueueScreen() {

@@ -32,6 +32,13 @@ describe('intentFromInterpret', () => {
     expect(intent).toEqual({ kind: 'CREATE_CLIENT', displayName: 'Modou Fall', clientType: 'INDIVIDUAL' });
   });
 
+  it('maps an ADJUST_STOCK draft (lot-less) with the stock item id', () => {
+    const intent = intentFromInterpret(
+      draft('ADJUST_STOCK', { stockItemId: 11, articleKey: 'aliment', articleSource: 'INVENTORY', delta: -5, before: 40, after: 35, unit: 'sac' }, null),
+    );
+    expect(intent).toEqual({ kind: 'ADJUST_STOCK', stockItemId: 11, articleKey: 'aliment', delta: -5, unit: 'sac', before: 40, after: 35 });
+  });
+
   it('maps a HEALTH_OBSERVATION draft, keeping optionals when present', () => {
     const intent = intentFromInterpret(
       draft('HEALTH_OBSERVATION', {
