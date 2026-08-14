@@ -27,6 +27,11 @@ describe('intentFromInterpret', () => {
     });
   });
 
+  it('maps a CREATE_CLIENT draft (lot-less)', () => {
+    const intent = intentFromInterpret(draft('CREATE_CLIENT', { displayName: 'Modou Fall', clientType: 'INDIVIDUAL' }, null));
+    expect(intent).toEqual({ kind: 'CREATE_CLIENT', displayName: 'Modou Fall', clientType: 'INDIVIDUAL' });
+  });
+
   it('maps a HEALTH_OBSERVATION draft, keeping optionals when present', () => {
     const intent = intentFromInterpret(
       draft('HEALTH_OBSERVATION', {

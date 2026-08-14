@@ -16,6 +16,16 @@ function todayIso(): string {
 /** Build the queue mutation for an intent, or null if it isn't ready (e.g. no
  * lot resolved yet). */
 export function toMutation(intent: AssistantIntent, farmId: number): EnqueueFieldMutationInput | null {
+  // Lot-less actions are handled before the lot guard.
+  if (intent.kind === 'CREATE_CLIENT') {
+    return {
+      farmId,
+      kind: 'CREATE_CLIENT',
+      endpoint: `/api/v1/farms/${farmId}/commercial/clients`,
+      payload: { clientType: intent.clientType, displayName: intent.displayName },
+    };
+  }
+
   if (intent.unitId == null) return null;
   const unitId = intent.unitId;
 

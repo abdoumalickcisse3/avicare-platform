@@ -76,14 +76,33 @@ export interface ObservationIntent {
   unitId: number | null;
 }
 
-/** Union of supported intents (lot-based field actions). */
+/** Create a commercial client — a lot-less action (no production unit involved). */
+export interface CreateClientIntent {
+  kind: 'CREATE_CLIENT';
+  displayName: string;
+  /** Domain enum name: INDIVIDUAL | BUSINESS | WHOLESALER. */
+  clientType: string;
+}
+
+/** Union of supported intents. Most are lot-based; a few (e.g. client creation)
+ * are lot-less — see {@link isLotBased}. */
 export type AssistantIntent =
   | MortalityIntent
   | DailyRecordIntent
   | WeighingIntent
   | EggCollectionIntent
   | VaccinationIntent
-  | ObservationIntent;
+  | ObservationIntent
+  | CreateClientIntent;
+
+/** Intents tied to a production unit (they carry a `unitId` and go through the
+ * lot-choice flow when it isn't resolved yet). */
+export type LotBasedIntent = Exclude<AssistantIntent, CreateClientIntent>;
+
+/** Whether an intent needs a resolved lot before it can be confirmed. */
+export function isLotBased(intent: AssistantIntent): intent is LotBasedIntent {
+  return intent.kind !== 'CREATE_CLIENT';
+}
 
 export type ParsedIntent = AssistantIntent | null;
 

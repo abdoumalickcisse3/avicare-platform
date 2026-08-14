@@ -65,6 +65,12 @@ export function intentFromInterpret(resp: InterpretResponse): AssistantIntent | 
         suspectedDisease: strOrU(f.suspectedDisease),
         unitId,
       };
+    case 'CREATE_CLIENT':
+      return {
+        kind: 'CREATE_CLIENT',
+        displayName: String(f.displayName ?? ''),
+        clientType: String(f.clientType ?? 'INDIVIDUAL'),
+      };
     default:
       return null;
   }
