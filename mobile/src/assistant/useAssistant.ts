@@ -18,10 +18,16 @@ import { rulesParse } from './parsers';
 import { intentFromInterpret } from './llm/fromInterpret';
 import { buildConfirmation } from './drafts';
 import { toMutation } from './intentRegistry';
-import type { AssistantIntent, AssistantUnit, ConfirmationDraft } from './types';
+import {
+  isLotBased,
+  type AssistantIntent,
+  type AssistantUnit,
+  type ConfirmationDraft,
+  type LotBasedIntent,
+} from './types';
 
 interface UnitChoice {
-  intent: AssistantIntent;
+  intent: LotBasedIntent;
   units: AssistantUnit[];
 }
 
@@ -66,9 +72,10 @@ export function useAssistant({ unitId }: { unitId?: number | null } = {}): Assis
     setThinking(false);
   }
 
-  /** Turn a resolved intent into either a lot question or a confirmation card. */
+  /** Turn a resolved intent into either a lot question or a confirmation card.
+   * Lot-less intents (e.g. client creation) skip the lot choice. */
   function finalize(intent: AssistantIntent) {
-    if (intent.unitId == null) {
+    if (isLotBased(intent) && intent.unitId == null) {
       setDraft(null);
       setMessage('Sur quel lot ?');
       setUnitChoice({ intent, units: activeUnits });

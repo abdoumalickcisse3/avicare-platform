@@ -5,7 +5,7 @@
  * computed offline from the intent + the already-loaded units.
  */
 import { formatNumber } from '@/lib/format';
-import type { AssistantIntent, AssistantUnit, ConfirmationDraft } from './types';
+import { isLotBased, type AssistantIntent, type AssistantUnit, type ConfirmationDraft } from './types';
 
 const TITLES: Record<AssistantIntent['kind'], string> = {
   MORTALITY: 'Mortalité',
@@ -14,6 +14,7 @@ const TITLES: Record<AssistantIntent['kind'], string> = {
   EGG_COLLECTION: "Collecte d'œufs",
   VACCINATION: 'Vaccination',
   HEALTH_OBSERVATION: 'Observation santé',
+  CREATE_CLIENT: 'Nouveau client',
 };
 
 const SEVERITY_LABELS: Record<string, string> = {
@@ -22,12 +23,18 @@ const SEVERITY_LABELS: Record<string, string> = {
   CRITICAL: 'critique',
 };
 
+const CLIENT_TYPE_LABELS: Record<string, string> = {
+  INDIVIDUAL: 'particulier',
+  BUSINESS: 'entreprise',
+  WHOLESALER: 'grossiste',
+};
+
 function avg(nums: number[]): number {
   return nums.length ? Math.round(nums.reduce((s, n) => s + n, 0) / nums.length) : 0;
 }
 
 export function buildConfirmation(intent: AssistantIntent, units: AssistantUnit[]): ConfirmationDraft {
-  const unit = units.find((u) => u.id === intent.unitId);
+  const unit = isLotBased(intent) ? units.find((u) => u.id === intent.unitId) : undefined;
   const lotName = unit?.name ?? '—';
   const lines: ConfirmationDraft['lines'] = [];
   let speech = '';
@@ -78,6 +85,12 @@ export function buildConfirmation(intent: AssistantIntent, units: AssistantUnit[
       if (intent.suspectedDisease) lines.push({ label: 'Suspicion', value: intent.suspectedDisease });
       lines.push({ label: 'Lot', value: lotName });
       speech = `Observation sur le lot ${lotName} : ${intent.title}. Confirmer ?`;
+      break;
+    }
+    case 'CREATE_CLIENT': {
+      lines.push({ label: 'Client', value: intent.displayName });
+      lines.push({ label: 'Type', value: CLIENT_TYPE_LABELS[intent.clientType] ?? intent.clientType });
+      speech = `Nouveau client : ${intent.displayName}. Confirmer ?`;
       break;
     }
   }

@@ -49,6 +49,13 @@ describe('intentRegistry.toMutation', () => {
     expect((m?.payload as { administeredDate: string }).administeredDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 
+  it('maps CREATE_CLIENT to the clients endpoint without needing a lot', () => {
+    const m = toMutation({ kind: 'CREATE_CLIENT', displayName: 'Boucherie Diop', clientType: 'BUSINESS' }, FARM);
+    expect(m?.kind).toBe('CREATE_CLIENT');
+    expect(m?.endpoint).toBe('/api/v1/farms/7/commercial/clients');
+    expect(m?.payload).toEqual({ clientType: 'BUSINESS', displayName: 'Boucherie Diop' });
+  });
+
   it('maps HEALTH_OBSERVATION to the observations endpoint, omitting empty optionals', () => {
     const m = toMutation(
       { kind: 'HEALTH_OBSERVATION', title: 'les poules toussent', severity: 'CRITICAL', unitId: 3 },

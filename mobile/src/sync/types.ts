@@ -4,7 +4,8 @@ export type MutationKind =
   | 'WEIGHING'
   | 'EGG_COLLECTION'
   | 'VACCINATION'
-  | 'HEALTH_OBSERVATION';
+  | 'HEALTH_OBSERVATION'
+  | 'CREATE_CLIENT';
 
 export type MutationStatus = 'PENDING' | 'IN_FLIGHT' | 'FAILED';
 
