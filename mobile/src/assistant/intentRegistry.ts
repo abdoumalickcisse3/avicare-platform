@@ -6,7 +6,7 @@
  */
 import * as Crypto from 'expo-crypto';
 import type { EnqueueFieldMutationInput } from '@/field/enqueueMutation';
-import type { AssistantIntent } from './types';
+import { isOnline, type AssistantIntent } from './types';
 
 function todayIso(): string {
   const d = new Date();
@@ -42,7 +42,7 @@ export function toMutation(intent: AssistantIntent, farmId: number): EnqueueFiel
   }
 
   // Online actions are confirmed against a live mutation, not the offline queue.
-  if (intent.kind === 'RECORD_PAYMENT') return null;
+  if (isOnline(intent)) return null;
 
   if (intent.unitId == null) return null;
   const unitId = intent.unitId;
