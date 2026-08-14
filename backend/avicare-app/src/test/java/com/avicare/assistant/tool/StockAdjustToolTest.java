@@ -25,7 +25,7 @@ class StockAdjustToolTest {
   @Test
   void addToKnownArticle_showsBeforeAndAfter() {
     when(inventory.listStock(1L))
-        .thenReturn(List.of(new InventoryStockInfo("mais_concasse", "INVENTORY", "kg", 40)));
+        .thenReturn(List.of(new InventoryStockInfo(12L, "mais_concasse", "INVENTORY", "kg", 40)));
 
     InterpretResponse r = tool().dryRun(1L, Map.of("article", "maïs", "delta", 25), null);
 
@@ -33,6 +33,7 @@ class StockAdjustToolTest {
     assertThat(r.action()).isEqualTo("ADJUST_STOCK");
     assertThat(r.fields())
         .containsEntry("articleKey", "mais_concasse")
+        .containsEntry("stockItemId", 12L)
         .containsEntry("articleSource", "INVENTORY")
         .containsEntry("before", 40L)
         .containsEntry("after", 65L)
@@ -43,7 +44,7 @@ class StockAdjustToolTest {
   @Test
   void removeBelowZero_isRefused() {
     when(inventory.listStock(1L))
-        .thenReturn(List.of(new InventoryStockInfo("mais", "INVENTORY", "kg", 10)));
+        .thenReturn(List.of(new InventoryStockInfo(13L, "mais", "INVENTORY", "kg", 10)));
 
     InterpretResponse r = tool().dryRun(1L, Map.of("article", "mais", "delta", -25), null);
 
@@ -54,7 +55,7 @@ class StockAdjustToolTest {
   @Test
   void unknownArticle_asksWhichOne() {
     when(inventory.listStock(1L))
-        .thenReturn(List.of(new InventoryStockInfo("mais", "INVENTORY", "kg", 10)));
+        .thenReturn(List.of(new InventoryStockInfo(13L, "mais", "INVENTORY", "kg", 10)));
 
     InterpretResponse r = tool().dryRun(1L, Map.of("article", "ciment", "delta", 5), null);
 

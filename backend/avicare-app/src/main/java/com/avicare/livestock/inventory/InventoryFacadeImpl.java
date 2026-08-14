@@ -64,7 +64,7 @@ public class InventoryFacadeImpl implements InventoryFacade {
   private static InventoryStockInfo toInfo(StockItem item) {
     long qty = item.getCurrentQuantity() == null ? 0L : item.getCurrentQuantity().longValue();
     return new InventoryStockInfo(
-        item.getArticleKey(), item.getArticleSource().name(), item.getUnit(), qty);
+        item.getId(), item.getArticleKey(), item.getArticleSource().name(), item.getUnit(), qty);
   }
 
   private static SupplierInfo toInfo(Supplier supplier) {

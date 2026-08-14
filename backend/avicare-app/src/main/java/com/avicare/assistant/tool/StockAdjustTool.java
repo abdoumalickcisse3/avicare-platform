@@ -79,6 +79,7 @@ public class StockAdjustTool implements AssistantTool {
     }
 
     Map<String, Object> fields = new LinkedHashMap<>();
+    fields.put("stockItemId", item.stockItemId());
     fields.put("articleKey", item.articleKey());
     fields.put("articleSource", item.articleSource());
     fields.put("delta", delta);
