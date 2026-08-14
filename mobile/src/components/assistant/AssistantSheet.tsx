@@ -13,6 +13,7 @@ import { useAssistant } from '@/assistant/useAssistant';
 import { useSpeechInput } from '@/assistant/speech/useSpeechInput';
 import { speak } from '@/assistant/speech/tts';
 import { ConfirmationCard } from './ConfirmationCard';
+import { AnswerCard } from './AnswerCard';
 
 export function AssistantSheet({
   visible,
@@ -79,6 +80,14 @@ export function AssistantSheet({
               <ActivityIndicator color={tokens.colors.primary[600]} />
               <Text style={styles.thinkingText}>Jawdi réfléchit…</Text>
             </View>
+          ) : assistant.answer ? (
+            <AnswerCard
+              answer={assistant.answer}
+              onClose={() => {
+                assistant.cancel();
+                setText('');
+              }}
+            />
           ) : assistant.draft ? (
             <ConfirmationCard draft={assistant.draft} onConfirm={handleConfirm} onCancel={() => { assistant.cancel(); setText(''); }} />
           ) : assistant.unitChoice ? (
@@ -96,10 +105,10 @@ export function AssistantSheet({
             <View style={styles.block}>
               <Text style={styles.hint}>
                 {!speech.supported
-                  ? 'Écrivez votre saisie — ex. « dix sont morts ».'
+                  ? 'Écrivez une saisie ou une question — ex. « dix sont morts » ou « quel est mon stock ? ».'
                   : speech.listening
                     ? 'Parlez maintenant…'
-                    : 'Appuyez sur le micro et parlez — ex. « dix sont morts ».'}
+                    : 'Micro : dictez une saisie ou posez une question — ex. « dix sont morts » ou « quel est mon stock ? ».'}
               </Text>
 
               {/* Big mic: tap to listen (on-device FR); the field mirrors the
