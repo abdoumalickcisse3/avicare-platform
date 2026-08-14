@@ -41,6 +41,9 @@ public class MockLlmClient implements LlmClient {
   private static final Pattern OVERDUE = Pattern.compile("retard|impayé|impaye|en retard");
   private static final Pattern LOW_STOCK = Pattern.compile("stock bas|seuil|manque|rupture");
   private static final Pattern FEED = Pattern.compile("consomm|nourriture|mange");
+  private static final Pattern VACC_DUE =
+      Pattern.compile(
+          "vaccination.*(due|dues|retard|prevu)|quelle.*vaccin|vaccin.*(due|dues|retard)");
 
   @Override
   public Optional<ToolCall> interpret(String text, List<ToolSpec> tools) {
@@ -108,6 +111,8 @@ public class MockLlmClient implements LlmClient {
       tool = "EGG_PRODUCTION_QUERY";
     } else if (offered(tools, "GROWTH_QUERY") && GROWTH.matcher(question).find()) {
       tool = "GROWTH_QUERY";
+    } else if (offered(tools, "VACCINATION_DUE") && VACC_DUE.matcher(question).find()) {
+      tool = "VACCINATION_DUE";
     }
     if (tool == null) {
       return LlmTurn.answer("");
