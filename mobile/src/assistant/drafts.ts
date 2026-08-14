@@ -15,6 +15,7 @@ const TITLES: Record<AssistantIntent['kind'], string> = {
   VACCINATION: 'Vaccination',
   HEALTH_OBSERVATION: 'Observation santé',
   CREATE_CLIENT: 'Nouveau client',
+  ADJUST_STOCK: 'Ajustement stock',
 };
 
 const SEVERITY_LABELS: Record<string, string> = {
@@ -91,6 +92,19 @@ export function buildConfirmation(intent: AssistantIntent, units: AssistantUnit[
       lines.push({ label: 'Client', value: intent.displayName });
       lines.push({ label: 'Type', value: CLIENT_TYPE_LABELS[intent.clientType] ?? intent.clientType });
       speech = `Nouveau client : ${intent.displayName}. Confirmer ?`;
+      break;
+    }
+    case 'ADJUST_STOCK': {
+      const unit = intent.unit ? ` ${intent.unit}` : '';
+      const sign = intent.delta >= 0 ? '+' : '−';
+      const move = `${sign}${formatNumber(Math.abs(intent.delta))}${unit}`;
+      lines.push({ label: 'Article', value: intent.articleKey });
+      lines.push({ label: 'Mouvement', value: move });
+      if (intent.before != null && intent.after != null) {
+        lines.push({ label: 'Stock', value: `${formatNumber(intent.before)} → ${formatNumber(intent.after)}${unit}` });
+      }
+      const verb = intent.delta >= 0 ? 'Réception' : 'Sortie';
+      speech = `${verb} de ${Math.abs(intent.delta)}${unit} de ${intent.articleKey}. Confirmer ?`;
       break;
     }
   }

@@ -71,6 +71,16 @@ export function intentFromInterpret(resp: InterpretResponse): AssistantIntent | 
         displayName: String(f.displayName ?? ''),
         clientType: String(f.clientType ?? 'INDIVIDUAL'),
       };
+    case 'ADJUST_STOCK':
+      return {
+        kind: 'ADJUST_STOCK',
+        stockItemId: num(f.stockItemId),
+        articleKey: String(f.articleKey ?? ''),
+        delta: num(f.delta),
+        unit: strOrU(f.unit),
+        before: numOrU(f.before),
+        after: numOrU(f.after),
+      };
     default:
       return null;
   }

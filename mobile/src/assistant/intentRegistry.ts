@@ -25,6 +25,21 @@ export function toMutation(intent: AssistantIntent, farmId: number): EnqueueFiel
       payload: { clientType: intent.clientType, displayName: intent.displayName },
     };
   }
+  if (intent.kind === 'ADJUST_STOCK') {
+    const add = intent.delta >= 0;
+    return {
+      farmId,
+      kind: 'STOCK_ADJUSTMENT',
+      endpoint: `/api/v1/farms/${farmId}/inventory/movements`,
+      payload: {
+        stockItemId: intent.stockItemId,
+        movementType: add ? 'IN' : 'OUT',
+        quantity: Math.abs(intent.delta),
+        reason: add ? 'RECEPTION_PURCHASE' : 'LOSS',
+        movementDate: todayIso(),
+      },
+    };
+  }
 
   if (intent.unitId == null) return null;
   const unitId = intent.unitId;

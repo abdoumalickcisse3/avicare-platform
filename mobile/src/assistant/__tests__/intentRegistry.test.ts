@@ -56,6 +56,18 @@ describe('intentRegistry.toMutation', () => {
     expect(m?.payload).toEqual({ clientType: 'BUSINESS', displayName: 'Boucherie Diop' });
   });
 
+  it('maps ADJUST_STOCK reception (+) to an IN movement by stockItemId', () => {
+    const m = toMutation({ kind: 'ADJUST_STOCK', stockItemId: 11, articleKey: 'aliment', delta: 25 }, FARM);
+    expect(m?.kind).toBe('STOCK_ADJUSTMENT');
+    expect(m?.endpoint).toBe('/api/v1/farms/7/inventory/movements');
+    expect(m?.payload).toMatchObject({ stockItemId: 11, movementType: 'IN', quantity: 25, reason: 'RECEPTION_PURCHASE' });
+  });
+
+  it('maps ADJUST_STOCK loss (−) to an OUT movement', () => {
+    const m = toMutation({ kind: 'ADJUST_STOCK', stockItemId: 11, articleKey: 'aliment', delta: -5 }, FARM);
+    expect(m?.payload).toMatchObject({ movementType: 'OUT', quantity: 5, reason: 'LOSS' });
+  });
+
   it('maps HEALTH_OBSERVATION to the observations endpoint, omitting empty optionals', () => {
     const m = toMutation(
       { kind: 'HEALTH_OBSERVATION', title: 'les poules toussent', severity: 'CRITICAL', unitId: 3 },

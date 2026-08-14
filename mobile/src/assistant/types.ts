@@ -84,8 +84,20 @@ export interface CreateClientIntent {
   clientType: string;
 }
 
-/** Union of supported intents. Most are lot-based; a few (e.g. client creation)
- * are lot-less — see {@link isLotBased}. */
+/** Adjust the stock of an article (reception on +, loss on −) — a lot-less action. */
+export interface StockAdjustIntent {
+  kind: 'ADJUST_STOCK';
+  stockItemId: number;
+  articleKey: string;
+  /** Signed quantity: positive adds (reception), negative removes (loss). */
+  delta: number;
+  unit?: string;
+  before?: number;
+  after?: number;
+}
+
+/** Union of supported intents. Most are lot-based; a few (client creation, stock
+ * adjustment) are lot-less — see {@link isLotBased}. */
 export type AssistantIntent =
   | MortalityIntent
   | DailyRecordIntent
@@ -93,15 +105,19 @@ export type AssistantIntent =
   | EggCollectionIntent
   | VaccinationIntent
   | ObservationIntent
-  | CreateClientIntent;
+  | CreateClientIntent
+  | StockAdjustIntent;
+
+/** Lot-less intent kinds (no production unit, skip the lot-choice flow). */
+const LOT_LESS_KINDS = new Set<AssistantIntent['kind']>(['CREATE_CLIENT', 'ADJUST_STOCK']);
 
 /** Intents tied to a production unit (they carry a `unitId` and go through the
  * lot-choice flow when it isn't resolved yet). */
-export type LotBasedIntent = Exclude<AssistantIntent, CreateClientIntent>;
+export type LotBasedIntent = Exclude<AssistantIntent, CreateClientIntent | StockAdjustIntent>;
 
 /** Whether an intent needs a resolved lot before it can be confirmed. */
 export function isLotBased(intent: AssistantIntent): intent is LotBasedIntent {
-  return intent.kind !== 'CREATE_CLIENT';
+  return !LOT_LESS_KINDS.has(intent.kind);
 }
 
 export type ParsedIntent = AssistantIntent | null;
