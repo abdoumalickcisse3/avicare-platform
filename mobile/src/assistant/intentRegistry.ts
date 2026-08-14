@@ -73,6 +73,34 @@ export function toMutation(intent: AssistantIntent, farmId: number): EnqueueFiel
         clientRef: ref,
       };
     }
+    case 'VACCINATION':
+      // Health endpoints don't dedup server-side (no client_ref in the body);
+      // the queue stamps one only for local uniqueness (like the daily record).
+      return {
+        farmId,
+        kind: 'VACCINATION',
+        endpoint: `/api/v1/farms/${farmId}/health/vaccinations`,
+        payload: {
+          unitId,
+          vaccineKey: intent.vaccineKey,
+          administeredDate: todayIso(),
+          subjectsCount: intent.subjectsCount,
+        },
+      };
+    case 'HEALTH_OBSERVATION':
+      return {
+        farmId,
+        kind: 'HEALTH_OBSERVATION',
+        endpoint: `/api/v1/farms/${farmId}/health/observations`,
+        payload: {
+          unitId,
+          observationDate: todayIso(),
+          title: intent.title,
+          description: intent.description || undefined,
+          severity: intent.severity || undefined,
+          suspectedDisease: intent.suspectedDisease || undefined,
+        },
+      };
     default:
       return null;
   }

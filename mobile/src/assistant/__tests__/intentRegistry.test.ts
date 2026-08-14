@@ -37,4 +37,26 @@ describe('intentRegistry.toMutation', () => {
     expect(m?.payload).toMatchObject({ unitId: 4, timeslotKey: 'morning', totalEggs: 30, brokenEggs: 1 });
     expect(m?.clientRef).toMatch(/^egg-4-\d{4}-\d{2}-\d{2}-morning$/);
   });
+
+  it('maps VACCINATION to the vaccinations endpoint with today and the count', () => {
+    const m = toMutation(
+      { kind: 'VACCINATION', vaccineKey: 'newcastle', vaccineLabel: 'Newcastle', subjectsCount: 500, unitId: 3 },
+      FARM,
+    );
+    expect(m?.kind).toBe('VACCINATION');
+    expect(m?.endpoint).toBe('/api/v1/farms/7/health/vaccinations');
+    expect(m?.payload).toMatchObject({ unitId: 3, vaccineKey: 'newcastle', subjectsCount: 500 });
+    expect((m?.payload as { administeredDate: string }).administeredDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it('maps HEALTH_OBSERVATION to the observations endpoint, omitting empty optionals', () => {
+    const m = toMutation(
+      { kind: 'HEALTH_OBSERVATION', title: 'les poules toussent', severity: 'CRITICAL', unitId: 3 },
+      FARM,
+    );
+    expect(m?.kind).toBe('HEALTH_OBSERVATION');
+    expect(m?.endpoint).toBe('/api/v1/farms/7/health/observations');
+    expect(m?.payload).toMatchObject({ unitId: 3, title: 'les poules toussent', severity: 'CRITICAL' });
+    expect((m?.payload as { suspectedDisease?: string }).suspectedDisease).toBeUndefined();
+  });
 });

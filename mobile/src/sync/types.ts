@@ -1,4 +1,10 @@
-export type MutationKind = 'DAILY_RECORD' | 'MORTALITY' | 'WEIGHING' | 'EGG_COLLECTION';
+export type MutationKind =
+  | 'DAILY_RECORD'
+  | 'MORTALITY'
+  | 'WEIGHING'
+  | 'EGG_COLLECTION'
+  | 'VACCINATION'
+  | 'HEALTH_OBSERVATION';
 
 export type MutationStatus = 'PENDING' | 'IN_FLIGHT' | 'FAILED';
 

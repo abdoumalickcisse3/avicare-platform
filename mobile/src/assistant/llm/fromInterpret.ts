@@ -48,6 +48,23 @@ export function intentFromInterpret(resp: InterpretResponse): AssistantIntent | 
         timeslotKey: String(f.timeslotKey ?? ''),
         unitId,
       };
+    case 'VACCINATION':
+      return {
+        kind: 'VACCINATION',
+        vaccineKey: String(f.vaccineKey ?? ''),
+        vaccineLabel: String(f.vaccineLabel ?? f.vaccineKey ?? ''),
+        subjectsCount: num(f.subjectsCount),
+        unitId,
+      };
+    case 'HEALTH_OBSERVATION':
+      return {
+        kind: 'HEALTH_OBSERVATION',
+        title: String(f.title ?? ''),
+        description: strOrU(f.description),
+        severity: strOrU(f.severity),
+        suspectedDisease: strOrU(f.suspectedDisease),
+        unitId,
+      };
     default:
       return null;
   }
