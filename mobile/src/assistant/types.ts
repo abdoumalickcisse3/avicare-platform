@@ -96,6 +96,18 @@ export interface StockAdjustIntent {
   after?: number;
 }
 
+/** Record a payment against a client's invoice — a lot-less, ONLINE action (it
+ * hits a live mutation with preconditions, not the offline field queue). */
+export interface PaymentIntent {
+  kind: 'RECORD_PAYMENT';
+  invoiceId: number;
+  invoiceNumber?: string;
+  clientName?: string;
+  amountXof: number;
+  /** Domain enum name: CASH | MOBILE_MONEY | BANK_TRANSFER; defaults to CASH. */
+  method?: string;
+}
+
 /** Union of supported intents. Most are lot-based; a few (client creation, stock
  * adjustment) are lot-less — see {@link isLotBased}. */
 export type AssistantIntent =
@@ -106,18 +118,35 @@ export type AssistantIntent =
   | VaccinationIntent
   | ObservationIntent
   | CreateClientIntent
-  | StockAdjustIntent;
+  | StockAdjustIntent
+  | PaymentIntent;
 
 /** Lot-less intent kinds (no production unit, skip the lot-choice flow). */
-const LOT_LESS_KINDS = new Set<AssistantIntent['kind']>(['CREATE_CLIENT', 'ADJUST_STOCK']);
+const LOT_LESS_KINDS = new Set<AssistantIntent['kind']>([
+  'CREATE_CLIENT',
+  'ADJUST_STOCK',
+  'RECORD_PAYMENT',
+]);
 
 /** Intents tied to a production unit (they carry a `unitId` and go through the
  * lot-choice flow when it isn't resolved yet). */
-export type LotBasedIntent = Exclude<AssistantIntent, CreateClientIntent | StockAdjustIntent>;
+export type LotBasedIntent = Exclude<
+  AssistantIntent,
+  CreateClientIntent | StockAdjustIntent | PaymentIntent
+>;
 
 /** Whether an intent needs a resolved lot before it can be confirmed. */
 export function isLotBased(intent: AssistantIntent): intent is LotBasedIntent {
   return !LOT_LESS_KINDS.has(intent.kind);
+}
+
+/** Intent kinds confirmed against a live online mutation (with preconditions),
+ * NOT the offline field queue. */
+const ONLINE_KINDS = new Set<AssistantIntent['kind']>(['RECORD_PAYMENT']);
+
+/** Whether an intent is confirmed online (vs enqueued on the offline field queue). */
+export function isOnline(intent: AssistantIntent): boolean {
+  return ONLINE_KINDS.has(intent.kind);
 }
 
 export type ParsedIntent = AssistantIntent | null;

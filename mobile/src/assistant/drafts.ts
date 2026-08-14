@@ -16,6 +16,13 @@ const TITLES: Record<AssistantIntent['kind'], string> = {
   HEALTH_OBSERVATION: 'Observation santé',
   CREATE_CLIENT: 'Nouveau client',
   ADJUST_STOCK: 'Ajustement stock',
+  RECORD_PAYMENT: 'Encaissement',
+};
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  CASH: 'espèces',
+  MOBILE_MONEY: 'mobile money',
+  BANK_TRANSFER: 'virement',
 };
 
 const SEVERITY_LABELS: Record<string, string> = {
@@ -105,6 +112,15 @@ export function buildConfirmation(intent: AssistantIntent, units: AssistantUnit[
       }
       const verb = intent.delta >= 0 ? 'Réception' : 'Sortie';
       speech = `${verb} de ${Math.abs(intent.delta)}${unit} de ${intent.articleKey}. Confirmer ?`;
+      break;
+    }
+    case 'RECORD_PAYMENT': {
+      lines.push({ label: 'Montant', value: `${formatNumber(intent.amountXof)} F CFA` });
+      if (intent.clientName) lines.push({ label: 'Client', value: intent.clientName });
+      if (intent.invoiceNumber) lines.push({ label: 'Facture', value: intent.invoiceNumber });
+      if (intent.method) lines.push({ label: 'Moyen', value: PAYMENT_METHOD_LABELS[intent.method] ?? intent.method });
+      const who = intent.clientName ? ` de ${intent.clientName}` : '';
+      speech = `Encaissement de ${intent.amountXof} francs${who}. Confirmer ?`;
       break;
     }
   }

@@ -39,6 +39,20 @@ describe('intentFromInterpret', () => {
     expect(intent).toEqual({ kind: 'ADJUST_STOCK', stockItemId: 11, articleKey: 'aliment', delta: -5, unit: 'sac', before: 40, after: 35 });
   });
 
+  it('maps a RECORD_PAYMENT draft (lot-less, online)', () => {
+    const intent = intentFromInterpret(
+      draft('RECORD_PAYMENT', { invoiceId: 42, invoiceNumber: 'FAC-2026-042', clientName: 'Diallo', amountXof: 30000, method: 'MOBILE_MONEY' }, null),
+    );
+    expect(intent).toEqual({
+      kind: 'RECORD_PAYMENT',
+      invoiceId: 42,
+      invoiceNumber: 'FAC-2026-042',
+      clientName: 'Diallo',
+      amountXof: 30000,
+      method: 'MOBILE_MONEY',
+    });
+  });
+
   it('maps a HEALTH_OBSERVATION draft, keeping optionals when present', () => {
     const intent = intentFromInterpret(
       draft('HEALTH_OBSERVATION', {

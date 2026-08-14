@@ -81,6 +81,15 @@ export function intentFromInterpret(resp: InterpretResponse): AssistantIntent | 
         before: numOrU(f.before),
         after: numOrU(f.after),
       };
+    case 'RECORD_PAYMENT':
+      return {
+        kind: 'RECORD_PAYMENT',
+        invoiceId: num(f.invoiceId),
+        invoiceNumber: strOrU(f.invoiceNumber),
+        clientName: strOrU(f.clientName),
+        amountXof: num(f.amountXof),
+        method: strOrU(f.method),
+      };
     default:
       return null;
   }

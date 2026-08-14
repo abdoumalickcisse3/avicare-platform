@@ -54,10 +54,12 @@ export function AssistantSheet({
     if (assistant.message) speak(assistant.message);
   }, [assistant.message]);
 
-  function handleConfirm() {
-    assistant.confirm();
-    speak('Enregistré.');
-    onClose();
+  async function handleConfirm() {
+    const ok = await assistant.confirm();
+    if (ok) {
+      speak('Enregistré.');
+      onClose();
+    }
   }
 
   return (
@@ -75,10 +77,12 @@ export function AssistantSheet({
             </Pressable>
           </View>
 
-          {assistant.thinking ? (
+          {assistant.thinking || assistant.submitting ? (
             <View style={styles.thinking}>
               <ActivityIndicator color={tokens.colors.primary[600]} />
-              <Text style={styles.thinkingText}>Jawdi réfléchit…</Text>
+              <Text style={styles.thinkingText}>
+                {assistant.submitting ? 'Enregistrement…' : 'Jawdi réfléchit…'}
+              </Text>
             </View>
           ) : assistant.answer ? (
             <AnswerCard

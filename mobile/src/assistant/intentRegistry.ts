@@ -41,6 +41,9 @@ export function toMutation(intent: AssistantIntent, farmId: number): EnqueueFiel
     };
   }
 
+  // Online actions are confirmed against a live mutation, not the offline queue.
+  if (intent.kind === 'RECORD_PAYMENT') return null;
+
   if (intent.unitId == null) return null;
   const unitId = intent.unitId;
 
