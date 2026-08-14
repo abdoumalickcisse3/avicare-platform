@@ -12,14 +12,17 @@ import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
 import { useListProductionUnitsQuery } from '@/store/api/productionUnitsApi';
 import { useInterpretMutation } from '@/store/api/assistantApi';
+import { useRecordPaymentMutation } from '@/store/api/paymentsApi';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { enqueueFieldMutation } from '@/field/enqueueMutation';
+import type { PaymentMethod } from '@/types';
 import { rulesParse } from './parsers';
 import { intentFromInterpret } from './llm/fromInterpret';
 import { buildConfirmation } from './drafts';
 import { toMutation } from './intentRegistry';
 import {
   isLotBased,
+  isOnline,
   type AssistantIntent,
   type AssistantUnit,
   type ConfirmationDraft,
@@ -39,9 +42,13 @@ export interface Assistant {
   unitChoice: UnitChoice | null;
   /** True while the backend LLM is being queried. */
   thinking: boolean;
+  /** True while an online action (e.g. payment) is being submitted. */
+  submitting: boolean;
   submit: (text: string) => Promise<void>;
   chooseUnit: (unitId: number) => void;
-  confirm: () => void;
+  /** Confirms the current draft. Resolves true when the sheet should close
+   * (offline entry enqueued, or online mutation succeeded), false on failure. */
+  confirm: () => Promise<boolean>;
   cancel: () => void;
 }
 
@@ -49,6 +56,7 @@ export function useAssistant({ unitId }: { unitId?: number | null } = {}): Assis
   const farmId = useSelector(selectSelectedFarmId);
   const { data: units } = useListProductionUnitsQuery(farmId ?? skipToken);
   const [interpret] = useInterpretMutation();
+  const [recordPayment] = useRecordPaymentMutation();
 
   const activeUnits = useMemo<AssistantUnit[]>(
     () =>
@@ -63,6 +71,7 @@ export function useAssistant({ unitId }: { unitId?: number | null } = {}): Assis
   const [answer, setAnswer] = useState<string | null>(null);
   const [unitChoice, setUnitChoice] = useState<UnitChoice | null>(null);
   const [thinking, setThinking] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   function reset() {
     setDraft(null);
@@ -70,6 +79,7 @@ export function useAssistant({ unitId }: { unitId?: number | null } = {}): Assis
     setAnswer(null);
     setUnitChoice(null);
     setThinking(false);
+    setSubmitting(false);
   }
 
   /** Turn a resolved intent into either a lot question or a confirmation card.
@@ -132,13 +142,58 @@ export function useAssistant({ unitId }: { unitId?: number | null } = {}): Assis
     finalize({ ...unitChoice.intent, unitId: id });
   }
 
-  function confirm() {
-    if (!draft || farmId == null) return;
-    const mutation = toMutation(draft.intent, farmId);
-    if (!mutation) return;
-    enqueueFieldMutation(mutation);
-    reset();
+  /** Submit an online intent against its live mutation; throws on failure. */
+  async function submitOnline(intent: AssistantIntent, farm: number): Promise<void> {
+    if (intent.kind === 'RECORD_PAYMENT') {
+      await recordPayment({
+        farmId: farm,
+        body: {
+          invoiceId: intent.invoiceId,
+          amountXof: intent.amountXof,
+          method: (intent.method as PaymentMethod | undefined) ?? 'CASH',
+        },
+      }).unwrap();
+      return;
+    }
+    throw new Error(`unsupported online intent: ${intent.kind}`);
   }
 
-  return { draft, message, answer, unitChoice, thinking, submit, chooseUnit, confirm, cancel: reset };
+  async function confirm(): Promise<boolean> {
+    if (!draft || farmId == null) return false;
+    const intent = draft.intent;
+
+    if (isOnline(intent)) {
+      setSubmitting(true);
+      setMessage(null);
+      try {
+        await submitOnline(intent, farmId);
+        reset();
+        return true;
+      } catch {
+        setSubmitting(false);
+        setMessage("Échec de l'enregistrement. Réessayez.");
+        return false;
+      }
+    }
+
+    // Offline field queue.
+    const mutation = toMutation(intent, farmId);
+    if (!mutation) return false;
+    enqueueFieldMutation(mutation);
+    reset();
+    return true;
+  }
+
+  return {
+    draft,
+    message,
+    answer,
+    unitChoice,
+    thinking,
+    submitting,
+    submit,
+    chooseUnit,
+    confirm,
+    cancel: reset,
+  };
 }
