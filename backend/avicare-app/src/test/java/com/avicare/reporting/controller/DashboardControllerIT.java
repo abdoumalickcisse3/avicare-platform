@@ -151,6 +151,9 @@ class DashboardControllerIT {
   @MockitoBean private SalaryRepository salaryRepository;
   @MockitoBean private SalaryAdvanceRepository salaryAdvanceRepository;
 
+  @MockitoBean
+  private com.avicare.assistant.audit.AssistantAuditRepository assistantAuditRepository;
+
   @DynamicPropertySource
   static void jwtKeys(DynamicPropertyRegistry registry) {
     registry.add("avicare.security.jwt.private-key", () -> privatePem(KEYS));
