@@ -27,7 +27,8 @@ class PurchaseToolTest {
   @Test
   void purchaseWithPriceAndSupplier_buildsDraftWithStockConsequence() {
     when(inventory.listStock(1L))
-        .thenReturn(List.of(new InventoryStockInfo("aliment_croissance", "INVENTORY", "sac", 12)));
+        .thenReturn(
+            List.of(new InventoryStockInfo(11L, "aliment_croissance", "INVENTORY", "sac", 12)));
     when(inventory.listSuppliers(1L))
         .thenReturn(List.of(new SupplierInfo(3L, "Aliments du Sahel")));
 
@@ -64,7 +65,7 @@ class PurchaseToolTest {
   @Test
   void singleSupplierNotNamed_isUsedByDefault() {
     when(inventory.listStock(1L))
-        .thenReturn(List.of(new InventoryStockInfo("mais", "INVENTORY", "kg", 40)));
+        .thenReturn(List.of(new InventoryStockInfo(13L, "mais", "INVENTORY", "kg", 40)));
     when(inventory.listSuppliers(1L)).thenReturn(List.of(new SupplierInfo(3L, "Grainterie Diop")));
 
     InterpretResponse r = tool().dryRun(1L, Map.of("article", "mais", "quantity", 50), null);
@@ -76,7 +77,7 @@ class PurchaseToolTest {
   @Test
   void severalSuppliersNoneNamed_asksWhichSupplier() {
     when(inventory.listStock(1L))
-        .thenReturn(List.of(new InventoryStockInfo("mais", "INVENTORY", "kg", 40)));
+        .thenReturn(List.of(new InventoryStockInfo(13L, "mais", "INVENTORY", "kg", 40)));
     when(inventory.listSuppliers(1L))
         .thenReturn(List.of(new SupplierInfo(3L, "Diop"), new SupplierInfo(4L, "Ndiaye")));
 
@@ -89,7 +90,7 @@ class PurchaseToolTest {
   @Test
   void noSupplierRegistered_asksToAddOne() {
     when(inventory.listStock(1L))
-        .thenReturn(List.of(new InventoryStockInfo("mais", "INVENTORY", "kg", 40)));
+        .thenReturn(List.of(new InventoryStockInfo(13L, "mais", "INVENTORY", "kg", 40)));
     when(inventory.listSuppliers(1L)).thenReturn(List.of());
 
     InterpretResponse r = tool().dryRun(1L, Map.of("article", "mais", "quantity", 50), null);
@@ -102,7 +103,7 @@ class PurchaseToolTest {
   void unknownArticle_asksWhichOne() {
     lenient().when(inventory.listSuppliers(1L)).thenReturn(List.of(new SupplierInfo(3L, "Diop")));
     when(inventory.listStock(1L))
-        .thenReturn(List.of(new InventoryStockInfo("mais", "INVENTORY", "kg", 40)));
+        .thenReturn(List.of(new InventoryStockInfo(13L, "mais", "INVENTORY", "kg", 40)));
 
     InterpretResponse r = tool().dryRun(1L, Map.of("article", "ciment", "quantity", 5), null);
 

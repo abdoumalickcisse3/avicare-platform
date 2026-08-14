@@ -26,8 +26,8 @@ class StockQueryToolTest {
     when(inventory.listStock(1L))
         .thenReturn(
             List.of(
-                new InventoryStockInfo("aliment_croissance", "INVENTORY", "sac", 40),
-                new InventoryStockInfo("mais", "INVENTORY", "kg", 120)));
+                new InventoryStockInfo(11L, "aliment_croissance", "INVENTORY", "sac", 40),
+                new InventoryStockInfo(13L, "mais", "INVENTORY", "kg", 120)));
 
     String r = tool().read(1L, Map.of("article", "aliment"), null);
 
@@ -39,8 +39,8 @@ class StockQueryToolTest {
     when(inventory.listStock(1L))
         .thenReturn(
             List.of(
-                new InventoryStockInfo("aliment_croissance", "INVENTORY", "sac", 40),
-                new InventoryStockInfo("mais", "INVENTORY", "kg", 120)));
+                new InventoryStockInfo(11L, "aliment_croissance", "INVENTORY", "sac", 40),
+                new InventoryStockInfo(13L, "mais", "INVENTORY", "kg", 120)));
 
     String r = tool().read(1L, Map.of(), null);
 
