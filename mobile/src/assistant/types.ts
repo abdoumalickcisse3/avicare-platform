@@ -108,6 +108,36 @@ export interface PaymentIntent {
   method?: string;
 }
 
+/** A quick walk-in production sale (live broilers from a lot, or eggs from the
+ * farm pool) — a lot-less, ONLINE action. Confirmable only with a unit price. */
+export interface SaleIntent {
+  kind: 'QUICK_SALE';
+  /** Domain enum name: BROILER | EGGS. */
+  productType: string;
+  quantity: number;
+  /** The broiler lot (BROILER only; EGGS sell from the farm pool). */
+  unitId?: number | null;
+  unitName?: string;
+  unitPriceXof?: number;
+  availableAfter?: number;
+}
+
+/** A supplier purchase (a draft purchase order) — a lot-less, ONLINE action.
+ * Confirmable only with a unit price. */
+export interface PurchaseIntent {
+  kind: 'PURCHASE';
+  articleKey: string;
+  /** Domain enum name: INVENTORY | TREATMENT. */
+  articleSource: string;
+  quantity: number;
+  supplierId: number;
+  supplierName?: string;
+  unitPriceXof?: number;
+  unit?: string;
+  before?: number;
+  after?: number;
+}
+
 /** Union of supported intents. Most are lot-based; a few (client creation, stock
  * adjustment) are lot-less — see {@link isLotBased}. */
 export type AssistantIntent =
@@ -119,20 +149,28 @@ export type AssistantIntent =
   | ObservationIntent
   | CreateClientIntent
   | StockAdjustIntent
-  | PaymentIntent;
+  | PaymentIntent
+  | SaleIntent
+  | PurchaseIntent;
+
+/** Intents confirmed against a live online mutation (with preconditions), NOT the
+ * offline field queue. */
+export type OnlineIntent = PaymentIntent | SaleIntent | PurchaseIntent;
 
 /** Lot-less intent kinds (no production unit, skip the lot-choice flow). */
 const LOT_LESS_KINDS = new Set<AssistantIntent['kind']>([
   'CREATE_CLIENT',
   'ADJUST_STOCK',
   'RECORD_PAYMENT',
+  'QUICK_SALE',
+  'PURCHASE',
 ]);
 
 /** Intents tied to a production unit (they carry a `unitId` and go through the
  * lot-choice flow when it isn't resolved yet). */
 export type LotBasedIntent = Exclude<
   AssistantIntent,
-  CreateClientIntent | StockAdjustIntent | PaymentIntent
+  CreateClientIntent | StockAdjustIntent | OnlineIntent
 >;
 
 /** Whether an intent needs a resolved lot before it can be confirmed. */
@@ -140,12 +178,11 @@ export function isLotBased(intent: AssistantIntent): intent is LotBasedIntent {
   return !LOT_LESS_KINDS.has(intent.kind);
 }
 
-/** Intent kinds confirmed against a live online mutation (with preconditions),
- * NOT the offline field queue. */
-const ONLINE_KINDS = new Set<AssistantIntent['kind']>(['RECORD_PAYMENT']);
+/** Intent kinds confirmed against a live online mutation. */
+const ONLINE_KINDS = new Set<AssistantIntent['kind']>(['RECORD_PAYMENT', 'QUICK_SALE', 'PURCHASE']);
 
 /** Whether an intent is confirmed online (vs enqueued on the offline field queue). */
-export function isOnline(intent: AssistantIntent): boolean {
+export function isOnline(intent: AssistantIntent): intent is OnlineIntent {
   return ONLINE_KINDS.has(intent.kind);
 }
 

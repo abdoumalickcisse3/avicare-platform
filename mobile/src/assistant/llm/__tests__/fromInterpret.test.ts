@@ -53,6 +53,28 @@ describe('intentFromInterpret', () => {
     });
   });
 
+  it('maps a QUICK_SALE draft (broiler, with lot)', () => {
+    const intent = intentFromInterpret(
+      draft('QUICK_SALE', { productType: 'BROILER', quantity: 30, unitName: 'B-12', unitPriceXof: 2500, availableAfter: 90 }, 3),
+    );
+    expect(intent).toEqual({
+      kind: 'QUICK_SALE',
+      productType: 'BROILER',
+      quantity: 30,
+      unitId: 3,
+      unitName: 'B-12',
+      unitPriceXof: 2500,
+      availableAfter: 90,
+    });
+  });
+
+  it('maps a PURCHASE draft with the resolved supplier id', () => {
+    const intent = intentFromInterpret(
+      draft('PURCHASE', { articleKey: 'aliment', articleSource: 'INVENTORY', quantity: 10, supplierId: 3, supplierName: 'Sahel', unitPriceXof: 15000 }, null),
+    );
+    expect(intent).toMatchObject({ kind: 'PURCHASE', articleKey: 'aliment', quantity: 10, supplierId: 3, unitPriceXof: 15000 });
+  });
+
   it('maps a HEALTH_OBSERVATION draft, keeping optionals when present', () => {
     const intent = intentFromInterpret(
       draft('HEALTH_OBSERVATION', {

@@ -90,6 +90,29 @@ export function intentFromInterpret(resp: InterpretResponse): AssistantIntent | 
         amountXof: num(f.amountXof),
         method: strOrU(f.method),
       };
+    case 'QUICK_SALE':
+      return {
+        kind: 'QUICK_SALE',
+        productType: String(f.productType ?? ''),
+        quantity: num(f.quantity),
+        unitId,
+        unitName: strOrU(f.unitName),
+        unitPriceXof: numOrU(f.unitPriceXof),
+        availableAfter: numOrU(f.availableAfter),
+      };
+    case 'PURCHASE':
+      return {
+        kind: 'PURCHASE',
+        articleKey: String(f.articleKey ?? ''),
+        articleSource: String(f.articleSource ?? 'INVENTORY'),
+        quantity: num(f.quantity),
+        supplierId: num(f.supplierId),
+        supplierName: strOrU(f.supplierName),
+        unitPriceXof: numOrU(f.unitPriceXof),
+        unit: strOrU(f.unit),
+        before: numOrU(f.before),
+        after: numOrU(f.after),
+      };
     default:
       return null;
   }

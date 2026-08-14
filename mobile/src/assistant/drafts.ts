@@ -17,6 +17,13 @@ const TITLES: Record<AssistantIntent['kind'], string> = {
   CREATE_CLIENT: 'Nouveau client',
   ADJUST_STOCK: 'Ajustement stock',
   RECORD_PAYMENT: 'Encaissement',
+  QUICK_SALE: 'Vente',
+  PURCHASE: 'Achat',
+};
+
+const PRODUCT_LABELS: Record<string, string> = {
+  BROILER: 'poulets',
+  EGGS: 'œufs',
 };
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
@@ -121,6 +128,25 @@ export function buildConfirmation(intent: AssistantIntent, units: AssistantUnit[
       if (intent.method) lines.push({ label: 'Moyen', value: PAYMENT_METHOD_LABELS[intent.method] ?? intent.method });
       const who = intent.clientName ? ` de ${intent.clientName}` : '';
       speech = `Encaissement de ${intent.amountXof} francs${who}. Confirmer ?`;
+      break;
+    }
+    case 'QUICK_SALE': {
+      const product = PRODUCT_LABELS[intent.productType] ?? intent.productType;
+      lines.push({ label: 'Produit', value: product });
+      lines.push({ label: 'Quantité', value: formatNumber(intent.quantity) });
+      if (intent.productType === 'BROILER') lines.push({ label: 'Lot', value: intent.unitName ?? '—' });
+      lines.push({ label: 'Prix unitaire', value: intent.unitPriceXof != null ? `${formatNumber(intent.unitPriceXof)} F CFA` : '— à préciser' });
+      lines.push({ label: 'Client', value: 'passage' });
+      speech = `Vente de ${intent.quantity} ${product}, client de passage. Confirmer ?`;
+      break;
+    }
+    case 'PURCHASE': {
+      const u = intent.unit ? ` ${intent.unit}` : '';
+      lines.push({ label: 'Article', value: intent.articleKey });
+      lines.push({ label: 'Quantité', value: `${formatNumber(intent.quantity)}${u}` });
+      if (intent.supplierName) lines.push({ label: 'Fournisseur', value: intent.supplierName });
+      lines.push({ label: 'Prix unitaire', value: intent.unitPriceXof != null ? `${formatNumber(intent.unitPriceXof)} F CFA` : '— à préciser' });
+      speech = `Achat de ${intent.quantity}${u} de ${intent.articleKey}. Confirmer ?`;
       break;
     }
   }

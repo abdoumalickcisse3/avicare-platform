@@ -13,9 +13,11 @@ import { skipToken } from '@reduxjs/toolkit/query/react';
 import { useListProductionUnitsQuery } from '@/store/api/productionUnitsApi';
 import { useInterpretMutation } from '@/store/api/assistantApi';
 import { useRecordPaymentMutation } from '@/store/api/paymentsApi';
+import { useCreateSaleMutation } from '@/store/api/salesApi';
+import { useCreatePurchaseOrderMutation } from '@/store/api/purchaseOrdersApi';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { enqueueFieldMutation } from '@/field/enqueueMutation';
-import type { PaymentMethod } from '@/types';
+import type { ArticleSource, PaymentMethod, ProductType } from '@/types';
 import { rulesParse } from './parsers';
 import { intentFromInterpret } from './llm/fromInterpret';
 import { buildConfirmation } from './drafts';
@@ -57,6 +59,8 @@ export function useAssistant({ unitId }: { unitId?: number | null } = {}): Assis
   const { data: units } = useListProductionUnitsQuery(farmId ?? skipToken);
   const [interpret] = useInterpretMutation();
   const [recordPayment] = useRecordPaymentMutation();
+  const [createSale] = useCreateSaleMutation();
+  const [createPurchaseOrder] = useCreatePurchaseOrderMutation();
 
   const activeUnits = useMemo<AssistantUnit[]>(
     () =>
@@ -155,7 +159,55 @@ export function useAssistant({ unitId }: { unitId?: number | null } = {}): Assis
       }).unwrap();
       return;
     }
+    if (intent.kind === 'QUICK_SALE') {
+      const broiler = intent.productType === 'BROILER';
+      await createSale({
+        farmId: farm,
+        body: {
+          clientId: null, // walk-in cash sale
+          lines: [
+            {
+              articleKey: intent.productType,
+              articleSource: 'PRODUCTION' as ArticleSource,
+              quantity: intent.quantity,
+              unitPriceXof: intent.unitPriceXof as number,
+              productType: intent.productType as ProductType,
+              ...(broiler ? { productionUnitId: intent.unitId as number } : {}),
+            },
+          ],
+        },
+      }).unwrap();
+      return;
+    }
+    if (intent.kind === 'PURCHASE') {
+      await createPurchaseOrder({
+        farmId: farm,
+        body: {
+          supplierId: intent.supplierId,
+          lines: [
+            {
+              articleKey: intent.articleKey,
+              articleSource: intent.articleSource as ArticleSource,
+              orderedQuantity: intent.quantity,
+              unitPriceXof: intent.unitPriceXof as number,
+            },
+          ],
+        },
+      }).unwrap();
+      return;
+    }
     throw new Error(`unsupported online intent: ${intent.kind}`);
+  }
+
+  /** A blocking precondition for an online intent (missing required input), or null. */
+  function onlineBlocker(intent: AssistantIntent): string | null {
+    if ((intent.kind === 'QUICK_SALE' || intent.kind === 'PURCHASE') && intent.unitPriceXof == null) {
+      return 'Précisez le prix unitaire.';
+    }
+    if (intent.kind === 'QUICK_SALE' && intent.productType === 'BROILER' && intent.unitId == null) {
+      return 'De quel lot vendez-vous ?';
+    }
+    return null;
   }
 
   async function confirm(): Promise<boolean> {
@@ -163,6 +215,11 @@ export function useAssistant({ unitId }: { unitId?: number | null } = {}): Assis
     const intent = draft.intent;
 
     if (isOnline(intent)) {
+      const blocker = onlineBlocker(intent);
+      if (blocker) {
+        setMessage(blocker);
+        return false;
+      }
       setSubmitting(true);
       setMessage(null);
       try {
