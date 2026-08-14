@@ -56,8 +56,34 @@ export interface EggCollectionIntent {
   unitId: number | null;
 }
 
-/** Union of supported intents (Phase 2: the four field actions). */
-export type AssistantIntent = MortalityIntent | DailyRecordIntent | WeighingIntent | EggCollectionIntent;
+/** A vaccination administered on a lot (vaccine resolved against the catalog). */
+export interface VaccinationIntent {
+  kind: 'VACCINATION';
+  vaccineKey: string;
+  vaccineLabel: string;
+  subjectsCount: number;
+  unitId: number | null;
+}
+
+/** A health observation (a noticed symptom) on a lot. */
+export interface ObservationIntent {
+  kind: 'HEALTH_OBSERVATION';
+  title: string;
+  description?: string;
+  /** Domain scale: NORMAL | WARNING | CRITICAL, or undefined when unspecified. */
+  severity?: string;
+  suspectedDisease?: string;
+  unitId: number | null;
+}
+
+/** Union of supported intents (lot-based field actions). */
+export type AssistantIntent =
+  | MortalityIntent
+  | DailyRecordIntent
+  | WeighingIntent
+  | EggCollectionIntent
+  | VaccinationIntent
+  | ObservationIntent;
 
 export type ParsedIntent = AssistantIntent | null;
 

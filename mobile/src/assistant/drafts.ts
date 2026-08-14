@@ -12,6 +12,14 @@ const TITLES: Record<AssistantIntent['kind'], string> = {
   DAILY_RECORD: 'Saisie journalière',
   WEIGHING: 'Pesée',
   EGG_COLLECTION: "Collecte d'œufs",
+  VACCINATION: 'Vaccination',
+  HEALTH_OBSERVATION: 'Observation santé',
+};
+
+const SEVERITY_LABELS: Record<string, string> = {
+  NORMAL: 'normale',
+  WARNING: 'à surveiller',
+  CRITICAL: 'critique',
 };
 
 function avg(nums: number[]): number {
@@ -55,6 +63,21 @@ export function buildConfirmation(intent: AssistantIntent, units: AssistantUnit[
       lines.push({ label: 'Créneau', value: intent.timeslotKey });
       lines.push({ label: 'Lot', value: lotName });
       speech = `Collecte de ${intent.totalEggs} œufs sur le lot ${lotName}. Confirmer ?`;
+      break;
+    }
+    case 'VACCINATION': {
+      lines.push({ label: 'Vaccin', value: intent.vaccineLabel });
+      lines.push({ label: 'Sujets', value: formatNumber(intent.subjectsCount) });
+      lines.push({ label: 'Lot', value: lotName });
+      speech = `Vaccination du lot ${lotName} avec ${intent.vaccineLabel}, ${intent.subjectsCount} sujets. Confirmer ?`;
+      break;
+    }
+    case 'HEALTH_OBSERVATION': {
+      lines.push({ label: 'Observation', value: intent.title });
+      if (intent.severity) lines.push({ label: 'Gravité', value: SEVERITY_LABELS[intent.severity] ?? intent.severity });
+      if (intent.suspectedDisease) lines.push({ label: 'Suspicion', value: intent.suspectedDisease });
+      lines.push({ label: 'Lot', value: lotName });
+      speech = `Observation sur le lot ${lotName} : ${intent.title}. Confirmer ?`;
       break;
     }
   }

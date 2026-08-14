@@ -28,6 +28,8 @@ const KIND_LABELS: Record<MutationKind, string> = {
   MORTALITY: 'Mortalité',
   WEIGHING: 'Pesée',
   EGG_COLLECTION: "Collecte d'œufs",
+  VACCINATION: 'Vaccination',
+  HEALTH_OBSERVATION: 'Observation santé',
 };
 
 export default function QueueScreen() {
