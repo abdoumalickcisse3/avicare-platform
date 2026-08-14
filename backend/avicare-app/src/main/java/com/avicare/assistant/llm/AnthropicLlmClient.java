@@ -31,11 +31,11 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 /**
- * Real, Anthropic-backed {@link LlmClient}. Turns free French field text into a {@link ToolCall}
- * via the Messages API in tool-use mode: each available action is offered as a tool, the model
- * picks one and fills its arguments. The model is strictly bounded — it extracts intent and
- * entities only; {@code InterpretService} still validates everything against the domain (dry-run)
- * and the human confirms before any write (doc 12 §4).
+ * Real, Anthropic-backed {@link LlmClient}. Drives the assistant's single unified loop over the
+ * Messages API in tool-use mode: the offered write + read tools are exposed, the model either picks
+ * a write tool (its args are dry-run into a draft by {@code InterpretService}) or consults read
+ * tools before answering in text. The model is strictly bounded for writes — it extracts intent and
+ * entities only, never a computed figure; the human confirms before any write (doc 12 §4).
  *
  * <p>Active only when {@code anthropic.api-key} is present (in prod, from the {@code
  * ANTHROPIC_API_KEY} env var). When it is absent — dev, CI, DB-less tests — this bean is not
@@ -50,34 +50,25 @@ public class AnthropicLlmClient implements LlmClient {
   private static final Logger log = LoggerFactory.getLogger(AnthropicLlmClient.class);
 
   /**
-   * Write-intent extraction prompt. Bounded (intent + entities only, never a computed figure) and
-   * dated so relative wording ("hier", "aujourd'hui") resolves without a clarifying round-trip.
+   * Unified system prompt for the single loop. Dated so relative wording ("hier", "cette semaine")
+   * resolves without a clarifying round-trip; steers writes (extract intent/entities only, never a
+   * computed figure) and reads (consult the real figures, call all needed tools in ONE parallel
+   * turn — the main latency lever — then answer in one or two factual French sentences).
    */
-  private static String writeSystem() {
-    return "Tu es l'assistant de saisie d'une application d'élevage avicole. Nous sommes le "
+  private static String system() {
+    return "Tu es l'assistant d'une application d'élevage avicole. Nous sommes le "
         + LocalDate.now()
-        + ". L'ouvrier de terrain parle en français, souvent brièvement. À partir de sa phrase,"
-        + " choisis AU PLUS UNE action parmi les outils disponibles et remplis ses champs. Tu"
-        + " extrais uniquement l'intention et les entités (quantités, motif, lot, dates…) : tu ne"
-        + " calcules jamais et ne décides jamais un montant, un stock ou un solde — le système s'en"
-        + " charge. Si la phrase ne correspond à aucune action, ou qu'un nombre requis est absent,"
+        + ". L'ouvrier de terrain parle en français, souvent brièvement.\n"
+        + "- S'il DICTE une action (mortalité, vente, vaccination, encaissement…), choisis l'outil"
+        + " de SAISIE correspondant et remplis ses champs : tu extrais uniquement l'intention et les"
+        + " entités (quantités, motif, lot, dates…), tu ne calcules jamais et ne décides jamais un"
+        + " montant, un stock ou un solde — le système s'en charge.\n"
+        + "- S'il POSE une question (stock, mortalité, résultat…), utilise les outils de"
+        + " CONSULTATION pour obtenir les chiffres RÉELS — n'invente JAMAIS un chiffre — en appelant"
+        + " EN UNE SEULE FOIS tous les outils nécessaires, puis donne une réponse courte et"
+        + " factuelle en français (une à deux phrases, montants en F CFA).\n"
+        + "Si la phrase ne correspond à rien, ou qu'un nombre requis pour une saisie est absent,"
         + " n'appelle aucun outil.";
-  }
-
-  /**
-   * Read/consultation prompt. Encourages a SINGLE parallel tool turn (all needed tools at once) so
-   * a multi-part question resolves in one round-trip instead of several — the main latency lever —
-   * and a short, factual, invention-free French answer. Dated for relative periods.
-   */
-  private static String readSystem() {
-    return "Tu es l'assistant de consultation d'une application d'élevage avicole. Nous sommes le "
-        + LocalDate.now()
-        + ". L'ouvrier pose une question en français. Utilise les outils de consultation fournis"
-        + " pour obtenir les chiffres RÉELS — n'invente JAMAIS un chiffre. Si la question porte sur"
-        + " plusieurs éléments, appelle TOUS les outils nécessaires EN UNE SEULE FOIS (en parallèle),"
-        + " puis, dès que tu as les données, donne une réponse courte et factuelle en français (une"
-        + " à deux phrases, montants en F CFA). Si la question sort du périmètre des outils,"
-        + " dis-le brièvement sans appeler d'outil.";
   }
 
   private final AnthropicClient client;
@@ -107,36 +98,13 @@ public class AnthropicLlmClient implements LlmClient {
   }
 
   @Override
-  public Optional<ToolCall> interpret(String text, List<ToolSpec> tools) {
-    if (text == null || text.isBlank() || tools.isEmpty()) {
-      return Optional.empty();
-    }
-    try {
-      MessageCreateParams.Builder params =
-          MessageCreateParams.builder()
-              .model(model)
-              .maxTokens(maxTokens)
-              .system(writeSystem())
-              .addUserMessage(text);
-      for (ToolSpec spec : tools) {
-        params.addTool(toSdkTool(spec));
-      }
-      return firstToolCall(client.messages().create(params.build()));
-    } catch (RuntimeException e) {
-      // Network, timeout or parse failure — degrade to a clarification, never fail the request.
-      log.warn("Anthropic interpret failed ({}); falling back to clarification", e.toString());
-      return Optional.empty();
-    }
-  }
-
-  @Override
   public LlmTurn converse(List<LlmMessage> history, List<ToolSpec> tools) {
     if (history.isEmpty() || tools.isEmpty()) {
       return LlmTurn.answer("");
     }
     try {
       MessageCreateParams.Builder params =
-          MessageCreateParams.builder().model(model).maxTokens(maxTokens).system(readSystem());
+          MessageCreateParams.builder().model(model).maxTokens(maxTokens).system(system());
       for (LlmMessage message : history) {
         params.addMessage(toSdkMessage(message));
       }
@@ -211,19 +179,6 @@ public class AnthropicLlmClient implements LlmClient {
       block.text().ifPresent(t -> text.append(t.text()));
     }
     return new LlmTurn(calls, text.toString().trim());
-  }
-
-  /** The first tool the model invoked, mapped to a {@link ToolCall}; empty if it invoked none. */
-  private static Optional<ToolCall> firstToolCall(Message response) {
-    for (ContentBlock block : response.content()) {
-      Optional<ToolUseBlock> toolUse = block.toolUse();
-      if (toolUse.isPresent()) {
-        ToolUseBlock b = toolUse.get();
-        Map<String, Object> args = b._input().convert(new TypeReference<Map<String, Object>>() {});
-        return Optional.of(new ToolCall(b.name(), args == null ? Map.of() : args));
-      }
-    }
-    return Optional.empty();
   }
 
   /** Build the provider tool schema from a neutral {@link ToolSpec}. */

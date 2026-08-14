@@ -11,7 +11,6 @@ import static org.mockito.Mockito.when;
 import com.avicare.assistant.dto.InterpretResponse;
 import com.avicare.assistant.llm.LlmClient;
 import com.avicare.assistant.llm.LlmTurn;
-import com.avicare.assistant.llm.ToolCall;
 import com.avicare.assistant.llm.ToolInvocation;
 import com.avicare.assistant.read.ReadTool;
 import com.avicare.assistant.read.ReadToolRegistry;
@@ -21,7 +20,6 @@ import com.avicare.assistant.tool.ToolSpec;
 import com.avicare.common.security.access.FarmAccessChecker;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -30,7 +28,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
- * The orchestration + RBAC gating live here; each tool's dry-run is tested in its own tool test.
+ * The unified-loop orchestration + RBAC gating live here; each tool's dry-run/read is tested in its
+ * own tool test. Everything now flows through a single {@code llm.converse}.
  */
 @ExtendWith(MockitoExtension.class)
 class InterpretServiceTest {
@@ -55,13 +54,16 @@ class InterpretServiceTest {
     return t;
   }
 
+  private static LlmTurn call(String name, Map<String, Object> args) {
+    return LlmTurn.calls(List.of(new ToolInvocation("u1", name, args)), null);
+  }
+
   @Test
-  void offersOnlyPermittedTools_thenDispatchesToTheChosenTool() {
+  void aWriteToolCall_isDryRunIntoADraftAndStops() {
     AssistantTool mortality = tool("MORTALITY", "poultry:write");
     when(registry.all()).thenReturn(List.of(mortality));
     when(access.hasPermission(1L, "poultry:write")).thenReturn(true);
-    when(llm.interpret(any(), any()))
-        .thenReturn(Optional.of(new ToolCall("MORTALITY", Map.of("count", 10))));
+    when(llm.converse(any(), any())).thenReturn(call("MORTALITY", Map.of("count", 10)));
     when(mortality.dryRun(eq(1L), any(), eq(3L)))
         .thenReturn(InterpretResponse.draft("MORTALITY", 3L, Map.of("count", 10), "ok"));
 
@@ -73,24 +75,47 @@ class InterpretServiceTest {
   }
 
   @Test
-  void aFarmerNeverSeesToolsAboveItsPermissions() {
+  void offersWriteAndReadToolsTogether_scopedToPermissions() {
     AssistantTool mortality = tool("MORTALITY", "poultry:write");
     AssistantTool sale = tool("QUICK_SALE", "commercial:write");
+    ReadTool stock = readTool("STOCK_QUERY", "inventory:read");
     when(registry.all()).thenReturn(List.of(mortality, sale));
+    when(readRegistry.all()).thenReturn(List.of(stock));
     when(access.hasPermission(1L, "poultry:write")).thenReturn(true);
     when(access.hasPermission(1L, "commercial:write")).thenReturn(false); // FARMER
-    when(llm.interpret(any(), any())).thenReturn(Optional.empty());
+    when(access.hasPermission(1L, "inventory:read")).thenReturn(true);
+    when(llm.converse(any(), any())).thenReturn(LlmTurn.answer(""));
 
-    service.interpret(1L, "vends 30 poulets", null);
+    service.interpret(1L, "bonjour", null);
 
     @SuppressWarnings("unchecked")
     ArgumentCaptor<List<ToolSpec>> specs = ArgumentCaptor.forClass(List.class);
-    verify(llm).interpret(any(), specs.capture());
-    assertThat(specs.getValue()).extracting(ToolSpec::name).containsExactly("MORTALITY");
+    verify(llm).converse(any(), specs.capture());
+    // The forbidden write tool is never even offered; write + read are offered together.
+    assertThat(specs.getValue())
+        .extracting(ToolSpec::name)
+        .containsExactlyInAnyOrder("MORTALITY", "STOCK_QUERY");
   }
 
   @Test
-  void noPermittedTools_clarifies() {
+  void readQuestion_executesTheTool_feedsItBack_andAnswers() {
+    ReadTool stock = readTool("STOCK_QUERY", "inventory:read");
+    when(readRegistry.all()).thenReturn(List.of(stock));
+    when(access.hasPermission(1L, "inventory:read")).thenReturn(true);
+    when(stock.read(eq(1L), any(), eq(2L))).thenReturn("aliment : 40 sac");
+    when(llm.converse(any(), any()))
+        .thenReturn(
+            call("STOCK_QUERY", Map.of()), LlmTurn.answer("Il vous reste 40 sacs d'aliment."));
+
+    InterpretResponse r = service.interpret(1L, "quel est mon stock d'aliment ?", 2L);
+
+    assertThat(r.kind()).isEqualTo("ANSWER");
+    assertThat(r.message()).isEqualTo("Il vous reste 40 sacs d'aliment.");
+    verify(stock).read(eq(1L), any(), eq(2L));
+  }
+
+  @Test
+  void noPermittedTools_clarifiesWithoutCallingTheModel() {
     AssistantTool mortality = tool("MORTALITY", "poultry:write");
     when(registry.all()).thenReturn(List.of(mortality));
     when(access.hasPermission(any(), any())).thenReturn(false);
@@ -102,11 +127,11 @@ class InterpretServiceTest {
   }
 
   @Test
-  void unrecognized_clarifies() {
+  void plainTextWithNoTool_clarifies() {
     AssistantTool mortality = tool("MORTALITY", "poultry:write");
     when(registry.all()).thenReturn(List.of(mortality));
     when(access.hasPermission(1L, "poultry:write")).thenReturn(true);
-    when(llm.interpret(any(), any())).thenReturn(Optional.empty());
+    when(llm.converse(any(), any())).thenReturn(LlmTurn.answer(""));
 
     InterpretResponse r = service.interpret(1L, "bonjour", null);
 
@@ -114,62 +139,15 @@ class InterpretServiceTest {
   }
 
   @Test
-  void unknownAction_clarifies() {
+  void aRunawayModel_isCappedIntoAClarification() {
+    // A tool call matching neither registry loops (treated as a read with no handler) until the
+    // cap.
     AssistantTool mortality = tool("MORTALITY", "poultry:write");
     when(registry.all()).thenReturn(List.of(mortality));
     when(access.hasPermission(1L, "poultry:write")).thenReturn(true);
-    when(llm.interpret(any(), any())).thenReturn(Optional.of(new ToolCall("FOO", Map.of())));
+    when(llm.converse(any(), any())).thenReturn(call("FOO", Map.of()));
 
     InterpretResponse r = service.interpret(1L, "fais un truc", null);
-
-    assertThat(r.kind()).isEqualTo("CLARIFICATION");
-    assertThat(r.message()).contains("non prise en charge");
-  }
-
-  @Test
-  void readQuestion_runsTheLoop_executesTheTool_andAnswers() {
-    // No write tool matched → the read loop runs (write registry empty by default).
-    ReadTool stock = readTool("STOCK_QUERY", "inventory:read");
-    when(readRegistry.all()).thenReturn(List.of(stock));
-    when(access.hasPermission(1L, "inventory:read")).thenReturn(true);
-    when(stock.read(eq(1L), any(), eq(2L))).thenReturn("aliment : 40 sac");
-    when(llm.converse(any(), any()))
-        .thenReturn(
-            LlmTurn.calls(List.of(new ToolInvocation("u1", "STOCK_QUERY", Map.of())), null),
-            LlmTurn.answer("Il vous reste 40 sacs d'aliment."));
-
-    InterpretResponse r = service.interpret(1L, "quel est mon stock d'aliment ?", 2L);
-
-    assertThat(r.kind()).isEqualTo("ANSWER");
-    assertThat(r.message()).isEqualTo("Il vous reste 40 sacs d'aliment.");
-    verify(stock).read(eq(1L), any(), eq(2L));
-  }
-
-  @Test
-  void readLoop_neverOffersToolsAbovePermissions() {
-    ReadTool stock = readTool("STOCK_QUERY", "inventory:read");
-    ReadTool mortality = readTool("MORTALITY_QUERY", "poultry:read");
-    when(readRegistry.all()).thenReturn(List.of(stock, mortality));
-    when(access.hasPermission(1L, "inventory:read")).thenReturn(true);
-    when(access.hasPermission(1L, "poultry:read")).thenReturn(false); // not allowed
-    when(llm.converse(any(), any())).thenReturn(LlmTurn.answer("")); // no answer → clarification
-
-    service.interpret(1L, "combien de morts cette semaine ?", null);
-
-    @SuppressWarnings("unchecked")
-    ArgumentCaptor<List<ToolSpec>> specs = ArgumentCaptor.forClass(List.class);
-    verify(llm).converse(any(), specs.capture());
-    assertThat(specs.getValue()).extracting(ToolSpec::name).containsExactly("STOCK_QUERY");
-  }
-
-  @Test
-  void readLoop_withoutAnswer_fallsBackToClarification() {
-    ReadTool stock = readTool("STOCK_QUERY", "inventory:read");
-    when(readRegistry.all()).thenReturn(List.of(stock));
-    when(access.hasPermission(1L, "inventory:read")).thenReturn(true);
-    when(llm.converse(any(), any())).thenReturn(LlmTurn.answer(""));
-
-    InterpretResponse r = service.interpret(1L, "raconte une blague", null);
 
     assertThat(r.kind()).isEqualTo("CLARIFICATION");
   }

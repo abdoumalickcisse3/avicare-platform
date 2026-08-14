@@ -3,7 +3,6 @@ package com.avicare.assistant.llm;
 import com.avicare.assistant.tool.ToolSpec;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -11,10 +10,11 @@ import org.springframework.stereotype.Component;
 
 /**
  * Deterministic, keyless {@link LlmClient} used whenever no Anthropic key is configured (CI, dev,
- * DB-less tests). It recognises the mortality intent by keyword + a digit count — enough to
- * exercise the full interpret → dry-run → draft chain without a cloud call. It stays intentionally
- * dumb (only mortality, only digits): the real value comes from {@link AnthropicLlmClient}; this
- * proves the plumbing and keeps every downstream test green without a key.
+ * DB-less tests). It keyword-matches the phrase to one offered tool — a WRITE tool (with a few
+ * extracted args) that {@code InterpretService} dry-runs into a draft, or a READ tool that it
+ * executes and feeds back before the mock phrases the result as the answer. Intentionally dumb: the
+ * real value comes from {@link AnthropicLlmClient}; this proves the unified-loop plumbing and keeps
+ * every downstream test green without a key.
  *
  * <p>Default bean; the Anthropic client becomes {@code @Primary} when the key is present.
  */
@@ -45,35 +45,9 @@ public class MockLlmClient implements LlmClient {
       Pattern.compile(
           "vaccination.*(due|dues|retard|prevu)|quelle.*vaccin|vaccin.*(due|dues|retard)");
 
-  @Override
-  public Optional<ToolCall> interpret(String text, List<ToolSpec> tools) {
-    if (text == null) {
-      return Optional.empty();
-    }
-    String lower = text.toLowerCase();
-    if (offered(tools, "MORTALITY") && MORTALITY.matcher(lower).find()) {
-      Matcher m = COUNT.matcher(lower);
-      if (m.find()) {
-        int count = Integer.parseInt(m.group(1));
-        return Optional.of(new ToolCall("MORTALITY", Map.of("count", count)));
-      }
-    }
-    if (offered(tools, "VACCINATION") && VACCINE.matcher(lower).find()) {
-      return Optional.of(new ToolCall("VACCINATION", Map.of("vaccine", text)));
-    }
-    if (offered(tools, "HEALTH_OBSERVATION") && OBSERVATION.matcher(lower).find()) {
-      return Optional.of(new ToolCall("HEALTH_OBSERVATION", Map.of("observation", text)));
-    }
-    if (offered(tools, "CREATE_CLIENT") && NEW_CLIENT.matcher(lower).find()) {
-      return Optional.of(new ToolCall("CREATE_CLIENT", Map.of("name", text)));
-    }
-    return Optional.empty();
-  }
-
   /**
-   * Deterministic READ loop: on the first (USER) turn, keyword-match the question to one offered
-   * read tool and invoke it; once a TOOL result is in the history, phrase it as the final answer.
-   * Intentionally dumb — it proves the loop plumbing without a key.
+   * One turn of the unified loop: on a fresh question keyword-match a WRITE tool (with args) or a
+   * READ tool; once a TOOL result is in the history, phrase it as the final answer.
    */
   @Override
   public LlmTurn converse(List<LlmMessage> history, List<ToolSpec> tools) {
@@ -82,42 +56,78 @@ public class MockLlmClient implements LlmClient {
     }
     LlmMessage last = history.get(history.size() - 1);
     if (last.role() == LlmMessage.Role.TOOL) {
-      String answer =
-          last.toolResults().stream().map(ToolResult::content).collect(Collectors.joining(" "));
-      return LlmTurn.answer(answer);
+      return LlmTurn.answer(
+          last.toolResults().stream().map(ToolResult::content).collect(Collectors.joining(" ")));
     }
-    // First turn: pick a read tool by keyword among those offered.
-    String question = firstUserText(history).toLowerCase();
-    String tool = null;
-    if (offered(tools, "MORTALITY_QUERY") && MORTALITY.matcher(question).find()) {
-      tool = "MORTALITY_QUERY";
-    } else if (offered(tools, "LOW_STOCK") && LOW_STOCK.matcher(question).find()) {
-      tool = "LOW_STOCK";
-    } else if (offered(tools, "FEED_CONSUMPTION") && FEED.matcher(question).find()) {
-      tool = "FEED_CONSUMPTION";
-    } else if (offered(tools, "STOCK_QUERY") && STOCK.matcher(question).find()) {
-      tool = "STOCK_QUERY";
-    } else if (offered(tools, "FLOCK_HEADCOUNT") && HEADCOUNT.matcher(question).find()) {
-      tool = "FLOCK_HEADCOUNT";
-    } else if (offered(tools, "CLIENT_OUTSTANDING") && OUTSTANDING.matcher(question).find()) {
-      tool = "CLIENT_OUTSTANDING";
-    } else if (offered(tools, "FARM_PNL") && PNL.matcher(question).find()) {
-      tool = "FARM_PNL";
-    } else if (offered(tools, "SALES_SUMMARY") && SALES.matcher(question).find()) {
-      tool = "SALES_SUMMARY";
-    } else if (offered(tools, "OVERDUE_INVOICES") && OVERDUE.matcher(question).find()) {
-      tool = "OVERDUE_INVOICES";
-    } else if (offered(tools, "EGG_PRODUCTION_QUERY") && EGGS.matcher(question).find()) {
-      tool = "EGG_PRODUCTION_QUERY";
-    } else if (offered(tools, "GROWTH_QUERY") && GROWTH.matcher(question).find()) {
-      tool = "GROWTH_QUERY";
-    } else if (offered(tools, "VACCINATION_DUE") && VACC_DUE.matcher(question).find()) {
-      tool = "VACCINATION_DUE";
+
+    String text = firstUserText(history);
+    String q = text.toLowerCase();
+
+    // WRITE intents — InterpretService dry-runs these into a draft (terminal).
+    if (offered(tools, "MORTALITY") && MORTALITY.matcher(q).find()) {
+      Matcher m = COUNT.matcher(q);
+      if (m.find()) {
+        return call("MORTALITY", Map.of("count", Integer.parseInt(m.group(1))));
+      }
     }
-    if (tool == null) {
-      return LlmTurn.answer("");
+    if (offered(tools, "VACCINATION") && VACCINE.matcher(q).find()) {
+      return call("VACCINATION", Map.of("vaccine", text));
     }
-    return LlmTurn.calls(List.of(new ToolInvocation("mock-1", tool, Map.of())), null);
+    if (offered(tools, "HEALTH_OBSERVATION") && OBSERVATION.matcher(q).find()) {
+      return call("HEALTH_OBSERVATION", Map.of("observation", text));
+    }
+    if (offered(tools, "CREATE_CLIENT") && NEW_CLIENT.matcher(q).find()) {
+      return call("CREATE_CLIENT", Map.of("name", text));
+    }
+
+    // READ intents — InterpretService executes these and feeds the result back.
+    String readTool = readTool(tools, q);
+    return readTool != null ? call(readTool, Map.of()) : LlmTurn.answer("");
+  }
+
+  /** The first offered read tool whose keyword the question matches, or null. */
+  private static String readTool(List<ToolSpec> tools, String q) {
+    if (offered(tools, "MORTALITY_QUERY") && MORTALITY.matcher(q).find()) {
+      return "MORTALITY_QUERY";
+    }
+    if (offered(tools, "LOW_STOCK") && LOW_STOCK.matcher(q).find()) {
+      return "LOW_STOCK";
+    }
+    if (offered(tools, "FEED_CONSUMPTION") && FEED.matcher(q).find()) {
+      return "FEED_CONSUMPTION";
+    }
+    if (offered(tools, "STOCK_QUERY") && STOCK.matcher(q).find()) {
+      return "STOCK_QUERY";
+    }
+    if (offered(tools, "FLOCK_HEADCOUNT") && HEADCOUNT.matcher(q).find()) {
+      return "FLOCK_HEADCOUNT";
+    }
+    if (offered(tools, "CLIENT_OUTSTANDING") && OUTSTANDING.matcher(q).find()) {
+      return "CLIENT_OUTSTANDING";
+    }
+    if (offered(tools, "FARM_PNL") && PNL.matcher(q).find()) {
+      return "FARM_PNL";
+    }
+    if (offered(tools, "SALES_SUMMARY") && SALES.matcher(q).find()) {
+      return "SALES_SUMMARY";
+    }
+    if (offered(tools, "OVERDUE_INVOICES") && OVERDUE.matcher(q).find()) {
+      return "OVERDUE_INVOICES";
+    }
+    if (offered(tools, "EGG_PRODUCTION_QUERY") && EGGS.matcher(q).find()) {
+      return "EGG_PRODUCTION_QUERY";
+    }
+    if (offered(tools, "GROWTH_QUERY") && GROWTH.matcher(q).find()) {
+      return "GROWTH_QUERY";
+    }
+    if (offered(tools, "VACCINATION_DUE") && VACC_DUE.matcher(q).find()) {
+      return "VACCINATION_DUE";
+    }
+    return null;
+  }
+
+  private static LlmTurn call(String name, Map<String, Object> args) {
+    return LlmTurn.calls(List.of(new ToolInvocation("mock-1", name, args)), null);
   }
 
   private static boolean offered(List<ToolSpec> tools, String name) {

@@ -14,28 +14,21 @@ import com.anthropic.models.messages.MessageCreateParams;
 import com.anthropic.models.messages.TextBlock;
 import com.anthropic.models.messages.ToolUseBlock;
 import com.anthropic.services.blocking.MessageService;
-import com.avicare.assistant.tool.ToolParam;
 import com.avicare.assistant.tool.ToolSpec;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 /**
- * Exercises the tool_use → {@link ToolCall} mapping against a mocked SDK client — no cloud call, no
- * key, so it runs in CI. {@code InterpretService} keeps using the deterministic {@link
- * MockLlmClient}; this only proves the Anthropic client's parsing and error handling.
+ * Exercises the unified {@code converse} loop's request/response mapping against a mocked SDK
+ * client — no cloud call, no key, so it runs in CI. {@code InterpretService} keeps using the
+ * deterministic {@link MockLlmClient}; this only proves the Anthropic client's parsing and error
+ * handling.
  */
 class AnthropicLlmClientTest {
 
-  private static final List<ToolSpec> MORTALITY_TOOLS =
-      List.of(
-          new ToolSpec(
-              "MORTALITY",
-              "Enregistrer une mortalité.",
-              List.of(
-                  ToolParam.required("count", ToolParam.Type.INTEGER, "Nombre de sujets morts"),
-                  ToolParam.optional("reason", ToolParam.Type.STRING, "Cause"))));
+  private static final List<ToolSpec> TOOLS =
+      List.of(new ToolSpec("STOCK_QUERY", "Consulter le stock.", List.of()));
 
   private AnthropicLlmClient clientReturning(Message response) {
     AnthropicClient sdk = mock(AnthropicClient.class);
@@ -52,60 +45,7 @@ class AnthropicLlmClientTest {
   }
 
   @Test
-  void mapsAToolUseBlockToAToolCall() {
-    ToolUseBlock toolUse =
-        ToolUseBlock.builder()
-            .id("toolu_1")
-            .name("MORTALITY")
-            .input(JsonValue.from(Map.of("count", 12, "reason", "chaleur")))
-            .caller(DirectCaller.builder().build())
-            .build();
-    AnthropicLlmClient sut = clientReturning(messageWith(ContentBlock.ofToolUse(toolUse)));
-
-    Optional<ToolCall> call =
-        sut.interpret("douze sont morts à cause de la chaleur", MORTALITY_TOOLS);
-
-    assertThat(call).isPresent();
-    assertThat(call.get().action()).isEqualTo("MORTALITY");
-    assertThat(call.get().args()).containsEntry("count", 12).containsEntry("reason", "chaleur");
-  }
-
-  @Test
-  void returnsEmptyWhenTheModelInvokesNoTool() {
-    ContentBlock textOnly =
-        ContentBlock.ofText(
-            TextBlock.builder().text("Je n'ai pas compris.").citations(List.of()).build());
-    AnthropicLlmClient sut = clientReturning(messageWith(textOnly));
-
-    assertThat(sut.interpret("bonjour", MORTALITY_TOOLS)).isEmpty();
-  }
-
-  @Test
-  void degradesToEmptyWhenTheApiThrows() {
-    AnthropicClient sdk = mock(AnthropicClient.class);
-    MessageService messages = mock(MessageService.class);
-    when(sdk.messages()).thenReturn(messages);
-    when(messages.create(any(MessageCreateParams.class)))
-        .thenThrow(new RuntimeException("network down"));
-    AnthropicLlmClient sut = new AnthropicLlmClient(sdk, "claude-haiku-4-5", 512L);
-
-    assertThat(sut.interpret("dix sont morts", MORTALITY_TOOLS)).isEmpty();
-  }
-
-  @Test
-  void ignoresBlankTextAndEmptyActionsWithoutCallingTheApi() {
-    AnthropicClient sdk = mock(AnthropicClient.class);
-    AnthropicLlmClient sut = new AnthropicLlmClient(sdk, "claude-haiku-4-5", 512L);
-
-    assertThat(sut.interpret("   ", MORTALITY_TOOLS)).isEmpty();
-    assertThat(sut.interpret("dix sont morts", List.of())).isEmpty();
-  }
-
-  private static final List<ToolSpec> READ_TOOLS =
-      List.of(new ToolSpec("STOCK_QUERY", "Consulter le stock.", List.of()));
-
-  @Test
-  void converse_mapsToolUseBlocksToInvocations() {
+  void mapsToolUseBlocksToInvocations() {
     ToolUseBlock toolUse =
         ToolUseBlock.builder()
             .id("toolu_9")
@@ -115,7 +55,7 @@ class AnthropicLlmClientTest {
             .build();
     AnthropicLlmClient sut = clientReturning(messageWith(ContentBlock.ofToolUse(toolUse)));
 
-    LlmTurn turn = sut.converse(List.of(LlmMessage.user("quel stock ?")), READ_TOOLS);
+    LlmTurn turn = sut.converse(List.of(LlmMessage.user("quel stock ?")), TOOLS);
 
     assertThat(turn.hasToolCalls()).isTrue();
     assertThat(turn.toolCalls()).hasSize(1);
@@ -125,15 +65,39 @@ class AnthropicLlmClientTest {
   }
 
   @Test
-  void converse_returnsTheTextAnswerWhenNoToolIsInvoked() {
+  void returnsTheTextAnswerWhenNoToolIsInvoked() {
     ContentBlock textOnly =
         ContentBlock.ofText(
             TextBlock.builder().text("Il reste 40 sacs.").citations(List.of()).build());
     AnthropicLlmClient sut = clientReturning(messageWith(textOnly));
 
-    LlmTurn turn = sut.converse(List.of(LlmMessage.user("stock ?")), READ_TOOLS);
+    LlmTurn turn = sut.converse(List.of(LlmMessage.user("stock ?")), TOOLS);
 
     assertThat(turn.hasToolCalls()).isFalse();
     assertThat(turn.text()).isEqualTo("Il reste 40 sacs.");
+  }
+
+  @Test
+  void degradesToAnEmptyAnswerWhenTheApiThrows() {
+    AnthropicClient sdk = mock(AnthropicClient.class);
+    MessageService messages = mock(MessageService.class);
+    when(sdk.messages()).thenReturn(messages);
+    when(messages.create(any(MessageCreateParams.class)))
+        .thenThrow(new RuntimeException("network down"));
+    AnthropicLlmClient sut = new AnthropicLlmClient(sdk, "claude-haiku-4-5", 512L);
+
+    LlmTurn turn = sut.converse(List.of(LlmMessage.user("stock ?")), TOOLS);
+
+    assertThat(turn.hasToolCalls()).isFalse();
+    assertThat(turn.text()).isEmpty();
+  }
+
+  @Test
+  void returnsEmptyForEmptyHistoryOrToolsWithoutCallingTheApi() {
+    AnthropicClient sdk = mock(AnthropicClient.class);
+    AnthropicLlmClient sut = new AnthropicLlmClient(sdk, "claude-haiku-4-5", 512L);
+
+    assertThat(sut.converse(List.of(), TOOLS).text()).isEmpty();
+    assertThat(sut.converse(List.of(LlmMessage.user("stock ?")), List.of()).text()).isEmpty();
   }
 }
