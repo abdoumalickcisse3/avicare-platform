@@ -28,6 +28,8 @@ interface UnitChoice {
 export interface Assistant {
   draft: ConfirmationDraft | null;
   message: string | null;
+  /** A read-only answer to a question (no confirmation) — from the backend loop. */
+  answer: string | null;
   unitChoice: UnitChoice | null;
   /** True while the backend LLM is being queried. */
   thinking: boolean;
@@ -52,12 +54,14 @@ export function useAssistant({ unitId }: { unitId?: number | null } = {}): Assis
 
   const [draft, setDraft] = useState<ConfirmationDraft | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [answer, setAnswer] = useState<string | null>(null);
   const [unitChoice, setUnitChoice] = useState<UnitChoice | null>(null);
   const [thinking, setThinking] = useState(false);
 
   function reset() {
     setDraft(null);
     setMessage(null);
+    setAnswer(null);
     setUnitChoice(null);
     setThinking(false);
   }
@@ -77,6 +81,7 @@ export function useAssistant({ unitId }: { unitId?: number | null } = {}): Assis
 
   async function submit(text: string) {
     setMessage(null);
+    setAnswer(null);
     setUnitChoice(null);
 
     // 1) On-device rules — offline, free, covers the common phrases.
@@ -97,6 +102,10 @@ export function useAssistant({ unitId }: { unitId?: number | null } = {}): Assis
       setThinking(false);
       if (resp.kind === 'CLARIFICATION') {
         setMessage(resp.message ?? "Je n'ai pas compris.");
+        return;
+      }
+      if (resp.kind === 'ANSWER') {
+        setAnswer(resp.message ?? '');
         return;
       }
       const intent = intentFromInterpret(resp);
@@ -124,5 +133,5 @@ export function useAssistant({ unitId }: { unitId?: number | null } = {}): Assis
     reset();
   }
 
-  return { draft, message, unitChoice, thinking, submit, chooseUnit, confirm, cancel: reset };
+  return { draft, message, answer, unitChoice, thinking, submit, chooseUnit, confirm, cancel: reset };
 }

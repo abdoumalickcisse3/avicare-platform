@@ -2,12 +2,14 @@
  * Assistant interpret endpoint — the hybrid fallback: when the on-device rules
  * parser can't understand a phrase and the device is online, the mobile sends
  * the text (never audio) to the backend `assistant` context, which runs the LLM
- * + a deterministic dry-run and returns a DRAFT to confirm or a CLARIFICATION.
+ * + a deterministic dry-run and returns a DRAFT to confirm, a CLARIFICATION, or
+ * an ANSWER (a read-only consultation the backend's agentic loop produced —
+ * nothing to confirm, just information to show and read aloud).
  */
 import { baseApi } from './baseApi';
 
 export interface InterpretResponse {
-  kind: 'DRAFT' | 'CLARIFICATION';
+  kind: 'DRAFT' | 'CLARIFICATION' | 'ANSWER';
   action?: string | null;
   unitId?: number | null;
   fields?: Record<string, unknown> | null;
