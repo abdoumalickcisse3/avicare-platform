@@ -37,14 +37,15 @@ import org.springframework.stereotype.Component;
  * tools before answering in text. The model is strictly bounded for writes — it extracts intent and
  * entities only, never a computed figure; the human confirms before any write (doc 12 §4).
  *
- * <p>Active only when {@code anthropic.api-key} is present (in prod, from the {@code
- * ANTHROPIC_API_KEY} env var). When it is absent — dev, CI, DB-less tests — this bean is not
- * created and {@link MockLlmClient} is used instead, so the whole chain stays testable without a
- * key. When both exist this one is {@link Primary}.
+ * <p>Active only when {@code anthropic.enabled=true} (env {@code ANTHROPIC_ENABLED=true}), with the
+ * key supplied via {@code ANTHROPIC_API_KEY}. Off by default — dev, CI, DB-less tests and any
+ * deploy that hasn't opted in — so {@link MockLlmClient} is used and the whole chain stays testable
+ * without a key. The explicit flag avoids the trap of an empty key activating a broken client. When
+ * both beans exist this one is {@link Primary}.
  */
 @Component
 @Primary
-@ConditionalOnProperty(prefix = "anthropic", name = "api-key")
+@ConditionalOnProperty(prefix = "anthropic", name = "enabled", havingValue = "true")
 public class AnthropicLlmClient implements LlmClient {
 
   private static final Logger log = LoggerFactory.getLogger(AnthropicLlmClient.class);
