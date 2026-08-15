@@ -18,7 +18,6 @@ import { MortalityChart } from '@/components/charts/MortalityChart';
 import { FeedConsumptionChart } from '@/components/charts/FeedConsumptionChart';
 import { HealthSection } from '@/components/health/HealthSection';
 import { MicButton } from '@/components/assistant/MicButton';
-import { AssistantSheet } from '@/components/assistant/AssistantSheet';
 import { scoreMeta, daysUntil } from '@/lib/poultry';
 import {
   useGetBatchQuery,
@@ -66,7 +65,6 @@ export default function LotDetailScreen() {
   const { can } = useFarmAccess();
   const canWrite = can('poultry:write');
   const [tab, setTab] = useState<Tab>('overview');
-  const [assistantOpen, setAssistantOpen] = useState(false);
 
   const skip = selectedFarmId === null || Number.isNaN(batchId);
   const arg = skip ? skipToken : { farmId: selectedFarmId as number, batchId };
@@ -241,15 +239,18 @@ export default function LotDetailScreen() {
         )}
       </ScrollView>
 
-      {/* Assistant vocal (Jawdi) + FAB saisie rapide — gated by poultry:write */}
-      {canWrite && <MicButton onPress={() => setAssistantOpen(true)} style={styles.micFab} />}
+      {/* Assistant vocal (Jawdi) as a full page, scoped to this lot; quick-entry FAB gated. */}
+      <MicButton
+        onPress={() =>
+          router.push({ pathname: '/(field)/assistant', params: { unitId: String(batchId) } })
+        }
+        style={styles.micFab}
+      />
       {canWrite && (
         <Pressable style={styles.fab} onPress={() => router.push(`/(field)/lots/${batchId}/mortalite`)} accessibilityRole="button" accessibilityLabel="Nouvelle saisie">
           <Plus size={30} color={tokens.colors.earth} />
         </Pressable>
       )}
-
-      <AssistantSheet visible={assistantOpen} onClose={() => setAssistantOpen(false)} unitId={batchId} />
     </SafeAreaView>
   );
 }
