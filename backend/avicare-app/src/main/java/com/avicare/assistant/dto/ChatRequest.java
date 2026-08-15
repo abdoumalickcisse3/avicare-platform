@@ -1,6 +1,8 @@
 package com.avicare.assistant.dto;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 
 /**
@@ -9,4 +11,6 @@ import java.util.List;
  * unit. The reply reuses {@link InterpretResponse} — an ANSWER (advice), a DRAFT to confirm, or a
  * CLARIFICATION.
  */
-public record ChatRequest(@NotEmpty List<ChatTurn> messages, Long unitId) {}
+public record ChatRequest(
+    @NotEmpty @Size(max = 40, message = "conversation too long") List<@Valid ChatTurn> messages,
+    Long unitId) {}
