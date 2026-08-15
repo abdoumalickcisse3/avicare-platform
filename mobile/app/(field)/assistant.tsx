@@ -194,6 +194,7 @@ export default function AssistantScreen() {
         >
           <ScrollView
             ref={scrollRef}
+            style={styles.threadScroll}
             contentContainerStyle={styles.thread}
             keyboardShouldPersistTaps="handled"
           >
@@ -218,6 +219,7 @@ export default function AssistantScreen() {
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
+              style={styles.suggestionsBar}
               contentContainerStyle={styles.suggestions}
               keyboardShouldPersistTaps="handled"
             >
@@ -471,6 +473,7 @@ const styles = StyleSheet.create({
   statusText: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted },
   avatar: { alignItems: 'center', justifyContent: 'center' },
 
+  threadScroll: { flex: 1 },
   thread: { padding: tokens.spacing[4], gap: tokens.spacing[4], flexGrow: 1 },
 
   welcome: { alignItems: 'center', gap: tokens.spacing[4], paddingTop: tokens.spacing[10], paddingHorizontal: tokens.spacing[3] },
@@ -528,12 +531,14 @@ const styles = StyleSheet.create({
   thinking: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: tokens.spacing[4], paddingVertical: tokens.spacing[3], borderBottomLeftRadius: 6 },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: tokens.colors.primary[500] },
 
-  suggestions: { paddingHorizontal: tokens.spacing[4], paddingBottom: tokens.spacing[2], gap: tokens.spacing[2] },
+  suggestionsBar: { flexGrow: 0, marginBottom: tokens.spacing[2] },
+  suggestions: { paddingHorizontal: tokens.spacing[4], alignItems: 'center', gap: tokens.spacing[2] },
   chip: {
+    alignSelf: 'center',
     paddingHorizontal: tokens.spacing[4],
     paddingVertical: tokens.spacing[2],
     borderRadius: tokens.radii.full,
-    backgroundColor: 'rgba(255,255,255,0.7)',
+    backgroundColor: 'rgba(255,255,255,0.85)',
     borderWidth: 1,
     borderColor: tokens.colors.primary[200],
   },
@@ -541,15 +546,18 @@ const styles = StyleSheet.create({
 
   inputBar: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     gap: tokens.spacing[2],
+    minHeight: 60,
     marginHorizontal: tokens.spacing[4],
     marginBottom: tokens.spacing[3],
     paddingLeft: tokens.spacing[4],
     paddingRight: tokens.spacing[2],
     paddingVertical: tokens.spacing[2],
+    backgroundColor: 'rgba(255,255,255,0.88)',
+    borderColor: 'rgba(36,85,36,0.14)',
   },
-  input: { flex: 1, ...tokens.typography.bodyLg, color: tokens.colors.field.text, paddingVertical: tokens.spacing[2], maxHeight: 120 },
+  input: { flex: 1, ...tokens.typography.bodyLg, color: tokens.colors.field.text, paddingVertical: tokens.spacing[1], maxHeight: 120 },
   micWrap: { width: 46, height: 46, alignItems: 'center', justifyContent: 'center' },
   micHalo: { position: 'absolute', width: 46, height: 46, borderRadius: 23, backgroundColor: tokens.colors.accent[400] },
   micBtn: {
