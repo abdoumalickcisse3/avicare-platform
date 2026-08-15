@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Primary;
@@ -53,6 +54,7 @@ public class AnthropicLlmClient implements LlmClient {
   private final String model;
   private final long maxTokens;
 
+  @Autowired
   public AnthropicLlmClient(
       @Value("${anthropic.api-key}") String apiKey,
       @Value("${anthropic.model:claude-haiku-4-5}") String model,
