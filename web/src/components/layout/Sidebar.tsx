@@ -32,6 +32,7 @@ import {
   Settings,
   ShoppingBag,
   ShoppingCart,
+  Sparkles,
   TrendingUp,
   Truck,
   Users,
@@ -89,6 +90,7 @@ const NAV: Section[] = [
   {
     entries: [
       { kind: "leaf", label: "Tableau de bord", href: "/dashboard", icon: LayoutDashboard },
+      { kind: "leaf", label: "Jawdi IA", href: "/assistant", icon: Sparkles },
       { kind: "leaf", label: "Fermes", href: "/fermes", icon: Warehouse, ownerOnly: true },
     ],
   },
