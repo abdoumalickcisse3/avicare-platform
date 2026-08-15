@@ -50,7 +50,7 @@ public class MockLlmClient implements LlmClient {
    * READ tool; once a TOOL result is in the history, phrase it as the final answer.
    */
   @Override
-  public LlmTurn converse(List<LlmMessage> history, List<ToolSpec> tools) {
+  public LlmTurn converse(String system, List<LlmMessage> history, List<ToolSpec> tools) {
     if (history.isEmpty()) {
       return LlmTurn.answer("");
     }

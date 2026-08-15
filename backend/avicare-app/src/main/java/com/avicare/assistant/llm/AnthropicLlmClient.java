@@ -17,7 +17,6 @@ import com.avicare.assistant.tool.ToolParam;
 import com.avicare.assistant.tool.ToolSpec;
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.time.Duration;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -50,28 +49,6 @@ public class AnthropicLlmClient implements LlmClient {
 
   private static final Logger log = LoggerFactory.getLogger(AnthropicLlmClient.class);
 
-  /**
-   * Unified system prompt for the single loop. Dated so relative wording ("hier", "cette semaine")
-   * resolves without a clarifying round-trip; steers writes (extract intent/entities only, never a
-   * computed figure) and reads (consult the real figures, call all needed tools in ONE parallel
-   * turn — the main latency lever — then answer in one or two factual French sentences).
-   */
-  private static String system() {
-    return "Tu es l'assistant d'une application d'élevage avicole. Nous sommes le "
-        + LocalDate.now()
-        + ". L'ouvrier de terrain parle en français, souvent brièvement.\n"
-        + "- S'il DICTE une action (mortalité, vente, vaccination, encaissement…), choisis l'outil"
-        + " de SAISIE correspondant et remplis ses champs : tu extrais uniquement l'intention et les"
-        + " entités (quantités, motif, lot, dates…), tu ne calcules jamais et ne décides jamais un"
-        + " montant, un stock ou un solde — le système s'en charge.\n"
-        + "- S'il POSE une question (stock, mortalité, résultat…), utilise les outils de"
-        + " CONSULTATION pour obtenir les chiffres RÉELS — n'invente JAMAIS un chiffre — en appelant"
-        + " EN UNE SEULE FOIS tous les outils nécessaires, puis donne une réponse courte et"
-        + " factuelle en français (une à deux phrases, montants en F CFA).\n"
-        + "Si la phrase ne correspond à rien, ou qu'un nombre requis pour une saisie est absent,"
-        + " n'appelle aucun outil.";
-  }
-
   private final AnthropicClient client;
   private final String model;
   private final long maxTokens;
@@ -99,13 +76,13 @@ public class AnthropicLlmClient implements LlmClient {
   }
 
   @Override
-  public LlmTurn converse(List<LlmMessage> history, List<ToolSpec> tools) {
+  public LlmTurn converse(String system, List<LlmMessage> history, List<ToolSpec> tools) {
     if (history.isEmpty() || tools.isEmpty()) {
       return LlmTurn.answer("");
     }
     try {
       MessageCreateParams.Builder params =
-          MessageCreateParams.builder().model(model).maxTokens(maxTokens).system(system());
+          MessageCreateParams.builder().model(model).maxTokens(maxTokens).system(system);
       for (LlmMessage message : history) {
         params.addMessage(toSdkMessage(message));
       }

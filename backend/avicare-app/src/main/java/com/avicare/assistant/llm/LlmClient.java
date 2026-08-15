@@ -12,11 +12,16 @@ import java.util.List;
  * the model's text (→ an ANSWER). This seam only does one model round-trip and never touches the
  * domain.
  *
+ * <p>The client is a pure transport: the caller supplies the {@code system} prompt (persona), so
+ * the terse field-capture flow and the conversational advisor flow share one seam and one loop.
+ *
  * <p>{@link MockLlmClient} is the deterministic, keyless default (CI/dev/tests). The real {@link
- * AnthropicLlmClient} is {@code @Primary} when {@code anthropic.api-key} is set.
+ * AnthropicLlmClient} is {@code @Primary} when {@code anthropic.enabled=true}.
  */
 public interface LlmClient {
 
-  /** One turn of the unified agentic loop over the offered tools. */
-  LlmTurn converse(List<LlmMessage> history, List<ToolSpec> tools);
+  /**
+   * One turn of the unified agentic loop, under the given system prompt, over the offered tools.
+   */
+  LlmTurn converse(String system, List<LlmMessage> history, List<ToolSpec> tools);
 }
