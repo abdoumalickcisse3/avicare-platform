@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.avicare.assistant.audit.AssistantMemory;
+import com.avicare.assistant.dto.ChatTurn;
 import com.avicare.assistant.dto.InterpretResponse;
 import com.avicare.assistant.llm.LlmClient;
 import com.avicare.assistant.llm.LlmTurn;
@@ -65,7 +66,7 @@ class InterpretServiceTest {
     AssistantTool mortality = tool("MORTALITY", "poultry:write");
     when(registry.all()).thenReturn(List.of(mortality));
     when(access.hasPermission(1L, "poultry:write")).thenReturn(true);
-    when(llm.converse(any(), any())).thenReturn(call("MORTALITY", Map.of("count", 10)));
+    when(llm.converse(any(), any(), any())).thenReturn(call("MORTALITY", Map.of("count", 10)));
     when(mortality.dryRun(eq(1L), any(), eq(3L)))
         .thenReturn(InterpretResponse.draft("MORTALITY", 3L, Map.of("count", 10), "ok"));
 
@@ -86,13 +87,13 @@ class InterpretServiceTest {
     when(access.hasPermission(1L, "poultry:write")).thenReturn(true);
     when(access.hasPermission(1L, "commercial:write")).thenReturn(false); // FARMER
     when(access.hasPermission(1L, "inventory:read")).thenReturn(true);
-    when(llm.converse(any(), any())).thenReturn(LlmTurn.answer(""));
+    when(llm.converse(any(), any(), any())).thenReturn(LlmTurn.answer(""));
 
     service.interpret(1L, 9L, "bonjour", null);
 
     @SuppressWarnings("unchecked")
     ArgumentCaptor<List<ToolSpec>> specs = ArgumentCaptor.forClass(List.class);
-    verify(llm).converse(any(), specs.capture());
+    verify(llm).converse(any(), any(), specs.capture());
     // The forbidden write tool is never even offered; write + read are offered together.
     assertThat(specs.getValue())
         .extracting(ToolSpec::name)
@@ -105,7 +106,7 @@ class InterpretServiceTest {
     when(readRegistry.all()).thenReturn(List.of(stock));
     when(access.hasPermission(1L, "inventory:read")).thenReturn(true);
     when(stock.read(eq(1L), any(), eq(2L))).thenReturn("aliment : 40 sac");
-    when(llm.converse(any(), any()))
+    when(llm.converse(any(), any(), any()))
         .thenReturn(
             call("STOCK_QUERY", Map.of()), LlmTurn.answer("Il vous reste 40 sacs d'aliment."));
 
@@ -133,11 +134,53 @@ class InterpretServiceTest {
     AssistantTool mortality = tool("MORTALITY", "poultry:write");
     when(registry.all()).thenReturn(List.of(mortality));
     when(access.hasPermission(1L, "poultry:write")).thenReturn(true);
-    when(llm.converse(any(), any())).thenReturn(LlmTurn.answer(""));
+    when(llm.converse(any(), any(), any())).thenReturn(LlmTurn.answer(""));
 
     InterpretResponse r = service.interpret(1L, 9L, "bonjour", null);
 
     assertThat(r.kind()).isEqualTo("CLARIFICATION");
+  }
+
+  @Test
+  void chat_replaysTheThread_underTheAdvisorPrompt_andAnswers() {
+    ReadTool pnl = readTool("FARM_PNL", "finance:read");
+    when(readRegistry.all()).thenReturn(List.of(pnl));
+    when(access.hasPermission(1L, "finance:read")).thenReturn(true);
+    when(pnl.read(eq(1L), any(), any())).thenReturn("résultat : +120000 F CFA");
+    when(llm.converse(any(), any(), any()))
+        .thenReturn(
+            call("FARM_PNL", Map.of()),
+            LlmTurn.answer("Votre marge est positive (+120 000 F CFA) : bon signe."));
+
+    InterpretResponse r =
+        service.chat(
+            1L,
+            9L,
+            List.of(new ChatTurn("user", "comment va ma ferme ?"), new ChatTurn("assistant", "")),
+            null);
+
+    assertThat(r.kind()).isEqualTo("ANSWER");
+    assertThat(r.message()).contains("marge");
+    // The advisor persona is used (not the terse field prompt): its system text mentions Jawdi.
+    ArgumentCaptor<String> system = ArgumentCaptor.forClass(String.class);
+    verify(llm, org.mockito.Mockito.atLeastOnce()).converse(system.capture(), any(), any());
+    assertThat(system.getValue()).contains("conseiller");
+  }
+
+  @Test
+  void chat_dictatedAction_stillTerminatesAsADraft() {
+    AssistantTool mortality = tool("MORTALITY", "poultry:write");
+    when(registry.all()).thenReturn(List.of(mortality));
+    when(access.hasPermission(1L, "poultry:write")).thenReturn(true);
+    when(llm.converse(any(), any(), any())).thenReturn(call("MORTALITY", Map.of("count", 5)));
+    when(mortality.dryRun(eq(1L), any(), eq(3L)))
+        .thenReturn(InterpretResponse.draft("MORTALITY", 3L, Map.of("count", 5), "5 morts"));
+
+    InterpretResponse r =
+        service.chat(1L, 9L, List.of(new ChatTurn("user", "cinq sont morts")), 3L);
+
+    assertThat(r.kind()).isEqualTo("DRAFT");
+    assertThat(r.action()).isEqualTo("MORTALITY");
   }
 
   @Test
@@ -147,7 +190,7 @@ class InterpretServiceTest {
     AssistantTool mortality = tool("MORTALITY", "poultry:write");
     when(registry.all()).thenReturn(List.of(mortality));
     when(access.hasPermission(1L, "poultry:write")).thenReturn(true);
-    when(llm.converse(any(), any())).thenReturn(call("FOO", Map.of()));
+    when(llm.converse(any(), any(), any())).thenReturn(call("FOO", Map.of()));
 
     InterpretResponse r = service.interpret(1L, 9L, "fais un truc", null);
 

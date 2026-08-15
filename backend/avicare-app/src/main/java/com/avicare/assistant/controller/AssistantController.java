@@ -4,6 +4,8 @@ import com.avicare.assistant.audit.AssistantAuditService;
 import com.avicare.assistant.audit.AssistantQuotaService;
 import com.avicare.assistant.confirm.PendingActionService;
 import com.avicare.assistant.confirm.PendingActionService.ConfirmResult;
+import com.avicare.assistant.dto.ChatRequest;
+import com.avicare.assistant.dto.ChatTurn;
 import com.avicare.assistant.dto.ConfirmRequest;
 import com.avicare.assistant.dto.InterpretRequest;
 import com.avicare.assistant.dto.InterpretResponse;
@@ -11,6 +13,7 @@ import com.avicare.assistant.service.InterpretService;
 import com.avicare.common.api.response.ApiResponse;
 import com.avicare.common.tenancy.context.TenancyContext;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -61,6 +64,39 @@ public class AssistantController {
     }
     auditService.record(farmId, userId, request.text(), response);
     return ApiResponse.of(response);
+  }
+
+  @PostMapping("/chat")
+  @PreAuthorize("@farmAccess.hasAccess(#farmId)")
+  public ApiResponse<InterpretResponse> chat(
+      @PathVariable Long farmId, @RequestBody @Valid ChatRequest request) {
+    Long userId = TenancyContext.currentUserId();
+
+    if (quotaService.isExhausted(userId)) {
+      return ApiResponse.of(
+          InterpretResponse.clarification(
+              "Vous avez atteint votre limite d'assistant pour aujourd'hui ("
+                  + quotaService.dailyQuota()
+                  + " demandes). Réessayez demain."));
+    }
+
+    InterpretResponse response =
+        interpretService.chat(farmId, userId, request.messages(), request.unitId());
+    if ("DRAFT".equals(response.kind())) {
+      response = response.withClaimId(pendingActions.claim(farmId, userId, response));
+    }
+    auditService.record(farmId, userId, lastUserText(request.messages()), response);
+    return ApiResponse.of(response);
+  }
+
+  /** The prompt to audit is the user's latest turn in the thread. */
+  private static String lastUserText(List<ChatTurn> messages) {
+    for (int i = messages.size() - 1; i >= 0; i--) {
+      if ("user".equalsIgnoreCase(messages.get(i).role())) {
+        return messages.get(i).text();
+      }
+    }
+    return "";
   }
 
   @PostMapping("/confirm")

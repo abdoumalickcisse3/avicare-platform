@@ -55,7 +55,7 @@ class AnthropicLlmClientTest {
             .build();
     AnthropicLlmClient sut = clientReturning(messageWith(ContentBlock.ofToolUse(toolUse)));
 
-    LlmTurn turn = sut.converse(List.of(LlmMessage.user("quel stock ?")), TOOLS);
+    LlmTurn turn = sut.converse("sys", List.of(LlmMessage.user("quel stock ?")), TOOLS);
 
     assertThat(turn.hasToolCalls()).isTrue();
     assertThat(turn.toolCalls()).hasSize(1);
@@ -71,7 +71,7 @@ class AnthropicLlmClientTest {
             TextBlock.builder().text("Il reste 40 sacs.").citations(List.of()).build());
     AnthropicLlmClient sut = clientReturning(messageWith(textOnly));
 
-    LlmTurn turn = sut.converse(List.of(LlmMessage.user("stock ?")), TOOLS);
+    LlmTurn turn = sut.converse("sys", List.of(LlmMessage.user("stock ?")), TOOLS);
 
     assertThat(turn.hasToolCalls()).isFalse();
     assertThat(turn.text()).isEqualTo("Il reste 40 sacs.");
@@ -86,7 +86,7 @@ class AnthropicLlmClientTest {
         .thenThrow(new RuntimeException("network down"));
     AnthropicLlmClient sut = new AnthropicLlmClient(sdk, "claude-haiku-4-5", 512L);
 
-    LlmTurn turn = sut.converse(List.of(LlmMessage.user("stock ?")), TOOLS);
+    LlmTurn turn = sut.converse("sys", List.of(LlmMessage.user("stock ?")), TOOLS);
 
     assertThat(turn.hasToolCalls()).isFalse();
     assertThat(turn.text()).isEmpty();
@@ -97,7 +97,8 @@ class AnthropicLlmClientTest {
     AnthropicClient sdk = mock(AnthropicClient.class);
     AnthropicLlmClient sut = new AnthropicLlmClient(sdk, "claude-haiku-4-5", 512L);
 
-    assertThat(sut.converse(List.of(), TOOLS).text()).isEmpty();
-    assertThat(sut.converse(List.of(LlmMessage.user("stock ?")), List.of()).text()).isEmpty();
+    assertThat(sut.converse("sys", List.of(), TOOLS).text()).isEmpty();
+    assertThat(sut.converse("sys", List.of(LlmMessage.user("stock ?")), List.of()).text())
+        .isEmpty();
   }
 }
