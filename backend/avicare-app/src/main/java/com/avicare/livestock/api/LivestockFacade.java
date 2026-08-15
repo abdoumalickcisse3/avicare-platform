@@ -24,6 +24,12 @@ public interface LivestockFacade {
   List<ProductionUnitInfo> activeLayerUnits(Long farmId);
 
   /**
+   * Record a mortality on a lot (validates the lot belongs to {@code farmId}). Serves the
+   * assistant's server-side confirm path.
+   */
+  void recordMortality(Long farmId, Long unitId, int count, String reason, Long userId);
+
+  /**
    * Aggregated livestock dashboard stats for {@code farmId}. Snapshot KPIs ({@code activeBatches},
    * {@code totalHeadcount}) ignore the period; period KPIs honour the inclusive {@code [from, to]}
    * window.

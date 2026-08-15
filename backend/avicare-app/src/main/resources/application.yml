@@ -57,3 +57,7 @@ assistant:
   # memory-turns 0 disables it.
   memory-turns: ${ASSISTANT_MEMORY_TURNS:3}
   memory-window-minutes: ${ASSISTANT_MEMORY_WINDOW_MINUTES:15}
+  # Server-side confirm claims (additional path): how long a claim stays confirmable,
+  # and how often the sweep clears expired ones.
+  confirm-ttl-minutes: ${ASSISTANT_CONFIRM_TTL_MINUTES:5}
+  confirm-sweep-ms: ${ASSISTANT_CONFIRM_SWEEP_MS:300000}

@@ -128,6 +128,9 @@ class SecurityIntegrationTest {
   @MockitoBean
   private com.avicare.assistant.audit.AssistantAuditRepository assistantAuditRepository;
 
+  @MockitoBean
+  private com.avicare.assistant.confirm.PendingActionRepository pendingActionRepository;
+
   @Test
   void healthEndpoint_isPublic() throws Exception {
     mockMvc.perform(get("/actuator/health")).andExpect(status().isOk());
