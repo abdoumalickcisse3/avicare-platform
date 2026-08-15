@@ -1,5 +1,6 @@
 package com.avicare.assistant.service;
 
+import com.avicare.assistant.audit.AssistantMemory;
 import com.avicare.assistant.dto.InterpretResponse;
 import com.avicare.assistant.llm.LlmClient;
 import com.avicare.assistant.llm.LlmMessage;
@@ -47,9 +48,10 @@ public class InterpretService {
   private final LlmClient llm;
   private final ToolRegistry registry;
   private final ReadToolRegistry readRegistry;
+  private final AssistantMemory memory;
   private final FarmAccessChecker access;
 
-  public InterpretResponse interpret(Long farmId, String text, Long unitId) {
+  public InterpretResponse interpret(Long farmId, Long userId, String text, Long unitId) {
     List<AssistantTool> writeTools =
         registry.all().stream()
             .filter(tool -> access.hasPermission(farmId, tool.requiredPermission()))
@@ -67,7 +69,8 @@ public class InterpretService {
     writeTools.forEach(tool -> specs.add(tool.spec()));
     readTools.forEach(tool -> specs.add(tool.spec()));
 
-    List<LlmMessage> history = new ArrayList<>();
+    // Short-term memory: prior read answers give a follow-up question its subject.
+    List<LlmMessage> history = new ArrayList<>(memory.recentTurns(farmId, userId));
     history.add(LlmMessage.user(text));
 
     for (int step = 0; step < MAX_STEPS; step++) {

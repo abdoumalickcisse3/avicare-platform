@@ -8,6 +8,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.avicare.assistant.audit.AssistantMemory;
 import com.avicare.assistant.dto.InterpretResponse;
 import com.avicare.assistant.llm.LlmClient;
 import com.avicare.assistant.llm.LlmTurn;
@@ -37,6 +38,7 @@ class InterpretServiceTest {
   @Mock private LlmClient llm;
   @Mock private ToolRegistry registry;
   @Mock private ReadToolRegistry readRegistry;
+  @Mock private AssistantMemory memory;
   @Mock private FarmAccessChecker access;
   @InjectMocks private InterpretService service;
 
@@ -67,7 +69,7 @@ class InterpretServiceTest {
     when(mortality.dryRun(eq(1L), any(), eq(3L)))
         .thenReturn(InterpretResponse.draft("MORTALITY", 3L, Map.of("count", 10), "ok"));
 
-    InterpretResponse r = service.interpret(1L, "dix sont morts", 3L);
+    InterpretResponse r = service.interpret(1L, 9L, "dix sont morts", 3L);
 
     assertThat(r.kind()).isEqualTo("DRAFT");
     assertThat(r.action()).isEqualTo("MORTALITY");
@@ -86,7 +88,7 @@ class InterpretServiceTest {
     when(access.hasPermission(1L, "inventory:read")).thenReturn(true);
     when(llm.converse(any(), any())).thenReturn(LlmTurn.answer(""));
 
-    service.interpret(1L, "bonjour", null);
+    service.interpret(1L, 9L, "bonjour", null);
 
     @SuppressWarnings("unchecked")
     ArgumentCaptor<List<ToolSpec>> specs = ArgumentCaptor.forClass(List.class);
@@ -107,7 +109,7 @@ class InterpretServiceTest {
         .thenReturn(
             call("STOCK_QUERY", Map.of()), LlmTurn.answer("Il vous reste 40 sacs d'aliment."));
 
-    InterpretResponse r = service.interpret(1L, "quel est mon stock d'aliment ?", 2L);
+    InterpretResponse r = service.interpret(1L, 9L, "quel est mon stock d'aliment ?", 2L);
 
     assertThat(r.kind()).isEqualTo("ANSWER");
     assertThat(r.message()).isEqualTo("Il vous reste 40 sacs d'aliment.");
@@ -120,7 +122,7 @@ class InterpretServiceTest {
     when(registry.all()).thenReturn(List.of(mortality));
     when(access.hasPermission(any(), any())).thenReturn(false);
 
-    InterpretResponse r = service.interpret(1L, "dix sont morts", null);
+    InterpretResponse r = service.interpret(1L, 9L, "dix sont morts", null);
 
     assertThat(r.kind()).isEqualTo("CLARIFICATION");
     assertThat(r.message()).isNotBlank();
@@ -133,7 +135,7 @@ class InterpretServiceTest {
     when(access.hasPermission(1L, "poultry:write")).thenReturn(true);
     when(llm.converse(any(), any())).thenReturn(LlmTurn.answer(""));
 
-    InterpretResponse r = service.interpret(1L, "bonjour", null);
+    InterpretResponse r = service.interpret(1L, 9L, "bonjour", null);
 
     assertThat(r.kind()).isEqualTo("CLARIFICATION");
   }
@@ -147,7 +149,7 @@ class InterpretServiceTest {
     when(access.hasPermission(1L, "poultry:write")).thenReturn(true);
     when(llm.converse(any(), any())).thenReturn(call("FOO", Map.of()));
 
-    InterpretResponse r = service.interpret(1L, "fais un truc", null);
+    InterpretResponse r = service.interpret(1L, 9L, "fais un truc", null);
 
     assertThat(r.kind()).isEqualTo("CLARIFICATION");
   }

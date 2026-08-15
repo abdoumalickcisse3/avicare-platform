@@ -60,7 +60,7 @@ public class MockLlmClient implements LlmClient {
           last.toolResults().stream().map(ToolResult::content).collect(Collectors.joining(" ")));
     }
 
-    String text = firstUserText(history);
+    String text = lastUserText(history);
     String q = text.toLowerCase();
 
     // WRITE intents — InterpretService dry-runs these into a draft (terminal).
@@ -134,11 +134,14 @@ public class MockLlmClient implements LlmClient {
     return tools.stream().anyMatch(t -> name.equals(t.name()));
   }
 
-  private static String firstUserText(List<LlmMessage> history) {
-    return history.stream()
-        .filter(m -> m.role() == LlmMessage.Role.USER)
-        .map(LlmMessage::text)
-        .findFirst()
-        .orElse("");
+  /** The current question is the LAST user turn (short-term memory prepends earlier ones). */
+  private static String lastUserText(List<LlmMessage> history) {
+    for (int i = history.size() - 1; i >= 0; i--) {
+      LlmMessage m = history.get(i);
+      if (m.role() == LlmMessage.Role.USER) {
+        return m.text() == null ? "" : m.text();
+      }
+    }
+    return "";
   }
 }

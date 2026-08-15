@@ -52,3 +52,8 @@ anthropic:
 # trail — a cost guard before scaling. 0 or negative = unlimited.
 assistant:
   daily-quota: ${ASSISTANT_DAILY_QUOTA:300}
+  # Short-term conversational memory: replay the user's last N read answers (from
+  # the audit trail) within the window, so a follow-up question keeps its subject.
+  # memory-turns 0 disables it.
+  memory-turns: ${ASSISTANT_MEMORY_TURNS:3}
+  memory-window-minutes: ${ASSISTANT_MEMORY_WINDOW_MINUTES:15}
