@@ -24,9 +24,25 @@ export function ConfirmationCard({
     speak(draft.speech);
   }, [draft]);
 
+  const accent =
+    draft.risk === 'HIGH'
+      ? tokens.colors.error
+      : draft.risk === 'MEDIUM'
+        ? tokens.colors.warning
+        : tokens.colors.neutral[200];
+
   return (
-    <View style={styles.card}>
-      <Text style={styles.title}>{draft.title}</Text>
+    <View style={[styles.card, { borderTopColor: accent, borderTopWidth: 4 }]}>
+      <View style={styles.head}>
+        <Text style={styles.title}>{draft.title}</Text>
+        {draft.risk !== 'LOW' ? (
+          <View style={[styles.riskChip, { backgroundColor: accent }]}>
+            <Text style={styles.riskChipText}>
+              {draft.risk === 'HIGH' ? 'À vérifier' : 'Attention'}
+            </Text>
+          </View>
+        ) : null}
+      </View>
       <View style={styles.lines}>
         {draft.lines.map((l) => (
           <View key={l.label} style={styles.line}>
@@ -51,7 +67,10 @@ export function ConfirmationCard({
 
 const styles = StyleSheet.create({
   card: { backgroundColor: tokens.colors.neutral[0], borderRadius: tokens.radii.xl, borderWidth: 1, borderColor: tokens.colors.neutral[200], padding: tokens.spacing[5], gap: tokens.spacing[4] },
-  title: { ...tokens.typography.headingMd, fontSize: 18, color: tokens.colors.field.text },
+  head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: tokens.spacing[3] },
+  title: { ...tokens.typography.headingMd, fontSize: 18, color: tokens.colors.field.text, flexShrink: 1 },
+  riskChip: { paddingHorizontal: tokens.spacing[3], paddingVertical: tokens.spacing[1], borderRadius: tokens.radii.full },
+  riskChipText: { ...tokens.typography.button, fontSize: 12, color: tokens.colors.neutral[0], letterSpacing: 0.3 },
   lines: { gap: tokens.spacing[2] },
   line: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: tokens.spacing[3] },
   lineLabel: { ...tokens.typography.bodyMd, color: tokens.colors.field.textMuted },

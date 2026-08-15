@@ -5,7 +5,6 @@ jest.mock('react-redux', () => ({ useSelector: jest.fn(() => 7), useDispatch: je
 jest.mock('@/components/AppHeader', () => ({ AppHeader: () => null }));
 jest.mock('@/components/charts/Sparkline', () => ({ Sparkline: () => null }));
 jest.mock('@/components/assistant/MicButton', () => ({ MicButton: () => null }));
-jest.mock('@/components/assistant/AssistantSheet', () => ({ AssistantSheet: () => null }));
 jest.mock('@/auth/useSession', () => ({ useFarmAccess: jest.fn(() => ({ can: () => true, isAdmin: true, farmRole: 'OWNER', session: null })) }));
 jest.mock('@/store/api/farmsApi', () => ({ useListFarmsQuery: jest.fn(() => ({ data: [{ id: 7, name: 'Ferme Test' }] })) }));
 jest.mock('@/store/api/activityApi', () => ({ useGetFarmActivityQuery: jest.fn(() => ({ data: [{ kind: 'SALE', at: '2026-08-13T09:00:00', label: 'Vente enregistrée', detail: null }] })) }));

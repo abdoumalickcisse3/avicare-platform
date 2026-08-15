@@ -199,6 +199,9 @@ export interface ConfirmationLine {
   value: string;
 }
 
+/** How consequential confirming an action is — colours the confirmation card. */
+export type Risk = 'LOW' | 'MEDIUM' | 'HIGH';
+
 /** Everything needed to render AND read aloud a confirmation card, computed
  * without any network call. */
 export interface ConfirmationDraft {
@@ -207,4 +210,6 @@ export interface ConfirmationDraft {
   lines: ConfirmationLine[];
   /** Sentence read aloud when the card appears (TTS). */
   speech: string;
+  /** Risk level, derived from the action (mirrors the backend). */
+  risk: Risk;
 }

@@ -45,7 +45,6 @@ import { SectionHeader } from '@/components/ui';
 import { AppHeader } from '@/components/AppHeader';
 import { Sparkline } from '@/components/charts/Sparkline';
 import { MicButton } from '@/components/assistant/MicButton';
-import { AssistantSheet } from '@/components/assistant/AssistantSheet';
 import { useFarmAccess } from '@/auth/useSession';
 import { useListFarmsQuery } from '@/store/api/farmsApi';
 import { useGetDashboardQuery } from '@/store/api/dashboardApi';
@@ -216,7 +215,6 @@ export default function HomeScreen() {
   const router = useRouter();
   const selectedFarmId = useSelector(selectSelectedFarmId);
   const { can } = useFarmAccess();
-  const [assistantOpen, setAssistantOpen] = useState(false);
   const { data: farms } = useListFarmsQuery();
   const farmId = selectedFarmId ?? undefined;
 
@@ -404,12 +402,10 @@ export default function HomeScreen() {
         )}
       </ScrollView>
 
-      {can('poultry:write') && <MicButton onPress={() => setAssistantOpen(true)} style={styles.micFab} />}
+      <MicButton onPress={() => router.push('/(field)/assistant')} style={styles.micFab} />
       <Pressable style={styles.fab} onPress={goElevage} accessibilityRole="button" accessibilityLabel="Nouvelle saisie">
         <Plus size={30} color={tokens.colors.earth} />
       </Pressable>
-
-      <AssistantSheet visible={assistantOpen} onClose={() => setAssistantOpen(false)} />
     </SafeAreaView>
   );
 }

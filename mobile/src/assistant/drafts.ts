@@ -5,7 +5,22 @@
  * computed offline from the intent + the already-loaded units.
  */
 import { formatNumber } from '@/lib/format';
-import { isLotBased, type AssistantIntent, type AssistantUnit, type ConfirmationDraft } from './types';
+import {
+  isLotBased,
+  type AssistantIntent,
+  type AssistantUnit,
+  type ConfirmationDraft,
+  type Risk,
+} from './types';
+
+// Mirrors the backend risk classification (InterpretResponse.riskOf).
+const HIGH_RISK: ReadonlySet<AssistantIntent['kind']> = new Set(['RECORD_PAYMENT', 'QUICK_SALE', 'PURCHASE']);
+const MEDIUM_RISK: ReadonlySet<AssistantIntent['kind']> = new Set(['MORTALITY', 'ADJUST_STOCK', 'VACCINATION']);
+
+function riskOf(kind: AssistantIntent['kind']): Risk {
+  if (HIGH_RISK.has(kind)) return 'HIGH';
+  return MEDIUM_RISK.has(kind) ? 'MEDIUM' : 'LOW';
+}
 
 const TITLES: Record<AssistantIntent['kind'], string> = {
   MORTALITY: 'Mortalité',
@@ -151,5 +166,5 @@ export function buildConfirmation(intent: AssistantIntent, units: AssistantUnit[
     }
   }
 
-  return { intent, title: TITLES[intent.kind], lines, speech };
+  return { intent, title: TITLES[intent.kind], lines, speech, risk: riskOf(intent.kind) };
 }
