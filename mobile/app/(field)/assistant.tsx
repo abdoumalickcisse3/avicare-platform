@@ -274,6 +274,11 @@ function Avatar({ size = 40 }: { size?: number }) {
   );
 }
 
+/**
+ * Frosted-glass surface. The passed `style` (padding, flexDirection, margins…)
+ * is applied to THIS view — the one that lays out the children — so callers get
+ * real layout; the blur sits behind, the children above it.
+ */
 function Glass({
   children,
   style,
@@ -284,12 +289,9 @@ function Glass({
   radius?: number;
 }) {
   return (
-    <View style={[styles.glassShadow, { borderRadius: radius }, style]}>
-      <View style={[styles.glassClip, { borderRadius: radius }]}>
-        <BlurView intensity={24} tint="light" style={StyleSheet.absoluteFill} />
-        <View style={[StyleSheet.absoluteFill, styles.glassTint]} />
-        {children}
-      </View>
+    <View style={[styles.glass, { borderRadius: radius }, style]}>
+      <BlurView intensity={24} tint="light" style={StyleSheet.absoluteFill} />
+      {children}
     </View>
   );
 }
@@ -490,15 +492,7 @@ const styles = StyleSheet.create({
   assistantBubble: { paddingHorizontal: tokens.spacing[4], paddingVertical: tokens.spacing[3], borderBottomLeftRadius: 6, flexShrink: 1 },
   assistantText: { ...tokens.typography.bodyLg, color: tokens.colors.field.text },
 
-  glassShadow: {
-    shadowColor: '#1C3C23',
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 3,
-  },
-  glassClip: { overflow: 'hidden', borderWidth: 1, borderColor: GLASS_BORDER },
-  glassTint: { backgroundColor: GLASS_TINT },
+  glass: { overflow: 'hidden', borderWidth: 1, borderColor: GLASS_BORDER, backgroundColor: GLASS_TINT },
 
   draftCard: { padding: tokens.spacing[4], borderBottomLeftRadius: 6, flexShrink: 1, gap: tokens.spacing[2] },
   draftHead: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[2] },
