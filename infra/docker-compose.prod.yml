@@ -59,6 +59,10 @@ services:
       JWT_ISSUER: ${JWT_ISSUER:-avicare-platform}
       JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY:?export JWT_PRIVATE_KEY (deploy.sh does this)}
       JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY:?export JWT_PUBLIC_KEY (deploy.sh does this)}
+      # Jawdi IA — set ANTHROPIC_ENABLED=true and ANTHROPIC_API_KEY in .env to use the
+      # real LLM; left as-is (disabled) the assistant runs the offline keyword Mock.
+      ANTHROPIC_ENABLED: ${ANTHROPIC_ENABLED:-false}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     mem_limit: ${BACKEND_MEM:-3g}
     networks: [internal]
 

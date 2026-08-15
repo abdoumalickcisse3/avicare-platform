@@ -43,6 +43,10 @@ springdoc:
 # is missing, AnthropicLlmClient's @ConditionalOnProperty is false, and the
 # deterministic MockLlmClient is used — so nothing here needs a secret.
 anthropic:
+  # The real LLM is off unless explicitly enabled AND given a key. `enabled=false`
+  # (default) keeps the deterministic MockLlmClient — so an empty/missing key never
+  # activates a broken client. api-key is supplied only via ANTHROPIC_API_KEY (prod).
+  enabled: ${ANTHROPIC_ENABLED:false}
   model: ${ANTHROPIC_MODEL:claude-haiku-4-5}
   max-tokens: ${ANTHROPIC_MAX_TOKENS:512}
   timeout-seconds: ${ANTHROPIC_TIMEOUT_SECONDS:12}
