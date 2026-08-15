@@ -21,6 +21,13 @@ public interface CommercialFacade {
   List<ClientLite> listClients(Long farmId);
 
   /**
+   * Record a payment against an invoice (validated in {@code farmId}). {@code method} is a {@code
+   * PaymentMethod} enum name, defaulting to CASH when null/blank. Serves the assistant's
+   * server-side confirm path.
+   */
+  void recordPayment(Long farmId, Long invoiceId, long amountXof, String method, Long userId);
+
+  /**
    * The client's oldest still-payable invoice (status ISSUED/PARTIALLY_PAID with a non-zero
    * outstanding), for an encaissement that clears the oldest debt first. Empty when the client has
    * no open invoice.

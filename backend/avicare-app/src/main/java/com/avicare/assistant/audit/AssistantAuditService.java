@@ -36,6 +36,22 @@ public class AssistantAuditService {
     }
   }
 
+  /** Trace a server-confirm outcome (kind CONFIRMED or EXPIRED); never throws. */
+  public void recordAction(Long farmId, Long userId, String action, String kind, String summary) {
+    try {
+      AssistantAudit row = new AssistantAudit();
+      row.setFarmId(farmId);
+      row.setUserId(userId);
+      row.setText(action);
+      row.setKind(kind);
+      row.setAction(action);
+      row.setSummary(truncate(summary));
+      repository.save(row);
+    } catch (RuntimeException e) {
+      log.warn("Assistant action audit skipped ({})", e.toString());
+    }
+  }
+
   /** The human-readable outcome: the answer/clarification message, else the draft summary. */
   private static String outcome(InterpretResponse response) {
     return response.message() != null ? response.message() : response.summary();

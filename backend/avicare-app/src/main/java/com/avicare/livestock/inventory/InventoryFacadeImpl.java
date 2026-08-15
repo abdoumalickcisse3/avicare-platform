@@ -4,9 +4,12 @@ import com.avicare.livestock.api.InventoryFacade;
 import com.avicare.livestock.api.dto.InventoryStockInfo;
 import com.avicare.livestock.api.dto.LowStockInfo;
 import com.avicare.livestock.api.dto.SupplierInfo;
+import com.avicare.livestock.domain.MovementReason;
+import com.avicare.livestock.domain.MovementType;
 import com.avicare.livestock.domain.StockItem;
 import com.avicare.livestock.domain.Supplier;
 import com.avicare.livestock.inventory.StockAlertsResponse.LowStockItem;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +29,7 @@ public class InventoryFacadeImpl implements InventoryFacade {
   private final StockItemService stockItems;
   private final SupplierService suppliers;
   private final InventoryAlertService inventoryAlertService;
+  private final StockMovementService stockMovementService;
 
   @Override
   public List<InventoryStockInfo> listStock(Long farmId) {
@@ -50,6 +54,27 @@ public class InventoryFacadeImpl implements InventoryFacade {
     return inventoryAlertService.computeStockAlertsForFarm(farmId).lowStockItems().stream()
         .map(InventoryFacadeImpl::toInfo)
         .toList();
+  }
+
+  @Override
+  @Transactional
+  public void recordStockMovement(Long farmId, Long stockItemId, long delta, Long userId) {
+    boolean reception = delta >= 0;
+    StockMovementCommand cmd =
+        new StockMovementCommand(
+            stockItemId,
+            reception ? MovementType.IN : MovementType.OUT,
+            BigDecimal.valueOf(Math.abs(delta)),
+            reception ? MovementReason.RECEPTION_PURCHASE : MovementReason.LOSS,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null);
+    stockMovementService.recordMovement(farmId, cmd, userId);
   }
 
   private static LowStockInfo toInfo(LowStockItem item) {

@@ -24,4 +24,10 @@ public interface InventoryFacade {
 
   /** Articles at or below their alert threshold on the farm (low-stock consultation). */
   List<LowStockInfo> lowStock(Long farmId);
+
+  /**
+   * Record a manual stock movement of {@code delta} on a stock item (positive = reception, negative
+   * = loss), validated in {@code farmId}. Serves the assistant's server-side confirm path.
+   */
+  void recordStockMovement(Long farmId, Long stockItemId, long delta, Long userId);
 }

@@ -19,23 +19,30 @@ public record InterpretResponse(
     Map<String, Object> fields,
     String summary,
     String message,
-    String risk) {
+    String risk,
+    String claimId) {
 
   private static final Set<String> HIGH_RISK = Set.of("RECORD_PAYMENT", "QUICK_SALE", "PURCHASE");
   private static final Set<String> MEDIUM_RISK = Set.of("MORTALITY", "ADJUST_STOCK", "VACCINATION");
 
   public static InterpretResponse draft(
       String action, Long unitId, Map<String, Object> fields, String summary) {
-    return new InterpretResponse("DRAFT", action, unitId, fields, summary, null, riskOf(action));
+    return new InterpretResponse(
+        "DRAFT", action, unitId, fields, summary, null, riskOf(action), null);
   }
 
   public static InterpretResponse clarification(String message) {
-    return new InterpretResponse("CLARIFICATION", null, null, null, null, message, null);
+    return new InterpretResponse("CLARIFICATION", null, null, null, null, message, null, null);
   }
 
   /** A read-only answer produced by the consultation loop; carried in {@code message}. */
   public static InterpretResponse answer(String message) {
-    return new InterpretResponse("ANSWER", null, null, null, null, message, null);
+    return new InterpretResponse("ANSWER", null, null, null, null, message, null, null);
+  }
+
+  /** A copy carrying the server-confirm claim id (set on a DRAFT by the controller). */
+  public InterpretResponse withClaimId(String claim) {
+    return new InterpretResponse(kind, action, unitId, fields, summary, message, risk, claim);
   }
 
   /** Coarse risk of confirming an action, to colour the mobile card. */

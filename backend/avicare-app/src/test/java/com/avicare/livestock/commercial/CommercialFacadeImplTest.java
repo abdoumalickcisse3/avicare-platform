@@ -36,6 +36,7 @@ class CommercialFacadeImplTest {
         new CommercialFacadeImpl(
             clientService,
             invoiceService,
+            Mockito.mock(PaymentService.class),
             Mockito.mock(SaleRepository.class),
             Mockito.mock(InvoiceRepository.class),
             Mockito.mock(OrderRepository.class),

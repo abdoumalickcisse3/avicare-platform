@@ -77,6 +77,20 @@ public class LivestockFacadeImpl implements LivestockFacade {
   }
 
   @Override
+  @Transactional
+  public void recordMortality(Long farmId, Long unitId, int count, String reason, Long userId) {
+    ProductionUnit unit =
+        productionUnitRepository
+            .findById(unitId)
+            .orElseThrow(() -> NotFoundException.of("ProductionUnit", unitId));
+    if (!farmId.equals(unit.getFarmId())) {
+      throw new BusinessRuleException(
+          "PRODUCTION_UNIT_NOT_ON_FARM", "Unit " + unitId + " does not belong to farm " + farmId);
+    }
+    livestockService.recordMortality(unitId, count, reason, userId);
+  }
+
+  @Override
   public List<ProductionUnitInfo> activeLayerUnits(Long farmId) {
     return productionUnitRepository.findByFarmIdAndStatus(farmId, UnitStatus.ACTIVE).stream()
         .filter(u -> u.getSpecies() == Species.POULTRY && !(u instanceof PoultryBatch))

@@ -2,6 +2,9 @@ package com.avicare.assistant.controller;
 
 import com.avicare.assistant.audit.AssistantAuditService;
 import com.avicare.assistant.audit.AssistantQuotaService;
+import com.avicare.assistant.confirm.PendingActionService;
+import com.avicare.assistant.confirm.PendingActionService.ConfirmResult;
+import com.avicare.assistant.dto.ConfirmRequest;
 import com.avicare.assistant.dto.InterpretRequest;
 import com.avicare.assistant.dto.InterpretResponse;
 import com.avicare.assistant.service.InterpretService;
@@ -17,9 +20,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Assistant gateway. {@code interpret} turns text into a confirmable draft (or a clarification) —
- * it reads/validates only, never writes. Gated by farm access; the real write still happens on the
- * mobile "Confirmer" → the existing field endpoints, which enforce the action's write permission.
+ * Assistant gateway. {@code interpret} turns text into a confirmable draft (or a
+ * clarification/answer) — it reads/validates only, never writes. Two confirm paths coexist: the
+ * mobile confirms on the existing field endpoints, and {@code confirm} executes a stored claim
+ * server-side (the additional path). Gated by farm access; each write still enforces the action's
+ * own permission downstream.
  */
 @RestController
 @RequestMapping("/api/v1/farms/{farmId}/assistant")
@@ -29,6 +34,7 @@ public class AssistantController {
   private final InterpretService interpretService;
   private final AssistantAuditService auditService;
   private final AssistantQuotaService quotaService;
+  private final PendingActionService pendingActions;
 
   @PostMapping("/interpret")
   @PreAuthorize("@farmAccess.hasAccess(#farmId)")
@@ -48,7 +54,22 @@ public class AssistantController {
 
     InterpretResponse response =
         interpretService.interpret(farmId, userId, request.text(), request.unitId());
+    // A write draft also gets a short-lived server claim, so a server-confirm client can execute
+    // it.
+    if ("DRAFT".equals(response.kind())) {
+      response = response.withClaimId(pendingActions.claim(farmId, userId, response));
+    }
     auditService.record(farmId, userId, request.text(), response);
     return ApiResponse.of(response);
+  }
+
+  @PostMapping("/confirm")
+  @PreAuthorize("@farmAccess.hasAccess(#farmId)")
+  public ApiResponse<ConfirmResult> confirm(
+      @PathVariable Long farmId, @RequestBody @Valid ConfirmRequest request) {
+    Long userId = TenancyContext.currentUserId();
+    ConfirmResult result = pendingActions.confirm(farmId, userId, request.claimId());
+    auditService.recordAction(farmId, userId, result.action(), "CONFIRMED", result.summary());
+    return ApiResponse.of(result);
   }
 }

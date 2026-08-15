@@ -8,6 +8,7 @@ import com.avicare.livestock.domain.Client;
 import com.avicare.livestock.domain.Invoice;
 import com.avicare.livestock.domain.InvoiceStatus;
 import com.avicare.livestock.domain.Payment;
+import com.avicare.livestock.domain.PaymentMethod;
 import com.avicare.livestock.domain.Sale;
 import com.avicare.livestock.domain.SaleStatus;
 import com.avicare.livestock.repository.InvoiceRepository;
@@ -38,6 +39,7 @@ public class CommercialFacadeImpl implements CommercialFacade {
 
   private final ClientService clientService;
   private final InvoiceService invoiceService;
+  private final PaymentService paymentService;
   private final SaleRepository saleRepository;
   private final InvoiceRepository invoiceRepository;
   private final OrderRepository orderRepository;
@@ -62,6 +64,16 @@ public class CommercialFacadeImpl implements CommercialFacade {
     return clientService.listForFarm(farmId).stream()
         .map(c -> new ClientLite(c.getId(), c.getDisplayName(), c.getCurrentBalanceXof()))
         .toList();
+  }
+
+  @Override
+  @Transactional
+  public void recordPayment(
+      Long farmId, Long invoiceId, long amountXof, String method, Long userId) {
+    PaymentMethod paymentMethod =
+        method == null || method.isBlank() ? PaymentMethod.CASH : PaymentMethod.valueOf(method);
+    paymentService.record(
+        farmId, new PaymentCommand(invoiceId, amountXof, paymentMethod, null, null, null), userId);
   }
 
   @Override
