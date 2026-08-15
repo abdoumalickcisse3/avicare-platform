@@ -47,7 +47,7 @@ public class AssistantController {
     }
 
     InterpretResponse response =
-        interpretService.interpret(farmId, request.text(), request.unitId());
+        interpretService.interpret(farmId, userId, request.text(), request.unitId());
     auditService.record(farmId, userId, request.text(), response);
     return ApiResponse.of(response);
   }
