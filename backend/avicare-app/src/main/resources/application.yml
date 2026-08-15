@@ -46,3 +46,9 @@ anthropic:
   model: ${ANTHROPIC_MODEL:claude-haiku-4-5}
   max-tokens: ${ANTHROPIC_MAX_TOKENS:512}
   timeout-seconds: ${ANTHROPIC_TIMEOUT_SECONDS:12}
+
+# Assistant usage guardrails. daily-quota caps the number of assistant requests
+# one user may make per calendar day (UTC), counted from the assistant_audit
+# trail — a cost guard before scaling. 0 or negative = unlimited.
+assistant:
+  daily-quota: ${ASSISTANT_DAILY_QUOTA:300}
