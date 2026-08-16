@@ -16,6 +16,7 @@ import com.avicare.livestock.domain.Species;
 import com.avicare.livestock.domain.UnitKind;
 import com.avicare.livestock.domain.UnitStatus;
 import com.avicare.livestock.layer.EggTrayStockService;
+import com.avicare.livestock.poultry.PoultryBatchService;
 import com.avicare.livestock.repository.BreedRepository;
 import com.avicare.livestock.repository.EggTrayStockRepository;
 import com.avicare.livestock.repository.LifecycleEventRepository;
@@ -49,7 +50,12 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Testcontainers
-@Import({LivestockService.class, EggTrayStockService.class, LivestockFacadeImpl.class})
+@Import({
+  LivestockService.class,
+  EggTrayStockService.class,
+  LivestockFacadeImpl.class,
+  PoultryBatchService.class
+})
 class ProductionStockIT {
 
   @Container

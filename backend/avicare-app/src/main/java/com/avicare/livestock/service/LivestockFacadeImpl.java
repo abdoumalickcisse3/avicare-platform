@@ -7,7 +7,9 @@ import com.avicare.common.api.exception.NotFoundException;
 import com.avicare.livestock.api.LivestockFacade;
 import com.avicare.livestock.api.ProductType;
 import com.avicare.livestock.api.dto.LivestockStats;
+import com.avicare.livestock.api.dto.PoultryBreedLite;
 import com.avicare.livestock.api.dto.ProductionUnitInfo;
+import com.avicare.livestock.domain.Breed;
 import com.avicare.livestock.domain.LifecycleEvent;
 import com.avicare.livestock.domain.PoultryBatch;
 import com.avicare.livestock.domain.ProductionUnit;
@@ -15,6 +17,9 @@ import com.avicare.livestock.domain.Species;
 import com.avicare.livestock.domain.StockMovement;
 import com.avicare.livestock.domain.UnitStatus;
 import com.avicare.livestock.layer.EggTrayStockService;
+import com.avicare.livestock.poultry.PoultryBatchCreate;
+import com.avicare.livestock.poultry.PoultryBatchService;
+import com.avicare.livestock.repository.BreedRepository;
 import com.avicare.livestock.repository.DailyEggProductionRepository;
 import com.avicare.livestock.repository.DailyRecordRepository;
 import com.avicare.livestock.repository.EggTrayStockRepository;
@@ -52,6 +57,8 @@ public class LivestockFacadeImpl implements LivestockFacade {
   private final EggTrayStockService eggTrayStockService;
   private final EggTrayStockRepository eggTrayStockRepository;
   private final StockMovementRepository stockMovementRepository;
+  private final BreedRepository breedRepository;
+  private final PoultryBatchService poultryBatchService;
 
   private static final Set<String> ACTIVITY_EVENT_TYPES =
       Set.of(
@@ -306,5 +313,32 @@ public class LivestockFacadeImpl implements LivestockFacade {
         u.getName(),
         u.getCurrentCount(),
         u.getStatus());
+  }
+
+  @Override
+  public List<PoultryBreedLite> listPoultryBreeds(Long farmId) {
+    return breedRepository.findBySpeciesAndActiveTrue(Species.POULTRY).stream()
+        .filter(b -> b.getFarmId() == null || b.getFarmId().equals(farmId))
+        .map(b -> new PoultryBreedLite(b.getId(), b.getCode(), b.getName()))
+        .toList();
+  }
+
+  @Override
+  @Transactional
+  public Long createBroilerBatch(
+      Long farmId, Long breedId, String name, int initialCount, LocalDate startDate, Long userId) {
+    // Guard the breed belongs to the platform catalog or this farm (defence in depth; the service
+    // also validates the species). A foreign farm's breed must never be usable here.
+    Breed breed =
+        breedRepository
+            .findById(breedId)
+            .filter(b -> b.getFarmId() == null || b.getFarmId().equals(farmId))
+            .orElseThrow(() -> NotFoundException.of("Breed", breedId));
+    return poultryBatchService
+        .create(
+            new PoultryBatchCreate(
+                farmId, breed.getId(), name, startDate, null, null, initialCount),
+            userId)
+        .getId();
   }
 }

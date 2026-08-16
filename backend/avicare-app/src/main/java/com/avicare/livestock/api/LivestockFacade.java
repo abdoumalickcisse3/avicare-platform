@@ -2,6 +2,7 @@ package com.avicare.livestock.api;
 
 import com.avicare.common.api.dto.ActivityItem;
 import com.avicare.livestock.api.dto.LivestockStats;
+import com.avicare.livestock.api.dto.PoultryBreedLite;
 import com.avicare.livestock.api.dto.ProductionUnitInfo;
 import java.time.LocalDate;
 import java.util.List;
@@ -61,4 +62,17 @@ public interface LivestockFacade {
    * Up to {@code limit} most recent livestock activity items (lifecycle events + stock movements).
    */
   List<ActivityItem> recentActivity(Long farmId, int limit);
+
+  /**
+   * Active poultry breeds usable by {@code farmId}: the platform catalog plus this farm's own
+   * breeds. Lets the assistant resolve a breed spoken by name to its id before creating a lot.
+   */
+  List<PoultryBreedLite> listPoultryBreeds(Long farmId);
+
+  /**
+   * Create a broiler batch (assistant server-confirm path) and return the new unit id. {@code
+   * startDate} defaults to today when null. Validates the breed is a POULTRY breed downstream.
+   */
+  Long createBroilerBatch(
+      Long farmId, Long breedId, String name, int initialCount, LocalDate startDate, Long userId);
 }

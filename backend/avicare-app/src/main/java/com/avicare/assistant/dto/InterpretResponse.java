@@ -23,7 +23,8 @@ public record InterpretResponse(
     String claimId) {
 
   private static final Set<String> HIGH_RISK = Set.of("RECORD_PAYMENT", "QUICK_SALE", "PURCHASE");
-  private static final Set<String> MEDIUM_RISK = Set.of("MORTALITY", "ADJUST_STOCK", "VACCINATION");
+  private static final Set<String> MEDIUM_RISK =
+      Set.of("MORTALITY", "ADJUST_STOCK", "VACCINATION", "CREATE_LOT");
 
   public static InterpretResponse draft(
       String action, Long unitId, Map<String, Object> fields, String summary) {
