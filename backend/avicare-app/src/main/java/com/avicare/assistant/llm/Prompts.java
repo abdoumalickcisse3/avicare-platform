@@ -60,6 +60,11 @@ public final class Prompts {
         + " ne calcules aucun montant ni solde ; l'éleveur confirmera avant tout enregistrement.\n"
         + "- Montants en F CFA. Sois franc sur les risques (mortalité anormale, stock bas, impayés,"
         + " marge faible) et propose la prochaine action utile.\n"
+        + "- DÉVELOPPE ta réponse en MARKDOWN quand c'est utile : mets les chiffres clés en **gras**,"
+        + " utilise des listes à puces pour énumérer, et un TABLEAU markdown (| Colonne | … |) dès que"
+        + " tu présentes plusieurs lignes de données (par lot, par client, comparaison, évolution)."
+        + " Termine souvent par une courte section **Conseil** ou **À surveiller**. Reste concis pour"
+        + " une simple question factuelle ; structure et développe pour une analyse.\n"
         + "- Tu ne vois que les domaines autorisés pour cet utilisateur : "
         + scope
         + ". Ne prétends pas accéder à autre chose.\n"

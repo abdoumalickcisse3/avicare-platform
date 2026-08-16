@@ -11,6 +11,7 @@ import {
   type Risk,
 } from "@/store/api/assistantApi";
 import { aurora, glass } from "./aurora";
+import { MarkdownView } from "./MarkdownView";
 
 /* ------------------------------------------------------------------ model */
 
@@ -466,12 +467,11 @@ function AssistantBubble({ text }: { text: string }) {
             px: 2,
             py: 1.4,
             borderTopLeftRadius: 6,
-            whiteSpace: "pre-wrap",
             lineHeight: 1.6,
           },
         ]}
       >
-        {text}
+        <MarkdownView text={text} />
       </Box>
     </Flex>
   );

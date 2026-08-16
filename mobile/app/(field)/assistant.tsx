@@ -35,6 +35,7 @@ import {
   type Risk,
 } from '@/store/api/assistantApi';
 import { useSpeechInput } from '@/assistant/speech/useSpeechInput';
+import { Markdown } from '@/components/assistant/Markdown';
 
 type Kind = 'ANSWER' | 'DRAFT' | 'CLARIFICATION';
 type DraftStatus = 'pending' | 'confirmed' | 'cancelled' | 'expired';
@@ -315,7 +316,7 @@ function AssistantBubble({ text }: { text: string }) {
     <View style={styles.assistantRow}>
       <Avatar size={30} />
       <Glass radius={18} style={styles.assistantBubble}>
-        <Text style={styles.assistantText}>{text}</Text>
+        <Markdown text={text} />
       </Glass>
     </View>
   );
@@ -490,7 +491,6 @@ const styles = StyleSheet.create({
 
   assistantRow: { flexDirection: 'row', alignItems: 'flex-end', gap: tokens.spacing[2], maxWidth: '92%' },
   assistantBubble: { paddingHorizontal: tokens.spacing[4], paddingVertical: tokens.spacing[3], borderBottomLeftRadius: 6, flexShrink: 1 },
-  assistantText: { ...tokens.typography.bodyLg, color: tokens.colors.field.text },
 
   glass: { overflow: 'hidden', borderWidth: 1, borderColor: GLASS_BORDER, backgroundColor: GLASS_TINT },
 
