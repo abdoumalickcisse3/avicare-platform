@@ -3,9 +3,10 @@
 // chips flottantes) + bandeau de confiance. Ported verbatim from the
 // prototype's `.hero` section (§ hero, § floating product cluster,
 // § trust strip).
+import { Image } from "astro:assets";
 import Highlight from "./Highlight.astro";
-import Cockpit from "./Cockpit.astro";
 import TrustStrip from "./TrustStrip.astro";
+import dashboard from "../assets/screens/web-dashboard.png";
 
 const signupUrl = import.meta.env.PUBLIC_APP_SIGNUP_URL || "#";
 ---
@@ -32,7 +33,21 @@ const signupUrl = import.meta.env.PUBLIC_APP_SIGNUP_URL || "#";
     </div>
 
     <div class="cluster">
-      <Cockpit />
+      <div class="shot" data-float>
+        <div class="shot-bar" aria-hidden="true">
+          <span></span><span></span><span></span>
+          <em>app.jawdi.app</em>
+        </div>
+        <Image
+          src={dashboard}
+          alt="Tableau de bord Jawdi — chiffre d'affaires, effectif vivant, mortalité et production d'œufs en temps réel"
+          class="shot-img"
+          widths={[560, 840, 1120]}
+          sizes="560px"
+          loading="eager"
+          fetchpriority="high"
+        />
+      </div>
       <div class="chip c1">
         <span class="ic">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
@@ -149,6 +164,83 @@ const signupUrl = import.meta.env.PUBLIC_APP_SIGNUP_URL || "#";
     position: relative;
     padding: 10px 0;
   }
+  /* Real dashboard screenshot in a browser frame, gently floating. */
+  .shot {
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--paper);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow:
+      0 40px 80px -30px rgba(0, 0, 0, 0.6),
+      0 12px 28px -14px rgba(0, 0, 0, 0.4);
+    transform: perspective(1400px) rotateY(-4deg) rotateX(1.5deg);
+    animation: heroReveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .shot[data-float] {
+    animation:
+      heroReveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) both,
+      heroFloat 7s ease-in-out 0.8s infinite;
+  }
+  .shot-bar {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 13px;
+    background: #f0efec;
+    border-bottom: 1px solid var(--line);
+  }
+  .shot-bar span {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #d6d3d1;
+  }
+  .shot-bar span:first-child {
+    background: #ef6a5f;
+  }
+  .shot-bar span:nth-child(2) {
+    background: #f6be4f;
+  }
+  .shot-bar span:nth-child(3) {
+    background: #57c05a;
+  }
+  .shot-bar em {
+    margin-left: 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-style: normal;
+    color: var(--ink-soft);
+  }
+  :global(.shot-img) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  @keyframes heroReveal {
+    from {
+      opacity: 0;
+      transform: perspective(1400px) rotateY(-4deg) rotateX(1.5deg) translateY(24px) scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: perspective(1400px) rotateY(-4deg) rotateX(1.5deg) translateY(0) scale(1);
+    }
+  }
+  @keyframes heroFloat {
+    0%,
+    100% {
+      transform: perspective(1400px) rotateY(-4deg) rotateX(1.5deg) translateY(0);
+    }
+    50% {
+      transform: perspective(1400px) rotateY(-4deg) rotateX(1.5deg) translateY(-12px);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .shot,
+    .shot[data-float] {
+      animation: none;
+    }
+  }
   .chip {
     position: absolute;
     background: var(--paper);
@@ -209,7 +301,9 @@ const signupUrl = import.meta.env.PUBLIC_APP_SIGNUP_URL || "#";
       margin-top: -86px;
       padding: 112px 0 60px;
     }
-    .chip {
+    /* The dashboard screenshot is hidden on mobile (per design) — the hero
+       becomes a single text column. */
+    .cluster {
       display: none;
     }
   }

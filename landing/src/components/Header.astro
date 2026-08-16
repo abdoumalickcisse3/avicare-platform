@@ -18,6 +18,7 @@ const signupUrl = import.meta.env.PUBLIC_APP_SIGNUP_URL || "#";
 const loginUrl = import.meta.env.PUBLIC_APP_LOGIN_URL || "#";
 
 const navLinks = [
+  { href: "/jawdi-ia", label: "Jawdi IA", badge: true },
   { href: "/fonctionnalites", label: "Fonctionnalités" },
   { href: "/tarifs", label: "Tarifs" },
   { href: "/a-propos", label: "À propos" },
@@ -53,7 +54,14 @@ const navLinks = [
     </a>
 
     <nav class="nav-links" aria-label="Navigation principale">
-      {navLinks.map((link) => <a href={link.href}>{link.label}</a>)}
+      {
+        navLinks.map((link) => (
+          <a href={link.href} class:list={[{ "nav-ai": link.badge }]}>
+            {link.label}
+            {link.badge && <span class="ai-dot" aria-hidden="true" />}
+          </a>
+        ))
+      }
     </nav>
 
     <div class="nav-right">
@@ -78,6 +86,7 @@ const navLinks = [
     <nav aria-label="Navigation mobile">
       {navLinks.map((link) => <a href={link.href}>{link.label}</a>)}
       <a href={loginUrl}>Se connecter</a>
+      <a class="btn btn-cta mobile-cta" href={signupUrl}>Commencer gratuitement</a>
     </nav>
   </div>
 </header>
@@ -226,6 +235,32 @@ const navLinks = [
   .mobile-nav a:hover {
     background: var(--stone);
     color: var(--earth-700);
+  }
+  /* The signup CTA inside the mobile menu keeps its button look (not the plain
+     link style) — override the more-specific `.mobile-nav a` color/hover. */
+  .mobile-nav a.mobile-cta {
+    margin-top: 8px;
+    justify-content: center;
+    color: var(--earth);
+    font-weight: 700;
+  }
+  .mobile-nav a.mobile-cta:hover {
+    background: var(--sun-600);
+    color: var(--earth);
+  }
+
+  /* "Jawdi IA" nav item with a glowing sun dot. */
+  .nav-ai {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .ai-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--sun);
+    box-shadow: 0 0 8px var(--sun);
   }
 
   @media (max-width: 920px) {
