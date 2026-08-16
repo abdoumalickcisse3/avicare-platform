@@ -1,6 +1,7 @@
 package com.avicare.livestock.inventory;
 
 import com.avicare.livestock.api.InventoryFacade;
+import com.avicare.livestock.api.dto.InventoryAlertInfo;
 import com.avicare.livestock.api.dto.InventoryStockInfo;
 import com.avicare.livestock.api.dto.LowStockInfo;
 import com.avicare.livestock.api.dto.SupplierInfo;
@@ -10,6 +11,7 @@ import com.avicare.livestock.domain.StockItem;
 import com.avicare.livestock.domain.Supplier;
 import com.avicare.livestock.inventory.StockAlertsResponse.LowStockItem;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -54,6 +56,27 @@ public class InventoryFacadeImpl implements InventoryFacade {
     return inventoryAlertService.computeStockAlertsForFarm(farmId).lowStockItems().stream()
         .map(InventoryFacadeImpl::toInfo)
         .toList();
+  }
+
+  @Override
+  public List<InventoryAlertInfo> inventoryAlerts(Long farmId) {
+    InventoryAlertsResponse alerts = inventoryAlertService.computeInventoryAlerts(farmId);
+    List<InventoryAlertInfo> out = new ArrayList<>();
+    alerts
+        .lowStockItems()
+        .forEach(i -> out.add(new InventoryAlertInfo("LOW_STOCK", i.stockItemId(), i.label(), 0L)));
+    alerts
+        .negativeStockItems()
+        .forEach(
+            i -> out.add(new InventoryAlertInfo("NEGATIVE_STOCK", i.stockItemId(), i.label(), 0L)));
+    alerts
+        .pendingPurchaseOrders()
+        .forEach(
+            po ->
+                out.add(
+                    new InventoryAlertInfo(
+                        "PO_OVERDUE", po.purchaseOrderId(), po.orderNumber(), po.daysOverdue())));
+    return out;
   }
 
   @Override

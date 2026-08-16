@@ -1,5 +1,6 @@
 package com.avicare.livestock.api;
 
+import com.avicare.livestock.api.dto.InventoryAlertInfo;
 import com.avicare.livestock.api.dto.InventoryStockInfo;
 import com.avicare.livestock.api.dto.LowStockInfo;
 import com.avicare.livestock.api.dto.SupplierInfo;
@@ -24,6 +25,13 @@ public interface InventoryFacade {
 
   /** Articles at or below their alert threshold on the farm (low-stock consultation). */
   List<LowStockInfo> lowStock(Long farmId);
+
+  /**
+   * All inventory alert conditions currently true on the farm — low stock, negative stock, and
+   * overdue purchase orders — flattened into neutral {@link InventoryAlertInfo} items for the
+   * notification context (Sprint C1).
+   */
+  List<InventoryAlertInfo> inventoryAlerts(Long farmId);
 
   /**
    * Record a manual stock movement of {@code delta} on a stock item (positive = reception, negative
