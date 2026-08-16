@@ -1,0 +1,317 @@
+---
+// Coded recreation of the Jawdi mobile app home screen (KPIs, quick actions,
+// bottom nav) for the homepage "App mobile" section. Static, lightweight.
+---
+
+<div class="pa" aria-label="Aperçu de l'application mobile Jawdi">
+  <div class="pa-bezel">
+    <span class="pa-notch" aria-hidden="true"></span>
+    <div class="pa-screen">
+      <div class="pa-head">
+        <span class="pa-burger" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="pa-farm">Ferme Complète<b></b></span>
+        <span class="pa-bell" aria-hidden="true"></span>
+      </div>
+
+      <div class="pa-hero">
+        <span class="pa-hello">Bonjour 👋</span>
+        <span class="pa-name">Ferme Complète</span>
+        <span class="pa-lab">Ventes de la période</span>
+        <div class="pa-amount">158 200 F<span class="pa-up">↗ 14%</span></div>
+        <svg class="pa-spark" viewBox="0 0 200 40" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0,30 C30,28 45,14 70,20 C100,27 120,6 150,10 C175,13 190,20 200,16" fill="none" stroke="rgba(255,255,255,.8)" stroke-width="2"></path>
+        </svg>
+      </div>
+
+      <div class="pa-kpis">
+        <div class="pa-kpi"><span class="ic g">✦</span><b>6 720</b><span>Effectif vivant</span></div>
+        <div class="pa-kpi warn"><span class="ic r">♥</span><em>↗100%</em><b>4</b><span>Mortalité</span></div>
+        <div class="pa-kpi"><span class="ic o">◔</span><b>92 %</b><span>Taux de ponte</span></div>
+        <div class="pa-kpi"><span class="ic o">!</span><b>0 F</b><span>Impayés</span></div>
+      </div>
+
+      <div class="pa-actions-h">Actions rapides</div>
+      <div class="pa-actions">
+        <span class="pa-act"><span class="r">☠</span>Mortalité</span>
+        <span class="pa-act"><span class="o">◯</span>Œufs</span>
+        <span class="pa-act"><span class="b">⚖</span>Pesée</span>
+        <span class="pa-mic" aria-hidden="true"></span>
+      </div>
+
+      <div class="pa-nav" aria-hidden="true">
+        <span class="on">Accueil</span><span>Fermes</span><span>Stock</span><span>Finance</span><span>Réglages</span>
+      </div>
+      <span class="pa-fab" aria-hidden="true">+</span>
+    </div>
+  </div>
+</div>
+
+<style>
+  .pa {
+    width: 292px;
+    margin-inline: auto;
+  }
+  .pa-bezel {
+    position: relative;
+    background: #14110f;
+    border-radius: 40px;
+    padding: 9px;
+    box-shadow:
+      0 50px 90px -34px rgba(0, 0, 0, 0.5),
+      0 14px 30px -16px rgba(0, 0, 0, 0.35);
+  }
+  .pa-notch {
+    position: absolute;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90px;
+    height: 18px;
+    border-radius: 999px;
+    background: #14110f;
+    z-index: 3;
+  }
+  .pa-screen {
+    position: relative;
+    height: 600px;
+    border-radius: 32px;
+    overflow: hidden;
+    background: #f7faf6;
+    padding: 30px 14px 0;
+  }
+  .pa-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .pa-burger {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    width: 18px;
+  }
+  .pa-burger i {
+    height: 2px;
+    border-radius: 2px;
+    background: var(--ink);
+    opacity: 0.8;
+  }
+  .pa-farm {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--earth-700);
+  }
+  .pa-farm b {
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid currentColor;
+  }
+  .pa-bell {
+    margin-left: auto;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid var(--ink);
+    opacity: 0.65;
+  }
+  .pa-hero {
+    margin-top: 14px;
+    border-radius: 20px;
+    padding: 16px 16px 12px;
+    color: #fff;
+    background: linear-gradient(160deg, var(--earth-700), #0e240e);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+  .pa-hello {
+    font-size: 12px;
+    opacity: 0.85;
+  }
+  .pa-name {
+    font-size: 17px;
+    font-weight: 700;
+  }
+  .pa-lab {
+    margin-top: 10px;
+    font-size: 11px;
+    opacity: 0.85;
+  }
+  .pa-amount {
+    font-size: 26px;
+    font-weight: 800;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .pa-up {
+    font-size: 11px;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    padding: 2px 7px;
+  }
+  .pa-spark {
+    width: 100%;
+    height: 34px;
+    margin-top: 4px;
+  }
+  .pa-kpis {
+    margin-top: 12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .pa-kpi {
+    position: relative;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 12px 13px;
+  }
+  .pa-kpi.warn {
+    border-color: var(--sun-200, #ffcb85);
+  }
+  .pa-kpi .ic {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    font-size: 13px;
+    background: var(--leaf-050);
+    color: var(--leaf);
+  }
+  .pa-kpi .ic.r {
+    background: #fdeceb;
+    color: #dc2626;
+  }
+  .pa-kpi .ic.o {
+    background: var(--sun-050);
+    color: var(--sun-600);
+  }
+  .pa-kpi em {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-style: normal;
+    font-size: 10px;
+    font-weight: 700;
+    color: #dc2626;
+    background: #fdeceb;
+    border-radius: 999px;
+    padding: 2px 6px;
+  }
+  .pa-kpi b {
+    display: block;
+    margin-top: 9px;
+    font-family: var(--mono);
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--ink);
+  }
+  .pa-kpi span:last-child {
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+  .pa-actions-h {
+    margin-top: 16px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .pa-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 12px;
+  }
+  .pa-act {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+  .pa-act span {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+  }
+  .pa-act .r {
+    background: #fdeceb;
+    color: #dc2626;
+  }
+  .pa-act .o {
+    background: var(--sun-050);
+    color: var(--sun-600);
+  }
+  .pa-act .b {
+    background: #e8eefc;
+    color: #2563eb;
+  }
+  .pa-mic {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--earth-700);
+    position: relative;
+    box-shadow: 0 10px 20px -8px rgba(18, 43, 18, 0.5);
+  }
+  .pa-mic::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: #fff;
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='9' y='2' width='6' height='12' rx='3'/%3E%3Cpath d='M5 11a7 7 0 0 0 14 0M12 18v3' fill='none' stroke='white' stroke-width='2'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='9' y='2' width='6' height='12' rx='3'/%3E%3Cpath d='M5 11a7 7 0 0 0 14 0M12 18v3' fill='none' stroke='white' stroke-width='2'/%3E%3C/svg%3E");
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: 22px;
+    mask-size: 22px;
+  }
+  .pa-nav {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: space-around;
+    padding: 12px 8px 16px;
+    background: var(--paper);
+    border-top: 1px solid var(--line);
+    font-size: 10px;
+    color: var(--ink-faint);
+  }
+  .pa-nav .on {
+    color: var(--earth-700);
+    font-weight: 700;
+  }
+  .pa-fab {
+    position: absolute;
+    right: 16px;
+    bottom: 58px;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: var(--sun);
+    color: var(--earth);
+    display: grid;
+    place-items: center;
+    font-size: 24px;
+    font-weight: 700;
+    box-shadow: 0 12px 22px -8px rgba(230, 126, 10, 0.6);
+  }
+</style>
