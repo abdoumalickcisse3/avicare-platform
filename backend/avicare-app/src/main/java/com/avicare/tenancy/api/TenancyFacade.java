@@ -19,6 +19,12 @@ public interface TenancyFacade {
 
   List<Long> getAccessibleFarmIds(Long userId);
 
+  /** Ids of all farms (non-soft-deleted) — for the daily notification scan (Sprint C1). */
+  List<Long> listAllFarmIds();
+
+  /** User ids of the active members of a farm — notification/WhatsApp recipients (Sprint C1). */
+  List<Long> listMemberUserIds(Long farmId);
+
   boolean hasAccess(Long userId, Long farmId);
 
   Optional<UserFarmInfo> findMembership(Long userId, Long farmId);
