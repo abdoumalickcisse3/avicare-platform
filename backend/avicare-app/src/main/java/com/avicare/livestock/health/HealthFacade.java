@@ -11,4 +11,11 @@ public interface HealthFacade {
 
   /** Vaccinations that are due/overdue on the farm's lots, most late first. */
   List<VaccinationDueInfo> dueVaccinations(Long farmId);
+
+  /**
+   * All health alert conditions currently true on the farm — late vaccinations, active treatment
+   * withdrawals, and recent critical observations — flattened into neutral {@link HealthAlertInfo}
+   * items for the notification context (Sprint C1).
+   */
+  List<HealthAlertInfo> healthAlerts(Long farmId);
 }

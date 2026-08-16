@@ -1,6 +1,10 @@
 package com.avicare.livestock.health;
 
+import com.avicare.livestock.health.dto.AlertsResponse;
+import com.avicare.livestock.health.dto.AlertsResponse.ActiveWithdrawalItem;
+import com.avicare.livestock.health.dto.AlertsResponse.CriticalObservationItem;
 import com.avicare.livestock.health.dto.AlertsResponse.VaccinationLateItem;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,6 +27,37 @@ public class HealthFacadeImpl implements HealthFacade {
     return alertService.computeAlertsForFarm(farmId).vaccinationsLate().stream()
         .map(HealthFacadeImpl::toInfo)
         .toList();
+  }
+
+  @Override
+  public List<HealthAlertInfo> healthAlerts(Long farmId) {
+    AlertsResponse alerts = alertService.computeAlertsForFarm(farmId);
+    List<HealthAlertInfo> out = new ArrayList<>();
+    for (VaccinationLateItem v : alerts.vaccinationsLate()) {
+      out.add(
+          new HealthAlertInfo(
+              "VACCINATION_LATE", v.unitId(), null, v.vaccineKey(), v.vaccineKey(), v.daysLate()));
+    }
+    for (ActiveWithdrawalItem w : alerts.activeWithdrawals()) {
+      long days =
+          w.daysRemainingMeat() != null
+              ? w.daysRemainingMeat()
+              : (w.daysRemainingEggs() != null ? w.daysRemainingEggs() : 0L);
+      out.add(
+          new HealthAlertInfo(
+              "WITHDRAWAL_ENDING",
+              w.unitId(),
+              w.treatmentId(),
+              w.treatmentKey(),
+              w.treatmentKey(),
+              days));
+    }
+    for (CriticalObservationItem o : alerts.criticalObservations()) {
+      out.add(
+          new HealthAlertInfo(
+              "CRITICAL_OBSERVATION", o.unitId(), o.observationId(), null, o.title(), 0L));
+    }
+    return out;
   }
 
   private static VaccinationDueInfo toInfo(VaccinationLateItem item) {
