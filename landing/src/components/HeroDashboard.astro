@@ -1,11 +1,34 @@
 ---
-// Coded recreation of the real Jawdi dashboard (sidebar + logo, KPI cards,
-// egg-production chart) — a live, animated mockup for the hero instead of a
-// static screenshot. Numbers count up (via <Kpi>), the chart line draws in,
-// and the "Jawdi IA" dot pulses.
+// Coded, faithful recreation of the real Jawdi dashboard for the hero — a live
+// animated mockup (not a screenshot). Intentionally wider than its column so it
+// bleeds off the right edge ("peek" effect). Numbers count up (<Kpi>), the
+// egg-production line draws in, and the Jawdi IA nav dot pulses.
 import { Image } from "astro:assets";
 import Kpi from "./Kpi.astro";
 import logo from "../assets/logo.png";
+
+const nav = [
+  { label: "Tableau de bord", ic: "grid", active: true },
+  { label: "Jawdi IA", ic: "spark", dot: true },
+  { label: "Fermes", ic: "home" },
+];
+const gestion = [
+  { label: "Élevage", ic: "bird", chev: true },
+  { label: "Poulets de chair", ic: "bird", sub: true },
+  { label: "Œufs", ic: "egg", sub: true },
+  { label: "Sanitaire", ic: "heart", sub: true },
+  { label: "Stocks", ic: "box", chev: true },
+  { label: "Commercial", ic: "cart", chev: true },
+  { label: "Finance", ic: "wallet", chev: true },
+];
+const periods = ["Aujourd'hui", "7 jours", "30 jours", "Ce mois"];
+const activity = [
+  { c: "g", t: "Paiement reçu 24 000 XOF", s: "il y a 1 min" },
+  { c: "g", t: "Production journalière clôturée", s: "il y a 11 min" },
+  { c: "n", t: "Entrée stock : feed_finisher", s: "il y a 3 j" },
+  { c: "o", t: "Vente 40 000 XOF", s: "il y a 4 j" },
+  { c: "r", t: "Mortalité : 4 sujets", s: "il y a 4 j" },
+];
 ---
 
 <div class="hd" aria-label="Aperçu du tableau de bord Jawdi">
@@ -15,56 +38,110 @@ import logo from "../assets/logo.png";
 
   <div class="hd-body">
     <aside class="hd-side">
-      <Image src={logo} alt="Jawdi Platform" width={110} height={38} class="hd-logo" loading="eager" />
+      <Image src={logo} alt="Jawdi Platform" width={120} height={40} class="hd-logo" loading="eager" />
       <nav class="hd-nav">
-        <a class="hd-item active"><span class="hd-ic hd-grid"></span>Tableau de bord</a>
-        <a class="hd-item"><span class="hd-ic hd-spark"></span>Jawdi IA<span class="hd-dot"></span></a>
-        <a class="hd-item"><span class="hd-ic hd-home"></span>Fermes</a>
+        {
+          nav.map((n) => (
+            <a class:list={["hd-item", { active: n.active }]}>
+              <span class:list={["hd-ic", `hd-${n.ic}`]} />
+              {n.label}
+              {n.dot && <span class="hd-dot" />}
+            </a>
+          ))
+        }
         <div class="hd-lab">Gestion</div>
-        <a class="hd-item"><span class="hd-ic hd-bird"></span>Élevage<span class="hd-chev"></span></a>
-        <a class="hd-item sub"><span class="hd-ic hd-bird"></span>Poulets de chair</a>
-        <a class="hd-item sub"><span class="hd-ic hd-egg"></span>Œufs</a>
-        <a class="hd-item sub"><span class="hd-ic hd-heart"></span>Sanitaire</a>
+        {
+          gestion.map((n) => (
+            <a class:list={["hd-item", { sub: n.sub }]}>
+              <span class:list={["hd-ic", `hd-${n.ic}`]} />
+              {n.label}
+              {n.chev && <span class="hd-chev" />}
+            </a>
+          ))
+        }
       </nav>
     </aside>
 
     <main class="hd-main">
       <div class="hd-top">
         <span class="hd-title">Tableau de bord</span>
-        <span class="hd-farm">Ferme Complète<i></i></span>
+        <div class="hd-top-r">
+          <span class="hd-farm">Ferme Complète<i></i></span>
+          <span class="hd-bell"></span>
+          <span class="hd-av">CC</span>
+        </div>
       </div>
-      <div class="hd-hello">Bonjour, Compte 👋</div>
-      <p class="hd-lead">Voici ce qui se passe sur Ferme Complète aujourd'hui.</p>
+
+      <div class="hd-hellorow">
+        <div>
+          <div class="hd-hello">Bonjour, Compte 👋</div>
+          <p class="hd-lead">Voici ce qui se passe sur Ferme Complète aujourd'hui.</p>
+        </div>
+        <div class="hd-periods">
+          {periods.map((p, i) => <span class:list={["hd-per", { on: i === 2 }]}>{p}</span>)}
+        </div>
+      </div>
 
       <div class="hd-kpis">
         <div class="hd-kpi">
+          <span class="badge g">◈</span>
           <span class="lab">CA période</span>
-          <span class="val"><Kpi count={158200} /><small> F CFA</small></span>
-          <span class="up">▲ 14%</span>
+          <span class="val"><Kpi count={158200} /><small> F CFA</small> <b class="up">▲14%</b></span>
         </div>
         <div class="hd-kpi">
+          <span class="badge o">!</span>
+          <span class="lab">Impayés</span>
+          <span class="val">0<small> F CFA</small></span>
+        </div>
+        <div class="hd-kpi">
+          <span class="badge g">✦</span>
           <span class="lab">Effectif vivant</span>
           <span class="val"><Kpi count={6720} /></span>
         </div>
-        <div class="hd-kpi warn">
+        <div class="hd-kpi">
+          <span class="badge r">♥</span>
           <span class="lab">Mortalité</span>
-          <span class="val"><Kpi count={4} /></span>
+          <span class="val warn"><Kpi count={4} /></span>
         </div>
       </div>
 
-      <div class="hd-chart">
-        <div class="hd-chart-h">Production d'œufs<span>Évolution sur la période</span></div>
-        <svg class="hd-svg" viewBox="0 0 360 96" preserveAspectRatio="none" aria-hidden="true">
-          <defs>
-            <linearGradient id="hdArea" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#3D8B3D" stop-opacity=".24"></stop>
-              <stop offset="1" stop-color="#3D8B3D" stop-opacity="0"></stop>
-            </linearGradient>
-          </defs>
-          <path class="hd-area" d="M0,70 C50,64 90,40 140,44 C190,48 210,20 260,16 C300,13 330,22 360,18 L360,96 L0,96 Z" fill="url(#hdArea)"></path>
-          <path class="hd-line" d="M0,70 C50,64 90,40 140,44 C190,48 210,20 260,16 C300,13 330,22 360,18" fill="none" stroke="#3D8B3D" stroke-width="2.4" stroke-linecap="round"></path>
-          <circle class="hd-tip" cx="360" cy="18" r="4" fill="#F8961E"></circle>
-        </svg>
+      <div class="hd-grid2">
+        <div class="hd-panel">
+          <div class="hd-panel-h">Production d'œufs<span>Évolution sur la période</span></div>
+          <svg class="hd-svg" viewBox="0 0 420 110" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="hdArea" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#3D8B3D" stop-opacity=".22"></stop>
+                <stop offset="1" stop-color="#3D8B3D" stop-opacity="0"></stop>
+              </linearGradient>
+            </defs>
+            <path class="hd-area" d="M0,82 C60,76 110,44 170,50 C230,56 250,22 320,18 C360,15 390,26 420,20 L420,110 L0,110 Z" fill="url(#hdArea)"></path>
+            <path class="hd-line" d="M0,82 C60,76 110,44 170,50 C230,56 250,22 320,18 C360,15 390,26 420,20" fill="none" stroke="#3D8B3D" stroke-width="2.4" stroke-linecap="round"></path>
+            <circle class="hd-tip" cx="420" cy="20" r="4" fill="#F8961E"></circle>
+          </svg>
+          <div class="hd-stats">
+            <div><span>Total période</span><b>270</b></div>
+            <div><span>Moyenne / jour</span><b>270</b></div>
+            <div><span>Meilleur jour</span><b>270</b></div>
+          </div>
+        </div>
+
+        <div class="hd-panel">
+          <div class="hd-panel-h">Activité récente</div>
+          <ul class="hd-act">
+            {
+              activity.map((a) => (
+                <li>
+                  <span class:list={["hd-adot", a.c]} />
+                  <span class="hd-atx">
+                    {a.t}
+                    <em>{a.s}</em>
+                  </span>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
       </div>
     </main>
   </div>
@@ -72,13 +149,16 @@ import logo from "../assets/logo.png";
 
 <style is:global>
   .hd {
+    width: 860px;
     border-radius: 18px;
     overflow: hidden;
     background: var(--paper);
     border: 1px solid var(--line);
     box-shadow:
-      0 44px 84px -34px rgba(0, 0, 0, 0.55),
-      0 12px 28px -14px rgba(0, 0, 0, 0.35);
+      0 46px 90px -34px rgba(0, 0, 0, 0.55),
+      0 14px 30px -16px rgba(0, 0, 0, 0.35);
+    transform: perspective(1700px) rotateY(-6deg) rotateX(1deg);
+    transform-origin: left center;
   }
   .hd-chrome {
     display: flex;
@@ -94,15 +174,9 @@ import logo from "../assets/logo.png";
     border-radius: 50%;
     background: #d6d3d1;
   }
-  .hd-chrome span:first-child {
-    background: #ef6a5f;
-  }
-  .hd-chrome span:nth-child(2) {
-    background: #f6be4f;
-  }
-  .hd-chrome span:nth-child(3) {
-    background: #57c05a;
-  }
+  .hd-chrome span:first-child { background: #ef6a5f; }
+  .hd-chrome span:nth-child(2) { background: #f6be4f; }
+  .hd-chrome span:nth-child(3) { background: #57c05a; }
   .hd-chrome em {
     margin-left: 10px;
     font-family: var(--mono);
@@ -112,7 +186,7 @@ import logo from "../assets/logo.png";
   }
   .hd-body {
     display: grid;
-    grid-template-columns: 150px 1fr;
+    grid-template-columns: 168px 1fr;
     background: #fafaf9;
   }
   .hd-side {
@@ -120,35 +194,20 @@ import logo from "../assets/logo.png";
     border-right: 1px solid var(--line);
     background: var(--paper);
   }
-  .hd-logo {
-    height: 30px;
-    width: auto;
-    margin: 2px 4px 14px;
-  }
-  .hd-nav {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
+  .hd-logo { height: 30px; width: auto; margin: 2px 4px 14px; }
+  .hd-nav { display: flex; flex-direction: column; gap: 2px; }
   .hd-item {
     display: flex;
     align-items: center;
     gap: 9px;
-    padding: 8px 10px;
+    padding: 7px 10px;
     border-radius: 9px;
     font-size: 12.5px;
     font-weight: 600;
     color: var(--ink-soft);
   }
-  .hd-item.sub {
-    font-weight: 500;
-    color: var(--ink-faint);
-    padding-left: 14px;
-  }
-  .hd-item.active {
-    background: var(--leaf-050);
-    color: var(--earth-700);
-  }
+  .hd-item.sub { font-weight: 500; color: var(--ink-faint); padding-left: 14px; }
+  .hd-item.active { background: var(--leaf-050); color: var(--earth-700); }
   .hd-lab {
     font-size: 9.5px;
     letter-spacing: 0.08em;
@@ -157,213 +216,98 @@ import logo from "../assets/logo.png";
     padding: 12px 10px 4px;
   }
   .hd-ic {
-    width: 15px;
-    height: 15px;
-    border-radius: 4px;
-    flex: none;
-    background: currentColor;
-    opacity: 0.55;
-    -webkit-mask-position: center;
-    mask-position: center;
-    -webkit-mask-repeat: no-repeat;
-    mask-repeat: no-repeat;
-    -webkit-mask-size: contain;
-    mask-size: contain;
+    width: 15px; height: 15px; border-radius: 4px; flex: none;
+    background: currentColor; opacity: 0.5;
+    -webkit-mask-position: center; mask-position: center;
+    -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+    -webkit-mask-size: contain; mask-size: contain;
   }
-  .hd-item.active .hd-ic {
-    opacity: 0.9;
-  }
-  .hd-grid {
-    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='3' y='3' width='7' height='7' rx='1'/%3E%3Crect x='14' y='3' width='7' height='7' rx='1'/%3E%3Crect x='3' y='14' width='7' height='7' rx='1'/%3E%3Crect x='14' y='14' width='7' height='7' rx='1'/%3E%3C/svg%3E");
-    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='3' y='3' width='7' height='7' rx='1'/%3E%3Crect x='14' y='3' width='7' height='7' rx='1'/%3E%3Crect x='3' y='14' width='7' height='7' rx='1'/%3E%3Crect x='14' y='14' width='7' height='7' rx='1'/%3E%3C/svg%3E");
-  }
-  .hd-spark {
-    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l1.6 5.4L19 9l-5.4 1.6L12 16l-1.6-5.4L5 9l5.4-1.6z'/%3E%3C/svg%3E");
-    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l1.6 5.4L19 9l-5.4 1.6L12 16l-1.6-5.4L5 9l5.4-1.6z'/%3E%3C/svg%3E");
-  }
-  .hd-home,
-  .hd-bird,
-  .hd-egg,
-  .hd-heart {
-    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3C/svg%3E");
-    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3C/svg%3E");
-  }
+  .hd-item.active .hd-ic { opacity: 0.9; }
+  .hd-grid { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='3' y='3' width='7' height='7' rx='1'/%3E%3Crect x='14' y='3' width='7' height='7' rx='1'/%3E%3Crect x='3' y='14' width='7' height='7' rx='1'/%3E%3Crect x='14' y='14' width='7' height='7' rx='1'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='3' y='3' width='7' height='7' rx='1'/%3E%3Crect x='14' y='3' width='7' height='7' rx='1'/%3E%3Crect x='3' y='14' width='7' height='7' rx='1'/%3E%3Crect x='14' y='14' width='7' height='7' rx='1'/%3E%3C/svg%3E"); }
+  .hd-spark { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l1.6 5.4L19 9l-5.4 1.6L12 16l-1.6-5.4L5 9l5.4-1.6z'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l1.6 5.4L19 9l-5.4 1.6L12 16l-1.6-5.4L5 9l5.4-1.6z'/%3E%3C/svg%3E"); }
+  .hd-home, .hd-bird, .hd-egg, .hd-heart, .hd-box, .hd-cart, .hd-wallet { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3C/svg%3E"); }
   .hd-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--sun);
-    margin-left: auto;
-    box-shadow: 0 0 0 0 rgba(248, 150, 30, 0.6);
+    width: 6px; height: 6px; border-radius: 50%; background: var(--sun);
+    margin-left: auto; box-shadow: 0 0 0 0 rgba(248, 150, 30, 0.6);
     animation: hdPulse 2s infinite;
   }
   .hd-chev {
-    width: 0;
-    height: 0;
-    margin-left: auto;
-    border-top: 4px solid transparent;
-    border-bottom: 4px solid transparent;
-    border-left: 5px solid currentColor;
-    opacity: 0.5;
+    width: 0; height: 0; margin-left: auto;
+    border-top: 4px solid transparent; border-bottom: 4px solid transparent;
+    border-left: 5px solid currentColor; opacity: 0.45;
   }
-  .hd-main {
-    padding: 16px 18px 20px;
-    min-width: 0;
-  }
-  .hd-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .hd-title {
-    font-weight: 700;
-    font-size: 13px;
-    color: var(--ink);
-  }
+  .hd-main { padding: 15px 18px 20px; min-width: 0; }
+  .hd-top { display: flex; align-items: center; justify-content: space-between; }
+  .hd-title { font-weight: 700; font-size: 13px; color: var(--ink); }
+  .hd-top-r { display: flex; align-items: center; gap: 9px; }
   .hd-farm {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--ink-soft);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 5px 9px;
-    background: var(--paper);
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 600; color: var(--ink-soft);
+    border: 1px solid var(--line); border-radius: 8px; padding: 5px 9px; background: var(--paper);
   }
   .hd-farm i {
-    width: 0;
-    height: 0;
-    border-left: 3.5px solid transparent;
-    border-right: 3.5px solid transparent;
-    border-top: 4px solid currentColor;
-    opacity: 0.6;
+    width: 0; height: 0; border-left: 3.5px solid transparent;
+    border-right: 3.5px solid transparent; border-top: 4px solid currentColor; opacity: 0.6;
   }
-  .hd-hello {
-    margin-top: 14px;
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--ink);
+  .hd-bell { width: 15px; height: 15px; border-radius: 50%; background: var(--stone); }
+  .hd-av {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--leaf); color: #fff; font-size: 10px; font-weight: 700;
+    display: grid; place-items: center;
   }
-  .hd-lead {
-    margin: 2px 0 0;
-    font-size: 11.5px;
-    color: var(--ink-soft);
+  .hd-hellorow { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-top: 14px; }
+  .hd-hello { font-size: 19px; font-weight: 700; color: var(--ink); }
+  .hd-lead { margin: 2px 0 0; font-size: 11.5px; color: var(--ink-soft); }
+  .hd-periods { display: flex; gap: 2px; background: var(--stone); border-radius: 9px; padding: 3px; }
+  .hd-per { font-size: 10.5px; font-weight: 600; color: var(--ink-soft); padding: 4px 8px; border-radius: 7px; white-space: nowrap; }
+  .hd-per.on { background: var(--paper); color: var(--earth-700); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06); }
+  .hd-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 14px; }
+  .hd-kpi { position: relative; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 11px 12px; }
+  .hd-kpi .badge {
+    position: absolute; top: 11px; right: 11px;
+    width: 20px; height: 20px; border-radius: 7px; display: grid; place-items: center;
+    font-size: 11px; background: var(--leaf-050); color: var(--leaf);
   }
-  .hd-kpis {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin-top: 14px;
-  }
-  .hd-kpi {
-    background: var(--paper);
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 11px 12px;
-  }
-  .hd-kpi .lab {
-    display: block;
-    font-size: 10.5px;
-    color: var(--ink-soft);
-  }
-  .hd-kpi .val {
-    display: block;
-    margin-top: 4px;
-    font-family: var(--mono);
-    font-weight: 700;
-    font-size: 17px;
-    color: var(--ink);
-  }
-  .hd-kpi .val small {
-    font-size: 10px;
-    color: var(--ink-soft);
-  }
-  .hd-kpi .up {
-    display: inline-block;
-    margin-top: 4px;
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--leaf);
-  }
-  .hd-kpi.warn .val {
-    color: #dc2626;
-  }
-  .hd-chart {
-    margin-top: 14px;
-    background: var(--paper);
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 12px 14px 8px;
-  }
-  .hd-chart-h {
-    display: flex;
-    flex-direction: column;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--ink);
-  }
-  .hd-chart-h span {
-    font-size: 10px;
-    font-weight: 500;
-    color: var(--ink-soft);
-  }
-  .hd-svg {
-    width: 100%;
-    height: 76px;
-    margin-top: 6px;
-    display: block;
-  }
-  .hd-line {
-    stroke-dasharray: 460;
-    stroke-dashoffset: 460;
-    animation: hdDraw 1.6s ease 0.3s forwards;
-  }
-  .hd-area {
-    opacity: 0;
-    animation: hdFade 0.8s ease 1.3s forwards;
-  }
-  .hd-tip {
-    opacity: 0;
-    animation: hdFade 0.4s ease 1.7s forwards;
-  }
-  @keyframes hdDraw {
-    to {
-      stroke-dashoffset: 0;
-    }
-  }
-  @keyframes hdFade {
-    to {
-      opacity: 1;
-    }
-  }
+  .hd-kpi .badge.o { background: var(--sun-050); color: var(--sun-600); }
+  .hd-kpi .badge.r { background: #fdeceb; color: #dc2626; }
+  .hd-kpi .lab { display: block; font-size: 10.5px; color: var(--ink-soft); }
+  .hd-kpi .val { display: block; margin-top: 5px; font-family: var(--mono); font-weight: 700; font-size: 16px; color: var(--ink); }
+  .hd-kpi .val small { font-size: 9.5px; color: var(--ink-soft); }
+  .hd-kpi .val .up { font-family: var(--sans); font-size: 9.5px; color: var(--leaf); }
+  .hd-kpi .val.warn { color: #dc2626; }
+  .hd-grid2 { display: grid; grid-template-columns: 1.55fr 1fr; gap: 12px; margin-top: 14px; }
+  .hd-panel { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .hd-panel-h { display: flex; flex-direction: column; font-size: 12px; font-weight: 700; color: var(--ink); }
+  .hd-panel-h span { font-size: 10px; font-weight: 500; color: var(--ink-soft); }
+  .hd-svg { width: 100%; height: 84px; margin-top: 8px; display: block; }
+  .hd-line { stroke-dasharray: 560; stroke-dashoffset: 560; animation: hdDraw 1.7s ease 0.3s forwards; }
+  .hd-area { opacity: 0; animation: hdFade 0.8s ease 1.4s forwards; }
+  .hd-tip { opacity: 0; animation: hdFade 0.4s ease 1.8s forwards; }
+  .hd-stats { display: flex; gap: 8px; margin-top: 8px; }
+  .hd-stats div { flex: 1; background: var(--stone); border-radius: 8px; padding: 7px 9px; }
+  .hd-stats span { display: block; font-size: 9px; color: var(--ink-soft); }
+  .hd-stats b { font-family: var(--mono); font-size: 13px; color: var(--ink); }
+  .hd-act { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+  .hd-act li { display: flex; align-items: flex-start; gap: 8px; }
+  .hd-adot { width: 8px; height: 8px; border-radius: 50%; margin-top: 3px; flex: none; }
+  .hd-adot.g { background: var(--leaf); }
+  .hd-adot.o { background: var(--sun); }
+  .hd-adot.r { background: #dc2626; }
+  .hd-adot.n { background: var(--outline, #a8a29e); }
+  .hd-atx { font-size: 11px; font-weight: 600; color: var(--ink); line-height: 1.25; }
+  .hd-atx em { display: block; font-style: normal; font-family: var(--mono); font-size: 9.5px; color: var(--ink-soft); font-weight: 500; }
+
+  @keyframes hdDraw { to { stroke-dashoffset: 0; } }
+  @keyframes hdFade { to { opacity: 1; } }
   @keyframes hdPulse {
-    0% {
-      box-shadow: 0 0 0 0 rgba(248, 150, 30, 0.5);
-    }
-    70% {
-      box-shadow: 0 0 0 7px rgba(248, 150, 30, 0);
-    }
-    100% {
-      box-shadow: 0 0 0 0 rgba(248, 150, 30, 0);
-    }
+    0% { box-shadow: 0 0 0 0 rgba(248, 150, 30, 0.5); }
+    70% { box-shadow: 0 0 0 7px rgba(248, 150, 30, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(248, 150, 30, 0); }
   }
   @media (prefers-reduced-motion: reduce) {
-    .hd-line,
-    .hd-area,
-    .hd-tip {
-      animation: none;
-      stroke-dashoffset: 0;
-      opacity: 1;
-    }
+    .hd-line, .hd-area, .hd-tip { animation: none; stroke-dashoffset: 0; opacity: 1; }
   }
-  @media (max-width: 520px) {
-    .hd-side {
-      display: none;
-    }
-    .hd-body {
-      grid-template-columns: 1fr;
-    }
+  @media (max-width: 920px) {
+    .hd { width: 100%; transform: none; }
   }
 </style>
