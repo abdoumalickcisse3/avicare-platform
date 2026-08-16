@@ -2,7 +2,6 @@
 import SeoHead from "../components/SeoHead.astro";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
-import MobileCta from "../components/MobileCta.astro";
 import CountUp from "../components/CountUp.astro";
 import outfit600 from "../fonts/outfit-600.woff2";
 import outfit700 from "../fonts/outfit-700.woff2";
@@ -58,7 +57,6 @@ const { title, description, canonical, jsonLd, image, solidHeader = false } = As
       <slot />
     </main>
     <Footer />
-    <MobileCta />
     <CountUp />
   </body>
 </html>
