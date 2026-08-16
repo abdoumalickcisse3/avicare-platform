@@ -40,6 +40,18 @@ public class TenancyFacadeImpl implements TenancyFacade {
   }
 
   @Override
+  public List<Long> listAllFarmIds() {
+    return farmRepository.findAllIds();
+  }
+
+  @Override
+  public List<Long> listMemberUserIds(Long farmId) {
+    return userFarmRepository.findByFarmIdAndActiveTrue(farmId).stream()
+        .map(UserFarm::getUserId)
+        .toList();
+  }
+
+  @Override
   public boolean hasAccess(Long userId, Long farmId) {
     return userFarmRepository
         .findByUserIdAndFarmId(userId, farmId)
