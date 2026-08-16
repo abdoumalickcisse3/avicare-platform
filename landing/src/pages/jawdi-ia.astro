@@ -8,13 +8,18 @@ import Screenshot from "../components/Screenshot.astro";
 import FinalCta from "../components/FinalCta.astro";
 import { Image } from "astro:assets";
 import iaAnswer from "../assets/screens/web-jawdi-ia.jpg";
+import iaDiagnostic from "../assets/screens/ia-mobile-diagnostic.png";
+import iaConseil from "../assets/screens/ia-mobile-conseil.png";
+import iaVaccins from "../assets/screens/ia-mobile-vaccins.png";
 import mobileHome from "../assets/screens/mobile-home.png";
 import mobileAnalytics from "../assets/screens/mobile-analytics.png";
-import mobileFarm from "../assets/screens/mobile-farm.png";
 import mobileFinance from "../assets/screens/mobile-finance.png";
 import mobileMenu from "../assets/screens/mobile-menu.png";
 
 const signupUrl = import.meta.env.PUBLIC_APP_SIGNUP_URL || "#";
+const appStoreUrl = import.meta.env.PUBLIC_APP_STORE_URL || "";
+const playStoreUrl = import.meta.env.PUBLIC_PLAY_STORE_URL || "";
+const storesLive = Boolean(appStoreUrl || playStoreUrl);
 const siteUrl = Astro.site ? Astro.site.toString().replace(/\/$/, "") : "https://jawdi.app";
 
 const title = "Jawdi IA — le conseiller d'élevage qui connaît votre ferme";
@@ -68,9 +73,9 @@ const examples = [
 
 const phones = [
   { src: mobileHome, alt: "Accueil de l'app mobile Jawdi avec le micro pour dicter" },
+  { src: iaConseil, alt: "Jawdi IA propose un conseil prioritaire dans le chat mobile" },
   { src: mobileAnalytics, alt: "Analyse de rentabilité (marge, revenus vs dépenses) sur mobile" },
   { src: mobileFinance, alt: "Suivi des dépenses de la ferme sur mobile" },
-  { src: mobileFarm, alt: "Vue d'ensemble d'une ferme sur mobile" },
   { src: mobileMenu, alt: "Menu de navigation de l'app mobile Jawdi" },
 ];
 ---
@@ -157,15 +162,15 @@ const phones = [
     <div class="ia-cap rev">
       <div class="ia-cap-text">
         <div class="eyebrow">Voix &amp; action</div>
-        <h2>Dictez. Il prépare, vous confirmez.</h2>
+        <h2>Demandez à la voix. Il répond en détail.</h2>
         <p>
-          Sur le terrain, les mains prises, parlez : « dix sont morts sur le lot A ». Jawdi comprend,
-          prépare la saisie et vous la présente en <strong>carte à confirmer</strong> — rien n'est
-          enregistré sans votre validation.
+          Sur le terrain, les mains prises, parlez : « comment va mon élevage ? ». Jawdi vous répond
+          avec un vrai <strong>diagnostic</strong> — points forts, alertes stock, conseils — et pour
+          une action dictée, il prépare une carte à confirmer. Rien n'est enregistré sans vous.
         </p>
       </div>
       <div class="ia-cap-visual">
-        <Screenshot src={mobileHome} device="phone" alt="Micro de l'app mobile Jawdi pour dicter une saisie" />
+        <Screenshot src={iaDiagnostic} device="phone" alt="Diagnostic d'élevage par Jawdi IA dans le chat mobile : points forts et alertes stock" />
       </div>
     </div>
 
@@ -175,12 +180,12 @@ const phones = [
         <h2>Le bon conseil, selon qui demande.</h2>
         <p>
           Propriétaire, gestionnaire, vétérinaire ou éleveur : chacun ne voit que les données de son
-          périmètre. Jawdi s'adapte automatiquement — <strong>le même assistant</strong>, un conseil
-          pertinent pour chaque métier.
+          périmètre. Jawdi développe même ses réponses en <strong>tableaux</strong> — vaccins en
+          retard, impayés, résultats — pour décider vite et juste.
         </p>
       </div>
       <div class="ia-cap-visual">
-        <Screenshot src={mobileAnalytics} device="phone" alt="Analyse de rentabilité de la ferme sur mobile" />
+        <Screenshot src={iaVaccins} device="phone" alt="Jawdi IA liste les vaccinations en retard dans un tableau sur mobile" />
       </div>
     </div>
   </section>
@@ -220,6 +225,38 @@ const phones = [
           </div>
         ))
       }
+    </div>
+
+    <div class="ia-stores">
+      {!storesLive && <p class="ia-stores-soon">Bientôt sur l'App Store et Google Play</p>}
+      <div class="store-btns">
+        <a
+          class="store-btn"
+          href={appStoreUrl || "#"}
+          aria-label="Télécharger Jawdi sur l'App Store"
+          {...!storesLive ? { "aria-disabled": "true" } : {}}
+        >
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true">
+            <path d="M16.4 12.9c0-2 1.6-3 1.7-3-.9-1.4-2.4-1.5-2.9-1.6-1.2-.1-2.4.7-3 .7-.6 0-1.6-.7-2.6-.7-1.3 0-2.6.8-3.3 2-1.4 2.4-.4 6 1 8 .7 1 1.4 2 2.5 2 1 0 1.3-.6 2.5-.6s1.5.6 2.5.6 1.7-1 2.4-2c.7-1.1 1-2.1 1-2.2-.1 0-2.3-.9-2.3-3.4Z" />
+            <path d="M14.6 6.6c.5-.7.9-1.6.8-2.6-.8 0-1.8.6-2.4 1.2-.5.6-1 1.5-.8 2.4.9.1 1.8-.4 2.4-1Z" />
+          </svg>
+          <span><em>Télécharger sur</em><b>l'App Store</b></span>
+        </a>
+        <a
+          class="store-btn"
+          href={playStoreUrl || "#"}
+          aria-label="Télécharger Jawdi sur Google Play"
+          {...!storesLive ? { "aria-disabled": "true" } : {}}
+        >
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+            <path d="M3.6 2.3 13.4 12 3.6 21.7c-.4-.2-.6-.6-.6-1.1V3.4c0-.5.2-.9.6-1.1Z" fill="#34d399" />
+            <path d="m16.5 8.9 2.9 1.6c1 .6 1 1.4 0 2l-2.9 1.6L13.7 12l2.8-3.1Z" fill="#fbbf24" />
+            <path d="M4.6 2.1c.4-.2.9-.1 1.3.1l10 5.5-2.5 2.8L4.6 2.1Z" fill="#60a5fa" />
+            <path d="m13.4 13.5 2.5 2.8-10 5.5c-.4.2-.9.3-1.3.1l8.8-8.4Z" fill="#f87171" />
+          </svg>
+          <span><em>Disponible sur</em><b>Google Play</b></span>
+        </a>
+      </div>
     </div>
   </section>
 
@@ -325,6 +362,8 @@ const phones = [
     background: rgba(255, 255, 255, 0.04);
   }
   .ia-shot-frame {
+    max-width: 540px;
+    margin-inline: auto;
     border-radius: 16px;
     overflow: hidden;
     background: var(--paper);
@@ -504,6 +543,62 @@ const phones = [
   }
   .ia-phones::-webkit-scrollbar {
     height: 0;
+  }
+
+  /* download the mobile app */
+  .ia-stores {
+    margin-top: 26px;
+    text-align: center;
+  }
+  .ia-stores-soon {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin: 0 0 14px;
+  }
+  .store-btns {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .store-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 11px;
+    padding: 11px 20px;
+    border-radius: 14px;
+    background: var(--earth);
+    color: #fff;
+    border: 1px solid var(--earth-700);
+    transition:
+      transform 0.15s ease,
+      background 0.15s ease;
+  }
+  .store-btn:hover {
+    transform: translateY(-2px);
+    background: var(--earth-800);
+  }
+  .store-btn[aria-disabled="true"] {
+    opacity: 0.85;
+  }
+  .store-btn svg {
+    flex: none;
+  }
+  .store-btn span {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+    text-align: left;
+  }
+  .store-btn em {
+    font-style: normal;
+    font-size: 11px;
+    color: #cfe3c6;
+  }
+  .store-btn b {
+    font-size: 16px;
+    font-weight: 700;
   }
 
   @keyframes iaReveal {
