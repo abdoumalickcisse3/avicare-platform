@@ -6,7 +6,7 @@ import Base from "../layouts/Base.astro";
 import Highlight from "../components/Highlight.astro";
 import Screenshot from "../components/Screenshot.astro";
 import FinalCta from "../components/FinalCta.astro";
-import { Image } from "astro:assets";
+import HeroPhoneChat from "../components/HeroPhoneChat.astro";
 import iaAnswer from "../assets/screens/web-jawdi-ia.jpg";
 import iaDiagnostic from "../assets/screens/ia-mobile-diagnostic.png";
 import iaConseil from "../assets/screens/ia-mobile-conseil.png";
@@ -107,18 +107,7 @@ const phones = [
       </div>
 
       <div class="ia-hero-shot">
-        <div class="ia-shot-frame" data-float>
-          <div class="chrome" aria-hidden="true"><span></span><span></span><span></span><em>Jawdi IA</em></div>
-          <Image
-            src={iaAnswer}
-            alt="Réponse de Jawdi IA : analyse de la production d'œufs avec un tableau d'hypothèses et des prochaines actions"
-            widths={[560, 900, 1200]}
-            sizes="(max-width:920px) 92vw, 600px"
-            loading="eager"
-            fetchpriority="high"
-            class="ia-shot-img"
-          />
-        </div>
+        <HeroPhoneChat />
       </div>
     </div>
   </section>
@@ -307,6 +296,11 @@ const phones = [
     grid-template-columns: 1.02fr 0.98fr;
     gap: 52px;
     align-items: center;
+  }
+  /* Let the coded chat console keep its width and bleed off the right edge,
+     instead of stretching the track and squeezing the hero copy. */
+  .ia-hero-shot {
+    min-width: 0;
   }
   .ia-eyebrow {
     display: inline-flex;
