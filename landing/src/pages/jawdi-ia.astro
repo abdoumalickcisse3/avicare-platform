@@ -1,0 +1,574 @@
+---
+// Jawdi IA — page de présentation du conseiller IA. Design volontairement plus
+// premium/sombre que le reste du site (hero "console IA") tout en restant sur
+// la marque (vert + orange). Illustrée par de vraies captures produit.
+import Base from "../layouts/Base.astro";
+import Highlight from "../components/Highlight.astro";
+import Screenshot from "../components/Screenshot.astro";
+import FinalCta from "../components/FinalCta.astro";
+import { Image } from "astro:assets";
+import iaAnswer from "../assets/screens/web-jawdi-ia.jpg";
+import mobileHome from "../assets/screens/mobile-home.png";
+import mobileAnalytics from "../assets/screens/mobile-analytics.png";
+import mobileFarm from "../assets/screens/mobile-farm.png";
+import mobileFinance from "../assets/screens/mobile-finance.png";
+import mobileMenu from "../assets/screens/mobile-menu.png";
+
+const signupUrl = import.meta.env.PUBLIC_APP_SIGNUP_URL || "#";
+const siteUrl = Astro.site ? Astro.site.toString().replace(/\/$/, "") : "https://jawdi.app";
+
+const title = "Jawdi IA — le conseiller d'élevage qui connaît votre ferme";
+const description =
+  "Jawdi IA est un conseiller d'élevage avicole propulsé par l'IA : il parle français, analyse vos données réelles, conseille et prépare vos actions — sur le web et sur mobile, adapté à chaque rôle.";
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "Jawdi IA",
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Web, iOS, Android",
+  description,
+  url: `${siteUrl}/jawdi-ia`,
+  offers: { "@type": "Offer", price: "0", priceCurrency: "XOF" },
+  featureList: [
+    "Conseiller conversationnel en français",
+    "Analyse des données réelles de la ferme",
+    "Conseils et alertes d'élevage",
+    "Préparation d'actions (saisie par la voix)",
+    "Adapté au rôle de chaque utilisateur",
+  ],
+};
+
+const steps = [
+  {
+    k: "01",
+    t: "Vous demandez",
+    b: "Par écrit ou à la voix, en français : « Comment va mon lot A ? », « Qui me doit de l'argent ? ».",
+  },
+  {
+    k: "02",
+    t: "Il lit vos données",
+    b: "Jawdi consulte vos vrais chiffres — effectif, mortalité, stock, ventes, soldes — jamais inventés.",
+  },
+  {
+    k: "03",
+    t: "Il répond et prépare",
+    b: "Une analyse claire, un conseil actionnable, et si vous dictez une action, un brouillon à confirmer d'un geste.",
+  },
+];
+
+const examples = [
+  "Comment va mon élevage ?",
+  "Quel est mon stock d'aliment ?",
+  "Mon résultat du mois ?",
+  "Qui me doit de l'argent ?",
+  "Quels vaccins sont en retard ?",
+  "Enregistre 12 morts sur le lot A",
+];
+
+const phones = [
+  { src: mobileHome, alt: "Accueil de l'app mobile Jawdi avec le micro pour dicter" },
+  { src: mobileAnalytics, alt: "Analyse de rentabilité (marge, revenus vs dépenses) sur mobile" },
+  { src: mobileFinance, alt: "Suivi des dépenses de la ferme sur mobile" },
+  { src: mobileFarm, alt: "Vue d'ensemble d'une ferme sur mobile" },
+  { src: mobileMenu, alt: "Menu de navigation de l'app mobile Jawdi" },
+];
+---
+
+<Base title={title} description={description} jsonLd={jsonLd}>
+  {/* ---------------------------------------------------------------- HERO */}
+  <section class="ia-hero">
+    <div class="glow g1"></div>
+    <div class="glow g2"></div>
+    <div class="wrap ia-hero-grid">
+      <div class="ia-hero-copy">
+        <div class="ia-eyebrow"><span class="sparkle">✦</span> Nouveau · Jawdi IA</div>
+        <h1>
+          Un conseiller d'élevage<br />qui connaît <Highlight>votre ferme</Highlight>.
+        </h1>
+        <p class="ia-sub">
+          Jawdi IA parle français, analyse <strong>vos données réelles</strong> et vous conseille comme
+          un vétérinaire doublé d'un gestionnaire. Il peut même préparer vos saisies — à la voix.
+        </p>
+        <div class="ia-cta">
+          <a class="btn btn-cta btn-lg" href={signupUrl}>Commencer gratuitement</a>
+          <a class="btn btn-onearth btn-lg" href="#exemples">Voir un exemple</a>
+        </div>
+        <ul class="ia-badges">
+          <li>Ancré dans vos données</li>
+          <li>Voix &amp; texte</li>
+          <li>Web + mobile</li>
+        </ul>
+      </div>
+
+      <div class="ia-hero-shot">
+        <div class="ia-shot-frame" data-float>
+          <div class="chrome" aria-hidden="true"><span></span><span></span><span></span><em>Jawdi IA</em></div>
+          <Image
+            src={iaAnswer}
+            alt="Réponse de Jawdi IA : analyse de la production d'œufs avec un tableau d'hypothèses et des prochaines actions"
+            widths={[560, 900, 1200]}
+            sizes="(max-width:920px) 92vw, 600px"
+            loading="eager"
+            fetchpriority="high"
+            class="ia-shot-img"
+          />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* -------------------------------------------------------------- COMMENT */}
+  <section class="panel reveal">
+    <div class="ia-head">
+      <div class="eyebrow">Comment ça marche</div>
+      <h2>Trois gestes. Une vraie analyse.</h2>
+    </div>
+    <div class="ia-steps">
+      {
+        steps.map((s) => (
+          <div class="ia-step">
+            <div class="ia-step-k">{s.k}</div>
+            <h3>{s.t}</h3>
+            <p>{s.b}</p>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  {/* ------------------------------------------------------------ CAPACITÉS */}
+  <section class="panel panel-stone reveal">
+    <div class="ia-cap">
+      <div class="ia-cap-text">
+        <div class="eyebrow">Ancré dans vos données</div>
+        <h2>Il répond avec <Highlight>vos vrais chiffres</Highlight>.</h2>
+        <p>
+          Pas de réponses génériques : Jawdi consulte votre effectif, votre mortalité, vos stocks, vos
+          ventes et vos soldes clients. Il développe l'analyse en <strong>tableaux</strong> et termine
+          par un conseil concret et la prochaine action utile.
+        </p>
+      </div>
+      <div class="ia-cap-visual">
+        <Screenshot src={iaAnswer} alt="Jawdi IA analyse la production d'œufs et propose des hypothèses et des actions" />
+      </div>
+    </div>
+
+    <div class="ia-cap rev">
+      <div class="ia-cap-text">
+        <div class="eyebrow">Voix &amp; action</div>
+        <h2>Dictez. Il prépare, vous confirmez.</h2>
+        <p>
+          Sur le terrain, les mains prises, parlez : « dix sont morts sur le lot A ». Jawdi comprend,
+          prépare la saisie et vous la présente en <strong>carte à confirmer</strong> — rien n'est
+          enregistré sans votre validation.
+        </p>
+      </div>
+      <div class="ia-cap-visual">
+        <Screenshot src={mobileHome} device="phone" alt="Micro de l'app mobile Jawdi pour dicter une saisie" />
+      </div>
+    </div>
+
+    <div class="ia-cap">
+      <div class="ia-cap-text">
+        <div class="eyebrow">Adapté à chaque rôle</div>
+        <h2>Le bon conseil, selon qui demande.</h2>
+        <p>
+          Propriétaire, gestionnaire, vétérinaire ou éleveur : chacun ne voit que les données de son
+          périmètre. Jawdi s'adapte automatiquement — <strong>le même assistant</strong>, un conseil
+          pertinent pour chaque métier.
+        </p>
+      </div>
+      <div class="ia-cap-visual">
+        <Screenshot src={mobileAnalytics} device="phone" alt="Analyse de rentabilité de la ferme sur mobile" />
+      </div>
+    </div>
+  </section>
+
+  {/* -------------------------------------------------------------- EXEMPLES */}
+  <section id="exemples" class="panel reveal">
+    <div class="ia-head center">
+      <div class="eyebrow">Posez n'importe quoi</div>
+      <h2>Ce que les éleveurs lui demandent.</h2>
+    </div>
+    <div class="ia-examples">
+      {
+        examples.map((q) => (
+          <span class="ia-q">
+            <span class="q-ic">✦</span>
+            {q}
+          </span>
+        ))
+      }
+    </div>
+  </section>
+
+  {/* --------------------------------------------------------- MULTIPLATEFORME */}
+  <section class="panel panel-tint reveal">
+    <div class="ia-head center">
+      <div class="eyebrow">Web + mobile</div>
+      <h2>Jawdi, aussi dans <Highlight>votre poche</Highlight>.</h2>
+      <p class="ia-lead">
+        Le conseiller vous suit du bureau au poulailler — même compte, mêmes données, en temps réel.
+      </p>
+    </div>
+    <div class="ia-phones" role="list">
+      {
+        phones.map((p, i) => (
+          <div class="ia-phone" role="listitem" style={`--i:${i}`}>
+            <Screenshot src={p.src} device="phone" alt={p.alt} />
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <FinalCta
+    title="Essayez Jawdi IA sur votre ferme."
+    description="Gratuit pendant le pilote. Sans carte bancaire. En français."
+  />
+</Base>
+
+<style is:global>
+  /* ---- HERO (premium dark AI console) ---- */
+  .ia-hero {
+    position: relative;
+    overflow: hidden;
+    margin-top: -92px;
+    padding: 176px 0 96px;
+    color: #eaf3e4;
+    background:
+      radial-gradient(120% 80% at 78% -10%, rgba(61, 139, 61, 0.42), transparent 55%),
+      linear-gradient(165deg, var(--earth) 0%, var(--earth-800) 60%, #0c220c 100%);
+  }
+  .ia-hero .glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    pointer-events: none;
+    animation: iaGlow 9s ease-in-out infinite;
+  }
+  .ia-hero .g1 {
+    width: 480px;
+    height: 480px;
+    top: -160px;
+    right: -80px;
+    background: radial-gradient(circle, rgba(61, 139, 61, 0.5), transparent 68%);
+  }
+  .ia-hero .g2 {
+    width: 520px;
+    height: 520px;
+    bottom: -220px;
+    left: -140px;
+    background: radial-gradient(circle, rgba(248, 150, 30, 0.28), transparent 66%);
+    animation-duration: 11s;
+  }
+  .ia-hero-grid {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1.02fr 0.98fr;
+    gap: 52px;
+    align-items: center;
+  }
+  .ia-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    color: var(--leaf-300);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 6px 12px;
+    border-radius: 999px;
+  }
+  .ia-eyebrow .sparkle {
+    color: var(--sun);
+  }
+  .ia-hero h1 {
+    color: #fff;
+    font-size: clamp(2.3rem, 5vw, 3.7rem);
+    margin-top: 18px;
+  }
+  .ia-sub {
+    margin-top: 22px;
+    font-size: 1.12rem;
+    color: #cfe3c6;
+    max-width: 44ch;
+  }
+  .ia-sub strong {
+    color: #fff;
+  }
+  .ia-cta {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 30px;
+  }
+  .ia-badges {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 26px 0 0;
+    padding: 0;
+  }
+  .ia-badges li {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: #cfe3c6;
+    padding: 6px 11px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.04);
+  }
+  .ia-shot-frame {
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--paper);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow:
+      0 46px 90px -34px rgba(0, 0, 0, 0.66),
+      0 14px 30px -16px rgba(0, 0, 0, 0.45);
+    transform: perspective(1500px) rotateY(-4deg) rotateX(1.4deg);
+    animation: iaReveal 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .ia-shot-frame[data-float] {
+    animation:
+      iaReveal 0.85s cubic-bezier(0.22, 1, 0.36, 1) both,
+      iaFloat 7.5s ease-in-out 0.85s infinite;
+  }
+  .ia-shot-frame .chrome {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 13px;
+    background: #f0efec;
+    border-bottom: 1px solid var(--line);
+  }
+  .ia-shot-frame .chrome span {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #d6d3d1;
+  }
+  .ia-shot-frame .chrome span:first-child {
+    background: #ef6a5f;
+  }
+  .ia-shot-frame .chrome span:nth-child(2) {
+    background: #f6be4f;
+  }
+  .ia-shot-frame .chrome span:nth-child(3) {
+    background: #57c05a;
+  }
+  .ia-shot-frame .chrome em {
+    margin-left: 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-style: normal;
+    color: var(--ink-soft);
+  }
+  :global(.ia-shot-img) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  /* ---- shared section heads ---- */
+  .ia-head {
+    max-width: 720px;
+  }
+  .ia-head.center {
+    margin-inline: auto;
+    text-align: center;
+  }
+  .ia-head h2 {
+    font-size: clamp(1.7rem, 3.4vw, 2.3rem);
+    margin-top: 8px;
+  }
+  .ia-head .ia-lead {
+    margin-top: 14px;
+    color: var(--ink-soft);
+    font-size: 1.05rem;
+  }
+
+  /* ---- steps ---- */
+  .ia-steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+    margin-top: 40px;
+  }
+  .ia-step {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 26px;
+  }
+  .ia-step-k {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--sun-600);
+    font-weight: 600;
+  }
+  .ia-step h3 {
+    margin-top: 10px;
+    font-size: 1.2rem;
+  }
+  .ia-step p {
+    margin-top: 8px;
+    color: var(--ink-soft);
+    font-size: 0.98rem;
+  }
+
+  /* ---- capability rows ---- */
+  .ia-cap {
+    display: grid;
+    grid-template-columns: 0.9fr 1.1fr;
+    gap: 44px;
+    align-items: center;
+  }
+  .ia-cap + .ia-cap {
+    margin-top: 64px;
+  }
+  .ia-cap.rev .ia-cap-text {
+    order: 2;
+  }
+  .ia-cap.rev .ia-cap-visual {
+    order: 1;
+  }
+  .ia-cap-text h2 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    margin-top: 8px;
+  }
+  .ia-cap-text p {
+    margin-top: 14px;
+    color: var(--ink-soft);
+    font-size: 1.04rem;
+  }
+  .ia-cap-text p strong {
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  /* ---- examples ---- */
+  .ia-examples {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 36px;
+    max-width: 860px;
+    margin-inline: auto;
+  }
+  .ia-q {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 12px 18px;
+    border-radius: 999px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    font-size: 1rem;
+    color: var(--ink);
+    box-shadow: 0 8px 20px -14px rgba(18, 43, 18, 0.3);
+    transition:
+      transform 0.15s ease,
+      border-color 0.15s ease;
+  }
+  .ia-q:hover {
+    transform: translateY(-2px);
+    border-color: var(--leaf);
+  }
+  .ia-q .q-ic {
+    color: var(--sun);
+    font-size: 0.9em;
+  }
+
+  /* ---- phones ---- */
+  .ia-phones {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    padding: 40px 4px 12px;
+    scroll-snap-type: x mandatory;
+  }
+  .ia-phone {
+    flex: 0 0 auto;
+    width: 220px;
+    scroll-snap-align: center;
+    animation: iaReveal 0.6s ease both;
+    animation-delay: calc(var(--i) * 0.06s);
+  }
+  .ia-phones::-webkit-scrollbar {
+    height: 0;
+  }
+
+  @keyframes iaReveal {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes iaFloat {
+    0%,
+    100% {
+      transform: perspective(1500px) rotateY(-4deg) rotateX(1.4deg) translateY(0);
+    }
+    50% {
+      transform: perspective(1500px) rotateY(-4deg) rotateX(1.4deg) translateY(-12px);
+    }
+  }
+  @keyframes iaGlow {
+    0%,
+    100% {
+      opacity: 0.7;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ia-shot-frame,
+    .ia-shot-frame[data-float],
+    .ia-hero .glow,
+    .ia-phone {
+      animation: none;
+    }
+  }
+
+  @media (max-width: 920px) {
+    .ia-hero {
+      margin-top: -86px;
+      padding: 116px 0 64px;
+    }
+    .ia-hero-grid {
+      grid-template-columns: 1fr;
+      gap: 36px;
+    }
+    .ia-shot-frame {
+      transform: none;
+      animation: iaReveal 0.7s ease both;
+    }
+    .ia-steps {
+      grid-template-columns: 1fr;
+    }
+    .ia-cap,
+    .ia-cap.rev {
+      grid-template-columns: 1fr;
+      gap: 28px;
+    }
+    .ia-cap.rev .ia-cap-text {
+      order: 1;
+    }
+    .ia-cap.rev .ia-cap-visual {
+      order: 2;
+    }
+  }
+</style>
