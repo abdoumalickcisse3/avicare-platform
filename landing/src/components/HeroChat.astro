@@ -1,0 +1,231 @@
+---
+// Coded, animated recreation of the Jawdi IA chat console for the /jawdi-ia
+// hero — same treatment as the homepage dashboard (wide, tilted, bleeds right),
+// showing a real conversation: a user question and an assistant answer card
+// with a table, revealed with motion.
+import { Image } from "astro:assets";
+import logo from "../assets/logo.png";
+
+const nav = [
+  { label: "Tableau de bord", ic: "grid" },
+  { label: "Jawdi IA", ic: "spark", active: true },
+  { label: "Fermes", ic: "home" },
+];
+const gestion = [
+  { label: "Élevage", ic: "bird", chev: true },
+  { label: "Stocks", ic: "box", chev: true },
+  { label: "Commercial", ic: "cart", chev: true },
+  { label: "Finance", ic: "wallet", chev: true },
+];
+const rows = [
+  ["Pas de lot de pondeuses actif", "Consultez l'effectif"],
+  ["Pondeuses en fin de cycle", "Âge des poules ?"],
+  ["Problème sanitaire", "Maladie, stress…"],
+];
+---
+
+<div class="hc" aria-label="Aperçu du chat Jawdi IA">
+  <div class="hc-chrome" aria-hidden="true">
+    <span></span><span></span><span></span><em>Jawdi IA</em>
+  </div>
+
+  <div class="hc-body">
+    <aside class="hc-side">
+      <Image src={logo} alt="Jawdi Platform" width={120} height={40} class="hc-logo" loading="eager" />
+      <nav class="hc-nav">
+        {
+          nav.map((n) => (
+            <a class:list={["hc-item", { active: n.active }]}>
+              <span class:list={["hc-ic", `hc-${n.ic}`]} />
+              {n.label}
+            </a>
+          ))
+        }
+        <div class="hc-lab">Gestion</div>
+        {
+          gestion.map((n) => (
+            <a class="hc-item">
+              <span class:list={["hc-ic", `hc-${n.ic}`]} />
+              {n.label}
+              {n.chev && <span class="hc-chev" />}
+            </a>
+          ))
+        }
+      </nav>
+    </aside>
+
+    <main class="hc-main">
+      <div class="hc-head">
+        <span class="hc-av"></span>
+        <div>
+          <b>Jawdi IA</b>
+          <span class="hc-status"><i></i>Conseiller d'élevage · en ligne</span>
+        </div>
+      </div>
+
+      <div class="hc-thread">
+        <div class="hc-user">Comment va mon élevage ?</div>
+
+        <div class="hc-answer">
+          <div class="hc-a-head">
+            <span class="hc-av sm"></span>
+            <span class="hc-a-title">Diagnostic de votre élevage 🟢</span>
+          </div>
+          <p class="hc-a-p"><b>Zéro mortalité</b> sur 7 jours, effectif sain de <b>6 720 sujets</b>.</p>
+          <div class="hc-a-sub">Points à vérifier — production d'œufs :</div>
+          <div class="hc-table">
+            <div class="hc-tr hc-th"><span>Hypothèse</span><span>À vérifier</span></div>
+            {
+              rows.map((r, i) => (
+                <div class="hc-tr" style={`--r:${i}`}>
+                  <span>{r[0]}</span>
+                  <span>{r[1]}</span>
+                </div>
+              ))
+            }
+          </div>
+          <p class="hc-a-tip"><b>Conseil :</b> commandez l'aliment avant vendredi (stock &lt; 5 j).</p>
+        </div>
+      </div>
+
+      <div class="hc-input">
+        <span class="hc-input-tx">Posez une question, dictez une action…</span>
+        <span class="hc-send"></span>
+      </div>
+    </main>
+  </div>
+</div>
+
+<style is:global>
+  .hc {
+    width: 720px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    box-shadow:
+      0 46px 90px -34px rgba(0, 0, 0, 0.6),
+      0 14px 30px -16px rgba(0, 0, 0, 0.42);
+    transform: perspective(1700px) rotateY(-6deg) rotateX(1deg);
+    transform-origin: left center;
+  }
+  .hc-chrome {
+    display: flex; align-items: center; gap: 6px;
+    padding: 9px 13px; background: #f0efec; border-bottom: 1px solid var(--line);
+  }
+  .hc-chrome span { width: 9px; height: 9px; border-radius: 50%; background: #d6d3d1; }
+  .hc-chrome span:first-child { background: #ef6a5f; }
+  .hc-chrome span:nth-child(2) { background: #f6be4f; }
+  .hc-chrome span:nth-child(3) { background: #57c05a; }
+  .hc-chrome em {
+    margin-left: 10px; font-family: var(--mono); font-size: 11px;
+    font-style: normal; color: var(--ink-soft);
+  }
+  .hc-body { display: grid; grid-template-columns: 168px 1fr; background: #f4f8f2; }
+  .hc-side { padding: 16px 12px; border-right: 1px solid var(--line); background: var(--paper); }
+  .hc-logo { height: 30px; width: auto; margin: 2px 4px 14px; }
+  .hc-nav { display: flex; flex-direction: column; gap: 2px; }
+  .hc-item {
+    display: flex; align-items: center; gap: 9px; padding: 7px 10px;
+    border-radius: 9px; font-size: 12.5px; font-weight: 600; color: var(--ink-soft);
+  }
+  .hc-item.active { background: var(--leaf-050); color: var(--earth-700); }
+  .hc-lab {
+    font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--ink-faint); padding: 12px 10px 4px;
+  }
+  .hc-ic {
+    width: 15px; height: 15px; border-radius: 4px; flex: none;
+    background: currentColor; opacity: 0.5;
+    -webkit-mask-position: center; mask-position: center;
+    -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+    -webkit-mask-size: contain; mask-size: contain;
+  }
+  .hc-item.active .hc-ic { opacity: 0.95; }
+  .hc-grid { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='3' y='3' width='7' height='7' rx='1'/%3E%3Crect x='14' y='3' width='7' height='7' rx='1'/%3E%3Crect x='3' y='14' width='7' height='7' rx='1'/%3E%3Crect x='14' y='14' width='7' height='7' rx='1'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='3' y='3' width='7' height='7' rx='1'/%3E%3Crect x='14' y='3' width='7' height='7' rx='1'/%3E%3Crect x='3' y='14' width='7' height='7' rx='1'/%3E%3Crect x='14' y='14' width='7' height='7' rx='1'/%3E%3C/svg%3E"); }
+  .hc-spark { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l1.6 5.4L19 9l-5.4 1.6L12 16l-1.6-5.4L5 9l5.4-1.6z'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l1.6 5.4L19 9l-5.4 1.6L12 16l-1.6-5.4L5 9l5.4-1.6z'/%3E%3C/svg%3E"); }
+  .hc-home, .hc-bird, .hc-box, .hc-cart, .hc-wallet { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3C/svg%3E"); }
+  .hc-chev {
+    width: 0; height: 0; margin-left: auto;
+    border-top: 4px solid transparent; border-bottom: 4px solid transparent;
+    border-left: 5px solid currentColor; opacity: 0.45;
+  }
+
+  .hc-main { padding: 14px 16px 14px; min-width: 0; display: flex; flex-direction: column; }
+  .hc-head { display: flex; align-items: center; gap: 10px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+  .hc-av {
+    width: 30px; height: 30px; border-radius: 50%; flex: none;
+    background: radial-gradient(circle at 30% 30%, #53a250, var(--earth-700));
+    position: relative;
+  }
+  .hc-av::after {
+    content: "✦"; position: absolute; inset: 0; display: grid; place-items: center;
+    color: #fff; font-size: 13px;
+  }
+  .hc-av.sm { width: 22px; height: 22px; }
+  .hc-av.sm::after { font-size: 10px; }
+  .hc-head b { font-size: 13.5px; color: var(--ink); display: block; line-height: 1.1; }
+  .hc-status { display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; color: var(--ink-soft); }
+  .hc-status i { width: 6px; height: 6px; border-radius: 50%; background: var(--leaf); }
+
+  .hc-thread { flex: 1; padding: 14px 2px; display: flex; flex-direction: column; gap: 12px; }
+  .hc-user {
+    align-self: flex-end; max-width: 70%;
+    background: linear-gradient(135deg, var(--leaf), var(--earth-700));
+    color: #fff; font-size: 12.5px; font-weight: 600;
+    padding: 9px 14px; border-radius: 16px 16px 4px 16px;
+    animation: hcRise 0.5s ease both;
+  }
+  .hc-answer {
+    align-self: flex-start; max-width: 90%;
+    background: var(--paper); border: 1px solid var(--line);
+    border-radius: 16px 16px 16px 4px; padding: 13px 15px;
+    box-shadow: 0 10px 26px -18px rgba(18, 43, 18, 0.4);
+    animation: hcRise 0.55s ease 0.5s both;
+  }
+  .hc-a-head { display: flex; align-items: center; gap: 8px; }
+  .hc-a-title { font-size: 13px; font-weight: 700; color: var(--earth-700); }
+  .hc-a-p { margin: 9px 0 0; font-size: 12px; color: var(--ink); line-height: 1.5; }
+  .hc-a-p b, .hc-a-tip b { color: var(--earth-700); font-weight: 700; }
+  .hc-a-sub { margin-top: 10px; font-size: 11px; color: var(--ink-soft); }
+  .hc-table { margin-top: 7px; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+  .hc-tr { display: grid; grid-template-columns: 1fr 1fr; font-size: 11px; }
+  .hc-tr span { padding: 7px 10px; border-top: 1px solid var(--line-soft); }
+  .hc-tr span:first-child { color: var(--earth-700); font-weight: 600; }
+  .hc-tr span:last-child { color: var(--ink-soft); }
+  .hc-th { background: var(--leaf-050); }
+  .hc-th span { border-top: 0; font-weight: 700; color: var(--ink); }
+  .hc-table .hc-tr:not(.hc-th) { opacity: 0; animation: hcFadeUp 0.4s ease forwards; animation-delay: calc(1.05s + var(--r) * 0.14s); }
+  .hc-a-tip { margin: 10px 0 0; font-size: 12px; color: var(--ink); }
+
+  .hc-input {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    border: 1px solid var(--line); background: var(--paper);
+    border-radius: 999px; padding: 9px 9px 9px 16px; margin-top: 4px;
+  }
+  .hc-input-tx { font-size: 12px; color: var(--ink-faint); }
+  .hc-send {
+    width: 30px; height: 30px; border-radius: 50%; flex: none;
+    background: var(--leaf);
+    -webkit-mask: none;
+    position: relative;
+  }
+  .hc-send::after {
+    content: ""; position: absolute; inset: 0;
+    background: #fff;
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 11l18-8-8 18-2-8-8-2z'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 11l18-8-8 18-2-8-8-2z'/%3E%3C/svg%3E");
+    -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+    -webkit-mask-position: center; mask-position: center;
+    -webkit-mask-size: 15px; mask-size: 15px;
+  }
+
+  @keyframes hcRise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  @keyframes hcFadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    .hc-user, .hc-answer, .hc-table .hc-tr:not(.hc-th) { animation: none; opacity: 1; transform: none; }
+  }
+  @media (max-width: 920px) {
+    .hc { width: 100%; transform: none; }
+  }
+</style>
