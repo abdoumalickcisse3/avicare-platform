@@ -1,0 +1,138 @@
+---
+// Homepage "App mobile" section (inspired by fitsen's app block): a light card
+// with copy + store buttons on the left and a tilted coded phone on the right.
+import Highlight from "./Highlight.astro";
+import PhoneApp from "./PhoneApp.astro";
+
+const appStoreUrl = import.meta.env.PUBLIC_APP_STORE_URL || "";
+const playStoreUrl = import.meta.env.PUBLIC_PLAY_STORE_URL || "";
+const storesLive = Boolean(appStoreUrl || playStoreUrl);
+---
+
+<section class="panel reveal">
+  <div class="appsec">
+    <div class="appsec-copy">
+      <div class="appsec-eyebrow">◆ App mobile</div>
+      <h2>Votre élevage, <Highlight>dans votre poche</Highlight>.</h2>
+      <p>
+        Saisissez en 3 secondes, même au poulailler : mortalité, pesée, collecte d'œufs, vente.
+        Dictez à <strong>Jawdi IA</strong>, travaillez hors-ligne — tout se synchronise dès que le
+        réseau revient.
+      </p>
+      {!storesLive && <p class="appsec-soon">Bientôt sur l'App Store et Google Play</p>}
+      <div class="appsec-btns">
+        <a class="store-pill" href={appStoreUrl || "#"} aria-label="Télécharger sur l'App Store">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+            <path d="M16.4 12.9c0-2 1.6-3 1.7-3-.9-1.4-2.4-1.5-2.9-1.6-1.2-.1-2.4.7-3 .7-.6 0-1.6-.7-2.6-.7-1.3 0-2.6.8-3.3 2-1.4 2.4-.4 6 1 8 .7 1 1.4 2 2.5 2 1 0 1.3-.6 2.5-.6s1.5.6 2.5.6 1.7-1 2.4-2c.7-1.1 1-2.1 1-2.2-.1 0-2.3-.9-2.3-3.4Z" />
+            <path d="M14.6 6.6c.5-.7.9-1.6.8-2.6-.8 0-1.8.6-2.4 1.2-.5.6-1 1.5-.8 2.4.9.1 1.8-.4 2.4-1Z" />
+          </svg>
+          App Store
+        </a>
+        <a class="store-pill" href={playStoreUrl || "#"} aria-label="Télécharger sur Google Play">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path d="M3.6 2.3 13.4 12 3.6 21.7c-.4-.2-.6-.6-.6-1.1V3.4c0-.5.2-.9.6-1.1Z" fill="#34d399" />
+            <path d="m16.5 8.9 2.9 1.6c1 .6 1 1.4 0 2l-2.9 1.6L13.7 12l2.8-3.1Z" fill="#fbbf24" />
+            <path d="M4.6 2.1c.4-.2.9-.1 1.3.1l10 5.5-2.5 2.8L4.6 2.1Z" fill="#60a5fa" />
+            <path d="m13.4 13.5 2.5 2.8-10 5.5c-.4.2-.9.3-1.3.1l8.8-8.4Z" fill="#f87171" />
+          </svg>
+          Play Store
+        </a>
+      </div>
+    </div>
+
+    <div class="appsec-phone">
+      <PhoneApp />
+    </div>
+  </div>
+</section>
+
+<style>
+  .appsec {
+    max-width: var(--wrap);
+    margin: 0 auto;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 28px;
+    padding: 48px 52px;
+    box-shadow: 0 30px 70px -40px rgba(18, 43, 18, 0.28);
+    display: grid;
+    grid-template-columns: 1fr 0.85fr;
+    gap: 40px;
+    align-items: center;
+    overflow: hidden;
+  }
+  .appsec-eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--earth-700);
+    font-weight: 600;
+  }
+  .appsec-copy h2 {
+    margin-top: 12px;
+    font-size: clamp(1.8rem, 3.6vw, 2.6rem);
+  }
+  .appsec-copy p {
+    margin-top: 16px;
+    font-size: 1.08rem;
+    color: var(--ink-soft);
+    max-width: 46ch;
+  }
+  .appsec-copy p strong {
+    color: var(--ink);
+    font-weight: 700;
+  }
+  .appsec-soon {
+    font-family: var(--mono);
+    font-size: 12.5px !important;
+    color: var(--ink-faint) !important;
+    margin-top: 14px !important;
+  }
+  .appsec-btns {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+  }
+  .store-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 12px 22px;
+    border-radius: 999px;
+    background: var(--earth-700);
+    color: #fff;
+    font-weight: 700;
+    font-size: 15px;
+    transition:
+      transform 0.15s ease,
+      background 0.15s ease;
+  }
+  .store-pill:hover {
+    transform: translateY(-2px);
+    background: var(--earth-800);
+  }
+  .appsec-phone {
+    position: relative;
+    display: flex;
+    justify-content: center;
+  }
+  .appsec-phone :global(.pa) {
+    transform: rotate(7deg) translateY(6px);
+  }
+
+  @media (max-width: 860px) {
+    .appsec {
+      grid-template-columns: 1fr;
+      padding: 36px 26px;
+      gap: 30px;
+    }
+    .appsec-phone {
+      order: -1;
+    }
+    .appsec-phone :global(.pa) {
+      transform: none;
+    }
+  }
+</style>

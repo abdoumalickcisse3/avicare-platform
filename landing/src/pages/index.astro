@@ -16,6 +16,7 @@ import TestimonialCard from "../components/TestimonialCard.astro";
 import PricingCard from "../components/PricingCard.astro";
 import Faq from "../components/Faq.astro";
 import FinalCta from "../components/FinalCta.astro";
+import AppSection from "../components/AppSection.astro";
 import { testimonials } from "../data/testimonials";
 import { plans } from "../data/plans";
 import { faq } from "../data/faq";
@@ -241,6 +242,8 @@ const jsonLd = {
     </div>
     <p class="note">* Témoignages illustratifs — à remplacer par de vrais retours du pilote.</p>
   </section>
+
+  <AppSection />
 
   <section id="tarifs" class="panel panel-tint reveal">
     <SectionHead center eyebrow="Tarifs">
