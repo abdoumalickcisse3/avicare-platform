@@ -14,12 +14,10 @@ const nav = [
 ];
 const gestion = [
   { label: "Élevage", ic: "bird", chev: true },
-  { label: "Poulets de chair", ic: "bird", sub: true },
-  { label: "Œufs", ic: "egg", sub: true },
-  { label: "Sanitaire", ic: "heart", sub: true },
   { label: "Stocks", ic: "box", chev: true },
   { label: "Commercial", ic: "cart", chev: true },
   { label: "Finance", ic: "wallet", chev: true },
+  { label: "Réglages", ic: "home" },
 ];
 const periods = ["Aujourd'hui", "7 jours", "30 jours", "Ce mois"];
 const activity = [
@@ -149,8 +147,8 @@ const activity = [
 
 <style is:global>
   .hd {
-    width: 860px;
-    border-radius: 18px;
+    width: 720px;
+    border-radius: 16px;
     overflow: hidden;
     background: var(--paper);
     border: 1px solid var(--line);

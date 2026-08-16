@@ -148,6 +148,10 @@ const signupUrl = import.meta.env.PUBLIC_APP_SIGNUP_URL || "#";
   .cluster {
     position: relative;
     padding: 10px 0;
+    /* The dashboard is a fixed-width element wider than its column; min-width:0
+       stops the grid track from growing to fit it, so the title keeps its half
+       on the left and the dashboard bleeds off the right edge. */
+    min-width: 0;
   }
   /* The coded dashboard mockup gently floats + reveals on load. */
   .cluster[data-float] {
