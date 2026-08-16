@@ -13,12 +13,34 @@
 // nombre").
 import Base from "../../layouts/Base.astro";
 import FinalCta from "../../components/FinalCta.astro";
-import MockupElevage from "../../components/mockups/MockupElevage.astro";
-import MockupSanitaire from "../../components/mockups/MockupSanitaire.astro";
-import MockupStocks from "../../components/mockups/MockupStocks.astro";
-import MockupVentes from "../../components/mockups/MockupVentes.astro";
-import MockupFinance from "../../components/mockups/MockupFinance.astro";
+import Screenshot from "../../components/Screenshot.astro";
 import { MODULES, type Module } from "../../data/modules";
+import elevageOverview from "../../assets/screens/web-broiler-overview.png";
+import elevageEntries from "../../assets/screens/web-broiler-entries.png";
+import eggsOverview from "../../assets/screens/web-eggs-overview.png";
+import healthVacc from "../../assets/screens/web-health-vaccination.png";
+import healthTrack from "../../assets/screens/web-health.png";
+import broilerHealth from "../../assets/screens/web-broiler-health.png";
+import stocksShot from "../../assets/screens/web-stocks.png";
+import stockItem from "../../assets/screens/web-stock-item.png";
+import purchaseOrders from "../../assets/screens/web-purchase-orders.png";
+import directSale from "../../assets/screens/web-direct-sale.png";
+import ordersShot from "../../assets/screens/web-orders.png";
+import invoiceShot from "../../assets/screens/web-invoice.png";
+import expensesShot from "../../assets/screens/web-expenses.png";
+import analyticsShot from "../../assets/screens/mobile-analytics.png";
+
+// One real screenshot per capability block (by index), replacing the old
+// hand-coded mockups. A module with more capabilities than screenshots keeps
+// the decorative icon on the extra blocks.
+type Shot = { src: ImageMetadata; device?: "browser" | "phone" };
+const SHOTS: Record<string, Shot[]> = {
+  elevage: [{ src: elevageOverview }, { src: elevageEntries }, { src: eggsOverview }],
+  sanitaire: [{ src: healthVacc }, { src: healthTrack }, { src: broilerHealth }],
+  stocks: [{ src: stocksShot }, { src: stockItem }, { src: purchaseOrders }],
+  ventes: [{ src: directSale }, { src: ordersShot }, { src: invoiceShot }],
+  finance: [{ src: expensesShot }, { src: analyticsShot, device: "phone" }],
+};
 
 export async function getStaticPaths() {
   return MODULES.map((m) => ({ params: { module: m.slug }, props: { module: m } }));
@@ -74,27 +96,21 @@ const jsonLd = {
     <div class="caps">
       {
         mod.capabilities.map((cap, i) => {
-          const isMock =
-            (mod.slug === "elevage" && i === 1) ||
-            (mod.slug === "sanitaire" && i === 0) ||
-            (mod.slug === "stocks" && i === 1) ||
-            (mod.slug === "ventes" && i === 0) ||
-            (mod.slug === "finance" && (i === 1 || i === 2));
+          const shot = SHOTS[mod.slug]?.[i];
           return (
-            <div class:list={["cap", { rev: i % 2 === 1, "has-mock": isMock }]}>
+            <div class:list={["cap", { rev: i % 2 === 1, "has-mock": !!shot }]}>
               <div class="cap-text">
                 <div class="eyebrow">Capacité {String(i + 1).padStart(2, "0")}</div>
                 <h2>{cap.title}</h2>
                 <p set:html={mdBold(cap.body)} />
               </div>
-              {isMock ? (
-                <div class="cap-visual mk">
-                  {mod.slug === "elevage" && <MockupElevage />}
-                  {mod.slug === "sanitaire" && <MockupSanitaire />}
-                  {mod.slug === "stocks" && <MockupStocks />}
-                  {mod.slug === "ventes" && <MockupVentes />}
-                  {mod.slug === "finance" && i === 1 && <MockupFinance variant="full" />}
-                  {mod.slug === "finance" && i === 2 && <MockupFinance variant="revenuParLot" />}
+              {shot ? (
+                <div class="cap-visual shot">
+                  <Screenshot
+                    src={shot.src}
+                    device={shot.device ?? "browser"}
+                    alt={`Écran « ${cap.title} » dans Jawdi`}
+                  />
                 </div>
               ) : (
                 <div class="cap-visual" role="img" aria-label={`Aperçu de l'écran ${cap.title} dans Jawdi`}>
@@ -199,6 +215,14 @@ const jsonLd = {
     aspect-ratio: auto;
     background: var(--stone);
     padding: 18px;
+    display: block;
+  }
+  /* A real screenshot brings its own frame — drop the decorative box. */
+  .cap-visual.shot {
+    aspect-ratio: auto;
+    background: none;
+    border: 0;
+    padding: 0;
     display: block;
   }
 
