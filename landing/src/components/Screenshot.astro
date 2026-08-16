@@ -1,0 +1,79 @@
+---
+// Real product screenshot in a framed "chrome" (browser or phone), used across
+// the module pages and the Jawdi IA page instead of hand-coded mockups.
+import { Image } from "astro:assets";
+
+interface Props {
+  src: ImageMetadata;
+  alt: string;
+  device?: "browser" | "phone";
+  loading?: "eager" | "lazy";
+}
+const { src, alt, device = "browser", loading = "lazy" } = Astro.props;
+---
+
+<figure class:list={["shotframe", device]}>
+  {
+    device === "browser" && (
+      <div class="chrome" aria-hidden="true">
+        <span /><span /><span />
+      </div>
+    )
+  }
+  <Image
+    src={src}
+    alt={alt}
+    widths={[420, 720, 1040]}
+    sizes={device === "phone" ? "(max-width:920px) 60vw, 300px" : "(max-width:920px) 92vw, 620px"}
+    loading={loading}
+    class="shotframe-img"
+  />
+</figure>
+
+<style>
+  .shotframe {
+    margin: 0;
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    box-shadow:
+      0 34px 64px -34px rgba(18, 43, 18, 0.5),
+      0 8px 18px -10px rgba(18, 43, 18, 0.16);
+  }
+  .chrome {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 12px;
+    background: #f0efec;
+    border-bottom: 1px solid var(--line);
+  }
+  .chrome span {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #d6d3d1;
+  }
+  .chrome span:first-child {
+    background: #ef6a5f;
+  }
+  .chrome span:nth-child(2) {
+    background: #f6be4f;
+  }
+  .chrome span:nth-child(3) {
+    background: #57c05a;
+  }
+  .shotframe.phone {
+    border-radius: 28px;
+    max-width: 300px;
+    margin-inline: auto;
+    border-width: 6px;
+    border-color: #1c1917;
+  }
+  .shotframe-img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+</style>
