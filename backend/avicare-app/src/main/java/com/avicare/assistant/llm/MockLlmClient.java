@@ -28,6 +28,8 @@ public class MockLlmClient implements LlmClient {
       Pattern.compile("observ|sympt|tousse|malade|boite|diarrh|éternu|eternu");
   private static final Pattern NEW_CLIENT =
       Pattern.compile("nouveau client|créer.*client|creer.*client|ajouter.*client");
+  private static final Pattern NEW_LOT =
+      Pattern.compile("nouveau lot|cr[eé]{1,2}r?.*lot|d[eé]marrer.*lot|nouvelle bande");
   private static final Pattern STOCK = Pattern.compile("stock|reste.*(aliment|mais|maïs)|aliment");
   private static final Pattern HEADCOUNT =
       Pattern.compile("effectif|combien.*(poulet|sujet|tête|tete)");
@@ -78,6 +80,12 @@ public class MockLlmClient implements LlmClient {
     }
     if (offered(tools, "CREATE_CLIENT") && NEW_CLIENT.matcher(q).find()) {
       return call("CREATE_CLIENT", Map.of("name", text));
+    }
+    if (offered(tools, "CREATE_LOT") && NEW_LOT.matcher(q).find()) {
+      Matcher m = COUNT.matcher(q);
+      return m.find()
+          ? call("CREATE_LOT", Map.of("breed", text, "count", Integer.parseInt(m.group(1))))
+          : call("CREATE_LOT", Map.of("breed", text));
     }
 
     // READ intents — InterpretService executes these and feeds the result back.
