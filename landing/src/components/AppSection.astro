@@ -48,18 +48,20 @@ const storesLive = Boolean(appStoreUrl || playStoreUrl);
 
 <style>
   .appsec {
+    position: relative;
     max-width: var(--wrap);
-    margin: 0 auto;
+    margin: 70px auto;
     background: var(--paper);
     border: 1px solid var(--line);
     border-radius: 28px;
-    padding: 48px 52px;
+    padding: 44px 52px;
     box-shadow: 0 30px 70px -40px rgba(18, 43, 18, 0.28);
-    display: grid;
-    grid-template-columns: 1fr 0.85fr;
-    gap: 40px;
-    align-items: center;
-    overflow: hidden;
+    /* Full width, short height: the copy defines the card height. The phone is
+       positioned in the foreground and overflows the card top + bottom. */
+    overflow: visible;
+  }
+  .appsec-copy {
+    max-width: 56%;
   }
   .appsec-eyebrow {
     font-family: var(--mono);
@@ -113,26 +115,48 @@ const storesLive = Boolean(appStoreUrl || playStoreUrl);
     transform: translateY(-2px);
     background: var(--earth-800);
   }
+  /* Phone: foreground, right side, overflowing the card top + bottom. */
   .appsec-phone {
-    position: relative;
-    display: flex;
-    justify-content: center;
+    position: absolute;
+    right: 44px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 292px;
+    z-index: 2;
   }
   .appsec-phone :global(.pa) {
-    transform: rotate(7deg) translateY(6px);
+    transform: rotate(7deg);
   }
 
   @media (max-width: 860px) {
     .appsec {
-      grid-template-columns: 1fr;
-      padding: 36px 26px;
-      gap: 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 30px 24px 34px;
     }
+    .appsec-copy {
+      max-width: 100%;
+      order: 2;
+    }
+    .appsec-btns {
+      justify-content: center;
+    }
+    .appsec-copy p {
+      margin-inline: auto;
+    }
+    /* On mobile the phone sits inline above the copy (no overflow). */
     .appsec-phone {
-      order: -1;
+      position: static;
+      transform: none;
+      width: 240px;
+      order: 1;
+      margin-bottom: 22px;
     }
     .appsec-phone :global(.pa) {
       transform: none;
+      width: 240px;
     }
   }
 </style>
