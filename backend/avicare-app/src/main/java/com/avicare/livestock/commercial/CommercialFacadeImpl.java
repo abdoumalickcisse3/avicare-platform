@@ -17,6 +17,7 @@ import com.avicare.livestock.repository.PaymentRepository;
 import com.avicare.livestock.repository.SaleItemRepository;
 import com.avicare.livestock.repository.SaleRepository;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -45,6 +46,34 @@ public class CommercialFacadeImpl implements CommercialFacade {
   private final OrderRepository orderRepository;
   private final SaleItemRepository saleItemRepository;
   private final PaymentRepository paymentRepository;
+
+  @Override
+  public List<OverdueInvoiceInfo> overdueInvoices(Long farmId) {
+    LocalDate today = LocalDate.now();
+    return invoiceService.listOverdue(farmId).stream()
+        .map(
+            inv ->
+                new OverdueInvoiceInfo(
+                    inv.getId(),
+                    inv.getClient().getId(),
+                    inv.getClient().getDisplayName(),
+                    inv.outstandingXof(),
+                    ChronoUnit.DAYS.between(inv.getDueDate(), today)))
+        .toList();
+  }
+
+  @Override
+  public List<CreditExceededInfo> clientsOverCredit(Long farmId) {
+    return clientService.listOverCreditLimit(farmId).stream()
+        .map(
+            c ->
+                new CreditExceededInfo(
+                    c.getId(),
+                    c.getDisplayName(),
+                    c.getCurrentBalanceXof(),
+                    c.getCreditLimitXof() == null ? 0L : c.getCreditLimitXof()))
+        .toList();
+  }
 
   @Override
   public ClientCreditInfo getClientCredit(Long farmId, Long clientId) {
