@@ -35,7 +35,6 @@ import {
   type Risk,
 } from '@/store/api/assistantApi';
 import { useSpeechInput } from '@/assistant/speech/useSpeechInput';
-import { speak } from '@/assistant/speech/tts';
 
 type Kind = 'ANSWER' | 'DRAFT' | 'CLARIFICATION';
 type DraftStatus = 'pending' | 'confirmed' | 'cancelled' | 'expired';
@@ -117,7 +116,6 @@ export default function AssistantScreen() {
               }
             : { id: uid(), role: 'assistant', kind: res.kind, text: res.message ?? '' };
         setMessages((m) => [...m, reply]);
-        if (reply.text) speak(reply.text);
       } catch {
         setMessages((m) => [
           ...m,
@@ -147,7 +145,6 @@ export default function AssistantScreen() {
       if (!msg.claimId || farmId == null) return;
       try {
         const r = await confirmAction({ farmId, claimId: msg.claimId }).unwrap();
-        speak('Enregistré.');
         setMessages((ms) =>
           ms
             .map((x) => (x.id === msg.id ? { ...x, status: 'confirmed' as DraftStatus } : x))
