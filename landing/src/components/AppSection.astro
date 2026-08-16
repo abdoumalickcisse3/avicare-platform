@@ -2,7 +2,8 @@
 // Homepage "App mobile" section (inspired by fitsen's app block): a light card
 // with copy + store buttons on the left and a tilted coded phone on the right.
 import Highlight from "./Highlight.astro";
-import PhoneApp from "./PhoneApp.astro";
+import { Image } from "astro:assets";
+import mobileHome from "../assets/screens/mobile-home.png";
 
 const appStoreUrl = import.meta.env.PUBLIC_APP_STORE_URL || "";
 const playStoreUrl = import.meta.env.PUBLIC_PLAY_STORE_URL || "";
@@ -41,7 +42,17 @@ const storesLive = Boolean(appStoreUrl || playStoreUrl);
     </div>
 
     <div class="appsec-phone">
-      <PhoneApp />
+      <div class="apbz">
+        <span class="apbz-notch" aria-hidden="true"></span>
+        <Image
+          src={mobileHome}
+          alt="Application mobile Jawdi — écran d'accueil : ventes, effectif, mortalité et actions rapides"
+          widths={[300, 480, 640]}
+          sizes="264px"
+          loading="lazy"
+          class="apbz-img"
+        />
+      </div>
     </div>
   </div>
 </section>
@@ -115,17 +126,41 @@ const storesLive = Boolean(appStoreUrl || playStoreUrl);
     transform: translateY(-2px);
     background: var(--earth-800);
   }
-  /* Phone: foreground, right side, overflowing the card top + bottom. */
+  /* Phone: foreground, right side. Its BOTTOM sits inside the card (aligned
+     with the store buttons); the top overflows above the card. */
   .appsec-phone {
     position: absolute;
-    right: 44px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 292px;
+    right: 48px;
+    bottom: 34px;
+    width: 264px;
+    z-index: 2;
+    transform: rotate(6deg);
+  }
+  .apbz {
+    position: relative;
+    background: #14110f;
+    border-radius: 34px;
+    padding: 8px;
+    box-shadow:
+      0 50px 90px -34px rgba(0, 0, 0, 0.5),
+      0 16px 32px -16px rgba(0, 0, 0, 0.4);
+  }
+  .apbz-notch {
+    position: absolute;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 84px;
+    height: 18px;
+    border-radius: 999px;
+    background: #14110f;
     z-index: 2;
   }
-  .appsec-phone :global(.pa) {
-    transform: rotate(7deg);
+  .apbz-img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 28px;
   }
 
   @media (max-width: 860px) {
@@ -150,13 +185,9 @@ const storesLive = Boolean(appStoreUrl || playStoreUrl);
     .appsec-phone {
       position: static;
       transform: none;
-      width: 240px;
+      width: 230px;
       order: 1;
       margin-bottom: 22px;
-    }
-    .appsec-phone :global(.pa) {
-      transform: none;
-      width: 240px;
     }
   }
 </style>
