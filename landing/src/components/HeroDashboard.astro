@@ -1,0 +1,369 @@
+---
+// Coded recreation of the real Jawdi dashboard (sidebar + logo, KPI cards,
+// egg-production chart) — a live, animated mockup for the hero instead of a
+// static screenshot. Numbers count up (via <Kpi>), the chart line draws in,
+// and the "Jawdi IA" dot pulses.
+import { Image } from "astro:assets";
+import Kpi from "./Kpi.astro";
+import logo from "../assets/logo.png";
+---
+
+<div class="hd" aria-label="Aperçu du tableau de bord Jawdi">
+  <div class="hd-chrome" aria-hidden="true">
+    <span></span><span></span><span></span><em>app.jawdi.app</em>
+  </div>
+
+  <div class="hd-body">
+    <aside class="hd-side">
+      <Image src={logo} alt="Jawdi Platform" width={110} height={38} class="hd-logo" loading="eager" />
+      <nav class="hd-nav">
+        <a class="hd-item active"><span class="hd-ic hd-grid"></span>Tableau de bord</a>
+        <a class="hd-item"><span class="hd-ic hd-spark"></span>Jawdi IA<span class="hd-dot"></span></a>
+        <a class="hd-item"><span class="hd-ic hd-home"></span>Fermes</a>
+        <div class="hd-lab">Gestion</div>
+        <a class="hd-item"><span class="hd-ic hd-bird"></span>Élevage<span class="hd-chev"></span></a>
+        <a class="hd-item sub"><span class="hd-ic hd-bird"></span>Poulets de chair</a>
+        <a class="hd-item sub"><span class="hd-ic hd-egg"></span>Œufs</a>
+        <a class="hd-item sub"><span class="hd-ic hd-heart"></span>Sanitaire</a>
+      </nav>
+    </aside>
+
+    <main class="hd-main">
+      <div class="hd-top">
+        <span class="hd-title">Tableau de bord</span>
+        <span class="hd-farm">Ferme Complète<i></i></span>
+      </div>
+      <div class="hd-hello">Bonjour, Compte 👋</div>
+      <p class="hd-lead">Voici ce qui se passe sur Ferme Complète aujourd'hui.</p>
+
+      <div class="hd-kpis">
+        <div class="hd-kpi">
+          <span class="lab">CA période</span>
+          <span class="val"><Kpi count={158200} /><small> F CFA</small></span>
+          <span class="up">▲ 14%</span>
+        </div>
+        <div class="hd-kpi">
+          <span class="lab">Effectif vivant</span>
+          <span class="val"><Kpi count={6720} /></span>
+        </div>
+        <div class="hd-kpi warn">
+          <span class="lab">Mortalité</span>
+          <span class="val"><Kpi count={4} /></span>
+        </div>
+      </div>
+
+      <div class="hd-chart">
+        <div class="hd-chart-h">Production d'œufs<span>Évolution sur la période</span></div>
+        <svg class="hd-svg" viewBox="0 0 360 96" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="hdArea" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#3D8B3D" stop-opacity=".24"></stop>
+              <stop offset="1" stop-color="#3D8B3D" stop-opacity="0"></stop>
+            </linearGradient>
+          </defs>
+          <path class="hd-area" d="M0,70 C50,64 90,40 140,44 C190,48 210,20 260,16 C300,13 330,22 360,18 L360,96 L0,96 Z" fill="url(#hdArea)"></path>
+          <path class="hd-line" d="M0,70 C50,64 90,40 140,44 C190,48 210,20 260,16 C300,13 330,22 360,18" fill="none" stroke="#3D8B3D" stroke-width="2.4" stroke-linecap="round"></path>
+          <circle class="hd-tip" cx="360" cy="18" r="4" fill="#F8961E"></circle>
+        </svg>
+      </div>
+    </main>
+  </div>
+</div>
+
+<style is:global>
+  .hd {
+    border-radius: 18px;
+    overflow: hidden;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    box-shadow:
+      0 44px 84px -34px rgba(0, 0, 0, 0.55),
+      0 12px 28px -14px rgba(0, 0, 0, 0.35);
+  }
+  .hd-chrome {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 13px;
+    background: #f0efec;
+    border-bottom: 1px solid var(--line);
+  }
+  .hd-chrome span {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #d6d3d1;
+  }
+  .hd-chrome span:first-child {
+    background: #ef6a5f;
+  }
+  .hd-chrome span:nth-child(2) {
+    background: #f6be4f;
+  }
+  .hd-chrome span:nth-child(3) {
+    background: #57c05a;
+  }
+  .hd-chrome em {
+    margin-left: 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-style: normal;
+    color: var(--ink-soft);
+  }
+  .hd-body {
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    background: #fafaf9;
+  }
+  .hd-side {
+    padding: 16px 12px;
+    border-right: 1px solid var(--line);
+    background: var(--paper);
+  }
+  .hd-logo {
+    height: 30px;
+    width: auto;
+    margin: 2px 4px 14px;
+  }
+  .hd-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .hd-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 10px;
+    border-radius: 9px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--ink-soft);
+  }
+  .hd-item.sub {
+    font-weight: 500;
+    color: var(--ink-faint);
+    padding-left: 14px;
+  }
+  .hd-item.active {
+    background: var(--leaf-050);
+    color: var(--earth-700);
+  }
+  .hd-lab {
+    font-size: 9.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    padding: 12px 10px 4px;
+  }
+  .hd-ic {
+    width: 15px;
+    height: 15px;
+    border-radius: 4px;
+    flex: none;
+    background: currentColor;
+    opacity: 0.55;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+  }
+  .hd-item.active .hd-ic {
+    opacity: 0.9;
+  }
+  .hd-grid {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='3' y='3' width='7' height='7' rx='1'/%3E%3Crect x='14' y='3' width='7' height='7' rx='1'/%3E%3Crect x='3' y='14' width='7' height='7' rx='1'/%3E%3Crect x='14' y='14' width='7' height='7' rx='1'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='3' y='3' width='7' height='7' rx='1'/%3E%3Crect x='14' y='3' width='7' height='7' rx='1'/%3E%3Crect x='3' y='14' width='7' height='7' rx='1'/%3E%3Crect x='14' y='14' width='7' height='7' rx='1'/%3E%3C/svg%3E");
+  }
+  .hd-spark {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l1.6 5.4L19 9l-5.4 1.6L12 16l-1.6-5.4L5 9l5.4-1.6z'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l1.6 5.4L19 9l-5.4 1.6L12 16l-1.6-5.4L5 9l5.4-1.6z'/%3E%3C/svg%3E");
+  }
+  .hd-home,
+  .hd-bird,
+  .hd-egg,
+  .hd-heart {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3C/svg%3E");
+  }
+  .hd-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--sun);
+    margin-left: auto;
+    box-shadow: 0 0 0 0 rgba(248, 150, 30, 0.6);
+    animation: hdPulse 2s infinite;
+  }
+  .hd-chev {
+    width: 0;
+    height: 0;
+    margin-left: auto;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-left: 5px solid currentColor;
+    opacity: 0.5;
+  }
+  .hd-main {
+    padding: 16px 18px 20px;
+    min-width: 0;
+  }
+  .hd-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .hd-title {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--ink);
+  }
+  .hd-farm {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 5px 9px;
+    background: var(--paper);
+  }
+  .hd-farm i {
+    width: 0;
+    height: 0;
+    border-left: 3.5px solid transparent;
+    border-right: 3.5px solid transparent;
+    border-top: 4px solid currentColor;
+    opacity: 0.6;
+  }
+  .hd-hello {
+    margin-top: 14px;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .hd-lead {
+    margin: 2px 0 0;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+  }
+  .hd-kpis {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .hd-kpi {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 11px 12px;
+  }
+  .hd-kpi .lab {
+    display: block;
+    font-size: 10.5px;
+    color: var(--ink-soft);
+  }
+  .hd-kpi .val {
+    display: block;
+    margin-top: 4px;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 17px;
+    color: var(--ink);
+  }
+  .hd-kpi .val small {
+    font-size: 10px;
+    color: var(--ink-soft);
+  }
+  .hd-kpi .up {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--leaf);
+  }
+  .hd-kpi.warn .val {
+    color: #dc2626;
+  }
+  .hd-chart {
+    margin-top: 14px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 14px 8px;
+  }
+  .hd-chart-h {
+    display: flex;
+    flex-direction: column;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .hd-chart-h span {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--ink-soft);
+  }
+  .hd-svg {
+    width: 100%;
+    height: 76px;
+    margin-top: 6px;
+    display: block;
+  }
+  .hd-line {
+    stroke-dasharray: 460;
+    stroke-dashoffset: 460;
+    animation: hdDraw 1.6s ease 0.3s forwards;
+  }
+  .hd-area {
+    opacity: 0;
+    animation: hdFade 0.8s ease 1.3s forwards;
+  }
+  .hd-tip {
+    opacity: 0;
+    animation: hdFade 0.4s ease 1.7s forwards;
+  }
+  @keyframes hdDraw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  @keyframes hdFade {
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes hdPulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(248, 150, 30, 0.5);
+    }
+    70% {
+      box-shadow: 0 0 0 7px rgba(248, 150, 30, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(248, 150, 30, 0);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hd-line,
+    .hd-area,
+    .hd-tip {
+      animation: none;
+      stroke-dashoffset: 0;
+      opacity: 1;
+    }
+  }
+  @media (max-width: 520px) {
+    .hd-side {
+      display: none;
+    }
+    .hd-body {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
