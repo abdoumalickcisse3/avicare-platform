@@ -17,6 +17,12 @@ public interface CommercialFacade {
   /** Credit standing of a client, for credit-overshoot alerts. */
   ClientCreditInfo getClientCredit(Long farmId, Long clientId);
 
+  /** Invoices that are overdue (ISSUED/PARTIALLY_PAID past due date, D24), for notifications. */
+  List<OverdueInvoiceInfo> overdueInvoices(Long farmId);
+
+  /** Clients whose receivable exceeds their credit limit (D26, informative), for notifications. */
+  List<CreditExceededInfo> clientsOverCredit(Long farmId);
+
   /** Active clients of a farm (for resolving a spoken client name), ordered by display name. */
   List<ClientLite> listClients(Long farmId);
 
