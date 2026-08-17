@@ -1302,3 +1302,39 @@ export interface ActivityItem {
   label: string;
   detail: string | null;
 }
+
+/* ===================== Notifications (Sprint C1) ===================== */
+
+export type NotificationSeverity = "INFO" | "WARNING" | "CRITICAL";
+export type NotificationChannelKey = "IN_APP" | "WHATSAPP";
+export type NotificationStatus = "ACTIVE" | "RESOLVED";
+
+/** One materialized notification (mirrors backend NotificationResponse). */
+export interface AppNotification {
+  id: number;
+  category: string;
+  severity: NotificationSeverity;
+  title: string;
+  body: string | null;
+  sourceRef: Record<string, unknown> | null;
+  status: NotificationStatus;
+  read: boolean;
+  createdAt: string; // ISO LocalDateTime
+}
+
+/** Paged notification feed (mirrors backend PageResponse<NotificationResponse>). */
+export interface NotificationFeed {
+  items: AppNotification[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
+
+/** One resolved (category, channel) preference cell (mirrors backend PreferenceResponse). */
+export interface NotificationPreference {
+  category: string;
+  channel: NotificationChannelKey;
+  enabled: boolean;
+  minSeverity: NotificationSeverity;
+}

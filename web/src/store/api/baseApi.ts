@@ -115,6 +115,7 @@ export const baseApi = createApi({
     "Salary",
     "Advance",
     "Dashboard",
+    "Notification",
   ],
   endpoints: () => ({}),
 });
