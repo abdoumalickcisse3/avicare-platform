@@ -88,13 +88,20 @@ class NotificationRepositoryTest {
   }
 
   @Test
-  void activeDedupKeyIsUnique_andReArmsAfterResolve() {
-    Notification n1 = repo.saveAndFlush(active("LOW_STOCK:item:42"));
+  void duplicateActiveDedupKey_violatesPartialUniqueIndex() {
+    repo.saveAndFlush(active("LOW_STOCK:item:42"));
 
+    // Second ACTIVE row with the same (farm_id, dedup_key) violates the partial unique index.
+    // The flush poisons the persistence context, so the test ends here (no further session use).
     assertThatThrownBy(() -> repo.saveAndFlush(active("LOW_STOCK:item:42")))
         .isInstanceOf(DataIntegrityViolationException.class);
+  }
 
-    // resolving frees the key
+  @Test
+  void reArmsAfterResolve_sameKeyAllowedOncePreviousIsResolved() {
+    Notification n1 = repo.saveAndFlush(active("LOW_STOCK:item:42"));
+
+    // Resolving frees the key (partial index only constrains ACTIVE rows).
     n1.setStatus(NotificationStatus.RESOLVED);
     n1.setResolvedAt(LocalDateTime.now());
     repo.saveAndFlush(n1);
