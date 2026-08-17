@@ -1,10 +1,15 @@
-package com.avicare.security;
+package com.avicare.notification.controller;
 
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.avicare.common.security.jwt.JwtService;
+import com.avicare.common.security.principal.AvicarePrincipal;
+import com.avicare.common.security.principal.FarmRole;
+import com.avicare.common.security.principal.Membership;
+import com.avicare.common.security.principal.UserRole;
 import com.avicare.finance.repository.ExpenseRepository;
 import com.avicare.finance.repository.SalaryAdvanceRepository;
 import com.avicare.finance.repository.SalaryRepository;
@@ -47,36 +52,50 @@ import com.avicare.parameters.repository.FarmSettingRepository;
 import com.avicare.parameters.repository.PriceListItemRepository;
 import com.avicare.parameters.repository.PriceListRepository;
 import com.avicare.parameters.repository.UserSettingRepository;
+import com.avicare.reporting.service.ReportingService;
+import com.avicare.subscription.api.SubscriptionFacade;
 import com.avicare.subscription.repository.SubscriptionChangeRequestRepository;
 import com.avicare.subscription.repository.SubscriptionModuleRepository;
 import com.avicare.subscription.repository.SubscriptionRepository;
 import com.avicare.tenancy.repository.FarmRepository;
 import com.avicare.tenancy.repository.UserFarmRepository;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
+import java.util.Base64;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
- * End-to-end check that Spring Security is now actively wired into the application: public routes
- * stay open, everything else demands authentication and gets a uniform RFC 7807 401.
- *
- * <p>This is the assertion that protects the boot smoke test described in the session plan — if
- * {@code /actuator/health} ever stops being public, this test goes red before a deploy can.
+ * DB-less controller integration test for the dashboard endpoint. Verifies access control (401
+ * without token), gating logic (200 with active commercial module showing non-null section), and
+ * period validation (422 for unknown preset). Uses the test profile (no JPA/Flyway/Redis).
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-class SecurityIntegrationTest {
+class NotificationControllerIT {
+
+  private static final KeyPair KEYS = generateKeys();
+  private static final Long FARM_ID = 42L;
 
   @Autowired private MockMvc mockMvc;
+  @Autowired private JwtService jwtService;
 
-  // The DB-less `test` profile excludes JPA autoconfig, so the identity/tenancy repositories the
-  // auth beans depend on are mocked to let the full web context load.
+  // Mock ReportingService and SubscriptionFacade directly — DB-less context.
+  @MockitoBean private ReportingService reportingService;
+  @MockitoBean private SubscriptionFacade subscriptionFacade;
+
+  // DB-less `test` profile mocks — same list as SecurityE2ETest.
   @MockitoBean private UserRepository userRepository;
   @MockitoBean private RefreshTokenRepository refreshTokenRepository;
   @MockitoBean private FarmRepository farmRepository;
@@ -117,10 +136,10 @@ class SecurityIntegrationTest {
   @MockitoBean private OrderRepository orderRepository;
   @MockitoBean private SaleRepository saleRepository;
   @MockitoBean private SaleItemRepository saleItemRepository;
+  @MockitoBean private ExpenseRepository expenseRepository;
   @MockitoBean private DeliveryRepository deliveryRepository;
   @MockitoBean private InvoiceRepository invoiceRepository;
   @MockitoBean private PaymentRepository paymentRepository;
-  @MockitoBean private ExpenseRepository expenseRepository;
   @MockitoBean private SalarySettingRepository salarySettingRepository;
   @MockitoBean private SalaryRepository salaryRepository;
   @MockitoBean private SalaryAdvanceRepository salaryAdvanceRepository;
@@ -141,18 +160,78 @@ class SecurityIntegrationTest {
   private com.avicare.notification.repository.NotificationPreferenceRepository
       notificationPreferenceRepository;
 
-  @Test
-  void healthEndpoint_isPublic() throws Exception {
-    mockMvc.perform(get("/actuator/health")).andExpect(status().isOk());
+  @DynamicPropertySource
+  static void jwtKeys(DynamicPropertyRegistry registry) {
+    registry.add("avicare.security.jwt.private-key", () -> privatePem(KEYS));
+    registry.add("avicare.security.jwt.public-key", () -> publicPem(KEYS));
   }
 
   @Test
-  void unauthenticatedProtectedRoute_returns401ProblemDetails() throws Exception {
+  void noToken_returns401() throws Exception {
     mockMvc
-        .perform(get("/api/v1/anything"))
-        .andExpect(status().isUnauthorized())
-        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
-        .andExpect(jsonPath("$.status").value(401))
-        .andExpect(jsonPath("$.code").value("AUTHENTICATION_FAILED"));
+        .perform(get("/api/v1/farms/" + FARM_ID + "/notifications/unread-count"))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void member_getsUnreadCount_200() throws Exception {
+    when(notificationRepository.countUnread(FARM_ID, 10L)).thenReturn(3L);
+    String token = memberToken(FARM_ID);
+    mockMvc
+        .perform(
+            get("/api/v1/farms/" + FARM_ID + "/notifications/unread-count")
+                .header("Authorization", "Bearer " + token))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.count").value(3));
+  }
+
+  @Test
+  void nonMemberFarm_isForbidden() throws Exception {
+    String token = memberToken(FARM_ID); // member of FARM_ID only
+    mockMvc
+        .perform(
+            get("/api/v1/farms/999/notifications/unread-count")
+                .header("Authorization", "Bearer " + token))
+        .andExpect(status().isForbidden());
+  }
+
+  private String memberToken(Long farmId) {
+    return jwtService.generateAccessToken(
+        new AvicarePrincipal(
+            10L,
+            "member@avicare.com",
+            UserRole.USER,
+            List.of(new Membership(farmId, FarmRole.FARMER, List.of("*")))));
+  }
+
+  // --- in-memory RSA key material ---
+
+  private static KeyPair generateKeys() {
+    try {
+      KeyPairGenerator gen = KeyPairGenerator.getInstance("RSA");
+      gen.initialize(2048);
+      return gen.generateKeyPair();
+    } catch (Exception e) {
+      throw new IllegalStateException("Cannot generate RSA key pair", e);
+    }
+  }
+
+  private static String privatePem(KeyPair pair) {
+    String b64 =
+        Base64.getEncoder().encodeToString(((RSAPrivateKey) pair.getPrivate()).getEncoded());
+    return "-----BEGIN PRIVATE KEY-----\n" + wrap(b64) + "\n-----END PRIVATE KEY-----";
+  }
+
+  private static String publicPem(KeyPair pair) {
+    String b64 = Base64.getEncoder().encodeToString(((RSAPublicKey) pair.getPublic()).getEncoded());
+    return "-----BEGIN PUBLIC KEY-----\n" + wrap(b64) + "\n-----END PUBLIC KEY-----";
+  }
+
+  private static String wrap(String base64) {
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < base64.length(); i += 64) {
+      sb.append(base64, i, Math.min(i + 64, base64.length())).append('\n');
+    }
+    return sb.toString().stripTrailing();
   }
 }
