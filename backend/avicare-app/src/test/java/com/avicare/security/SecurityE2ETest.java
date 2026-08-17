@@ -165,6 +165,9 @@ class SecurityE2ETest {
   private com.avicare.notification.repository.NotificationPreferenceRepository
       notificationPreferenceRepository;
 
+  @MockitoBean
+  private com.avicare.notification.whatsapp.WhatsappOutboxRepository whatsappOutboxRepository;
+
   @DynamicPropertySource
   static void jwtKeys(DynamicPropertyRegistry registry) {
     registry.add("avicare.security.jwt.private-key", () -> privatePem(KEYS));
