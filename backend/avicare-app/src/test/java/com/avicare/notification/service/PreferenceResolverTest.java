@@ -15,7 +15,7 @@ class PreferenceResolverTest {
   private final PreferenceResolver resolver = new PreferenceResolver();
 
   @Test
-  void defaults_inAppOn_whatsappOff() {
+  void defaults_inAppOnFromInfo_whatsappOnFlooredAtCritical() {
     ResolvedPreference inApp =
         resolver.resolve(NotificationCategory.LOW_STOCK, NotificationChannel.IN_APP, List.of());
     ResolvedPreference whatsapp =
@@ -23,7 +23,9 @@ class PreferenceResolverTest {
 
     assertThat(inApp.enabled()).isTrue();
     assertThat(inApp.minSeverity()).isEqualTo(NotificationSeverity.INFO);
-    assertThat(whatsapp.enabled()).isFalse();
+    // WhatsApp is on by default but only fires for CRITICAL (cost discipline).
+    assertThat(whatsapp.enabled()).isTrue();
+    assertThat(whatsapp.minSeverity()).isEqualTo(NotificationSeverity.CRITICAL);
   }
 
   @Test

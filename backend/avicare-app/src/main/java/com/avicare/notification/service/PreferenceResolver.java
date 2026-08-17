@@ -10,8 +10,10 @@ import org.springframework.stereotype.Component;
 
 /**
  * Resolves a user's delivery preference for a (category, channel), merging the conservative code
- * default with the user's stored overrides (Sprint C1). Default: IN_APP on (min INFO), WHATSAPP off
- * (min CRITICAL). Defaults live in code, never seeded in DB (3-layer parameter rule).
+ * default with the user's stored overrides (Sprint C1). Default: IN_APP on (min INFO), WHATSAPP on
+ * but floored at CRITICAL — so only CRITICAL alerts reach WhatsApp until a user opts a category
+ * down (cost discipline); everyone can still disable it. Defaults live in code, never seeded in DB
+ * (3-layer parameter rule).
  */
 @Component
 public class PreferenceResolver {
@@ -45,7 +47,7 @@ public class PreferenceResolver {
   private static ResolvedPreference defaultFor(NotificationChannel channel) {
     return switch (channel) {
       case IN_APP -> new ResolvedPreference(true, NotificationSeverity.INFO);
-      case WHATSAPP -> new ResolvedPreference(false, NotificationSeverity.CRITICAL);
+      case WHATSAPP -> new ResolvedPreference(true, NotificationSeverity.CRITICAL);
     };
   }
 
