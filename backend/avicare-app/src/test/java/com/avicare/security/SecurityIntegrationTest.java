@@ -141,6 +141,9 @@ class SecurityIntegrationTest {
   private com.avicare.notification.repository.NotificationPreferenceRepository
       notificationPreferenceRepository;
 
+  @MockitoBean
+  private com.avicare.notification.whatsapp.WhatsappOutboxRepository whatsappOutboxRepository;
+
   @Test
   void healthEndpoint_isPublic() throws Exception {
     mockMvc.perform(get("/actuator/health")).andExpect(status().isOk());

@@ -167,6 +167,9 @@ class DashboardControllerIT {
   private com.avicare.notification.repository.NotificationPreferenceRepository
       notificationPreferenceRepository;
 
+  @MockitoBean
+  private com.avicare.notification.whatsapp.WhatsappOutboxRepository whatsappOutboxRepository;
+
   @DynamicPropertySource
   static void jwtKeys(DynamicPropertyRegistry registry) {
     registry.add("avicare.security.jwt.private-key", () -> privatePem(KEYS));
