@@ -10,6 +10,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Redirect, useRouter } from 'expo-router';
 import {
   ArrowRight,
+  Bell,
   Bird,
   Package,
   Receipt,
@@ -35,6 +36,7 @@ const CATEGORIES: SettingCategory[] = [
   { slug: 'sanitaire', name: 'Sanitaire', description: 'Catalogue des vaccins et des traitements.', icon: Syringe },
   { slug: 'ventes', name: 'Ventes', description: 'Circuits de distribution.', icon: ShoppingCart },
   { slug: 'comptabilite', name: 'Comptabilité', description: 'Catégories de dépenses.', icon: Receipt },
+  { slug: 'notifications', name: 'Notifications', description: 'Alertes : cloche et WhatsApp.', icon: Bell },
 ];
 
 export default function ReglagesScreen() {
