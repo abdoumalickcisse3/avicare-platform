@@ -161,7 +161,7 @@ export default function NotificationPreferencesPage() {
                     <Switch
                       checked={enabled}
                       onChange={(e) => patch(category, c.key, { enabled: e.target.checked })}
-                      inputProps={{ "aria-label": `${category} ${c.key}` }}
+                      slotProps={{ input: { "aria-label": `${category} ${c.key}` } }}
                     />
                     <Select
                       size="small"
