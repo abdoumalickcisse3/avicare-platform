@@ -43,4 +43,28 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
   /** Active notifications of a farm, newest first (read facade for the assistant). */
   List<Notification> findByFarmIdAndStatusOrderByCreatedAtDesc(
       Long farmId, NotificationStatus status);
+
+  /** Feed page of notifications not yet read by the user, newest first. */
+  @Query(
+      """
+      SELECT n FROM Notification n
+      WHERE n.farmId = :farmId
+        AND NOT EXISTS (
+          SELECT 1 FROM NotificationRead r
+          WHERE r.notificationId = n.id AND r.userId = :userId)
+      ORDER BY n.createdAt DESC
+      """)
+  Page<Notification> findUnread(
+      @Param("farmId") Long farmId, @Param("userId") Long userId, Pageable pageable);
+
+  /** Ids of the farm notifications not yet read by the user (mark-all-read). */
+  @Query(
+      """
+      SELECT n.id FROM Notification n
+      WHERE n.farmId = :farmId
+        AND NOT EXISTS (
+          SELECT 1 FROM NotificationRead r
+          WHERE r.notificationId = n.id AND r.userId = :userId)
+      """)
+  List<Long> findUnreadIds(@Param("farmId") Long farmId, @Param("userId") Long userId);
 }
