@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Alert,
   Box,
@@ -62,16 +62,19 @@ export default function NotificationPreferencesPage() {
   );
   const [update, { isLoading: isSaving }] = useUpdateNotificationPreferencesMutation();
 
-  // Edit buffer keyed by category::channel, seeded edge-triggered when the grid loads.
+  // Edit buffer keyed by category::channel, seeded from the loaded grid. Seeding
+  // happens during render (React's "adjust state while rendering" pattern) keyed
+  // by the data identity, so a fresh fetch re-seeds without a setState-in-effect.
   const [buffer, setBuffer] = useState<Record<string, NotificationPreference>>({});
+  const [seededFrom, setSeededFrom] = useState<NotificationPreference[] | undefined>(undefined);
   const [saved, setSaved] = useState(false);
 
-  useEffect(() => {
-    if (!data) return;
+  if (data && data !== seededFrom) {
     const next: Record<string, NotificationPreference> = {};
     for (const p of data) next[keyOf(p.category, p.channel)] = { ...p };
+    setSeededFrom(data);
     setBuffer(next);
-  }, [data]);
+  }
 
   const categories = Array.from(new Set((data ?? []).map((p) => p.category)));
 
