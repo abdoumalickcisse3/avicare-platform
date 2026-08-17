@@ -5,7 +5,6 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   AppBar,
   Avatar,
-  Badge,
   Box,
   Button,
   Divider,
@@ -13,16 +12,16 @@ import {
   Menu,
   MenuItem,
   Toolbar,
-  Tooltip,
   Typography,
 } from "@mui/material";
-import { Bell, Check, ChevronDown, HandCoins, LogOut, Menu as MenuIcon, Warehouse } from "lucide-react";
+import { Check, ChevronDown, HandCoins, LogOut, Menu as MenuIcon, Warehouse } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { logout } from "@/store/authActions";
 import { setSelectedFarmId } from "@/store/slices/uiSlice";
 import { useSelectedFarm } from "@/hooks/useSelectedFarm";
 import { useGetMyFarmsQuery } from "@/store/api/farmsApi";
 import { MyAdvancesDialog } from "@/components/account/MyAdvancesDialog";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 import { colors } from "@/theme/tokens";
 
 /** Longest-prefix → page title (+ parent crumb) for the header context label. */
@@ -172,16 +171,8 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
           </>
         )}
 
-        {/* Notifications (placeholder — Sprint C1) */}
-        <Tooltip title="Notifications — bientôt disponible">
-          <span>
-            <IconButton aria-label="Notifications" sx={{ color: colors.neutral[600] }}>
-              <Badge variant="dot" color="secondary" invisible>
-                <Bell size={20} />
-              </Badge>
-            </IconButton>
-          </span>
-        </Tooltip>
+        {/* Notifications (Sprint C1) */}
+        <NotificationBell farmId={farmId} />
 
         {/* Account */}
         <IconButton onClick={(e) => setAccountAnchor(e.currentTarget)} aria-label="Compte" sx={{ p: 0.5 }}>
