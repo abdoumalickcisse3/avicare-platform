@@ -44,14 +44,18 @@ class OutboxEnqueuerTest {
     return e;
   }
 
-  private Notification critical() {
+  private Notification withSeverity(NotificationSeverity severity) {
     Notification n = new Notification();
     n.setFarmId(1L);
     n.setCategory(NotificationCategory.NEGATIVE_STOCK);
-    n.setSeverity(NotificationSeverity.CRITICAL);
+    n.setSeverity(severity);
     n.setTitle("Stock négatif");
     n.setBody("détail");
     return n;
+  }
+
+  private Notification critical() {
+    return withSeverity(NotificationSeverity.CRITICAL);
   }
 
   private UserInfo userWithPhone() {
@@ -84,11 +88,24 @@ class OutboxEnqueuerTest {
   }
 
   @Test
-  void skips_whenWhatsappPreferenceOff_default() {
+  void enqueues_criticalByDefault_withoutAnyOverride() {
+    // Default WhatsApp preference: on, floored at CRITICAL — a CRITICAL alert reaches WhatsApp
+    // even with no stored override, as long as the member has a phone.
+    when(tenancyFacade.listMemberUserIds(1L)).thenReturn(List.of(10L));
+    when(preferences.findByFarmIdAndUserId(1L, 10L)).thenReturn(List.of());
+    when(identityFacade.findById(10L)).thenReturn(userWithPhone());
+
+    enqueuer(true).enqueueFor(critical());
+
+    verify(outbox).save(any());
+  }
+
+  @Test
+  void skips_warningByDefault_belowCriticalFloor() {
     when(tenancyFacade.listMemberUserIds(1L)).thenReturn(List.of(10L));
     when(preferences.findByFarmIdAndUserId(1L, 10L)).thenReturn(List.of());
 
-    enqueuer(true).enqueueFor(critical());
+    enqueuer(true).enqueueFor(withSeverity(NotificationSeverity.WARNING));
 
     verify(outbox, never()).save(any());
   }
