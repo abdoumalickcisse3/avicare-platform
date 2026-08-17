@@ -155,6 +155,16 @@ class SecurityE2ETest {
   @MockitoBean
   private com.avicare.assistant.confirm.PendingActionRepository pendingActionRepository;
 
+  @MockitoBean
+  private com.avicare.notification.repository.NotificationRepository notificationRepository;
+
+  @MockitoBean
+  private com.avicare.notification.repository.NotificationReadRepository notificationReadRepository;
+
+  @MockitoBean
+  private com.avicare.notification.repository.NotificationPreferenceRepository
+      notificationPreferenceRepository;
+
   @DynamicPropertySource
   static void jwtKeys(DynamicPropertyRegistry registry) {
     registry.add("avicare.security.jwt.private-key", () -> privatePem(KEYS));
