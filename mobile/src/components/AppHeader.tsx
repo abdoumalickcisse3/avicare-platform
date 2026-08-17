@@ -11,10 +11,13 @@ import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
+import { useRouter } from 'expo-router';
+import { skipToken } from '@reduxjs/toolkit/query';
 import { Bell, Check, ChevronDown, Menu, User } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { useNav } from '@/navigation/NavContext';
 import { useListFarmsQuery } from '@/store/api/farmsApi';
+import { useGetUnreadCountQuery } from '@/store/api/notificationsApi';
 import { baseApi } from '@/store/api/baseApi';
 import { selectSelectedFarmId, setSelectedFarmId } from '@/store/slices/selectionSlice';
 
@@ -22,8 +25,13 @@ export function AppHeader() {
   const { isAdmin, openDrawer } = useNav();
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch();
+  const router = useRouter();
   const selectedFarmId = useSelector(selectSelectedFarmId);
   const { data: farms } = useListFarmsQuery();
+  const { data: unread = 0 } = useGetUnreadCountQuery(
+    selectedFarmId === null ? skipToken : { farmId: selectedFarmId },
+    { pollingInterval: 60000 },
+  );
   const [open, setOpen] = useState(false);
 
   const farmName = farms?.find((f) => f.id === selectedFarmId)?.name ?? 'Ferme';
@@ -60,7 +68,20 @@ export function AppHeader() {
           {multiFarm && <ChevronDown size={20} color={tokens.colors.primary[600]} />}
         </Pressable>
       </View>
-      <Bell size={24} color={tokens.colors.field.text} />
+      <Pressable
+        onPress={() => router.push('/(field)/notifications')}
+        accessibilityRole="button"
+        accessibilityLabel="Notifications"
+        hitSlop={8}
+        style={styles.bell}
+      >
+        <Bell size={24} color={tokens.colors.field.text} />
+        {unread > 0 && (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{unread > 99 ? '99+' : unread}</Text>
+          </View>
+        )}
+      </Pressable>
 
       {/* Farm dropdown */}
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
@@ -94,6 +115,20 @@ const styles = StyleSheet.create({
   },
   left: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[2], flex: 1 },
   burger: { padding: tokens.spacing[1] },
+  bell: { padding: tokens.spacing[1] },
+  badge: {
+    position: 'absolute',
+    top: -2,
+    right: -4,
+    minWidth: 18,
+    height: 18,
+    borderRadius: tokens.radii.full,
+    backgroundColor: tokens.colors.error,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  badgeText: { color: tokens.colors.neutral[0], fontSize: 10, fontWeight: '800' },
   farmPick: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[2], flexShrink: 1 },
   avatar: { width: 34, height: 34, borderRadius: tokens.radii.full, backgroundColor: tokens.colors.primary[100], alignItems: 'center', justifyContent: 'center' },
   farmName: { ...tokens.typography.headingMd, color: tokens.colors.primary[700], flexShrink: 1 },
