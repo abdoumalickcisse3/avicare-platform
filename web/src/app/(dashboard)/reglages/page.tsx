@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import {
   ArrowRight,
+  Bell,
   Bird,
   Package,
   Receipt,
@@ -57,6 +58,12 @@ const CATEGORIES: SettingCategory[] = [
     name: "Comptabilité",
     description: "Catégories de dépenses et de revenus.",
     icon: Receipt,
+  },
+  {
+    slug: "notifications",
+    name: "Notifications",
+    description: "Alertes par catégorie : cloche in-app et WhatsApp.",
+    icon: Bell,
   },
 ];
 

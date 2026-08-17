@@ -4,13 +4,13 @@ import { renderWithProviders } from "@/test/render";
 import SettingsHubPage from "./page";
 
 describe("SettingsHubPage", () => {
-  it("renders the five settings category cards", () => {
+  it("renders the settings category cards", () => {
     renderWithProviders(<SettingsHubPage />);
     expect(screen.getByRole("heading", { name: "Réglages" })).toBeInTheDocument();
-    ["Stock", "Lots", "Sanitaire", "Ventes", "Comptabilité"].forEach((name) => {
+    ["Stock", "Lots", "Sanitaire", "Ventes", "Comptabilité", "Notifications"].forEach((name) => {
       expect(screen.getByText(name)).toBeInTheDocument();
     });
-    expect(screen.getAllByRole("link", { name: /gérer/i })).toHaveLength(5);
+    expect(screen.getAllByRole("link", { name: /gérer/i })).toHaveLength(6);
   });
 
   it("links each card to its category route", () => {
@@ -19,5 +19,6 @@ describe("SettingsHubPage", () => {
     const hrefs = links.map((l) => l.getAttribute("href"));
     expect(hrefs).toContain("/reglages/stock");
     expect(hrefs).toContain("/reglages/comptabilite");
+    expect(hrefs).toContain("/reglages/notifications");
   });
 });
