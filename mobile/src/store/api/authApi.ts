@@ -20,6 +20,10 @@ export type UserProfile = {
 };
 
 export const authApi = baseApi.injectEndpoints({
+  // Re-injecting the same endpoints under Fast Refresh (when this file is edited)
+  // otherwise logs "override already-existing endpoint" for every endpoint. Harmless
+  // in dev; production evaluates the module once so this never triggers.
+  overrideExisting: __DEV__,
   endpoints: (build) => ({
     login: build.mutation<AuthTokens, LoginRequest>({
       query: (body) => ({ url: '/api/v1/auth/login', method: 'POST', body }),

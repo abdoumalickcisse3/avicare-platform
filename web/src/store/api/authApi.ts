@@ -12,6 +12,10 @@ interface ApiEnvelope<T> {
 }
 
 export const authApi = baseApi.injectEndpoints({
+  // Silence the "override already-existing endpoint" logs when this file is edited
+  // under HMR (re-injects into the persisted baseApi). Never triggers in production
+  // (the module evaluates once).
+  overrideExisting: process.env.NODE_ENV !== "production",
   endpoints: (build) => ({
     login: build.mutation<AuthTokens, LoginRequest>({
       query: (body) => ({ url: "/api/v1/auth/login", method: "POST", body }),
