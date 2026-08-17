@@ -65,3 +65,22 @@ assistant:
   # and how often the sweep clears expired ones.
   confirm-ttl-minutes: ${ASSISTANT_CONFIRM_TTL_MINUTES:5}
   confirm-sweep-ms: ${ASSISTANT_CONFIRM_SWEEP_MS:300000}
+
+# Konekt WhatsApp gateway (notifications channel). The secret is supplied ONLY via
+# KONEKT_API_SECRET (prod) — never committed. WhatsApp is off unless enabled AND
+# a secret is present; the dispatcher no-ops otherwise (in-app notifications keep working).
+konekt:
+  base-url: ${KONEKT_BASE_URL:https://konekt.nexteranga.com}
+  api-secret: ${KONEKT_API_SECRET:}
+
+# Notification scan (daily materialization) and WhatsApp dispatch cadence.
+notifications:
+  whatsapp:
+    enabled: ${NOTIF_WHATSAPP_ENABLED:false}
+    dispatch-cron: ${NOTIF_WHATSAPP_DISPATCH_CRON:0 */2 * * * *}
+    max-attempts: ${NOTIF_WHATSAPP_MAX_ATTEMPTS:5}
+    default-country-code: ${NOTIF_WHATSAPP_DEFAULT_CC:221}
+  scan:
+    cron: ${NOTIF_SCAN_CRON:0 0 6 * * *}
+    zone: ${NOTIF_SCAN_ZONE:Africa/Dakar}
+    manual-trigger-enabled: ${NOTIF_SCAN_MANUAL_TRIGGER:true}
