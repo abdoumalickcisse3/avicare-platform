@@ -16,6 +16,7 @@ import {
   Receipt,
   ShoppingCart,
   Syringe,
+  User,
   type LucideIcon,
 } from 'lucide-react-native';
 import { tokens } from '@/theme';
@@ -37,6 +38,7 @@ const CATEGORIES: SettingCategory[] = [
   { slug: 'ventes', name: 'Ventes', description: 'Circuits de distribution.', icon: ShoppingCart },
   { slug: 'comptabilite', name: 'Comptabilité', description: 'Catégories de dépenses.', icon: Receipt },
   { slug: 'notifications', name: 'Notifications', description: 'Alertes : cloche et WhatsApp.', icon: Bell },
+  { slug: 'profil', name: 'Mon profil', description: 'Nom et numéro WhatsApp.', icon: User },
 ];
 
 export default function ReglagesScreen() {
