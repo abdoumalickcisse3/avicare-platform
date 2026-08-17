@@ -14,13 +14,14 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
-import { Check, ChevronDown, HandCoins, LogOut, Menu as MenuIcon, Warehouse } from "lucide-react";
+import { Check, ChevronDown, HandCoins, LogOut, Menu as MenuIcon, User, Warehouse } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { logout } from "@/store/authActions";
 import { setSelectedFarmId } from "@/store/slices/uiSlice";
 import { useSelectedFarm } from "@/hooks/useSelectedFarm";
 import { useGetMyFarmsQuery } from "@/store/api/farmsApi";
 import { MyAdvancesDialog } from "@/components/account/MyAdvancesDialog";
+import { ProfileDialog } from "@/components/account/ProfileDialog";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 import { colors } from "@/theme/tokens";
 
@@ -70,6 +71,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
   const [accountAnchor, setAccountAnchor] = useState<null | HTMLElement>(null);
   const [farmAnchor, setFarmAnchor] = useState<null | HTMLElement>(null);
   const [advancesOpen, setAdvancesOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const page = PAGE_TITLES.filter(
     (p) => pathname === p.prefix || pathname.startsWith(`${p.prefix}/`),
@@ -200,6 +202,15 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
           <MenuItem
             onClick={() => {
               setAccountAnchor(null);
+              setProfileOpen(true);
+            }}
+          >
+            <User size={16} style={{ marginRight: 8 }} />
+            Mon profil
+          </MenuItem>
+          <MenuItem
+            onClick={() => {
+              setAccountAnchor(null);
               setAdvancesOpen(true);
             }}
           >
@@ -212,6 +223,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
           </MenuItem>
         </Menu>
         <MyAdvancesDialog open={advancesOpen} onClose={() => setAdvancesOpen(false)} />
+        <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)} />
       </Toolbar>
     </AppBar>
   );

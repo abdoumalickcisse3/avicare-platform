@@ -30,6 +30,14 @@ export const authApi = baseApi.injectEndpoints({
       transformResponse: (r: ApiEnvelope<UserProfile>) => r.data,
       providesTags: ["User"],
     }),
+    updateProfile: build.mutation<
+      UserProfile,
+      { fullName: string; phone?: string; locale?: string }
+    >({
+      query: (body) => ({ url: "/api/v1/account/profile", method: "PUT", body }),
+      transformResponse: (r: ApiEnvelope<UserProfile>) => r.data,
+      invalidatesTags: ["User"],
+    }),
   }),
 });
 
@@ -38,4 +46,5 @@ export const {
   useSignupMutation,
   useRefreshMutation,
   useGetProfileQuery,
+  useUpdateProfileMutation,
 } = authApi;
