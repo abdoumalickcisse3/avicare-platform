@@ -12,11 +12,12 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
-ARG PUBLIC_SITE_URL=https://jawdi.com
-ARG PUBLIC_APP_SIGNUP_URL=https://app.jawdi.com/signup
-ARG PUBLIC_APP_LOGIN_URL=https://app.jawdi.com/login
-ARG PUBLIC_PARTNER_EMAIL=partenaires@jawdi.com
-ARG PUBLIC_CONTACT_PHONE=
+ARG PUBLIC_SITE_URL=https://jawdi.app
+# Phase collaborateurs : le CTA "Commencer gratuitement" mène à /contact.
+ARG PUBLIC_APP_SIGNUP_URL=/contact
+ARG PUBLIC_APP_LOGIN_URL=https://app.jawdi.app/login
+ARG PUBLIC_PARTNER_EMAIL=malick.cisse@nlogicsolutions.com
+ARG PUBLIC_CONTACT_PHONE=+221 70 475 69 96
 ENV PUBLIC_SITE_URL=$PUBLIC_SITE_URL \
     PUBLIC_APP_SIGNUP_URL=$PUBLIC_APP_SIGNUP_URL \
     PUBLIC_APP_LOGIN_URL=$PUBLIC_APP_LOGIN_URL \
