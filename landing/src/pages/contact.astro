@@ -1,28 +1,27 @@
 ---
-// Page Contact — d'après le doc de design §11 : H1 verbatim
-// (« Parlons de votre élevage. »), canaux (email PUBLIC_PARTNER_EMAIL,
-// téléphone PUBLIC_CONTACT_PHONE, WhatsApp marqué "bientôt" — hors
-// périmètre V1 du site), formulaire structuré (nom, téléphone,
-// "je suis : éleveur / coopérative / autre", message).
+// Page Contact — H1 verbatim (« Parlons de votre élevage. »), canaux
+// (WhatsApp = canal principal, email, téléphone), formulaire structuré
+// (nom, téléphone, "je suis : éleveur / coopérative / autre", message).
 //
-// Pas de backend V1 (doc de design "Hors périmètre") : le formulaire
-// est inerte, soumis via `action="mailto:...&form-data..."` avec
-// `enctype="text/plain"` — technique standard qui ouvre le client mail
-// de l'utilisateur avec les champs assemblés en corps de message, sans
-// jamais poster nulle part côté serveur. Une note visible sous le
-// formulaire l'explicite ("endpoint à brancher plus tard"), pour ne
-// jamais laisser croire à un envoi silencieux qui n'aboutit nulle part.
+// Phase collaborateurs : le formulaire n'a pas de backend. À la soumission,
+// un petit script assemble les champs et ouvre WhatsApp du visiteur
+// (lien wa.me) avec le message pré-rempli, adressé au numéro de l'équipe
+// Jawdi. Rien n'est posté côté serveur ; la conversation démarre
+// directement dans WhatsApp. L'email reste un canal de secours (mailto).
 //
 // Un seul CTA orange sur la page (règle "un CTA principal par écran") :
-// le bouton d'envoi du formulaire. Le phero ne porte donc pas son
-// propre bouton `.btn-cta` — les canaux (mailto/tel) juste en dessous
-// servent d'actions immédiates, en style neutre (`btn-dark`).
+// le bouton d'envoi du formulaire. Les canaux (WhatsApp/mailto/tel) juste
+// au-dessus servent d'actions immédiates, en style neutre.
 import Base from "../layouts/Base.astro";
 import Highlight from "../components/Highlight.astro";
 import SectionHead from "../components/SectionHead.astro";
 
-const partnerEmail = import.meta.env.PUBLIC_PARTNER_EMAIL || "hello@jawdi.app";
-const contactPhone = import.meta.env.PUBLIC_CONTACT_PHONE || "+221 XX XXX XX XX";
+const partnerEmail =
+  import.meta.env.PUBLIC_PARTNER_EMAIL || "malick.cisse@nlogicsolutions.com";
+const contactPhone = import.meta.env.PUBLIC_CONTACT_PHONE || "+221 70 475 69 96";
+// wa.me exige le numéro international sans "+" ni espaces (ex. 221704756996).
+const waNumber = contactPhone.replace(/[^\d]/g, "");
+const waHref = `https://wa.me/${waNumber}`;
 const telHref = `tel:${contactPhone.replace(/[^+\d]/g, "")}`;
 const mailtoHref = `mailto:${partnerEmail}`;
 
@@ -46,15 +45,14 @@ const description =
   <section class="panel reveal">
     <SectionHead eyebrow="Nos canaux" center>Choisissez votre moyen le plus rapide.</SectionHead>
     <div class="channels">
-      <a class="chan" href={mailtoHref}>
-        <div class="ic">
+      <a class="chan chan-wa" href={waHref} target="_blank" rel="noopener">
+        <div class="ic ic-wa">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="5" width="18" height="14" rx="2"></rect>
-            <path d="m3 7 9 6 9-6"></path>
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"></path>
           </svg>
         </div>
-        <div class="l">Email</div>
-        <div class="v">{partnerEmail}</div>
+        <div class="l">WhatsApp — le plus rapide</div>
+        <div class="v">{contactPhone}</div>
       </a>
       <a class="chan" href={telHref}>
         <div class="ic">
@@ -65,15 +63,16 @@ const description =
         <div class="l">Téléphone</div>
         <div class="v">{contactPhone}</div>
       </a>
-      <div class="chan chan-soon" aria-disabled="true">
+      <a class="chan" href={mailtoHref}>
         <div class="ic">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"></path>
+            <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+            <path d="m3 7 9 6 9-6"></path>
           </svg>
         </div>
-        <div class="l">WhatsApp</div>
-        <div class="v">Bientôt disponible</div>
-      </div>
+        <div class="l">Email</div>
+        <div class="v">{partnerEmail}</div>
+      </a>
     </div>
   </section>
 
@@ -81,13 +80,15 @@ const description =
     <SectionHead
       eyebrow="Écrivez-nous"
       center
-      lead="Ce formulaire ouvre votre application mail avec le message déjà rempli&nbsp;: rien n'est envoyé automatiquement depuis cette page."
+      lead="Ce formulaire ouvre WhatsApp avec votre message déjà rempli&nbsp;: vous n'avez plus qu'à appuyer sur envoyer, et on vous répond directement."
     >
       Un message, et on revient vers vous.
     </SectionHead>
 
     <form
       class="cform"
+      data-wa-form
+      data-wa-number={waNumber}
       action={mailtoHref}
       method="post"
       enctype="text/plain"
@@ -121,13 +122,40 @@ const description =
         <label for="c-msg">Message</label>
         <textarea id="c-msg" name="Message" rows="5" required></textarea>
       </div>
-      <button class="btn btn-cta btn-lg" type="submit">Envoyer par email</button>
+      <button class="btn btn-cta btn-lg" type="submit">Envoyer sur WhatsApp</button>
       <p class="fine-note center">
-        Endpoint à brancher plus tard — pour l'instant, l'envoi ouvre votre client mail
-        (aucun serveur ne reçoit vos données depuis ce site).
+        L'envoi ouvre WhatsApp avec votre message déjà rempli — appuyez simplement sur
+        envoyer. Pas de WhatsApp&nbsp;? Écrivez-nous à <a href={mailtoHref}>{partnerEmail}</a>.
       </p>
     </form>
   </section>
+
+  <script>
+    // Phase collaborateurs : pas de backend. À la soumission, on assemble les
+    // champs en un message lisible et on ouvre WhatsApp (wa.me) vers le numéro
+    // de l'équipe. Si JS est indisponible, le formulaire retombe sur son
+    // action mailto native — aucun message n'est jamais perdu en silence.
+    const form = document.querySelector<HTMLFormElement>("[data-wa-form]");
+    const number = form?.dataset.waNumber;
+    if (form && number) {
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const data = new FormData(form);
+        const nom = (data.get("Nom") ?? "").toString().trim();
+        const tel = (data.get("Telephone") ?? "").toString().trim();
+        const profil = (data.get("Profil") ?? "").toString().trim();
+        const message = (data.get("Message") ?? "").toString().trim();
+        const text =
+          `Bonjour l'équipe Jawdi 👋\n\n` +
+          `Nom : ${nom}\n` +
+          `Téléphone : ${tel}\n` +
+          `Profil : ${profil}\n\n` +
+          `Message :\n${message}`;
+        const url = `https://wa.me/${number}?text=${encodeURIComponent(text)}`;
+        window.open(url, "_blank", "noopener");
+      });
+    }
+  </script>
 </Base>
 
 <style is:global>
@@ -184,16 +212,16 @@ const description =
     color: var(--ink);
     word-break: break-word;
   }
-  /* Pas d'opacity sur la carte entière : elle composite le texte avec le fond
-     et fait tomber --ink-soft de 5.75:1 à ~2.61:1 (échec AA). L'état "à venir"
-     passe par l'icône estompée + le libellé, le texte reste pleinement lisible. */
-  .chan-soon .ic {
-    opacity: 0.55;
+  /* WhatsApp = canal principal de la phase collaborateurs : carte mise en
+     avant par un liseré et une icône vert WhatsApp, pour l'action la plus
+     rapide (conversation directe). */
+  .chan-wa {
+    border-color: var(--leaf-300);
+    background: var(--leaf-050);
   }
-  .chan-soon .v {
-    font-weight: 500;
-    font-size: 0.95rem;
-    color: var(--ink-soft);
+  .chan-wa .ic-wa {
+    background: #25d366;
+    color: #fff;
   }
 
   /* ---- contact form ---- */
