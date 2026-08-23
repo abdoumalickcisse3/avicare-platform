@@ -7,10 +7,12 @@ describe("SettingsHubPage", () => {
   it("renders the settings category cards", () => {
     renderWithProviders(<SettingsHubPage />);
     expect(screen.getByRole("heading", { name: "Réglages" })).toBeInTheDocument();
-    ["Stock", "Lots", "Sanitaire", "Ventes", "Comptabilité", "Notifications"].forEach((name) => {
-      expect(screen.getByText(name)).toBeInTheDocument();
-    });
-    expect(screen.getAllByRole("link", { name: /gérer/i })).toHaveLength(6);
+    ["Stock", "Lots", "Sanitaire", "Ventes", "Comptabilité", "Notifications", "Mon réseau"].forEach(
+      (name) => {
+        expect(screen.getByText(name)).toBeInTheDocument();
+      },
+    );
+    expect(screen.getAllByRole("link", { name: /gérer/i })).toHaveLength(7);
   });
 
   it("links each card to its category route", () => {
@@ -20,5 +22,6 @@ describe("SettingsHubPage", () => {
     expect(hrefs).toContain("/reglages/stock");
     expect(hrefs).toContain("/reglages/comptabilite");
     expect(hrefs).toContain("/reglages/notifications");
+    expect(hrefs).toContain("/reglages/partenaires");
   });
 });
