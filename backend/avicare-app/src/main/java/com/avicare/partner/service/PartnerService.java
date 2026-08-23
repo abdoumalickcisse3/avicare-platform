@@ -5,8 +5,10 @@ import com.avicare.partner.domain.Partner;
 import com.avicare.partner.domain.PartnerInviteCode;
 import com.avicare.partner.domain.PartnerStatus;
 import com.avicare.partner.domain.PartnerType;
+import com.avicare.partner.domain.PartnerUser;
 import com.avicare.partner.repository.PartnerInviteCodeRepository;
 import com.avicare.partner.repository.PartnerRepository;
+import com.avicare.partner.repository.PartnerUserRepository;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -15,6 +17,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +32,8 @@ public class PartnerService {
 
   private final PartnerRepository partnerRepository;
   private final PartnerInviteCodeRepository inviteCodeRepository;
+  private final PartnerUserRepository partnerUserRepository;
+  private final PasswordEncoder passwordEncoder;
 
   @Transactional
   public Partner create(
@@ -97,6 +102,23 @@ public class PartnerService {
     code.setExpiresAt(expiresAt);
     code.setCreatedBy(actorUserId);
     return inviteCodeRepository.save(code);
+  }
+
+  /** Result of provisioning a partner user: the saved entity + the temporary password (once). */
+  public record PartnerUserResult(PartnerUser user, String temporaryPassword) {}
+
+  /** ADMIN provisions a partner-portal login. Returns the temp password once (BCrypt hashed). */
+  @Transactional
+  public PartnerUserResult createPartnerUser(Long partnerId, String email, String fullName) {
+    get(partnerId); // 404 if the partner does not exist
+    String tempPassword = uniqueCode() + uniqueCode(); // 16-char temp password
+    PartnerUser u = new PartnerUser();
+    u.setPartnerId(partnerId);
+    u.setEmail(email);
+    u.setFullName(fullName);
+    u.setActive(true);
+    u.setPasswordHash(passwordEncoder.encode(tempPassword));
+    return new PartnerUserResult(partnerUserRepository.save(u), tempPassword);
   }
 
   private String uniqueCode() {

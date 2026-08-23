@@ -10,6 +10,7 @@ import com.avicare.partner.domain.PartnerStatus;
 import com.avicare.partner.domain.PartnerType;
 import com.avicare.partner.repository.PartnerInviteCodeRepository;
 import com.avicare.partner.repository.PartnerRepository;
+import com.avicare.partner.repository.PartnerUserRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -17,13 +18,18 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
 class PartnerServiceTest {
 
   @Mock PartnerRepository partnerRepository;
   @Mock PartnerInviteCodeRepository inviteCodeRepository;
+  @Mock PartnerUserRepository partnerUserRepository;
+  @Spy PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(12);
   @InjectMocks PartnerService service;
 
   @Test
@@ -78,6 +84,22 @@ class PartnerServiceTest {
 
     assertThat(byId).containsOnlyKeys(3L);
     assertThat(byId.get(3L).getName()).isEqualTo("Provendier X");
+  }
+
+  @Test
+  void createPartnerUserHashesPasswordAndReturnsTempOnce() {
+    when(partnerRepository.findById(3L)).thenReturn(Optional.of(new Partner()));
+    when(partnerUserRepository.save(any(com.avicare.partner.domain.PartnerUser.class)))
+        .thenAnswer(inv -> inv.getArgument(0));
+
+    var result = service.createPartnerUser(3L, "p@x.io", "Awa");
+
+    assertThat(result.user().getEmail()).isEqualTo("p@x.io");
+    assertThat(result.user().getPartnerId()).isEqualTo(3L);
+    assertThat(result.temporaryPassword()).hasSizeGreaterThanOrEqualTo(10);
+    assertThat(result.user().getPasswordHash()).isNotEqualTo(result.temporaryPassword());
+    assertThat(passwordEncoder.matches(result.temporaryPassword(), result.user().getPasswordHash()))
+        .isTrue();
   }
 
   /** Test helper: Partner#id has no setter; set it via the JPA field for assertions. */
