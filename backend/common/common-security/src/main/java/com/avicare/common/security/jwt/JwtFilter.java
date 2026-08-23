@@ -1,7 +1,10 @@
 package com.avicare.common.security.jwt;
 
 import com.avicare.common.security.exception.TokenValidationException;
+import com.avicare.common.security.exception.WrongTokenTypeException;
 import com.avicare.common.security.principal.AvicarePrincipal;
+import com.avicare.common.security.principal.PartnerPrincipal;
+import com.avicare.common.tenancy.context.PartnerContext;
 import com.avicare.common.tenancy.context.TenancyContext;
 import com.avicare.common.tenancy.context.TenantData;
 import jakarta.servlet.FilterChain;
@@ -71,8 +74,15 @@ public class JwtFilter extends OncePerRequestFilter {
     if (token != null) {
       try {
         authenticate(jwtService.validateAccessToken(token));
+      } catch (WrongTokenTypeException wrongType) {
+        // A farmer access token has the wrong type only for the partner audience: try that path.
+        try {
+          authenticatePartner(jwtService.validatePartnerAccessToken(token));
+        } catch (TokenValidationException e) {
+          log.warn("Rejected partner JWT: {}", e.getMessage());
+        }
       } catch (TokenValidationException e) {
-        // Invalid/expired/wrong-type token: stay unauthenticated and let the
+        // Invalid/expired token: stay unauthenticated and let the
         // authorization layer return 401 on protected routes.
         log.warn("Rejected JWT: {}", e.getMessage());
       }
@@ -82,8 +92,23 @@ public class JwtFilter extends OncePerRequestFilter {
       chain.doFilter(request, response);
     } finally {
       TenancyContext.clear();
+      PartnerContext.clear();
       SecurityContextHolder.clearContext();
     }
+  }
+
+  /** Binds a partner principal (portal auth) to the security context and the partner context. */
+  private void authenticatePartner(PartnerPrincipal principal) {
+    PartnerContext.set(principal.partnerId());
+    var auth =
+        new UsernamePasswordAuthenticationToken(
+            principal.partnerUserId(), null, List.of(new SimpleGrantedAuthority("ROLE_PARTNER")));
+    auth.setDetails(principal);
+    SecurityContextHolder.getContext().setAuthentication(auth);
+    log.debug(
+        "Partner JWT authenticated partnerUserId={} partnerId={}",
+        principal.partnerUserId(),
+        principal.partnerId());
   }
 
   /** Binds the principal to both the Spring security context and the tenancy context. */
