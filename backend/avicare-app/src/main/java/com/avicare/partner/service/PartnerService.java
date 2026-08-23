@@ -9,7 +9,11 @@ import com.avicare.partner.repository.PartnerInviteCodeRepository;
 import com.avicare.partner.repository.PartnerRepository;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,6 +54,21 @@ public class PartnerService {
   @Transactional(readOnly = true)
   public List<Partner> list() {
     return partnerRepository.findAll();
+  }
+
+  /** Active partners for the farmer-facing directory, optionally filtered by type. */
+  @Transactional(readOnly = true)
+  public List<Partner> listActive(PartnerType type) {
+    return partnerRepository.findByStatus(PartnerStatus.ACTIVE).stream()
+        .filter(p -> type == null || p.getType() == type)
+        .toList();
+  }
+
+  /** Batch resolution of partners by id (soft-deleted excluded by {@code @SQLRestriction}). */
+  @Transactional(readOnly = true)
+  public Map<Long, Partner> mapByIds(Collection<Long> ids) {
+    return partnerRepository.findAllById(ids).stream()
+        .collect(Collectors.toMap(Partner::getId, Function.identity()));
   }
 
   @Transactional(readOnly = true)
