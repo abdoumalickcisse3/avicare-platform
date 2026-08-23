@@ -1,17 +1,14 @@
 package com.avicare.partner.controller;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.avicare.common.security.jwt.JwtService;
 import com.avicare.common.security.principal.AvicarePrincipal;
 import com.avicare.common.security.principal.FarmRole;
 import com.avicare.common.security.principal.Membership;
+import com.avicare.common.security.principal.PartnerPrincipal;
 import com.avicare.common.security.principal.UserRole;
 import com.avicare.finance.repository.ExpenseRepository;
 import com.avicare.finance.repository.SalaryAdvanceRepository;
@@ -55,18 +52,12 @@ import com.avicare.parameters.repository.FarmSettingRepository;
 import com.avicare.parameters.repository.PriceListItemRepository;
 import com.avicare.parameters.repository.PriceListRepository;
 import com.avicare.parameters.repository.UserSettingRepository;
-import com.avicare.partner.domain.MembershipOrigin;
-import com.avicare.partner.domain.MembershipStatus;
-import com.avicare.partner.domain.PartnerFarmMembership;
-import com.avicare.partner.exception.DuplicateMembershipException;
-import com.avicare.partner.exception.InviteCodeInvalidException;
+import com.avicare.partner.dto.response.NetworkDashboardResponse;
 import com.avicare.partner.repository.PartnerFarmMembershipRepository;
 import com.avicare.partner.repository.PartnerInviteCodeRepository;
 import com.avicare.partner.repository.PartnerRefreshTokenRepository;
 import com.avicare.partner.repository.PartnerRepository;
 import com.avicare.partner.repository.PartnerUserRepository;
-import com.avicare.partner.service.PartnerNetworkService;
-import com.avicare.partner.service.PartnerService;
 import com.avicare.subscription.repository.SubscriptionChangeRequestRepository;
 import com.avicare.subscription.repository.SubscriptionModuleRepository;
 import com.avicare.subscription.repository.SubscriptionRepository;
@@ -97,7 +88,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-class FarmerPartnerControllerIT {
+class PartnerPortalControllerIT {
 
   private static final KeyPair KEYS = generateKeys();
   private static final Long FARM_ID = 42L;
@@ -105,9 +96,8 @@ class FarmerPartnerControllerIT {
   @Autowired private MockMvc mockMvc;
   @Autowired private JwtService jwtService;
 
-  // Mock the two partner services directly (DB-less); the real FarmAccessChecker enforces the gate.
-  @MockitoBean private PartnerService partnerService;
-  @MockitoBean private PartnerNetworkService partnerNetworkService;
+  // Mock the read service (portal responses); real FarmAccessChecker/@partnerAccess enforce gates.
+  @MockitoBean private com.avicare.partner.service.PartnerNetworkReadService readService;
 
   // DB-less `test` profile mocks — same list as DashboardControllerIT / SecurityE2ETest.
   @MockitoBean private UserRepository userRepository;
@@ -188,103 +178,46 @@ class FarmerPartnerControllerIT {
     registry.add("avicare.security.jwt.public-key", () -> publicPem(KEYS));
   }
 
-  private PartnerFarmMembership sampleMembership() {
-    PartnerFarmMembership m = new PartnerFarmMembership();
-    m.setId(8L);
-    m.setPartnerId(3L);
-    m.setFarmId(FARM_ID);
-    m.setStatus(MembershipStatus.DECLARED);
-    m.setOrigin(MembershipOrigin.FARMER_DECLARED);
-    return m;
-  }
-
   @Test
   void noToken_returns401() throws Exception {
-    mockMvc
-        .perform(get("/api/v1/farms/" + FARM_ID + "/partners"))
-        .andExpect(status().isUnauthorized());
+    mockMvc.perform(get("/api/v1/partner/network")).andExpect(status().isUnauthorized());
   }
 
   @Test
-  void nonMember_returns403() throws Exception {
-    String token = token(new Membership(999L, FarmRole.OWNER, List.of("*")));
+  void partnerToken_get_network_returns200() throws Exception {
+    when(readService.dashboard(3L)).thenReturn(new NetworkDashboardResponse(0, 0, 0L, null));
     mockMvc
-        .perform(
-            get("/api/v1/farms/" + FARM_ID + "/partners")
-                .header("Authorization", "Bearer " + token))
+        .perform(get("/api/v1/partner/network").header("Authorization", "Bearer " + partnerToken()))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  void farmerToken_on_partnerEndpoint_returns403() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/partner/network").header("Authorization", "Bearer " + farmerToken()))
         .andExpect(status().isForbidden());
   }
 
   @Test
-  void member_list_returns200() throws Exception {
-    when(partnerNetworkService.listForFarmDetailed(FARM_ID)).thenReturn(List.of());
-    String token = token(new Membership(FARM_ID, FarmRole.FARMER, List.of("*")));
+  void partnerToken_on_farmerEndpoint_returns403() throws Exception {
     mockMvc
         .perform(
             get("/api/v1/farms/" + FARM_ID + "/partners")
-                .header("Authorization", "Bearer " + token))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.data").isArray());
-  }
-
-  @Test
-  void farmerRole_declare_returns403() throws Exception {
-    String token = token(new Membership(FARM_ID, FarmRole.FARMER, List.of("*")));
-    mockMvc
-        .perform(
-            post("/api/v1/farms/" + FARM_ID + "/partners/declare")
-                .header("Authorization", "Bearer " + token)
-                .contentType("application/json")
-                .content("{\"partnerId\":3}"))
+                .header("Authorization", "Bearer " + partnerToken()))
         .andExpect(status().isForbidden());
   }
 
-  @Test
-  void owner_declare_returns200() throws Exception {
-    when(partnerNetworkService.declareSupplier(anyLong(), anyLong(), anyLong()))
-        .thenReturn(sampleMembership());
-    String token = token(new Membership(FARM_ID, FarmRole.OWNER, List.of("*")));
-    mockMvc
-        .perform(
-            post("/api/v1/farms/" + FARM_ID + "/partners/declare")
-                .header("Authorization", "Bearer " + token)
-                .contentType("application/json")
-                .content("{\"partnerId\":3}"))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.data.membershipId").value(8));
+  private String partnerToken() {
+    return jwtService.generatePartnerAccessToken(new PartnerPrincipal(5L, "p@x.io", 3L));
   }
 
-  @Test
-  void owner_joinWithBadCode_returns422() throws Exception {
-    when(partnerNetworkService.joinViaCode(any(), anyLong(), anyLong()))
-        .thenThrow(new InviteCodeInvalidException("Unknown invite code"));
-    String token = token(new Membership(FARM_ID, FarmRole.OWNER, List.of("*")));
-    mockMvc
-        .perform(
-            post("/api/v1/farms/" + FARM_ID + "/partners/join")
-                .header("Authorization", "Bearer " + token)
-                .contentType("application/json")
-                .content("{\"code\":\"NOPE\"}"))
-        .andExpect(status().isUnprocessableEntity());
-  }
-
-  @Test
-  void owner_declareDuplicate_returns409() throws Exception {
-    when(partnerNetworkService.declareSupplier(anyLong(), anyLong(), anyLong()))
-        .thenThrow(new DuplicateMembershipException(3L, FARM_ID));
-    String token = token(new Membership(FARM_ID, FarmRole.OWNER, List.of("*")));
-    mockMvc
-        .perform(
-            post("/api/v1/farms/" + FARM_ID + "/partners/declare")
-                .header("Authorization", "Bearer " + token)
-                .contentType("application/json")
-                .content("{\"partnerId\":3}"))
-        .andExpect(status().isConflict());
-  }
-
-  private String token(Membership membership) {
+  private String farmerToken() {
     return jwtService.generateAccessToken(
-        new AvicarePrincipal(10L, "owner@avicare.com", UserRole.USER, List.of(membership)));
+        new AvicarePrincipal(
+            10L,
+            "u@x.io",
+            UserRole.USER,
+            List.of(new Membership(FARM_ID, FarmRole.OWNER, List.of("*")))));
   }
 
   // --- in-memory RSA key material ---
