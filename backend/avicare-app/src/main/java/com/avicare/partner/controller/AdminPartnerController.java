@@ -5,10 +5,12 @@ import com.avicare.common.tenancy.context.TenancyContext;
 import com.avicare.partner.domain.PartnerStatus;
 import com.avicare.partner.dto.request.AttachFarmRequest;
 import com.avicare.partner.dto.request.CreatePartnerRequest;
+import com.avicare.partner.dto.request.CreatePartnerUserRequest;
 import com.avicare.partner.dto.request.GenerateInviteCodeRequest;
 import com.avicare.partner.dto.response.InviteCodeResponse;
 import com.avicare.partner.dto.response.MembershipResponse;
 import com.avicare.partner.dto.response.PartnerResponse;
+import com.avicare.partner.dto.response.PartnerUserResponse;
 import com.avicare.partner.service.PartnerNetworkService;
 import com.avicare.partner.service.PartnerService;
 import jakarta.validation.Valid;
@@ -96,5 +98,12 @@ public class AdminPartnerController {
         InviteCodeResponse.of(
             partnerService.generateInviteCode(
                 partnerId, req.maxUses(), req.expiresAt(), TenancyContext.currentUserId())));
+  }
+
+  @PostMapping("/{partnerId}/users")
+  public ApiResponse<PartnerUserResponse> createUser(
+      @PathVariable Long partnerId, @RequestBody @Valid CreatePartnerUserRequest req) {
+    var result = partnerService.createPartnerUser(partnerId, req.email(), req.fullName());
+    return ApiResponse.of(PartnerUserResponse.of(result.user(), result.temporaryPassword()));
   }
 }
