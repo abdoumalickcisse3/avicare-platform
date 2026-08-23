@@ -58,7 +58,9 @@ import com.avicare.parameters.repository.PriceListRepository;
 import com.avicare.parameters.repository.UserSettingRepository;
 import com.avicare.partner.repository.PartnerFarmMembershipRepository;
 import com.avicare.partner.repository.PartnerInviteCodeRepository;
+import com.avicare.partner.repository.PartnerRefreshTokenRepository;
 import com.avicare.partner.repository.PartnerRepository;
+import com.avicare.partner.repository.PartnerUserRepository;
 import com.avicare.reporting.api.dto.DashboardResponse;
 import com.avicare.reporting.api.dto.DashboardResponse.CommercialSection;
 import com.avicare.reporting.api.dto.DashboardResponse.PeriodInfo;
@@ -110,6 +112,8 @@ class DashboardControllerIT {
   @MockitoBean private RefreshTokenRepository refreshTokenRepository;
   @MockitoBean private FarmRepository farmRepository;
   @MockitoBean private PartnerRepository partnerRepository;
+  @MockitoBean private PartnerUserRepository partnerUserRepository;
+  @MockitoBean private PartnerRefreshTokenRepository partnerRefreshTokenRepository;
   @MockitoBean private PartnerFarmMembershipRepository partnerFarmMembershipRepository;
   @MockitoBean private PartnerInviteCodeRepository partnerInviteCodeRepository;
   @MockitoBean private UserFarmRepository userFarmRepository;
