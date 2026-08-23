@@ -5,6 +5,7 @@ import com.avicare.common.security.exception.InvalidTokenException;
 import com.avicare.common.security.exception.WrongTokenTypeException;
 import com.avicare.common.security.principal.AvicarePrincipal;
 import com.avicare.common.security.principal.Membership;
+import com.avicare.common.security.principal.PartnerPrincipal;
 import com.avicare.common.security.principal.UserRole;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -44,8 +45,11 @@ public class JwtService {
   private static final String CLAIM_ROLE = "role";
   private static final String CLAIM_MEMBERSHIPS = "memberships";
   private static final String CLAIM_TYPE = "type";
+  private static final String CLAIM_PARTNER_ID = "partner_id";
   private static final String TYPE_ACCESS = "access";
   private static final String TYPE_REFRESH = "refresh";
+  private static final String TYPE_PARTNER_ACCESS = "partner_access";
+  private static final String TYPE_PARTNER_REFRESH = "partner_refresh";
 
   private final JwtProperties props;
   private final KeyLoader keyLoader;
@@ -146,6 +150,64 @@ public class JwtService {
   public Long validateRefreshToken(String token) {
     Claims claims = parseClaims(token);
     requireType(claims, TYPE_REFRESH);
+    return Long.parseLong(claims.getSubject());
+  }
+
+  /** Generate a partner-portal access token (audience distinct from farmer tokens). */
+  public String generatePartnerAccessToken(PartnerPrincipal principal) {
+    requireKeys();
+    Instant now = Instant.now();
+    return Jwts.builder()
+        .issuer(props.issuer())
+        .subject(principal.partnerUserId().toString())
+        .id(UUID.randomUUID().toString())
+        .issuedAt(Date.from(now))
+        .expiration(Date.from(now.plus(props.accessTokenTtl())))
+        .claims(
+            Map.of(
+                CLAIM_EMAIL, principal.email(),
+                CLAIM_PARTNER_ID, principal.partnerId(),
+                CLAIM_TYPE, TYPE_PARTNER_ACCESS))
+        .signWith(privateKey, Jwts.SIG.RS256)
+        .compact();
+  }
+
+  /** Generate a partner-portal refresh token carrying only the partner-user id. */
+  public String generatePartnerRefreshToken(Long partnerUserId) {
+    requireKeys();
+    Instant now = Instant.now();
+    return Jwts.builder()
+        .issuer(props.issuer())
+        .subject(partnerUserId.toString())
+        .id(UUID.randomUUID().toString())
+        .issuedAt(Date.from(now))
+        .expiration(Date.from(now.plus(props.refreshTokenTtl())))
+        .claims(Map.of(CLAIM_TYPE, TYPE_PARTNER_REFRESH))
+        .signWith(privateKey, Jwts.SIG.RS256)
+        .compact();
+  }
+
+  /**
+   * Verify a partner access token and rebuild the {@link PartnerPrincipal}. Throws {@link
+   * WrongTokenTypeException} for a farmer/refresh token — the cloisonnement guarantee.
+   */
+  public PartnerPrincipal validatePartnerAccessToken(String token) {
+    Claims claims = parseClaims(token);
+    requireType(claims, TYPE_PARTNER_ACCESS);
+    try {
+      Long partnerUserId = Long.parseLong(claims.getSubject());
+      String email = claims.get(CLAIM_EMAIL, String.class);
+      Long partnerId = claims.get(CLAIM_PARTNER_ID, Number.class).longValue();
+      return new PartnerPrincipal(partnerUserId, email, partnerId);
+    } catch (IllegalArgumentException | NullPointerException e) {
+      throw new InvalidTokenException("Cannot reconstruct partner principal: " + e.getMessage(), e);
+    }
+  }
+
+  /** Verify a partner refresh token and return the partner-user id. */
+  public Long validatePartnerRefreshToken(String token) {
+    Claims claims = parseClaims(token);
+    requireType(claims, TYPE_PARTNER_REFRESH);
     return Long.parseLong(claims.getSubject());
   }
 
