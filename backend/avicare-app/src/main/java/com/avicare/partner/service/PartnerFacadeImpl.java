@@ -3,10 +3,12 @@ package com.avicare.partner.service;
 import com.avicare.partner.api.PartnerFacade;
 import com.avicare.partner.api.dto.PartnerLink;
 import com.avicare.partner.domain.MembershipStatus;
+import com.avicare.partner.domain.Partner;
 import com.avicare.partner.domain.PartnerFarmMembership;
 import com.avicare.partner.repository.PartnerFarmMembershipRepository;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class PartnerFacadeImpl implements PartnerFacade {
 
   private final PartnerFarmMembershipRepository membershipRepository;
+  private final PartnerService partnerService;
 
   @Override
   @Transactional(readOnly = true)
@@ -42,8 +45,22 @@ public class PartnerFacadeImpl implements PartnerFacade {
   @Override
   @Transactional(readOnly = true)
   public List<PartnerLink> partnersForFarm(Long farmId) {
-    return membershipRepository.findByFarmIdAndStatusNot(farmId, MembershipStatus.LEFT).stream()
-        .map(m -> new PartnerLink(m.getPartnerId(), null, null, m.getId(), m.getStatus().name()))
+    List<PartnerFarmMembership> memberships =
+        membershipRepository.findByFarmIdAndStatusNot(farmId, MembershipStatus.LEFT);
+    Map<Long, Partner> byId =
+        partnerService.mapByIds(
+            memberships.stream().map(PartnerFarmMembership::getPartnerId).distinct().toList());
+    return memberships.stream()
+        .map(
+            m -> {
+              Partner p = byId.get(m.getPartnerId());
+              return new PartnerLink(
+                  m.getPartnerId(),
+                  p == null ? null : p.getName(),
+                  p == null ? null : p.getType().name(),
+                  m.getId(),
+                  m.getStatus().name());
+            })
         .toList();
   }
 
