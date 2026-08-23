@@ -13,6 +13,7 @@ import {
   ArrowRight,
   Bell,
   Bird,
+  Handshake,
   Package,
   Receipt,
   ShoppingCart,
@@ -64,6 +65,12 @@ const CATEGORIES: SettingCategory[] = [
     name: "Notifications",
     description: "Alertes par catégorie : cloche in-app et WhatsApp.",
     icon: Bell,
+  },
+  {
+    slug: "partenaires",
+    name: "Mon réseau",
+    description: "Vos fournisseurs et vétérinaires partenaires et ce que vous partagez.",
+    icon: Handshake,
   },
 ];
 
