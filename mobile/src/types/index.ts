@@ -685,3 +685,41 @@ export interface NotificationPreference {
   enabled: boolean;
   minSeverity: NotificationSeverity;
 }
+
+// --- Partner network (farmer-facing) ---
+
+export type PartnerType = 'FEED_SUPPLIER' | 'VET';
+
+/** A selectable partner in the directory (mirrors backend AvailablePartnerResponse). */
+export interface AvailablePartner {
+  id: number;
+  name: string;
+  type: PartnerType;
+  contactName: string | null;
+  contactPhone: string | null;
+  logoUrl: string | null;
+}
+
+/** A farm's membership in a partner network (mirrors backend FarmPartnerResponse). */
+export interface FarmPartner {
+  membershipId: number;
+  partnerId: number;
+  partnerName: string | null;
+  partnerType: PartnerType | null;
+  status: 'DECLARED' | 'CONFIRMED' | 'LEFT';
+  origin: 'MANUAL_ADMIN' | 'INVITE_CODE' | 'FARMER_DECLARED';
+  shareActivity: boolean;
+  shareFlockHealth: boolean;
+  shareFeedConsumption: boolean;
+  shareSalesVolume: boolean;
+  shareFinances: boolean;
+}
+
+/** The five farmer-controlled sharing sliders (mirrors backend SharingScopes). */
+export interface SharingScopes {
+  activity: boolean;
+  flockHealth: boolean;
+  feedConsumption: boolean;
+  salesVolume: boolean;
+  finances: boolean;
+}
