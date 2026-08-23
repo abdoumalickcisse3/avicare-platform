@@ -3,6 +3,7 @@ package com.avicare.partner.service;
 import com.avicare.common.api.exception.NotFoundException;
 import com.avicare.partner.domain.MembershipOrigin;
 import com.avicare.partner.domain.MembershipStatus;
+import com.avicare.partner.domain.Partner;
 import com.avicare.partner.domain.PartnerFarmMembership;
 import com.avicare.partner.domain.PartnerInviteCode;
 import com.avicare.partner.exception.DuplicateMembershipException;
@@ -11,6 +12,7 @@ import com.avicare.partner.repository.PartnerFarmMembershipRepository;
 import com.avicare.partner.repository.PartnerInviteCodeRepository;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -103,6 +105,49 @@ public class PartnerNetworkService {
   @Transactional(readOnly = true)
   public List<PartnerFarmMembership> listForFarm(Long farmId) {
     return membershipRepository.findByFarmIdAndStatusNot(farmId, MembershipStatus.LEFT);
+  }
+
+  @Transactional
+  public PartnerFarmMembership updateSharingScopesForFarm(
+      Long farmId, Long membershipId, SharingScopes scopes) {
+    PartnerFarmMembership m = loadForFarm(farmId, membershipId);
+    m.setShareActivity(scopes.activity());
+    m.setShareFlockHealth(scopes.flockHealth());
+    m.setShareFeedConsumption(scopes.feedConsumption());
+    m.setShareSalesVolume(scopes.salesVolume());
+    m.setShareFinances(scopes.finances());
+    return membershipRepository.save(m);
+  }
+
+  @Transactional
+  public PartnerFarmMembership leaveForFarm(Long farmId, Long membershipId) {
+    PartnerFarmMembership m = loadForFarm(farmId, membershipId);
+    m.setStatus(MembershipStatus.LEFT);
+    m.setLeftAt(LocalDateTime.now());
+    return membershipRepository.save(m);
+  }
+
+  @Transactional(readOnly = true)
+  public List<FarmPartnerView> listForFarmDetailed(Long farmId) {
+    List<PartnerFarmMembership> memberships =
+        membershipRepository.findByFarmIdAndStatusNot(farmId, MembershipStatus.LEFT);
+    List<Long> partnerIds =
+        memberships.stream().map(PartnerFarmMembership::getPartnerId).distinct().toList();
+    Map<Long, Partner> byId = partnerService.mapByIds(partnerIds);
+    return memberships.stream()
+        .map(m -> new FarmPartnerView(m, byId.get(m.getPartnerId())))
+        .toList();
+  }
+
+  /**
+   * Loads a membership and enforces it belongs to {@code farmId} (else 404 — no cross-farm leak).
+   */
+  private PartnerFarmMembership loadForFarm(Long farmId, Long membershipId) {
+    PartnerFarmMembership m = load(membershipId);
+    if (!m.getFarmId().equals(farmId)) {
+      throw NotFoundException.of("PartnerFarmMembership", membershipId);
+    }
+    return m;
   }
 
   private PartnerFarmMembership load(Long membershipId) {
