@@ -1,6 +1,7 @@
 package com.avicare.partner.repository;
 
 import com.avicare.partner.domain.Partner;
+import com.avicare.partner.domain.PartnerStatus;
 import com.avicare.partner.domain.PartnerType;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,4 +12,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface PartnerRepository extends JpaRepository<Partner, Long> {
 
   List<Partner> findByType(PartnerType type);
+
+  List<Partner> findByStatus(PartnerStatus status);
 }

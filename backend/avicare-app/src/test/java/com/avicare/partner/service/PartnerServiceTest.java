@@ -6,9 +6,12 @@ import static org.mockito.Mockito.when;
 
 import com.avicare.partner.domain.Partner;
 import com.avicare.partner.domain.PartnerInviteCode;
+import com.avicare.partner.domain.PartnerStatus;
 import com.avicare.partner.domain.PartnerType;
 import com.avicare.partner.repository.PartnerInviteCodeRepository;
 import com.avicare.partner.repository.PartnerRepository;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,5 +52,43 @@ class PartnerServiceTest {
     assertThat(code.getCode()).hasSize(8).matches("[A-Z0-9]{8}");
     assertThat(code.getMaxUses()).isEqualTo(50);
     assertThat(code.isActive()).isTrue();
+  }
+
+  @Test
+  void listActiveFiltersByStatusAndType() {
+    Partner active = new Partner();
+    active.setName("Provendier X");
+    active.setType(PartnerType.FEED_SUPPLIER);
+    active.setStatus(PartnerStatus.ACTIVE);
+    when(partnerRepository.findByStatus(PartnerStatus.ACTIVE)).thenReturn(List.of(active));
+
+    assertThat(service.listActive(null)).containsExactly(active);
+    assertThat(service.listActive(PartnerType.FEED_SUPPLIER)).containsExactly(active);
+    assertThat(service.listActive(PartnerType.VET)).isEmpty();
+  }
+
+  @Test
+  void mapByIdsIndexesPartnersById() {
+    Partner p = new Partner();
+    p.setName("Provendier X");
+    p.setType(PartnerType.FEED_SUPPLIER);
+    when(partnerRepository.findAllById(List.of(3L))).thenReturn(List.of(withId(p, 3L)));
+
+    Map<Long, Partner> byId = service.mapByIds(List.of(3L));
+
+    assertThat(byId).containsOnlyKeys(3L);
+    assertThat(byId.get(3L).getName()).isEqualTo("Provendier X");
+  }
+
+  /** Test helper: Partner#id has no setter; set it via the JPA field for assertions. */
+  private static Partner withId(Partner p, long id) {
+    try {
+      var f = Partner.class.getDeclaredField("id");
+      f.setAccessible(true);
+      f.set(p, id);
+    } catch (ReflectiveOperationException e) {
+      throw new IllegalStateException(e);
+    }
+    return p;
   }
 }
