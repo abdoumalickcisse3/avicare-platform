@@ -12,6 +12,7 @@ import {
   ArrowRight,
   Bell,
   Bird,
+  Handshake,
   Package,
   Receipt,
   ShoppingCart,
@@ -38,6 +39,7 @@ const CATEGORIES: SettingCategory[] = [
   { slug: 'ventes', name: 'Ventes', description: 'Circuits de distribution.', icon: ShoppingCart },
   { slug: 'comptabilite', name: 'Comptabilité', description: 'Catégories de dépenses.', icon: Receipt },
   { slug: 'notifications', name: 'Notifications', description: 'Alertes : cloche et WhatsApp.', icon: Bell },
+  { slug: 'partenaires', name: 'Mon réseau', description: 'Vos partenaires et ce que vous partagez.', icon: Handshake },
   { slug: 'profil', name: 'Mon profil', description: 'Nom et numéro WhatsApp.', icon: User },
 ];
 
