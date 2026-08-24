@@ -11,11 +11,13 @@ or OVH/Scaleway Paris for lowest Senegal latency). Ubuntu 22.04/24.04 LTS.
 
 ## 0. One-time: build args & routing
 
-- **Two sites, one box.** Caddy routes by hostname:
+- **Three sites, one box.** Caddy routes by hostname:
   - `DOMAIN` + `www.DOMAIN` → **landing** (Astro vitrine).
   - `app.DOMAIN` → **web** (Next.js dashboard) + backend.
+  - `partner.DOMAIN` → the **same web container**, partner portal (`/portal`) + backend.
 - The web image bakes `NEXT_PUBLIC_API_URL=""` (empty) → the browser calls
-  **same-origin** `/api/*` on `app.DOMAIN`, which Caddy routes to the backend. No separate API host.
+  **same-origin** `/api/*` on `app.DOMAIN` (and on `partner.DOMAIN`), which Caddy routes
+  to the backend. No separate API host, and no CORS to configure for the portal.
 - The landing bakes its CTA links at build time (`PUBLIC_APP_LOGIN_URL`,
   `PUBLIC_APP_SIGNUP_URL`) → "Se connecter" → `app.DOMAIN/login`, "Commencer
   gratuitement" → `app.DOMAIN/signup`. Override via repo **Variables** if the
@@ -56,9 +58,9 @@ chmod +x deploy.sh scripts/backup-db.sh
 
 ## 3. DNS + GHCR access
 
-- Point **three** A/AAAA records to the VPS IP: the apex `DOMAIN`, `www`, and
-  `app` (e.g. `jawdi.app`, `www.jawdi.app`, `app.jawdi.app`). Caddy issues a cert
-  for each. If using Cloudflare, keep them **DNS-only (grey cloud)** until Caddy
+- Point **four** A/AAAA records to the VPS IP: the apex `DOMAIN`, `www`, `app`, and
+  `partner` (e.g. `jawdi.app`, `www.jawdi.app`, `app.jawdi.app`, `partner.jawdi.app`).
+  Caddy issues a cert for each. If using Cloudflare, keep them **DNS-only (grey cloud)** until Caddy
   has issued the first certs, then you may enable the proxy (SSL mode **Full (strict)**).
 - If your GHCR packages are **private**, log the VPS into GHCR once:
   ```bash

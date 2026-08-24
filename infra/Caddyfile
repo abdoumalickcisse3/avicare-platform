@@ -2,8 +2,9 @@
 # Two sites on one box:
 #   {$DOMAIN}, www.{$DOMAIN}  -> landing (Astro vitrine)
 #   app.{$DOMAIN}            -> web (Next.js dashboard) + backend (/api, actuator…)
+#   partner.{$DOMAIN}        -> same web container, partner portal (/portal) + backend
 #
-# Requires public DNS A/AAAA for all three names -> this VPS, ports 80/443 open.
+# Requires public DNS A/AAAA for all four names -> this VPS, ports 80/443 open.
 # If Cloudflare is in front, use DNS-only (grey cloud) for the first certs,
 # then optionally enable the orange-cloud proxy (Full/strict). See DEPLOY.md.
 
@@ -24,6 +25,22 @@ app.{$DOMAIN} {
 	}
 
 	# Everything else -> Next.js web app.
+	handle {
+		reverse_proxy web:3000
+	}
+}
+
+# --- Partner portal (B2), same web + backend containers, own subdomain ---
+partner.{$DOMAIN} {
+	encode zstd gzip
+
+	# Backend: REST API, actuator, OpenAPI/Swagger.
+	@backend path /api/* /actuator/* /v3/api-docs* /swagger-ui*
+	handle @backend {
+		reverse_proxy backend:8080
+	}
+
+	# Everything else -> Next.js web app (the (partner) route group serves /portal).
 	handle {
 		reverse_proxy web:3000
 	}
