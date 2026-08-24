@@ -1376,3 +1376,34 @@ export interface SharingScopes {
   salesVolume: boolean;
   finances: boolean;
 }
+
+// --- Partner portal (B2) ---
+
+export interface PartnerAuthTokens {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+}
+
+export interface PartnerProfile {
+  partnerId: number;
+  name: string;
+  type: PartnerType;
+  logoUrl: string | null;
+  farmCount: number;
+}
+
+export interface NetworkDashboard {
+  farmCount: number;
+  activeFarmCount: number;
+  totalFeedKg: number | null;
+  avgMortalityRate: number | null;
+}
+
+export interface NetworkFarmRow {
+  farmId: number;
+  farmName: string;
+  active: boolean | null;
+  feedKg: number | null;
+  mortalityRate: number | null;
+}
