@@ -6,14 +6,17 @@ import com.avicare.partner.dto.response.NetworkDashboardResponse;
 import com.avicare.partner.dto.response.NetworkFarmRow;
 import com.avicare.partner.dto.response.PartnerAlertResponse;
 import com.avicare.partner.dto.response.PartnerProfileResponse;
+import com.avicare.partner.dto.response.RestockForecastResponse;
 import com.avicare.partner.service.PartnerAlertService;
 import com.avicare.partner.service.PartnerNetworkReadService;
+import com.avicare.partner.service.PartnerRestockForecastService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -27,6 +30,7 @@ public class PartnerPortalController {
 
   private final PartnerNetworkReadService readService;
   private final PartnerAlertService alertService;
+  private final PartnerRestockForecastService restockForecastService;
 
   @GetMapping("/me")
   public ApiResponse<PartnerProfileResponse> me() {
@@ -46,6 +50,17 @@ public class PartnerPortalController {
   @GetMapping("/network/farms/{farmId}")
   public ApiResponse<NetworkFarmRow> farm(@PathVariable Long farmId) {
     return ApiResponse.of(readService.farm(PartnerContext.currentPartnerId(), farmId));
+  }
+
+  /**
+   * Upcoming restocks across the network (couche « Développer »). Only farms that opted into the
+   * {@code restock_forecast} scope appear — the filtering is done server-side, in the read model.
+   */
+  @GetMapping("/network/restock")
+  public ApiResponse<RestockForecastResponse> restock(
+      @RequestParam(defaultValue = "30") int horizonDays) {
+    return ApiResponse.of(
+        restockForecastService.forecast(PartnerContext.currentPartnerId(), horizonDays));
   }
 
   /** Open network alerts of the calling partner, newest first (couche « Garder »). */
