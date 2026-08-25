@@ -60,6 +60,7 @@ import com.avicare.partner.domain.MembershipStatus;
 import com.avicare.partner.domain.PartnerFarmMembership;
 import com.avicare.partner.exception.DuplicateMembershipException;
 import com.avicare.partner.exception.InviteCodeInvalidException;
+import com.avicare.partner.repository.PartnerAlertRepository;
 import com.avicare.partner.repository.PartnerFarmMembershipRepository;
 import com.avicare.partner.repository.PartnerInviteCodeRepository;
 import com.avicare.partner.repository.PartnerRefreshTokenRepository;
@@ -114,6 +115,7 @@ class FarmerPartnerControllerIT {
   @MockitoBean private RefreshTokenRepository refreshTokenRepository;
   @MockitoBean private FarmRepository farmRepository;
   @MockitoBean private PartnerRepository partnerRepository;
+  @MockitoBean private PartnerAlertRepository partnerAlertRepository;
   @MockitoBean private PartnerUserRepository partnerUserRepository;
   @MockitoBean private PartnerRefreshTokenRepository partnerRefreshTokenRepository;
   @MockitoBean private PartnerFarmMembershipRepository partnerFarmMembershipRepository;

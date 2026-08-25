@@ -52,6 +52,7 @@ import com.avicare.parameters.repository.FarmSettingRepository;
 import com.avicare.parameters.repository.PriceListItemRepository;
 import com.avicare.parameters.repository.PriceListRepository;
 import com.avicare.parameters.repository.UserSettingRepository;
+import com.avicare.partner.repository.PartnerAlertRepository;
 import com.avicare.partner.repository.PartnerFarmMembershipRepository;
 import com.avicare.partner.repository.PartnerInviteCodeRepository;
 import com.avicare.partner.repository.PartnerRefreshTokenRepository;
@@ -110,6 +111,7 @@ class SecurityE2ETest {
   @MockitoBean private RefreshTokenRepository refreshTokenRepository;
   @MockitoBean private FarmRepository farmRepository;
   @MockitoBean private PartnerRepository partnerRepository;
+  @MockitoBean private PartnerAlertRepository partnerAlertRepository;
   @MockitoBean private PartnerUserRepository partnerUserRepository;
   @MockitoBean private PartnerRefreshTokenRepository partnerRefreshTokenRepository;
   @MockitoBean private PartnerFarmMembershipRepository partnerFarmMembershipRepository;
