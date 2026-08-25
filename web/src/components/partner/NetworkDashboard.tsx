@@ -24,7 +24,8 @@ import {
   usePartnerLogoutMutation,
 } from "@/store/api/partnerApi";
 import { partnerTokenStorage } from "@/lib/partnerStorage";
-import type { PartnerProfile } from "@/types";
+import NetworkAlerts from "./NetworkAlerts";
+import type { PartnerProfile, RiskLevel } from "@/types";
 import { colors } from "@/theme/tokens";
 
 const TYPE_LABEL: Record<PartnerProfile["type"], string> = {
@@ -38,6 +39,12 @@ function fmt(n: number | null | undefined): string {
 function fmtPct(n: number | null | undefined): string {
   return n == null ? "—" : `${n.toFixed(1)} %`;
 }
+
+const RISK: Record<RiskLevel, { label: string; color: "success" | "warning" | "error" }> = {
+  OK: { label: "À jour", color: "success" },
+  WATCH: { label: "À surveiller", color: "warning" },
+  AT_RISK: { label: "À risque", color: "error" },
+};
 
 /** Partner-portal read-only network view ("Voir"): profile header, KPI cards, per-farm table. */
 export default function NetworkDashboard() {
@@ -94,6 +101,8 @@ export default function NetworkDashboard() {
         </Button>
       </Stack>
 
+      <NetworkAlerts />
+
       <Box
         sx={{
           display: "grid",
@@ -127,11 +136,12 @@ export default function NetworkDashboard() {
             </Typography>
           ) : (
             <Box sx={{ overflowX: "auto" }}>
-              <Table size="small" sx={{ minWidth: 520 }}>
+              <Table size="small" sx={{ minWidth: 640 }}>
                 <TableHead>
                   <TableRow>
                     <TableCell>Ferme</TableCell>
                     <TableCell>Statut</TableCell>
+                    <TableCell>Suivi</TableCell>
                     <TableCell align="right">Aliment (kg)</TableCell>
                     <TableCell align="right">Mortalité</TableCell>
                   </TableRow>
@@ -148,6 +158,18 @@ export default function NetworkDashboard() {
                             size="small"
                             color={f.active ? "success" : "default"}
                             label={f.active ? "Actif" : "Inactif"}
+                          />
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {f.riskLevel == null ? (
+                          "—"
+                        ) : (
+                          <Chip
+                            size="small"
+                            variant="outlined"
+                            color={RISK[f.riskLevel].color}
+                            label={RISK[f.riskLevel].label}
                           />
                         )}
                       </TableCell>
