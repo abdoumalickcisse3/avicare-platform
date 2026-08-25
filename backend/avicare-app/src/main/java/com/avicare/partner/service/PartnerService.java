@@ -56,6 +56,24 @@ public class PartnerService {
     return partnerRepository.save(p);
   }
 
+  /** Partial update: a null field leaves the stored value alone (PATCH semantics). */
+  @Transactional
+  public Partner update(
+      Long partnerId,
+      String name,
+      String contactName,
+      String contactPhone,
+      String contactEmail,
+      String logoUrl) {
+    Partner p = get(partnerId);
+    if (name != null) p.setName(name);
+    if (contactName != null) p.setContactName(contactName);
+    if (contactPhone != null) p.setContactPhone(contactPhone);
+    if (contactEmail != null) p.setContactEmail(contactEmail);
+    if (logoUrl != null) p.setLogoUrl(logoUrl);
+    return partnerRepository.save(p);
+  }
+
   @Transactional(readOnly = true)
   public List<Partner> list() {
     return partnerRepository.findAll();
