@@ -21,6 +21,9 @@ import org.hibernate.type.SqlTypes;
  * One queued WhatsApp message (Sprint C1 Phase 2), created per (notification, recipient) when a
  * recipient opted in for the WhatsApp channel. The dispatcher sends PENDING rows best-effort with
  * retry; timestamps DB-owned. {@code providerResponse} stores the Konekt reply as JSON.
+ *
+ * <p>{@code notificationId} is null for messages queued outside the farmer notification flow —
+ * partner network alerts, via {@link com.avicare.notification.api.WhatsAppOutboxFacade} (V38).
  */
 @Entity
 @Table(name = "whatsapp_outbox")
@@ -34,7 +37,7 @@ public class WhatsappOutbox {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(name = "notification_id", nullable = false)
+  @Column(name = "notification_id")
   private Long notificationId;
 
   @Column(nullable = false)
