@@ -1359,6 +1359,7 @@ export interface FarmPartner {
   partnerId: number;
   partnerName: string | null;
   partnerType: PartnerType | null;
+  partnerLogoUrl: string | null;
   status: "DECLARED" | "CONFIRMED" | "LEFT";
   origin: "MANUAL_ADMIN" | "INVITE_CODE" | "FARMER_DECLARED";
   shareActivity: boolean;
@@ -1400,10 +1401,26 @@ export interface NetworkDashboard {
   avgMortalityRate: number | null;
 }
 
+export type RiskLevel = "OK" | "WATCH" | "AT_RISK";
+
 export interface NetworkFarmRow {
   farmId: number;
   farmName: string;
   active: boolean | null;
   feedKg: number | null;
   mortalityRate: number | null;
+  /** null when the farm does not share its activity — unmeasured, not "OK". */
+  riskLevel: RiskLevel | null;
+}
+
+// --- Partner network alerts (couche « Garder ») ---
+
+export interface PartnerAlert {
+  id: number;
+  farmId: number;
+  category: "FARM_SILENT" | "FARM_LEFT";
+  severity: "INFO" | "WARNING" | "CRITICAL";
+  title: string;
+  body: string | null;
+  createdAt: string;
 }

@@ -9,6 +9,7 @@ import { partnerTokenStorage } from "@/lib/partnerStorage";
 import type {
   NetworkDashboard,
   NetworkFarmRow,
+  PartnerAlert,
   PartnerAuthTokens,
   PartnerProfile,
 } from "@/types";
@@ -88,6 +89,11 @@ export const partnerApi = createApi({
       transformResponse: (r: Envelope<NetworkFarmRow[]>) => r.data,
       providesTags: ["Network"],
     }),
+    getNetworkAlerts: build.query<PartnerAlert[], void>({
+      query: () => "/api/v1/partner/network/alerts",
+      transformResponse: (r: Envelope<PartnerAlert[]>) => r.data,
+      providesTags: ["Network"],
+    }),
   }),
 });
 
@@ -97,4 +103,5 @@ export const {
   useGetPartnerProfileQuery,
   useGetNetworkDashboardQuery,
   useGetNetworkFarmsQuery,
+  useGetNetworkAlertsQuery,
 } = partnerApi;
