@@ -71,6 +71,7 @@ public class PartnerFacadeImpl implements PartnerFacade {
     if (m.isShareFeedConsumption()) scopes.add("feed_consumption");
     if (m.isShareSalesVolume()) scopes.add("sales_volume");
     if (m.isShareFinances()) scopes.add("finances");
+    if (m.isShareRestockForecast()) scopes.add("restock_forecast");
     return scopes;
   }
 }

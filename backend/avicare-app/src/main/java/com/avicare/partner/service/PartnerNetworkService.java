@@ -87,6 +87,7 @@ public class PartnerNetworkService {
     m.setShareFeedConsumption(scopes.feedConsumption());
     m.setShareSalesVolume(scopes.salesVolume());
     m.setShareFinances(scopes.finances());
+    m.setShareRestockForecast(scopes.restockForecast());
     return membershipRepository.save(m);
   }
 
@@ -114,6 +115,7 @@ public class PartnerNetworkService {
     m.setShareFeedConsumption(scopes.feedConsumption());
     m.setShareSalesVolume(scopes.salesVolume());
     m.setShareFinances(scopes.finances());
+    m.setShareRestockForecast(scopes.restockForecast());
     return membershipRepository.save(m);
   }
 

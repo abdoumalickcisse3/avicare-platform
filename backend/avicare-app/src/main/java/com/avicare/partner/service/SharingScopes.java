@@ -6,4 +6,5 @@ public record SharingScopes(
     boolean flockHealth,
     boolean feedConsumption,
     boolean salesVolume,
-    boolean finances) {}
+    boolean finances,
+    boolean restockForecast) {}

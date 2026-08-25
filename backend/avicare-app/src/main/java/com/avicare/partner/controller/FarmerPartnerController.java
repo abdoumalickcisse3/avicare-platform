@@ -93,7 +93,8 @@ public class FarmerPartnerController {
                 req.flockHealth(),
                 req.feedConsumption(),
                 req.salesVolume(),
-                req.finances()));
+                req.finances(),
+                req.restockForecast()));
     return ApiResponse.of(FarmPartnerResponse.of(new FarmPartnerView(m, null)));
   }
 

@@ -109,12 +109,13 @@ class PartnerNetworkServiceTest {
         .thenAnswer(inv -> inv.getArgument(0));
 
     PartnerFarmMembership m =
-        service().updateSharingScopes(8L, new SharingScopes(true, true, false, true, false));
+        service().updateSharingScopes(8L, new SharingScopes(true, true, false, true, false, true));
 
     assertThat(m.isShareActivity()).isTrue();
     assertThat(m.isShareFeedConsumption()).isFalse();
     assertThat(m.isShareSalesVolume()).isTrue();
     assertThat(m.isShareFinances()).isFalse();
+    assertThat(m.isShareRestockForecast()).isTrue();
   }
 
   @Test
@@ -128,7 +129,7 @@ class PartnerNetworkServiceTest {
             () ->
                 service()
                     .updateSharingScopesForFarm(
-                        2L, 8L, new SharingScopes(true, true, true, false, false)))
+                        2L, 8L, new SharingScopes(true, true, true, false, false, false)))
         .isInstanceOf(NotFoundException.class);
   }
 
@@ -143,7 +144,8 @@ class PartnerNetworkServiceTest {
 
     PartnerFarmMembership out =
         service()
-            .updateSharingScopesForFarm(2L, 8L, new SharingScopes(false, true, false, true, false));
+            .updateSharingScopesForFarm(
+                2L, 8L, new SharingScopes(false, true, false, true, false, false));
 
     assertThat(out.isShareActivity()).isFalse();
     assertThat(out.isShareSalesVolume()).isTrue();

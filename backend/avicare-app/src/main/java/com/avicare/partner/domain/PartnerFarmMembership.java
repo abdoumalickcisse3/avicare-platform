@@ -63,6 +63,10 @@ public class PartnerFarmMembership {
   @Column(name = "share_finances", nullable = false)
   private boolean shareFinances = false;
 
+  /** Off by default: a restock forecast is a commercially actionable prediction, not a state. */
+  @Column(name = "share_restock_forecast", nullable = false)
+  private boolean shareRestockForecast = false;
+
   @Column(name = "created_by")
   private Long createdBy;
 
