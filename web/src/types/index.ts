@@ -1416,6 +1416,34 @@ export interface NetworkFarmRow {
   riskLevel: RiskLevel | null;
 }
 
+// --- Partner restock forecast (couche « Développer ») ---
+
+export type ForecastMethod = "GROWTH" | "THEORETICAL";
+
+export interface RestockForecastRow {
+  farmId: number;
+  farmName: string;
+  unitId: number;
+  batchName: string | null;
+  headcount: number;
+  expectedEndDate: string;
+  daysToEnd: number;
+  /** A floor, not a target — consumption rises with age. Null without recent daily records. */
+  estimatedFeedKg: number | null;
+  forecastMethod: ForecastMethod;
+}
+
+export interface RestockForecastSummary {
+  horizonDays: number;
+  batchCount: number;
+  estimatedFeedKg: number;
+}
+
+export interface RestockForecast {
+  summary: RestockForecastSummary;
+  rows: RestockForecastRow[];
+}
+
 // --- Partner network alerts (couche « Garder ») ---
 
 export interface PartnerAlert {
