@@ -30,7 +30,26 @@ describe('rulesParse (combined)', () => {
     expect(rulesParse('dix sont morts', CTX)?.kind).toBe('MORTALITY');
   });
 
+  it('routes a daily entry to DAILY_RECORD, not to MORTALITY', () => {
+    // Both parsers see "3 morts"; the daily phrasing must win so the feed and water are kept.
+    const out = rulesParse('saisie du jour 3 morts 120 kg aliment', CTX);
+    expect(out?.kind).toBe('DAILY_RECORD');
+    expect(out).toMatchObject({ mortalityCount: 3, feedKg: 120 });
+  });
+
+  it('routes a collection to EGG_COLLECTION', () => {
+    expect(rulesParse('ramassage du matin 320 oeufs', CTX)?.kind).toBe('EGG_COLLECTION');
+  });
+
+  it('still routes a bare mortality phrase to MORTALITY', () => {
+    // Adding parsers ahead of it must not shadow the catch-all.
+    expect(rulesParse('dix sont morts', CTX)?.kind).toBe('MORTALITY');
+    expect(rulesParse("j'ai perdu 3 poules", CTX)?.kind).toBe('MORTALITY');
+  });
+
   it('returns null for an unrecognized phrase (→ LLM fallback)', () => {
     expect(rulesParse("j'ai vendu 30 poulets", CTX)).toBeNull();
+    // A collection without a usable timeslot stays with the LLM.
+    expect(rulesParse('ramassage 320 oeufs', CTX)).toBeNull();
   });
 });
