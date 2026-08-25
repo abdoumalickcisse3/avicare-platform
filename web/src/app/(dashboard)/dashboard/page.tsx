@@ -22,6 +22,7 @@ import { useSelectedFarm } from "@/hooks/useSelectedFarm";
 import { PeriodSelector } from "@/components/dashboard/PeriodSelector";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
+import MyNetworkCard from "@/components/partner/MyNetworkCard";
 import { FarmsTable } from "@/components/dashboard/FarmsTable";
 import { CommercialPanel } from "@/components/dashboard/CommercialPanel";
 import { LivestockPanel } from "@/components/dashboard/LivestockPanel";
@@ -212,7 +213,10 @@ export default function DashboardPage() {
                 )}
               </CardContent>
             </Card>
-            <ActivityFeed farmId={farmId} />
+            <Box sx={{ display: "grid", gap: 2, alignContent: "start" }}>
+              <MyNetworkCard farmId={farmId} />
+              <ActivityFeed farmId={farmId} />
+            </Box>
           </Box>
 
           {/* Detail panels — all the other statistics */}
