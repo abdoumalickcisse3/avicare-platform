@@ -84,3 +84,14 @@ notifications:
     cron: ${NOTIF_SCAN_CRON:0 0 6 * * *}
     zone: ${NOTIF_SCAN_ZONE:Africa/Dakar}
     manual-trigger-enabled: ${NOTIF_SCAN_MANUAL_TRIGGER:true}
+
+# Partner network health (couche « Garder »): how long a member farm may stay silent before its
+# partner is told. Platform-level thresholds — a farm has no say in when its own silence is flagged.
+# The scan runs after the farmer notification scan so both read a settled day.
+partner:
+  risk:
+    watch-days: ${PARTNER_RISK_WATCH_DAYS:7}
+    at-risk-days: ${PARTNER_RISK_AT_RISK_DAYS:14}
+    critical-days: ${PARTNER_RISK_CRITICAL_DAYS:30}
+    scan-cron: ${PARTNER_RISK_SCAN_CRON:0 30 6 * * *}
+    zone: ${PARTNER_RISK_SCAN_ZONE:Africa/Dakar}
