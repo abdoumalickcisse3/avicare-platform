@@ -3,6 +3,7 @@ package com.avicare.partner.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.avicare.common.api.exception.NotFoundException;
@@ -31,9 +32,11 @@ class PartnerNetworkServiceTest {
   @Mock PartnerFarmMembershipRepository membershipRepository;
   @Mock PartnerInviteCodeRepository inviteCodeRepository;
   @Mock PartnerService partnerService;
+  @Mock PartnerAlertService alertService;
 
   PartnerNetworkService service() {
-    return new PartnerNetworkService(membershipRepository, inviteCodeRepository, partnerService);
+    return new PartnerNetworkService(
+        membershipRepository, inviteCodeRepository, partnerService, alertService);
   }
 
   @Test
@@ -162,6 +165,7 @@ class PartnerNetworkServiceTest {
     PartnerFarmMembership m = new PartnerFarmMembership();
     m.setId(8L);
     m.setFarmId(2L);
+    m.setPartnerId(3L);
     when(membershipRepository.findById(8L)).thenReturn(Optional.of(m));
     when(membershipRepository.save(any(PartnerFarmMembership.class)))
         .thenAnswer(inv -> inv.getArgument(0));
@@ -170,6 +174,24 @@ class PartnerNetworkServiceTest {
 
     assertThat(out.getStatus()).isEqualTo(MembershipStatus.LEFT);
     assertThat(out.getLeftAt()).isNotNull();
+    // The partner is entitled to know it lost a member.
+    verify(alertService).raiseFarmLeft(3L, 2L);
+  }
+
+  @Test
+  void adminLeaveAlsoTellsThePartner() {
+    PartnerFarmMembership m = new PartnerFarmMembership();
+    m.setId(8L);
+    m.setFarmId(2L);
+    m.setPartnerId(3L);
+    when(membershipRepository.findById(8L)).thenReturn(Optional.of(m));
+    when(membershipRepository.save(any(PartnerFarmMembership.class)))
+        .thenAnswer(inv -> inv.getArgument(0));
+
+    // Both leave paths go through markLeft, so neither departure is silent.
+    service().leave(8L);
+
+    verify(alertService).raiseFarmLeft(3L, 2L);
   }
 
   @Test

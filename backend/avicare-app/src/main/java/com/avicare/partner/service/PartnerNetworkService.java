@@ -25,6 +25,7 @@ public class PartnerNetworkService {
   private final PartnerFarmMembershipRepository membershipRepository;
   private final PartnerInviteCodeRepository inviteCodeRepository;
   private final PartnerService partnerService;
+  private final PartnerAlertService alertService;
 
   @Transactional
   public PartnerFarmMembership attachFarmManually(Long partnerId, Long farmId, Long actorUserId) {
@@ -91,10 +92,7 @@ public class PartnerNetworkService {
 
   @Transactional
   public PartnerFarmMembership leave(Long membershipId) {
-    PartnerFarmMembership m = load(membershipId);
-    m.setStatus(MembershipStatus.LEFT);
-    m.setLeftAt(LocalDateTime.now());
-    return membershipRepository.save(m);
+    return markLeft(load(membershipId));
   }
 
   @Transactional(readOnly = true)
@@ -121,10 +119,19 @@ public class PartnerNetworkService {
 
   @Transactional
   public PartnerFarmMembership leaveForFarm(Long farmId, Long membershipId) {
-    PartnerFarmMembership m = loadForFarm(farmId, membershipId);
+    return markLeft(loadForFarm(farmId, membershipId));
+  }
+
+  /**
+   * Close a membership and tell the partner it lost a member. Both leave paths (admin and farmer)
+   * go through here so a departure is never silent on one of them.
+   */
+  private PartnerFarmMembership markLeft(PartnerFarmMembership m) {
     m.setStatus(MembershipStatus.LEFT);
     m.setLeftAt(LocalDateTime.now());
-    return membershipRepository.save(m);
+    PartnerFarmMembership saved = membershipRepository.save(m);
+    alertService.raiseFarmLeft(saved.getPartnerId(), saved.getFarmId());
+    return saved;
   }
 
   @Transactional(readOnly = true)

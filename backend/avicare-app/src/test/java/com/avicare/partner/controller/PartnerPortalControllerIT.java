@@ -2,6 +2,7 @@ package com.avicare.partner.controller;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.avicare.common.security.jwt.JwtService;
@@ -52,6 +53,9 @@ import com.avicare.parameters.repository.FarmSettingRepository;
 import com.avicare.parameters.repository.PriceListItemRepository;
 import com.avicare.parameters.repository.PriceListRepository;
 import com.avicare.parameters.repository.UserSettingRepository;
+import com.avicare.partner.domain.AlertCategory;
+import com.avicare.partner.domain.AlertSeverity;
+import com.avicare.partner.domain.PartnerAlert;
 import com.avicare.partner.dto.response.NetworkDashboardResponse;
 import com.avicare.partner.repository.PartnerAlertRepository;
 import com.avicare.partner.repository.PartnerFarmMembershipRepository;
@@ -99,6 +103,7 @@ class PartnerPortalControllerIT {
 
   // Mock the read service (portal responses); real FarmAccessChecker/@partnerAccess enforce gates.
   @MockitoBean private com.avicare.partner.service.PartnerNetworkReadService readService;
+  @MockitoBean private com.avicare.partner.service.PartnerAlertService alertService;
 
   // DB-less `test` profile mocks — same list as DashboardControllerIT / SecurityE2ETest.
   @MockitoBean private UserRepository userRepository;
@@ -191,6 +196,37 @@ class PartnerPortalControllerIT {
     mockMvc
         .perform(get("/api/v1/partner/network").header("Authorization", "Bearer " + partnerToken()))
         .andExpect(status().isOk());
+  }
+
+  @Test
+  void partnerToken_get_alerts_returnsOnlyItsOwnAlerts() throws Exception {
+    PartnerAlert alert = new PartnerAlert();
+    alert.setId(7L);
+    alert.setPartnerId(3L);
+    alert.setFarmId(FARM_ID);
+    alert.setCategory(AlertCategory.FARM_SILENT);
+    alert.setSeverity(AlertSeverity.WARNING);
+    alert.setTitle("Éleveur silencieux : Ferme A");
+    alert.setBody("« Ferme A » n'a rien saisi depuis 20 jours.");
+    // partnerId 3 comes from the token, never from the request.
+    when(alertService.listActive(3L)).thenReturn(List.of(alert));
+
+    mockMvc
+        .perform(
+            get("/api/v1/partner/network/alerts")
+                .header("Authorization", "Bearer " + partnerToken()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data[0].category").value("FARM_SILENT"))
+        .andExpect(jsonPath("$.data[0].severity").value("WARNING"));
+  }
+
+  @Test
+  void farmerToken_on_alertsEndpoint_returns403() throws Exception {
+    mockMvc
+        .perform(
+            get("/api/v1/partner/network/alerts")
+                .header("Authorization", "Bearer " + farmerToken()))
+        .andExpect(status().isForbidden());
   }
 
   @Test
