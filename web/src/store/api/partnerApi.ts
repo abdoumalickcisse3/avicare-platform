@@ -12,6 +12,7 @@ import type {
   PartnerAlert,
   PartnerAuthTokens,
   PartnerProfile,
+  RestockForecast,
 } from "@/types";
 
 interface Envelope<T> {
@@ -89,6 +90,11 @@ export const partnerApi = createApi({
       transformResponse: (r: Envelope<NetworkFarmRow[]>) => r.data,
       providesTags: ["Network"],
     }),
+    getRestockForecast: build.query<RestockForecast, { horizonDays?: number } | void>({
+      query: (args) => `/api/v1/partner/network/restock?horizonDays=${args?.horizonDays ?? 30}`,
+      transformResponse: (r: Envelope<RestockForecast>) => r.data,
+      providesTags: ["Network"],
+    }),
     getNetworkAlerts: build.query<PartnerAlert[], void>({
       query: () => "/api/v1/partner/network/alerts",
       transformResponse: (r: Envelope<PartnerAlert[]>) => r.data,
@@ -104,4 +110,5 @@ export const {
   useGetNetworkDashboardQuery,
   useGetNetworkFarmsQuery,
   useGetNetworkAlertsQuery,
+  useGetRestockForecastQuery,
 } = partnerApi;
