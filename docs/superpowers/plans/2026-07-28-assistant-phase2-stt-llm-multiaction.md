@@ -1,6 +1,26 @@
 # Assistant IA — Phase 2 : STT natif + intention LLM hybride, multi-actions — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans. Steps use checkbox (`- [ ]`).
+> ## ⚠️ PLAN LIVRÉ — ne pas rejouer
+>
+> Ce plan a été **réalisé, mais par d'autres cycles** qui n'ont jamais rouvert ce fichier ; ses
+> cases sont cochées rétroactivement le 2026-08-25. Vérifié sur `main` :
+>
+> | Objectif | Livré par |
+> |---|---|
+> | `LlmClient` / `MockLlmClient` / `AnthropicLlmClient` | `backend/…/assistant/llm/` |
+> | `POST /assistant/interpret` + dry-run + brouillon | `AssistantController`, `InterpretService` |
+> | STT natif FR on-device | `mobile/src/assistant/speech/useSpeechInput.ts` (`expo-speech-recognition`) |
+> | Multi-actions (4 visées) | **11** intents câblés dans `mobile/src/assistant/drafts.ts` |
+> | Confirmation humaine + file offline | `PendingActionService`, executors, `ConfirmationCard` |
+>
+> Le projet est allé au-delà : `/assistant/chat` (conseiller conversationnel, PR #201),
+> `ToolRegistry` (11 outils d'écriture), `ReadToolRegistry` (12 outils de lecture), quotas et audit.
+>
+> **Écart restant, seul :** la couche de règles on-device ne couvre que 2 intents sur 11
+> (`mortalityParser`, `weighingParser`). Les 9 autres exigent le LLM, donc du réseau — ce qui
+> contredit la contrainte « offline-first » posée plus bas. C'est l'objet du cycle suivant.
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans. Steps use checkbox (`- [x]`).
 > **Design de référence :** `docs/12-assistant-ia-strategie.md`. **Suit :** `2026-07-28-assistant-phase1-voice-mortalite.md`.
 
 **Goal :** Faire de Jawdi un vrai compagnon vocal de terrain : **micro in-app natif (FR)** + un moteur d'intention **hybride** (règles on-device d'abord, **LLM cloud en secours** derrière un bounded context `assistant` backend) couvrant **les actions de terrain** (mortalité, saisie journalière, pesée, collecte d'œufs). Toujours : l'IA **extrait** → le backend **valide (dry-run)** → **carte de confirmation** → **file offline** ; l'humain confirme.
@@ -54,42 +74,42 @@
 
 ## Task 1: Mobile — STT natif FR (le vrai micro)
 **Files:** `src/assistant/speech/useSpeechInput.ts` (+ config plugin app.json)
-- [ ] Intégrer un module STT natif (FR), micro in-app : `start/stop/listening/transcript/supported`.
-- [ ] Permissions micro propres ; **repli texte** si `!supported`. Dev build requis (déjà en place).
-- [ ] `AssistantSheet` : bouton micro déclenche l'écoute réelle ; transcription en direct.
+- [x] Intégrer un module STT natif (FR), micro in-app : `start/stop/listening/transcript/supported`.
+- [x] Permissions micro propres ; **repli texte** si `!supported`. Dev build requis (déjà en place).
+- [x] `AssistantSheet` : bouton micro déclenche l'écoute réelle ; transcription en direct.
 
 ## Task 2: Mobile — modèle multi-actions (types + registre + brouillons)
 **Files:** `src/assistant/types.ts`, `intentRegistry.ts`, `useAssistant.ts`
-- [ ] `AssistantIntent` = union `MORTALITY | DAILY_RECORD | WEIGHING | EGG_COLLECTION` (champs par action).
-- [ ] `intentRegistry.toMutation` couvre les 4 (endpoints + kinds offline existants).
-- [ ] Constructeurs de `ConfirmationDraft` par action (résumé + phrase TTS), calcul offline.
-- [ ] Tests unitaires du registre/brouillons.
+- [x] `AssistantIntent` = union `MORTALITY | DAILY_RECORD | WEIGHING | EGG_COLLECTION` (champs par action).
+- [x] `intentRegistry.toMutation` couvre les 4 (endpoints + kinds offline existants).
+- [x] Constructeurs de `ConfirmationDraft` par action (résumé + phrase TTS), calcul offline.
+- [x] Tests unitaires du registre/brouillons.
 
 ## Task 3: Mobile — parseurs à règles complémentaires (offline)
 **Files:** `src/assistant/parsers/*`
-- [ ] Règles simples pour les cas évidents (« saisie journalière : 10 morts, 25 kg d'aliment » ; « pesée 1850, 1920 » ; « collecte 30 œufs matin ») quand extractibles sans LLM.
-- [ ] Tests. Ce qui n'est pas couvert → fallback LLM (Task 6).
+- [x] Règles simples pour les cas évidents (« saisie journalière : 10 morts, 25 kg d'aliment » ; « pesée 1850, 1920 » ; « collecte 30 œufs matin ») quand extractibles sans LLM.
+- [x] Tests. Ce qui n'est pas couvert → fallback LLM (Task 6).
 
 ## Task 4: Backend — bounded context `assistant` + `MockLlmClient`
 **Files:** `assistant/llm/*`, `assistant/tools/ActionTools.java`, `assistant/service/InterpretService.java`, `assistant/controller/AssistantController.java`, DTOs
-- [ ] `LlmClient` interface + `MockLlmClient` (tool-calls déterministes par mots-clés) pour dev/test.
-- [ ] `ActionTools` : schéma d'outil par action (champs + types).
-- [ ] `InterpretService` : LLM → tool-call → **dry-run** via façades (unité existe, effectif, stock…) → `DraftResponse` (action, champs, résumé) ou `ClarificationResponse`.
-- [ ] `AssistantController` `POST /assistant/interpret`, gété **accès ferme** ; `@features` du module concerné.
-- [ ] Tests : `InterpretServiceTest` (mock), `AssistantControllerIT` (dry-run + RBAC + module gating).
+- [x] `LlmClient` interface + `MockLlmClient` (tool-calls déterministes par mots-clés) pour dev/test.
+- [x] `ActionTools` : schéma d'outil par action (champs + types).
+- [x] `InterpretService` : LLM → tool-call → **dry-run** via façades (unité existe, effectif, stock…) → `DraftResponse` (action, champs, résumé) ou `ClarificationResponse`.
+- [x] `AssistantController` `POST /assistant/interpret`, gété **accès ferme** ; `@features` du module concerné.
+- [x] Tests : `InterpretServiceTest` (mock), `AssistantControllerIT` (dry-run + RBAC + module gating).
 
 ## Task 5: Mobile — brancher l'interprétation backend (hybride)
 **Files:** `src/store/api/assistantApi.ts`, `src/assistant/llm/interpretParser.ts`, `useAssistant.ts`
-- [ ] `assistantApi.interpret({farmId, text, unitId?})`.
-- [ ] `useAssistant` async : règles d'abord ; si `null` **et** en ligne → `interpret` → brouillon/clarification ; hors ligne → message « connexion requise pour cette phrase ».
-- [ ] `AssistantSheet` : état « en réflexion… », gestion clarification renvoyée par le backend.
-- [ ] Validation `tsc` + `npm test`.
+- [x] `assistantApi.interpret({farmId, text, unitId?})`.
+- [x] `useAssistant` async : règles d'abord ; si `null` **et** en ligne → `interpret` → brouillon/clarification ; hors ligne → message « connexion requise pour cette phrase ».
+- [x] `AssistantSheet` : état « en réflexion… », gestion clarification renvoyée par le backend.
+- [x] Validation `tsc` + `npm test`.
 
 ## Task 6: Backend — `AnthropicLlmClient` réel (dernier, clé requise)
 **Files:** `assistant/llm/AnthropicLlmClient.java`, config secrets
-- [ ] Impl HTTP Anthropic (function-calling), timeouts, dégradation propre (échec LLM → clarification générique, jamais de crash).
-- [ ] Clé via `avicare.assistant.anthropic.api-key` (env/secret ; **jamais commitée**). Profil `test`/dev = `MockLlmClient`.
-- [ ] Journaliser coût/latence (métriques doc 12 §12). Ne pas logger le contenu sensible.
+- [x] Impl HTTP Anthropic (function-calling), timeouts, dégradation propre (échec LLM → clarification générique, jamais de crash).
+- [x] Clé via `avicare.assistant.anthropic.api-key` (env/secret ; **jamais commitée**). Profil `test`/dev = `MockLlmClient`.
+- [x] Journaliser coût/latence (métriques doc 12 §12). Ne pas logger le contenu sensible.
 
 ## Definition of Done (Phase 2)
 - Un ouvrier **parle** (vrai micro in-app FR) et enregistre **mortalité / journalier / pesée / collecte** par la voix → carte lue à voix haute → **un tap** → file offline.
