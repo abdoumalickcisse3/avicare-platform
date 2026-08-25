@@ -45,6 +45,7 @@ import { SectionHeader } from '@/components/ui';
 import { AppHeader } from '@/components/AppHeader';
 import { Sparkline } from '@/components/charts/Sparkline';
 import { MicButton } from '@/components/assistant/MicButton';
+import { MyNetworkCard } from '@/components/field/MyNetworkCard';
 import { useFarmAccess } from '@/auth/useSession';
 import { useListFarmsQuery } from '@/store/api/farmsApi';
 import { useGetDashboardQuery } from '@/store/api/dashboardApi';
@@ -398,6 +399,9 @@ export default function HomeScreen() {
                 )}
               </View>
             </View>
+
+            {/* Co-branding: the networks this farm belongs to. Renders nothing when there is none. */}
+            {farmId !== undefined && <MyNetworkCard farmId={farmId} />}
           </>
         )}
       </ScrollView>
