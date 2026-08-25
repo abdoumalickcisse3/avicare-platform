@@ -706,6 +706,7 @@ export interface FarmPartner {
   partnerId: number;
   partnerName: string | null;
   partnerType: PartnerType | null;
+  partnerLogoUrl: string | null;
   status: 'DECLARED' | 'CONFIRMED' | 'LEFT';
   origin: 'MANUAL_ADMIN' | 'INVITE_CODE' | 'FARMER_DECLARED';
   shareActivity: boolean;
