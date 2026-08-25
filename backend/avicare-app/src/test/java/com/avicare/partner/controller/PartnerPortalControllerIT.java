@@ -57,6 +57,8 @@ import com.avicare.partner.domain.AlertCategory;
 import com.avicare.partner.domain.AlertSeverity;
 import com.avicare.partner.domain.PartnerAlert;
 import com.avicare.partner.dto.response.NetworkDashboardResponse;
+import com.avicare.partner.dto.response.RestockForecastResponse;
+import com.avicare.partner.dto.response.RestockForecastSummary;
 import com.avicare.partner.repository.PartnerAlertRepository;
 import com.avicare.partner.repository.PartnerFarmMembershipRepository;
 import com.avicare.partner.repository.PartnerInviteCodeRepository;
@@ -104,6 +106,9 @@ class PartnerPortalControllerIT {
   // Mock the read service (portal responses); real FarmAccessChecker/@partnerAccess enforce gates.
   @MockitoBean private com.avicare.partner.service.PartnerNetworkReadService readService;
   @MockitoBean private com.avicare.partner.service.PartnerAlertService alertService;
+
+  @MockitoBean
+  private com.avicare.partner.service.PartnerRestockForecastService restockForecastService;
 
   // DB-less `test` profile mocks — same list as DashboardControllerIT / SecurityE2ETest.
   @MockitoBean private UserRepository userRepository;
@@ -218,6 +223,30 @@ class PartnerPortalControllerIT {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data[0].category").value("FARM_SILENT"))
         .andExpect(jsonPath("$.data[0].severity").value("WARNING"));
+  }
+
+  @Test
+  void partnerToken_get_restock_returns200() throws Exception {
+    // partnerId 3 comes from the token; horizonDays defaults to 30.
+    when(restockForecastService.forecast(3L, 30))
+        .thenReturn(
+            new RestockForecastResponse(new RestockForecastSummary(30, 1, 720L), List.of()));
+
+    mockMvc
+        .perform(
+            get("/api/v1/partner/network/restock")
+                .header("Authorization", "Bearer " + partnerToken()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.summary.estimatedFeedKg").value(720));
+  }
+
+  @Test
+  void farmerToken_on_restockEndpoint_returns403() throws Exception {
+    mockMvc
+        .perform(
+            get("/api/v1/partner/network/restock")
+                .header("Authorization", "Bearer " + farmerToken()))
+        .andExpect(status().isForbidden());
   }
 
   @Test
