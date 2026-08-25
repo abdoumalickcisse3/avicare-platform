@@ -714,13 +714,16 @@ export interface FarmPartner {
   shareFeedConsumption: boolean;
   shareSalesVolume: boolean;
   shareFinances: boolean;
+  /** Off by default: consent to a commercially actionable forecast, not to observing a state. */
+  shareRestockForecast: boolean;
 }
 
-/** The five farmer-controlled sharing sliders (mirrors backend SharingScopes). */
+/** The six farmer-controlled sharing sliders (mirrors backend SharingScopes). */
 export interface SharingScopes {
   activity: boolean;
   flockHealth: boolean;
   feedConsumption: boolean;
   salesVolume: boolean;
   finances: boolean;
+  restockForecast: boolean;
 }
