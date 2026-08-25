@@ -8,6 +8,8 @@ import { weighingParser } from './weighingParser';
 import { mortalityParser } from './mortalityParser';
 import { dailyRecordParser } from './dailyRecordParser';
 import { eggCollectionParser } from './eggCollectionParser';
+import { vaccinationParser } from './vaccinationParser';
+import { observationParser } from './observationParser';
 
 export function rulesParse(text: string, ctx: ParseContext): AssistantIntent | null {
   // Order matters: the specific phrasings first, the mortality catch-all last. A daily entry and
@@ -15,8 +17,11 @@ export function rulesParse(text: string, ctx: ParseContext): AssistantIntent | n
   return (
     dailyRecordParser.parse(text, ctx) ??
     eggCollectionParser.parse(text, ctx) ??
+    vaccinationParser.parse(text, ctx) ??
     weighingParser.parse(text, ctx) ??
     mortalityParser.parse(text, ctx) ??
+    // Loosest gate, so it runs last: it must never pre-empt a death, a weighing or a collection.
+    observationParser.parse(text, ctx) ??
     null
   );
 }

@@ -123,10 +123,13 @@ export interface HealthAlerts {
   criticalObservations: CriticalObservationItem[];
 }
 
-/** A catalog entry (vaccine / treatment / program) — only the count is used on
- * mobile, so the shape is kept minimal. */
+/** A catalog entry (vaccine / treatment / program). The backend also sends `label` and
+ * `disease`; the assistant matches a spoken vaccine name against them, so they are typed here
+ * even though most screens only count the entries. */
 export interface HealthCatalogEntry {
   key: string;
+  label?: string;
+  disease?: string;
 }
 
 /** Record a vaccination (mirrors the web `VaccinationInput`, trimmed to the

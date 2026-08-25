@@ -19,6 +19,12 @@ export interface AssistantUnit {
 export interface ParseContext {
   unitId?: number | null;
   activeUnits?: AssistantUnit[];
+  /**
+   * The farm's vaccine catalog, as cached by RTK Query. The vaccination parser matches a spoken
+   * name against these real entries rather than against a hardcoded list — resolving a key the
+   * farm does not have would produce a draft the backend rejects.
+   */
+  vaccines?: { key: string; label?: string; disease?: string }[];
 }
 
 /** `unitId === null` means the lot still has to be chosen before confirmation. */
