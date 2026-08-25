@@ -60,6 +60,35 @@ class PartnerFacadeImplTest {
   }
 
   @Test
+  void restockForecastIsOffOnAMembershipNobodyOptedIn() {
+    // A membership created before V39 (or by any existing flow) does not consent retroactively to
+    // a commercially actionable forecast: the column defaults to FALSE and so does the entity.
+    PartnerFarmMembership m = membership(10L, MembershipStatus.CONFIRMED);
+    m.setShareActivity(true);
+    m.setShareFeedConsumption(true);
+    when(membershipRepository.findByPartnerIdAndFarmIdAndStatusNot(1L, 10L, MembershipStatus.LEFT))
+        .thenReturn(Optional.of(m));
+
+    PartnerFacadeImpl facade = new PartnerFacadeImpl(membershipRepository, partnerService);
+
+    assertThat(facade.sharedScopes(1L, 10L))
+        .contains("activity", "feed_consumption")
+        .doesNotContain("restock_forecast");
+  }
+
+  @Test
+  void restockForecastIsExposedOnceTheFarmerOptsIn() {
+    PartnerFarmMembership m = membership(10L, MembershipStatus.CONFIRMED);
+    m.setShareRestockForecast(true);
+    when(membershipRepository.findByPartnerIdAndFarmIdAndStatusNot(1L, 10L, MembershipStatus.LEFT))
+        .thenReturn(Optional.of(m));
+
+    PartnerFacadeImpl facade = new PartnerFacadeImpl(membershipRepository, partnerService);
+
+    assertThat(facade.sharedScopes(1L, 10L)).contains("restock_forecast");
+  }
+
+  @Test
   void sharedScopesEmptyWhenNoMembership() {
     when(membershipRepository.findByPartnerIdAndFarmIdAndStatusNot(1L, 99L, MembershipStatus.LEFT))
         .thenReturn(Optional.empty());

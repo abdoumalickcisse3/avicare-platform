@@ -18,7 +18,8 @@ public record FarmPartnerResponse(
     boolean shareFlockHealth,
     boolean shareFeedConsumption,
     boolean shareSalesVolume,
-    boolean shareFinances) {
+    boolean shareFinances,
+    boolean shareRestockForecast) {
 
   public static FarmPartnerResponse of(FarmPartnerView v) {
     var m = v.membership();
@@ -35,6 +36,7 @@ public record FarmPartnerResponse(
         m.isShareFlockHealth(),
         m.isShareFeedConsumption(),
         m.isShareSalesVolume(),
-        m.isShareFinances());
+        m.isShareFinances(),
+        m.isShareRestockForecast());
   }
 }
