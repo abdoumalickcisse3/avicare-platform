@@ -48,6 +48,7 @@ const OPERATIONAL: { key: keyof SharingScopes; label: string }[] = [
 const COMMERCIAL: { key: keyof SharingScopes; label: string }[] = [
   { key: 'salesVolume', label: 'Volumes de vente' },
   { key: 'finances', label: 'Finances' },
+  { key: 'restockForecast', label: 'Prévisions de recommande' },
 ];
 
 function scopesOf(p: FarmPartner): SharingScopes {
@@ -57,6 +58,7 @@ function scopesOf(p: FarmPartner): SharingScopes {
     feedConsumption: p.shareFeedConsumption,
     salesVolume: p.shareSalesVolume,
     finances: p.shareFinances,
+    restockForecast: p.shareRestockForecast,
   };
 }
 
