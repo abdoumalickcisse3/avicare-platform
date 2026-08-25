@@ -1,6 +1,7 @@
 package com.avicare.livestock.api;
 
 import com.avicare.common.api.dto.ActivityItem;
+import com.avicare.livestock.api.dto.BatchCycleInfo;
 import com.avicare.livestock.api.dto.LivestockStats;
 import com.avicare.livestock.api.dto.PoultryBreedLite;
 import com.avicare.livestock.api.dto.ProductionUnitInfo;
@@ -68,6 +69,13 @@ public interface LivestockFacade {
    * breeds. Lets the assistant resolve a breed spoken by name to its id before creating a lot.
    */
   List<PoultryBreedLite> listPoultryBreeds(Long farmId);
+
+  /**
+   * Active broiler batches of {@code farmId} with their end-of-cycle forecast (partner « Développer
+   * » layer). A batch whose end date can be established neither from its growth nor from a target
+   * age is <b>omitted</b> rather than dated arbitrarily.
+   */
+  List<BatchCycleInfo> activeBatchCycles(Long farmId);
 
   /**
    * Create a broiler batch (assistant server-confirm path) and return the new unit id. {@code
