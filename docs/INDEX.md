@@ -95,8 +95,8 @@ Pour toute décision d'architecture non documentée, ME DEMANDER avant d'agir.
 - [x] Sprint B4 — inventory
 - [x] Sprint B5 — commercial
 - [x] Sprint B6 — finance
-- [ ] Sprint B7 — mobile MVP
-- [ ] Sprint C1 — notifications
+- [x] Sprint B7 — mobile MVP
+- [x] Sprint C1 — notifications
 - [ ] Sprint C2 — reporting
 - [ ] Sprint C3 — QR + buyer
 - [ ] Sprint C4 — polish + bêta
