@@ -11,6 +11,7 @@ import { useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
 import { useListProductionUnitsQuery } from '@/store/api/productionUnitsApi';
+import { useGetVaccinesQuery } from '@/store/api/healthApi';
 import { useInterpretMutation } from '@/store/api/assistantApi';
 import { useRecordPaymentMutation } from '@/store/api/paymentsApi';
 import { useCreateSaleMutation } from '@/store/api/salesApi';
@@ -57,6 +58,9 @@ export interface Assistant {
 export function useAssistant({ unitId }: { unitId?: number | null } = {}): Assistant {
   const farmId = useSelector(selectSelectedFarmId);
   const { data: units } = useListProductionUnitsQuery(farmId ?? skipToken);
+  // Served from the RTK Query cache offline; empty until the farmer has opened a health screen
+  // once, in which case the vaccination parser simply declines and the LLM takes over.
+  const { data: vaccines } = useGetVaccinesQuery(farmId ? { farmId } : skipToken);
   const [interpret] = useInterpretMutation();
   const [recordPayment] = useRecordPaymentMutation();
   const [createSale] = useCreateSaleMutation();
@@ -106,7 +110,7 @@ export function useAssistant({ unitId }: { unitId?: number | null } = {}): Assis
     setUnitChoice(null);
 
     // 1) On-device rules — offline, free, covers the common phrases.
-    const local = rulesParse(text, { unitId, activeUnits });
+    const local = rulesParse(text, { unitId, activeUnits, vaccines });
     if (local) {
       finalize(local);
       return;

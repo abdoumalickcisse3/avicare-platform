@@ -12,6 +12,7 @@ jest.mock('react-redux', () => ({
   useStore: () => ({}),
 }));
 jest.mock('@/store/api/productionUnitsApi', () => ({ useListProductionUnitsQuery: () => ({ data: [] }) }));
+jest.mock('@/store/api/healthApi', () => ({ useGetVaccinesQuery: () => ({ data: [] }) }));
 jest.mock('@/store/api/assistantApi', () => ({ useInterpretMutation: () => [mockInterpret] }));
 jest.mock('@/store/api/paymentsApi', () => ({ useRecordPaymentMutation: () => [mockRecordPayment] }));
 jest.mock('@/store/api/salesApi', () => ({ useCreateSaleMutation: () => [mockCreateSale] }));
