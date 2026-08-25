@@ -6,10 +6,12 @@ import com.avicare.common.api.exception.BusinessRuleException;
 import com.avicare.common.api.exception.NotFoundException;
 import com.avicare.livestock.api.LivestockFacade;
 import com.avicare.livestock.api.ProductType;
+import com.avicare.livestock.api.dto.BatchCycleInfo;
 import com.avicare.livestock.api.dto.LivestockStats;
 import com.avicare.livestock.api.dto.PoultryBreedLite;
 import com.avicare.livestock.api.dto.ProductionUnitInfo;
 import com.avicare.livestock.domain.Breed;
+import com.avicare.livestock.domain.GrowthPerformance;
 import com.avicare.livestock.domain.LifecycleEvent;
 import com.avicare.livestock.domain.PoultryBatch;
 import com.avicare.livestock.domain.ProductionUnit;
@@ -23,7 +25,9 @@ import com.avicare.livestock.repository.BreedRepository;
 import com.avicare.livestock.repository.DailyEggProductionRepository;
 import com.avicare.livestock.repository.DailyRecordRepository;
 import com.avicare.livestock.repository.EggTrayStockRepository;
+import com.avicare.livestock.repository.GrowthPerformanceRepository;
 import com.avicare.livestock.repository.LifecycleEventRepository;
+import com.avicare.livestock.repository.PoultryBatchRepository;
 import com.avicare.livestock.repository.ProductionUnitRepository;
 import com.avicare.livestock.repository.StockMovementRepository;
 import com.avicare.livestock.repository.TreatmentExecutedRepository;
@@ -32,6 +36,7 @@ import com.avicare.livestock.repository.WeighingSampleRepository;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
@@ -59,6 +64,8 @@ public class LivestockFacadeImpl implements LivestockFacade {
   private final StockMovementRepository stockMovementRepository;
   private final BreedRepository breedRepository;
   private final PoultryBatchService poultryBatchService;
+  private final PoultryBatchRepository poultryBatchRepository;
+  private final GrowthPerformanceRepository growthPerformanceRepository;
 
   private static final Set<String> ACTIVITY_EVENT_TYPES =
       Set.of(
@@ -225,7 +232,49 @@ public class LivestockFacadeImpl implements LivestockFacade {
     }
   }
 
-  // ── Recent activity feed (Task 3) ───────────────────────────────────────
+  // ── Batch cycles (partner « Développer ») ───────────────────────────────
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<BatchCycleInfo> activeBatchCycles(Long farmId) {
+    return poultryBatchRepository.findByFarmIdAndStatus(farmId, UnitStatus.ACTIVE).stream()
+        .map(this::cycleOf)
+        .flatMap(Optional::stream)
+        .toList();
+  }
+
+  /**
+   * Prefer the growth projection (it accounts for how the batch is actually doing) and fall back on
+   * the theoretical target age. With neither, return empty: an invented end date would put a
+   * partner in front of a delivery window that does not exist.
+   */
+  private Optional<BatchCycleInfo> cycleOf(PoultryBatch batch) {
+    LocalDate end =
+        growthPerformanceRepository
+            .findFirstByPoultryBatchIdOrderBySnapshotDateDesc(batch.getId())
+            .map(GrowthPerformance::getForecastedTargetDate)
+            .orElse(null);
+    String method = BatchCycleInfo.METHOD_GROWTH;
+
+    if (end == null) {
+      if (batch.getTargetAgeDays() == null) {
+        return Optional.empty();
+      }
+      end = batch.getStartDate().plusDays(batch.getTargetAgeDays());
+      method = BatchCycleInfo.METHOD_THEORETICAL;
+    }
+
+    return Optional.of(
+        new BatchCycleInfo(
+            batch.getId(),
+            batch.getName(),
+            batch.getCurrentCount(),
+            batch.getStartDate(),
+            end,
+            method));
+  }
+
+  // ── Recent activity feed ────────────────────────────────────────────────
 
   @Override
   @Transactional(readOnly = true)
