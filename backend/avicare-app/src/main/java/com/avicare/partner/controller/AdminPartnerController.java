@@ -7,6 +7,7 @@ import com.avicare.partner.dto.request.AttachFarmRequest;
 import com.avicare.partner.dto.request.CreatePartnerRequest;
 import com.avicare.partner.dto.request.CreatePartnerUserRequest;
 import com.avicare.partner.dto.request.GenerateInviteCodeRequest;
+import com.avicare.partner.dto.request.UpdatePartnerRequest;
 import com.avicare.partner.dto.response.InviteCodeResponse;
 import com.avicare.partner.dto.response.MembershipResponse;
 import com.avicare.partner.dto.response.PartnerResponse;
@@ -18,6 +19,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -50,6 +52,21 @@ public class AdminPartnerController {
                 req.contactEmail(),
                 req.logoUrl(),
                 TenancyContext.currentUserId())));
+  }
+
+  /** Partial update — the co-branding path: an ADMIN sets the logo shown in the farmer app. */
+  @PatchMapping("/{partnerId}")
+  public ApiResponse<PartnerResponse> update(
+      @PathVariable Long partnerId, @RequestBody @Valid UpdatePartnerRequest req) {
+    return ApiResponse.of(
+        PartnerResponse.of(
+            partnerService.update(
+                partnerId,
+                req.name(),
+                req.contactName(),
+                req.contactPhone(),
+                req.contactEmail(),
+                req.logoUrl())));
   }
 
   @GetMapping
