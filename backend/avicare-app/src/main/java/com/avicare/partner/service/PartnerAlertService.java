@@ -2,10 +2,12 @@ package com.avicare.partner.service;
 
 import com.avicare.notification.api.WhatsAppOutboxFacade;
 import com.avicare.partner.domain.AlertCategory;
+import com.avicare.partner.domain.AlertSeverity;
 import com.avicare.partner.domain.AlertStatus;
 import com.avicare.partner.domain.Partner;
 import com.avicare.partner.domain.PartnerAlert;
 import com.avicare.partner.repository.PartnerAlertRepository;
+import com.avicare.tenancy.api.TenancyFacade;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -29,6 +31,7 @@ public class PartnerAlertService {
 
   private final PartnerAlertRepository alertRepository;
   private final PartnerService partnerService;
+  private final TenancyFacade tenancyFacade;
   private final WhatsAppOutboxFacade whatsAppOutboxFacade;
 
   /** Create the alert if this episode is not already open; return the open one either way. */
@@ -37,6 +40,33 @@ public class PartnerAlertService {
     return alertRepository
         .findByPartnerIdAndDedupKeyAndStatus(partnerId, c.dedupKey(), AlertStatus.ACTIVE)
         .orElseGet(() -> create(partnerId, farmId, c));
+  }
+
+  /**
+   * A farm left the network — a one-off fact the partner is entitled to know (it lost a member),
+   * not a data point about the farm's operations. Never reconciled by the scan: the departure does
+   * not stop being true. Best-effort: a farmer leaving must never fail because of an alert.
+   */
+  @Transactional
+  public void raiseFarmLeft(Long partnerId, Long farmId) {
+    try {
+      String farmName = tenancyFacade.findById(farmId).name();
+      raise(
+          partnerId,
+          farmId,
+          new PartnerAlertCondition(
+              AlertCategory.FARM_LEFT,
+              AlertSeverity.CRITICAL,
+              "FARM_LEFT:farm:" + farmId,
+              "Départ du réseau : " + farmName,
+              "« " + farmName + " » a quitté votre réseau."));
+    } catch (RuntimeException e) {
+      log.warn(
+          "Could not raise the FARM_LEFT alert for partner {} farm {}: {}",
+          partnerId,
+          farmId,
+          e.getMessage());
+    }
   }
 
   /**

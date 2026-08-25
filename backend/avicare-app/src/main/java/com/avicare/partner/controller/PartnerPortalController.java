@@ -4,7 +4,9 @@ import com.avicare.common.api.response.ApiResponse;
 import com.avicare.common.tenancy.context.PartnerContext;
 import com.avicare.partner.dto.response.NetworkDashboardResponse;
 import com.avicare.partner.dto.response.NetworkFarmRow;
+import com.avicare.partner.dto.response.PartnerAlertResponse;
 import com.avicare.partner.dto.response.PartnerProfileResponse;
+import com.avicare.partner.service.PartnerAlertService;
 import com.avicare.partner.service.PartnerNetworkReadService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class PartnerPortalController {
 
   private final PartnerNetworkReadService readService;
+  private final PartnerAlertService alertService;
 
   @GetMapping("/me")
   public ApiResponse<PartnerProfileResponse> me() {
@@ -43,5 +46,14 @@ public class PartnerPortalController {
   @GetMapping("/network/farms/{farmId}")
   public ApiResponse<NetworkFarmRow> farm(@PathVariable Long farmId) {
     return ApiResponse.of(readService.farm(PartnerContext.currentPartnerId(), farmId));
+  }
+
+  /** Open network alerts of the calling partner, newest first (couche « Garder »). */
+  @GetMapping("/network/alerts")
+  public ApiResponse<List<PartnerAlertResponse>> alerts() {
+    return ApiResponse.of(
+        alertService.listActive(PartnerContext.currentPartnerId()).stream()
+            .map(PartnerAlertResponse::of)
+            .toList());
   }
 }

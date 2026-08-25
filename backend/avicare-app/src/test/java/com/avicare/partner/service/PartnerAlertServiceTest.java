@@ -14,11 +14,14 @@ import com.avicare.partner.domain.AlertStatus;
 import com.avicare.partner.domain.Partner;
 import com.avicare.partner.domain.PartnerAlert;
 import com.avicare.partner.repository.PartnerAlertRepository;
+import com.avicare.tenancy.api.TenancyFacade;
+import com.avicare.tenancy.api.dto.FarmInfo;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -31,10 +34,12 @@ class PartnerAlertServiceTest {
 
   @Mock PartnerAlertRepository alertRepository;
   @Mock PartnerService partnerService;
+  @Mock TenancyFacade tenancyFacade;
   @Mock WhatsAppOutboxFacade whatsAppOutboxFacade;
 
   private PartnerAlertService service() {
-    return new PartnerAlertService(alertRepository, partnerService, whatsAppOutboxFacade);
+    return new PartnerAlertService(
+        alertRepository, partnerService, tenancyFacade, whatsAppOutboxFacade);
   }
 
   private PartnerAlertCondition condition() {
@@ -104,6 +109,35 @@ class PartnerAlertServiceTest {
 
     assertThat(raised.getDedupKey()).isEqualTo(KEY);
     verify(alertRepository).save(any(PartnerAlert.class));
+  }
+
+  @Test
+  void raisesACriticalAlertWhenAFarmLeavesTheNetwork() {
+    when(tenancyFacade.findById(FARM_ID))
+        .thenReturn(new FarmInfo(FARM_ID, "Ferme A", "XOF", "Africa/Dakar", true));
+    when(alertRepository.findByPartnerIdAndDedupKeyAndStatus(
+            PARTNER_ID, "FARM_LEFT:farm:42", AlertStatus.ACTIVE))
+        .thenReturn(Optional.empty());
+    when(alertRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+    when(partnerService.get(PARTNER_ID)).thenReturn(partnerWithPhone("770000001"));
+
+    service().raiseFarmLeft(PARTNER_ID, FARM_ID);
+
+    ArgumentCaptor<PartnerAlert> saved = ArgumentCaptor.captor();
+    verify(alertRepository).save(saved.capture());
+    assertThat(saved.getValue().getCategory()).isEqualTo(AlertCategory.FARM_LEFT);
+    assertThat(saved.getValue().getSeverity()).isEqualTo(AlertSeverity.CRITICAL);
+    assertThat(saved.getValue().getBody()).contains("Ferme A");
+  }
+
+  @Test
+  void aFarmLeavingIsNeverBlockedByABrokenAlert() {
+    when(tenancyFacade.findById(FARM_ID)).thenThrow(new IllegalStateException("farm gone"));
+
+    // The farmer's right to leave outranks the partner's right to be told about it.
+    service().raiseFarmLeft(PARTNER_ID, FARM_ID);
+
+    verify(alertRepository, never()).save(any());
   }
 
   @Test

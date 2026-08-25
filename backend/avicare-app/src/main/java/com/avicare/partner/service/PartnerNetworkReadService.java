@@ -11,6 +11,7 @@ import com.avicare.partner.dto.response.PartnerProfileResponse;
 import com.avicare.tenancy.api.TenancyFacade;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.OptionalLong;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,7 @@ public class PartnerNetworkReadService {
   private final PartnerService partnerService;
   private final TenancyFacade tenancyFacade;
   private final LivestockFacade livestockFacade;
+  private final PartnerRiskEvaluator riskEvaluator;
 
   @Transactional(readOnly = true)
   public PartnerProfileResponse profile(Long partnerId) {
@@ -77,8 +79,17 @@ public class PartnerNetworkReadService {
     Set<String> scopes = partnerFacade.sharedScopes(partnerId, farmId);
     String name = tenancyFacade.findById(farmId).name();
 
-    Boolean active =
-        scopes.contains("activity") ? livestockFacade.countActiveUnits(farmId) > 0 : null;
+    // Both ride on the activity scope: a farm keeping its activity private is unmeasured here,
+    // never reported as OK.
+    Boolean active = null;
+    String riskLevel = null;
+    if (scopes.contains("activity")) {
+      active = livestockFacade.countActiveUnits(farmId) > 0;
+      OptionalLong silentDays = riskEvaluator.daysSinceLastEntry(farmId);
+      if (silentDays.isPresent()) {
+        riskLevel = riskEvaluator.levelFor(silentDays.getAsLong()).name();
+      }
+    }
 
     Long feedKg = null;
     Double mortalityRate = null;
@@ -93,6 +104,6 @@ public class PartnerNetworkReadService {
         mortalityRate = stats.mortalityRate();
       }
     }
-    return new NetworkFarmRow(farmId, name, active, feedKg, mortalityRate);
+    return new NetworkFarmRow(farmId, name, active, feedKg, mortalityRate, riskLevel);
   }
 }
