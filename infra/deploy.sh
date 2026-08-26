@@ -30,6 +30,15 @@ fi
 echo "Deploying backend=$BACKEND_IMAGE  web=$WEB_IMAGE  landing=$LANDING_IMAGE"
 $COMPOSE pull
 $COMPOSE up -d --remove-orphans
+
+# The Caddyfile is a bind mount, so `up -d` sees no change to the caddy service when only its
+# CONTENT changed (same image, same volumes, same env) and leaves the container running with the
+# config it loaded last time. A new site would answer on :80 but never get a certificate.
+# `caddy reload` re-reads the file with zero downtime and re-triggers ACME for the new names.
+echo "Reloading Caddy…"
+$COMPOSE exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile \
+  || $COMPOSE restart caddy
+
 docker image prune -f >/dev/null || true
 $COMPOSE ps
 echo "Done. Follow logs with: $COMPOSE logs -f backend"
