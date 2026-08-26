@@ -31,13 +31,14 @@ echo "Deploying backend=$BACKEND_IMAGE  web=$WEB_IMAGE  landing=$LANDING_IMAGE"
 $COMPOSE pull
 $COMPOSE up -d --remove-orphans
 
-# The Caddyfile is a bind mount, so `up -d` sees no change to the caddy service when only its
-# CONTENT changed (same image, same volumes, same env) and leaves the container running with the
-# config it loaded last time. A new site would answer on :80 but never get a certificate.
-# `caddy reload` re-reads the file with zero downtime and re-triggers ACME for the new names.
-echo "Reloading Caddy…"
-$COMPOSE exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile \
-  || $COMPOSE restart caddy
+# The Caddyfile is a bind mount of a single FILE, and Docker resolves that mount to an inode when
+# the container is created. `git pull` does not edit in place — it writes a new file and renames it
+# over the old one — so the running container stays bound to the OLD inode and keeps reading the
+# previous content forever. `caddy reload` then re-reads that stale file and reports
+# "config is unchanged"; `restart` reuses the same container, hence the same inode, and is no
+# better. Only recreating the container re-resolves the mount.
+echo "Recreating Caddy so it picks up the current Caddyfile…"
+$COMPOSE up -d --force-recreate caddy
 
 docker image prune -f >/dev/null || true
 $COMPOSE ps
