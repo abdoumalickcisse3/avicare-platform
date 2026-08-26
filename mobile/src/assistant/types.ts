@@ -25,6 +25,12 @@ export interface ParseContext {
    * farm does not have would produce a draft the backend rejects.
    */
   vaccines?: { key: string; label?: string; disease?: string }[];
+  /**
+   * The farm's stock items, as cached by RTK Query. Same rule as `vaccines`: the stock parser
+   * matches against these real rows, because an invented `stockItemId` fails on the server after
+   * the farmer has already confirmed.
+   */
+  stockItems?: { id: number; articleKey: string; unit?: string | null }[];
 }
 
 /** `unitId === null` means the lot still has to be chosen before confirmation. */
