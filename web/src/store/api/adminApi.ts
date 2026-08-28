@@ -12,6 +12,7 @@ import type {
   AdminMe,
   AdminUserRow,
   AuthTokens,
+  FarmHealthRow,
   TemporaryPassword,
 } from "@/types";
 
@@ -97,6 +98,11 @@ export const adminApi = createApi({
       }),
       invalidatesTags: ["AdminFarm"],
     }),
+    getFarmsAtRisk: build.query<FarmHealthRow[], void>({
+      query: () => "/api/v1/admin/health/farms-at-risk",
+      transformResponse: (r: Envelope<FarmHealthRow[]>) => r.data,
+      providesTags: ["AdminFarm"],
+    }),
     searchAdminUsers: build.query<AdminUserRow[], { q: string }>({
       query: ({ q }) => `/api/v1/admin/users?q=${encodeURIComponent(q)}`,
       transformResponse: (r: Envelope<AdminUserRow[]>) => r.data,
@@ -129,6 +135,7 @@ export const {
   useGetAdminFarmsQuery,
   useGetAdminFarmQuery,
   useSetFarmModuleMutation,
+  useGetFarmsAtRiskQuery,
   useLazySearchAdminUsersQuery,
   useResetAdminUserPasswordMutation,
   useSetAdminUserActiveMutation,
