@@ -21,12 +21,15 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { KeyRound, Search } from "lucide-react";
+import { KeyRound, LifeBuoy, Search } from "lucide-react";
 import {
+  useImpersonateMutation,
   useLazySearchAdminUsersQuery,
   useResetAdminUserPasswordMutation,
   useSetAdminUserActiveMutation,
 } from "@/store/api/adminApi";
+import { impersonation } from "@/lib/impersonation";
+import { tokenStorage } from "@/lib/storage";
 import type { AdminUserRow } from "@/types";
 
 /**
@@ -41,10 +44,25 @@ export function UserSearch() {
     useLazySearchAdminUsersQuery();
   const [resetPassword] = useResetAdminUserPasswordMutation();
   const [setActive] = useSetAdminUserActiveMutation();
+  const [openSupport] = useImpersonateMutation();
   const [issued, setIssued] = useState<{ email: string; password: string } | null>(null);
 
   const onSearch = () => {
     if (query.trim().length > 0) search({ q: query.trim() });
+  };
+
+  const onSupport = async (user: AdminUserRow) => {
+    const { accessToken } = await openSupport({ userId: user.userId }).unwrap();
+    // Stash whatever farmer session was open so leaving support puts it back.
+    impersonation.set({
+      targetLabel: user.fullName ?? user.email,
+      targetUserId: user.userId,
+      previousAccess: tokenStorage.getAccess(),
+      previousRefresh: tokenStorage.getRefresh(),
+    });
+    // The support token IS the farmer token: the app must behave exactly as it does for them.
+    tokenStorage.set(accessToken, "");
+    window.location.href = "/dashboard";
   };
 
   const onReset = async (user: AdminUserRow) => {
@@ -128,6 +146,14 @@ export function UserSearch() {
                           onClick={() => onReset(u)}
                         >
                           Réinitialiser
+                        </Button>
+                        <Button
+                          size="small"
+                          startIcon={<LifeBuoy size={14} />}
+                          onClick={() => onSupport(u)}
+                          disabled={!u.active || u.role === "ADMIN"}
+                        >
+                          Mode support
                         </Button>
                         <Button
                           size="small"
