@@ -1497,3 +1497,18 @@ export interface AdminFarmDetail {
   enabledModules: string[];
   partners: AdminPartnerLinkRow[];
 }
+
+export interface AdminUserRow {
+  userId: number;
+  email: string;
+  fullName: string | null;
+  phone: string | null;
+  role: string;
+  active: boolean;
+  lastLoginAt: string | null;
+}
+
+export interface TemporaryPassword {
+  userId: number;
+  temporaryPassword: string;
+}
