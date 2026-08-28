@@ -1,8 +1,23 @@
 # Design — Console Super-Admin plateforme (back-office Jawdi)
 
-> Statut : **design validé, non planifié / non développé** (2026-08-20).
-> Issu d'un brainstorming. Le premier cycle d'implémentation (spec→plan) couvrira **Phase 0 + Phase 1**.
+> Statut : **design validé, non développé**. Écrit le 2026-08-20, **révisé le 2026-08-28**.
+> Le premier cycle d'implémentation couvrira **Phase 0 + Phase 1**.
 > Les phases 2→5 sont documentées ici en roadmap ; chacune aura ensuite son propre cycle.
+>
+> ## ⚠️ Révision 2026-08-28 — les partenaires ont changé de statut
+>
+> Ce document classait la gestion des partenaires en **Phase 5**, comme un différenciateur moyen
+> terme (« item J »). C'était exact au 20 août : rien n'était construit.
+>
+> Depuis, le domaine partenaire a été **entièrement développé et mis en production** :
+> migrations V36→V39, portail `partner.jawdi.app`, et les trois couches Voir → Garder →
+> Développer. Le produit tourne.
+>
+> **Conséquence : l'administration des partenaires passe de la Phase 5 à la Phase 1.** Ce n'est
+> plus un différenciateur, c'est le prérequis de ce qui est déjà en ligne. Aujourd'hui, créer un
+> partenaire, provisionner son compte de connexion ou rattacher une ferme se fait **en appelant
+> l'API au curl** — les endpoints `AdminPartnerController` existent tous, aucune interface ne les
+> consomme. Voir §6bis.
 
 ---
 
@@ -76,13 +91,15 @@ health-score, cockpit d'agrégats).
 - Compromis « O » : révocation de sessions (réutilise `RefreshTokenService`) + audit des
   connexions staff. 2FA optionnel remis à plus tard.
 
-### Phase 1 — Support & opérations + Anti-churn (H) *(valeur quotidienne max)*
+### Phase 1 — Support & opérations + Anti-churn (H) + **Partenaires (J)** *(valeur quotidienne max)*
 - Liste globale des fermes + **fiche ferme 360°** (membres, modules, volumes, dernière activité).
 - Recherche utilisateurs cross-tenant : reset mot de passe, activer/désactiver.
 - **Impersonation encadrée** : token scoped + durée limitée + bannière + audit.
 - Modules/feature-flags par ferme (réutilise le provisioning `subscription_modules`).
 - **Health-score anti-churn (H)** : fermes qui décrochent (pas de saisie depuis X jours,
   onboarding non terminé) + funnel d'activation (inscrit → onboarding fini → 1er lot → 1re vente).
+- **Administration des partenaires (J)** — détail en §6bis. Sans elle, le portail en production
+  n'est pilotable qu'au curl.
 
 ### Phase 2 — Paramétrage sans SQL + Conformité (M)
 - Éditeur **`catalog_items`** (CRUD races, catégories, seuils par défaut, formules) → fini les
@@ -99,13 +116,14 @@ health-score, cockpit d'agrégats).
 ### Phase 4 — Communication
 - Bannières/annonces in-app broadcast, campagnes WhatsApp ciblées (pilotes), notes de version.
 
-### Phase 5 — Différenciateurs (I/J/L)
+### Phase 5 — Différenciateurs (I/L)
 - **I — Benchmarks agrégés** : mortalité / FCR / prix agrégés anonymement → « vous vs moyenne
   région » offert aux fermes ; le super-admin active/modère.
-- **J — Partenaires B2B2C** : entité partenaire (fournisseur d'aliment / véto), rattachement des
-  fermes, vue portefeuille par partenaire. Aligné plan GTM.
 - **L — Supervision assistant IA** : relire les conversations (qualité/hallucinations), feedback,
   activation par ferme, quotas.
+
+> **J — Partenaires B2B2C : déplacé en Phase 1** (révision 2026-08-28). Le domaine est construit et
+> en production ; son administration est devenue bloquante, pas différenciante. Détail en §6bis.
 
 ### Hors périmètre (dormant) — « P » Monétisation
 Le gating existe en sommeil (ADR-009). Quand la monétisation reviendra : gestion plans/prix,
@@ -157,6 +175,95 @@ refacturation des crédits WhatsApp. **Pas construit maintenant.**
 - **Health-score (H)** : read-model dérivé (dernière saisie, état onboarding) → liste « à
   relancer » + funnel d'activation.
 
+
+---
+
+## 6bis. Détail — Administration des partenaires *(ajouté 2026-08-28)*
+
+### Où on en est
+
+Tous les endpoints existent déjà dans `AdminPartnerController`, **et aucun front ne les appelle** :
+créer un partenaire, lister, consulter, suspendre/réactiver, mettre à jour (dont le logo),
+provisionner un compte de connexion, rattacher une ferme, générer un code d'invitation.
+
+Le travail est donc surtout une **surface**, plus quelques manques ciblés côté API.
+
+### 6bis.1 Écrans
+
+| Écran | Contenu | État de l'API |
+|---|---|---|
+| **Liste des partenaires** | Nom, type, statut, nb de fermes, nb de comptes, dernière connexion | ✅ `GET /admin/partners` |
+| **Fiche partenaire** | Identité, contacts, logo, portefeuille de fermes, comptes, codes | ✅ partiel |
+| **Comptes de connexion** | Créer (mot de passe temporaire), désactiver, réinitialiser | ⚠️ création seule |
+| **Rattachement de fermes** | Rattacher, **détacher**, voir les curseurs consentis par chaque éleveur | ⚠️ détachement admin manquant |
+| **Codes d'invitation** | Générer, lister, révoquer, suivre les adhésions issues du code | ⚠️ génération seule |
+| **Prospects** | cf. 6bis.3 — l'écran de recrutement | ❌ à construire |
+
+### 6bis.2 Ce que l'API doit gagner
+
+- **Détacher une ferme** côté admin (le chemin éleveur existe, pas l'admin).
+- **Désactiver / réinitialiser** un compte partenaire (aujourd'hui : création seulement, donc un
+  départ de salarié chez un provendier n'est pas gérable).
+- **Lister et révoquer** les codes d'invitation, et mesurer leur conversion.
+- **Dernière connexion** d'un `partner_user` : la donnée n'est pas stockée. Sans elle, impossible
+  de savoir si un partenaire signé utilise réellement le portail — c'est pourtant la seule métrique
+  qui dit si le produit tient sa promesse.
+- **Upload du logo** : `logoUrl` est une URL saisie à la main ; aucun stockage de fichier
+  n'existe sur la plateforme. À trancher (URL externe assumée vs premier stockage d'objets).
+
+### 6bis.3 « Prospects partenaires » — le recrutement par la donnée
+
+**L'idée vient d'un constat de terrain : le fournisseur d'un éleveur n'est pas forcément inscrit
+sur la plateforme.** C'est vrai, et c'est exploitable.
+
+Les éleveurs saisissent déjà leurs fournisseurs dans l'inventaire (table `suppliers`, une ligne
+par ferme), sans aucun lien avec `partners`. La plateforme sait donc **chez qui les éleveurs
+achètent réellement**, y compris chez des provendiers qui ignorent son existence — et la table
+porte `commercial_name`, `contact_person`, `phone`, `email`, `city` : le prospect arrive avec ses
+coordonnées.
+
+Un écran d'admin qui agrège ces fournisseurs — groupés par nom normalisé, classés par **nombre de
+fermes clientes** puis par **volume acheté** (`purchase_orders`) — produit une liste de prospects
+hiérarchisée par preuve d'usage. Chaque ligne indique si ce fournisseur est déjà un `partner`.
+
+**Vérifié sur la production du 2026-08-28** : la requête d'agrégation tourne et remonte 3
+fournisseurs distincts sur 14 fermes, dont **Sedima** — un groupe avicole sénégalais majeur. Le
+mécanisme est donc bon ; son rendement est proportionnel à l'adoption, et reste faible tant que la
+base de fermes l'est. À construire pour ce qu'il vaudra à 100 fermes, pas pour ce qu'il rend
+aujourd'hui.
+
+C'est le pendant exact de la thèse GTM du doc 11 (le canal B2B2C passe par les provendiers des
+pilotes) : au lieu de démarcher au hasard, on appelle le provendier qui sert déjà onze fermes
+Jawdi, chiffres à l'appui.
+
+**Prudence** : ces noms sont des données d'éleveurs. L'écran est un outil interne de prospection,
+il ne doit ni être exposé aux partenaires, ni révéler à un provendier qui sont les clients d'un
+autre. À traiter comme de la donnée de tenant, dans le journal d'audit comme le reste.
+
+### 6bis.4 Permissions staff
+
+À ajouter au catalogue de §5.1 : `partners:read`, `partners:write` (créer/modifier/suspendre),
+`partners:users` (provisionner et désactiver des comptes), `partners:attach` (rattacher et
+détacher des fermes), `partners:prospect` (voir l'écran de recrutement).
+
+Le rattachement d'une ferme mérite sa propre permission : c'est l'action qui rend les données d'un
+éleveur visibles par un tiers.
+
+### 6bis.5 Audit
+
+Chaque action partenaire atterrit dans `admin_audit_log`, avec le `tenant_id` de la ferme
+concernée quand il y en a une. **Le rattachement et le détachement sont les entrées les plus
+sensibles de tout le back-office** : elles ouvrent et ferment l'accès d'un tiers aux données d'un
+éleveur. Elles doivent être relisibles ligne à ligne, et idéalement visibles par l'éleveur lui-même
+dans un cycle ultérieur.
+
+### 6bis.6 Ce que ça ne couvre pas
+
+La console administre les partenaires ; elle ne construit pas leur espace de travail. Le
+brainstorm du 2026-08-28 a acté un portail **transactionnel** (les commandes y passent) et
+**spécialisé par type** (console provendier ≠ console vétérinaire), plus un mode partenaire dans
+l'app mobile. Ces trois chantiers ont leur propre spec — celui-ci s'arrête au pilotage.
+
 ---
 
 ## 7. Questions ouvertes / à trancher au moment du spec détaillé
@@ -170,12 +277,17 @@ refacturation des crédits WhatsApp. **Pas construit maintenant.**
 - Health-score : seuils « décrochage » (X jours sans saisie) — à paramétrer (idéalement via
   `catalog_items`, cohérent avec « aucune valeur métier en dur »).
 - 2FA staff : à rouvrir si/quand des comptes staff autres que le fondateur sont créés.
+- Logo partenaire : rester sur une URL externe saisie à la main, ou introduire le premier stockage
+  de fichiers de la plateforme ? (aucun n'existe aujourd'hui — cf. §6bis.2)
+- « Dernière connexion » d'un `partner_user` : colonne sur `partner_users` ou dérivée d'un journal
+  de connexions staff/partenaire mutualisé ?
 
 ---
 
 ## 8. Prochaines étapes
 
-1. **Aucune implémentation pour l'instant** (décision utilisateur — on brainstorme d'autres aspects
-   de la plateforme d'abord).
-2. Quand on décide de lancer : écrire le **spec détaillé Phase 0 + Phase 1**, puis invoquer
-   `writing-plans` pour le plan d'implémentation.
+1. Écrire le **spec détaillé Phase 0 + Phase 1** (partenaires inclus, cf. §6bis), puis le plan
+   d'implémentation.
+2. Décidé le 2026-08-28 : la console d'administration passe **avant** l'enrichissement du portail
+   partenaire et avant le mode partenaire mobile. Piloter ce qui est déjà en production prime sur
+   l'ajout de surfaces.
