@@ -6,7 +6,7 @@ import {
   type FetchBaseQueryError,
 } from "@reduxjs/toolkit/query/react";
 import { adminTokenStorage } from "@/lib/adminStorage";
-import type { AdminMe, AuthTokens } from "@/types";
+import type { AdminFarmDetail, AdminFarmRow, AdminMe, AuthTokens } from "@/types";
 
 interface Envelope<T> {
   data: T;
@@ -73,7 +73,22 @@ export const adminApi = createApi({
       transformResponse: (r: Envelope<AdminMe>) => r.data,
       providesTags: ["AdminMe"],
     }),
+    getAdminFarms: build.query<AdminFarmRow[], { q?: string } | void>({
+      query: (args) => `/api/v1/admin/farms${args?.q ? `?q=${encodeURIComponent(args.q)}` : ""}`,
+      transformResponse: (r: Envelope<AdminFarmRow[]>) => r.data,
+      providesTags: ["AdminFarm"],
+    }),
+    getAdminFarm: build.query<AdminFarmDetail, { farmId: number }>({
+      query: ({ farmId }) => `/api/v1/admin/farms/${farmId}`,
+      transformResponse: (r: Envelope<AdminFarmDetail>) => r.data,
+      providesTags: ["AdminFarm"],
+    }),
   }),
 });
 
-export const { useAdminLoginMutation, useGetAdminMeQuery } = adminApi;
+export const {
+  useAdminLoginMutation,
+  useGetAdminMeQuery,
+  useGetAdminFarmsQuery,
+  useGetAdminFarmQuery,
+} = adminApi;
