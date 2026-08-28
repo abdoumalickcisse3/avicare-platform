@@ -12,6 +12,10 @@ import type {
   AdminMe,
   AdminUserRow,
   AuthTokens,
+  AdminInviteCode,
+  AdminPartnerMembership,
+  AdminPartnerRow,
+  AdminPartnerUser,
   FarmHealthRow,
   TemporaryPassword,
 } from "@/types";
@@ -98,6 +102,59 @@ export const adminApi = createApi({
       }),
       invalidatesTags: ["AdminFarm"],
     }),
+    getAdminPartners: build.query<AdminPartnerRow[], void>({
+      query: () => "/api/v1/admin/partners",
+      transformResponse: (r: Envelope<AdminPartnerRow[]>) => r.data,
+      providesTags: ["AdminPartner"],
+    }),
+    getAdminPartner: build.query<AdminPartnerRow, { partnerId: number }>({
+      query: ({ partnerId }) => `/api/v1/admin/partners/${partnerId}`,
+      transformResponse: (r: Envelope<AdminPartnerRow>) => r.data,
+      providesTags: ["AdminPartner"],
+    }),
+    getAdminPartnerFarms: build.query<AdminPartnerMembership[], { partnerId: number }>({
+      query: ({ partnerId }) => `/api/v1/admin/partners/${partnerId}/farms`,
+      transformResponse: (r: Envelope<AdminPartnerMembership[]>) => r.data,
+      providesTags: ["AdminPartner"],
+    }),
+    getAdminPartnerUsers: build.query<AdminPartnerUser[], { partnerId: number }>({
+      query: ({ partnerId }) => `/api/v1/admin/partners/${partnerId}/users`,
+      transformResponse: (r: Envelope<AdminPartnerUser[]>) => r.data,
+      providesTags: ["AdminPartner"],
+    }),
+    getAdminInviteCodes: build.query<AdminInviteCode[], { partnerId: number }>({
+      query: ({ partnerId }) => `/api/v1/admin/partners/${partnerId}/invite-codes`,
+      transformResponse: (r: Envelope<AdminInviteCode[]>) => r.data,
+      providesTags: ["AdminPartner"],
+    }),
+    detachPartnerFarm: build.mutation<void, { partnerId: number; membershipId: number }>({
+      query: ({ partnerId, membershipId }) => ({
+        url: `/api/v1/admin/partners/${partnerId}/farms/${membershipId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["AdminPartner"],
+    }),
+    setPartnerUserActive: build.mutation<void, { partnerId: number; partnerUserId: number; active: boolean }>({
+      query: ({ partnerId, partnerUserId, active }) => ({
+        url: `/api/v1/admin/partners/${partnerId}/users/${partnerUserId}/${active ? "activate" : "deactivate"}`,
+        method: "POST",
+      }),
+      invalidatesTags: ["AdminPartner"],
+    }),
+    resetPartnerUserPassword: build.mutation<{ temporaryPassword: string }, { partnerId: number; partnerUserId: number }>({
+      query: ({ partnerId, partnerUserId }) => ({
+        url: `/api/v1/admin/partners/${partnerId}/users/${partnerUserId}/reset-password`,
+        method: "POST",
+      }),
+      transformResponse: (r: Envelope<{ temporaryPassword: string }>) => r.data,
+    }),
+    revokeInviteCode: build.mutation<void, { partnerId: number; codeId: number }>({
+      query: ({ partnerId, codeId }) => ({
+        url: `/api/v1/admin/partners/${partnerId}/invite-codes/${codeId}/revoke`,
+        method: "POST",
+      }),
+      invalidatesTags: ["AdminPartner"],
+    }),
     getFarmsAtRisk: build.query<FarmHealthRow[], void>({
       query: () => "/api/v1/admin/health/farms-at-risk",
       transformResponse: (r: Envelope<FarmHealthRow[]>) => r.data,
@@ -136,6 +193,15 @@ export const {
   useGetAdminFarmQuery,
   useSetFarmModuleMutation,
   useGetFarmsAtRiskQuery,
+  useGetAdminPartnersQuery,
+  useGetAdminPartnerQuery,
+  useGetAdminPartnerFarmsQuery,
+  useGetAdminPartnerUsersQuery,
+  useGetAdminInviteCodesQuery,
+  useDetachPartnerFarmMutation,
+  useSetPartnerUserActiveMutation,
+  useResetPartnerUserPasswordMutation,
+  useRevokeInviteCodeMutation,
   useLazySearchAdminUsersQuery,
   useResetAdminUserPasswordMutation,
   useSetAdminUserActiveMutation,

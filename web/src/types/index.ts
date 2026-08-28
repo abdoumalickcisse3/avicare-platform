@@ -1521,3 +1521,46 @@ export interface FarmHealthRow {
   daysSinceLastEntry: number | null;
   reason: string;
 }
+
+export interface AdminPartnerRow {
+  id: number;
+  name: string;
+  type: string;
+  contactName: string | null;
+  contactPhone: string | null;
+  contactEmail: string | null;
+  logoUrl: string | null;
+  status: string;
+}
+
+export interface AdminPartnerMembership {
+  id: number;
+  partnerId: number;
+  farmId: number;
+  status: string;
+  origin: string;
+  shareActivity: boolean;
+  shareFlockHealth: boolean;
+  shareFeedConsumption: boolean;
+  shareSalesVolume: boolean;
+  shareFinances: boolean;
+  shareRestockForecast: boolean;
+}
+
+export interface AdminPartnerUser {
+  id: number;
+  partnerId: number;
+  email: string;
+  fullName: string | null;
+  active: boolean;
+  temporaryPassword?: string | null;
+}
+
+export interface AdminInviteCode {
+  id: number;
+  partnerId: number;
+  code: string;
+  active: boolean;
+  maxUses: number | null;
+  usesCount: number;
+}
