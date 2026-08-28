@@ -50,7 +50,7 @@ Ce qui manque = l'objet de ce design : la console elle-même (écrans + endpoint
 |---|---|---|
 | 1 | Périmètre | **Tout, par phases** (roadmap ci-dessous) |
 | 2 | Modèle de rôles | **Staff avec permissions fines** (sur le modèle des permissions membres). `SUPER_ADMIN` = toutes permissions implicites. On **sème un compte SUPER_ADMIN fondateur** en Phase 0, on ouvre la granularité ensuite. |
-| 3 | Emplacement | **Sous-domaine dédié `admin.jawdi.app`** (front séparé, cloisonné) |
+| 3 | Emplacement | **Sous-domaine dédié `admin.jawdi.app`**, servi par un **route-group `(admin)` dans `web/`** — *révisé le 2026-08-28, cf. §3bis* |
 | 4 | Impersonation | **Oui, encadrée** : token à portée réduite, durée limitée, bannière « Mode support », 100 % audité |
 | 5 | Sécurité back-office (« O ») | **Compromis léger en Phase 0** : révocation de sessions + audit des connexions staff. **2FA staff optionnel/activable plus tard** (pas un chantier maintenant). |
 | 6 | Ajouts au périmètre | **H** (anti-churn/health-score), **M** (conformité/droit à l'oubli), **I/J/L** (différenciateurs moyen terme) |
@@ -59,9 +59,9 @@ Ce qui manque = l'objet de ce design : la console elle-même (écrans + endpoint
 
 ## 3. Architecture d'ensemble
 
-**Frontend** — nouvelle app `admin.jawdi.app`, isolée du code tenant (surface d'attaque
-cloisonnée, cookies séparés). Réutilise la stack web existante (Next.js + MUI + RTK Query) mais en
-projet/déploiement séparé. Login réservé aux comptes staff. Routing Caddy dédié.
+**Frontend** — `admin.jawdi.app`, servi par un **route-group `(admin)` dans le projet `web/`
+existant** (révisé — la version initiale prévoyait un projet Next séparé, cf. §3bis). Login
+réservé aux comptes staff, routing Caddy dédié.
 
 **Backend** — pas de nouveau service : des endpoints `/api/v1/admin/**` dans l'app existante,
 protégés par un gate `AdminAccess` (réutilise `@PreAuthorize` + le principal JWT). Chaque endpoint
@@ -77,6 +77,34 @@ exige une permission staff précise.
 que possible (comme l'assistant IA l'est déjà), pour éviter de dupliquer la logique métier. On
 n'ajoute de nouveaux services que pour le transverse (audit, permissions staff, impersonation,
 health-score, cockpit d'agrégats).
+
+### 3bis. Révision 2026-08-28 — front intégré, et audit réellement global
+
+**Le front séparé est abandonné.** Le cloisonnement invoqué (« surface d'attaque cloisonnée,
+cookies séparés ») n'existe pas dans cette architecture : il n'y a **pas de cookie de session** —
+les tokens vivent en `localStorage`, qui est **déjà cloisonné par origine**. `admin.jawdi.app` et
+`app.jawdi.app` ne partagent rien, même servis par le même conteneur. Et l'autorisation est à
+100 % backend : un attaquant détenant un token staff n'a besoin d'aucun front, il fait `curl`.
+
+En face, un second projet Next coûte ~45 dépendances dupliquées, un 4ᵉ workflow CI, une 4ᵉ image,
+un conteneur de plus sur un VPS qui en porte déjà six, et une **dette de dérive permanente** du
+design system pour un développeur solo.
+
+Le patron existe déjà et tourne en production : `partner.jawdi.app` n'est **pas** un projet
+séparé, c'est un route-group `(partner)` dans `web/`, avec son propre token store
+(`partnerStorage.ts`) et son propre `createApi` (`partnerApi.ts`). La console le clone :
+`adminStorage.ts`, `adminApi.ts`, garde de route, et un `middleware.ts` qui renvoie **404 sur
+`/console/**` quand le host n'est pas `admin.<domaine>`` — c'est là qu'est le durcissement réel.
+
+Chemin `/console` et non `/admin`, pour éviter toute collision avec le préfixe d'API
+`/api/v1/admin` dans les règles Caddy.
+
+**L'audit doit couvrir plus que `/api/v1/admin/**`.** `FarmAccessChecker` accorde l'accès à tout
+principal `ADMIN` sur toute ferme (« Platform admins bypass every check », l.38), et `FeatureChecker`
+fait de même sur le gating. Un compte staff peut donc lire et écrire n'importe quelle ferme **par
+l'API tenant ordinaire**. N'auditer que les endpoints admin rendrait l'invariant du §3 faux par
+construction. Décision : un **interceptor global** journalise toute requête non-GET portée par un
+principal `ADMIN`, quel que soit le chemin, en plus des appels explicites à `AdminAuditService`.
 
 ---
 
@@ -211,7 +239,13 @@ Le travail est donc surtout une **surface**, plus quelques manques ciblés côt�
 - **Upload du logo** : `logoUrl` est une URL saisie à la main ; aucun stockage de fichier
   n'existe sur la plateforme. À trancher (URL externe assumée vs premier stockage d'objets).
 
-### 6bis.3 « Prospects partenaires » — le recrutement par la donnée
+### 6bis.3 « Prospects partenaires » — le recrutement par la donnée *(reporté hors Phase 1)*
+
+> **Reporté le 2026-08-28.** L'idée est conservée, sa construction non : elle exige de croiser
+> `suppliers` (contexte livestock) avec `partners` — donc une extension de façade ou une entorse
+> DDD — plus un écran, et la manipulation de données d'éleveurs sensibles. Pour 3 lignes de
+> résultat aujourd'hui. À rouvrir vers 50 fermes, comme le dit déjà le paragraphe de vérification
+> ci-dessous.
 
 **L'idée vient d'un constat de terrain : le fournisseur d'un éleveur n'est pas forcément inscrit
 sur la plateforme.** C'est vrai, et c'est exploitable.
