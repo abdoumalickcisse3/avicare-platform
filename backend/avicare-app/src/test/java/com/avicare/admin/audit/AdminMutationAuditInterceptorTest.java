@@ -37,7 +37,12 @@ class AdminMutationAuditInterceptorTest {
   }
 
   private void authenticate(Long userId, UserRole role) {
-    AvicarePrincipal principal = new AvicarePrincipal(userId, "u@jawdi.app", role, List.of());
+    authenticate(userId, role, null);
+  }
+
+  private void authenticate(Long userId, UserRole role, Long impersonatedBy) {
+    AvicarePrincipal principal =
+        new AvicarePrincipal(userId, "u@jawdi.app", role, List.of(), impersonatedBy);
     var auth = new UsernamePasswordAuthenticationToken(principal.email(), null, List.of());
     auth.setDetails(principal);
     SecurityContextHolder.getContext().setAuthentication(auth);
@@ -100,6 +105,26 @@ class AdminMutationAuditInterceptorTest {
     run(request("GET", "/api/v1/farms/8", "/api/v1/farms/{farmId}", "8"), 200);
 
     verify(auditService, never()).record(anyLong(), anyString(), any(), any(), any(), any());
+  }
+
+  @Test
+  void tracesASupportSessionUnderTheStaffMemberNotTheFarmer() {
+    // A support token carries role=USER: checking isAdmin alone would leave every action taken
+    // during a support session untraced — exactly the ones that most need a trail.
+    authenticate(7L, UserRole.USER, STAFF_ID);
+
+    run(request("POST", "/api/v1/farms/8/sales", "/api/v1/farms/{farmId}/sales", "8"), 201);
+
+    ArgumentCaptor<Map<String, Object>> metadata = ArgumentCaptor.captor();
+    verify(auditService)
+        .record(
+            org.mockito.ArgumentMatchers.eq(STAFF_ID),
+            anyString(),
+            anyString(),
+            any(),
+            org.mockito.ArgumentMatchers.eq(8L),
+            metadata.capture());
+    assertThat(metadata.getValue()).containsEntry("impersonating", 7L);
   }
 
   @Test
