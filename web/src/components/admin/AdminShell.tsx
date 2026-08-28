@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Box, Button, Chip, Stack, Typography } from "@mui/material";
-import { Building2, HeartPulse, LogOut, ShieldCheck, Users } from "lucide-react";
+import { Building2, Handshake, HeartPulse, LogOut, ShieldCheck, Users } from "lucide-react";
 import { useGetAdminMeQuery } from "@/store/api/adminApi";
 import { adminTokenStorage } from "@/lib/adminStorage";
 import { colors } from "@/theme/tokens";
@@ -21,6 +21,7 @@ const NAV: NavEntry[] = [
   { href: "/console/fermes", label: "Fermes", icon: Building2, permission: "tenants:read" },
   { href: "/console/utilisateurs", label: "Utilisateurs", icon: Users, permission: "users:read" },
   { href: "/console/sante", label: "Santé", icon: HeartPulse, permission: "tenants:read" },
+  { href: "/console/partenaires", label: "Partenaires", icon: Handshake, permission: "partners:read" },
 ];
 
 function holds(permissions: string[], required: string): boolean {
