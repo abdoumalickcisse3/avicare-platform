@@ -6,7 +6,9 @@ import com.avicare.livestock.api.dto.LivestockStats;
 import com.avicare.livestock.api.dto.PoultryBreedLite;
 import com.avicare.livestock.api.dto.ProductionUnitInfo;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Public contract of the livestock bounded context (doc 03 §4). Transverse business contexts read
@@ -17,6 +19,15 @@ public interface LivestockFacade {
   List<ProductionUnitInfo> listFarmUnits(Long farmId);
 
   long countActiveUnits(Long farmId);
+
+  /**
+   * Most recent livestock activity per farm, in one query, for the platform-wide support views.
+   * Farms with no activity are absent from the map rather than mapped to a zero date.
+   */
+  Map<Long, LocalDateTime> lastActivityByFarm(List<Long> farmIds);
+
+  /** Active production units per farm, in one query. */
+  Map<Long, Long> activeUnitCountByFarm(List<Long> farmIds);
 
   /**
    * Active layer flocks of {@code farmId}: POULTRY units that are NOT broiler batches (a layer lot

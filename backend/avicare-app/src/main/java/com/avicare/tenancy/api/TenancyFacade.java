@@ -3,6 +3,7 @@ package com.avicare.tenancy.api;
 import com.avicare.tenancy.api.dto.FarmInfo;
 import com.avicare.tenancy.api.dto.UserFarmInfo;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -21,6 +22,15 @@ public interface TenancyFacade {
 
   /** Ids of all farms (non-soft-deleted) — for the daily notification scan (Sprint C1). */
   List<Long> listAllFarmIds();
+
+  /**
+   * Every farm on the platform, in one query. Used by the back-office directory: fetching them one
+   * by one from {@link #findById} would be an N+1 over the whole tenant base.
+   */
+  List<FarmInfo> listAllFarms();
+
+  /** Member count per farm, in one query — same reason. */
+  Map<Long, Long> memberCountByFarm(List<Long> farmIds);
 
   /** User ids of the active members of a farm — notification/WhatsApp recipients (Sprint C1). */
   List<Long> listMemberUserIds(Long farmId);

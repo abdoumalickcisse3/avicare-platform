@@ -34,8 +34,11 @@ import com.avicare.livestock.repository.TreatmentExecutedRepository;
 import com.avicare.livestock.repository.VaccinationRepository;
 import com.avicare.livestock.repository.WeighingSampleRepository;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -230,6 +233,36 @@ public class LivestockFacadeImpl implements LivestockFacade {
       // EGGS
       eggTrayStockService.adjustStock(farmId, (int) qty, 0);
     }
+  }
+
+  // ── Platform-wide batches (back-office support views) ───────────────────
+
+  @Override
+  @Transactional(readOnly = true)
+  public Map<Long, LocalDateTime> lastActivityByFarm(List<Long> farmIds) {
+    if (farmIds == null || farmIds.isEmpty()) {
+      return Map.of();
+    }
+    Map<Long, LocalDateTime> out = new HashMap<>();
+    for (Object[] row : lifecycleEventRepository.findLastEventPerFarm(farmIds)) {
+      if (row[0] != null && row[1] != null) {
+        out.put((Long) row[0], (LocalDateTime) row[1]);
+      }
+    }
+    return out;
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Map<Long, Long> activeUnitCountByFarm(List<Long> farmIds) {
+    if (farmIds == null || farmIds.isEmpty()) {
+      return Map.of();
+    }
+    Map<Long, Long> out = new HashMap<>();
+    for (Long farmId : farmIds) {
+      out.put(farmId, productionUnitRepository.countActiveByFarmId(farmId));
+    }
+    return out;
   }
 
   // ── Batch cycles (partner « Développer ») ───────────────────────────────

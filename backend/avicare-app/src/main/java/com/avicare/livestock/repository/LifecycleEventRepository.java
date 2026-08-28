@@ -67,4 +67,16 @@ public interface LifecycleEventRepository extends JpaRepository<LifecycleEvent, 
           + "AND e.eventType IN :types ORDER BY e.occurredAt DESC")
   List<LifecycleEvent> findRecentByFarmAndTypes(
       @Param("farmId") Long farmId, @Param("types") Collection<String> types, Pageable pageable);
+
+  /**
+   * Most recent event per farm, in ONE query. The platform-wide support views list every farm at
+   * once, so asking farm by farm would be an N+1 over the whole tenant base.
+   *
+   * <p>Each row is {@code [farmId, occurredAt]}.
+   */
+  @Query(
+      "SELECT u.farmId, MAX(e.occurredAt) FROM LifecycleEvent e, ProductionUnit u "
+          + "WHERE e.productionUnitId = u.id AND u.farmId IN :farmIds "
+          + "GROUP BY u.farmId")
+  List<Object[]> findLastEventPerFarm(@Param("farmIds") Collection<Long> farmIds);
 }

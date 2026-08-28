@@ -8,7 +8,9 @@ import com.avicare.tenancy.domain.UserFarm;
 import com.avicare.tenancy.mapper.TenancyMapper;
 import com.avicare.tenancy.repository.FarmRepository;
 import com.avicare.tenancy.repository.UserFarmRepository;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -42,6 +44,25 @@ public class TenancyFacadeImpl implements TenancyFacade {
   @Override
   public List<Long> listAllFarmIds() {
     return farmRepository.findAllIds();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<FarmInfo> listAllFarms() {
+    return farmRepository.findAll().stream().map(tenancyMapper::toInfo).toList();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Map<Long, Long> memberCountByFarm(List<Long> farmIds) {
+    if (farmIds == null || farmIds.isEmpty()) {
+      return Map.of();
+    }
+    Map<Long, Long> out = new HashMap<>();
+    for (Long farmId : farmIds) {
+      out.put(farmId, (long) userFarmRepository.findByFarmIdAndActiveTrue(farmId).size());
+    }
+    return out;
   }
 
   @Override
