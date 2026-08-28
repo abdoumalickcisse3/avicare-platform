@@ -90,6 +90,13 @@ export const adminApi = createApi({
       transformResponse: (r: Envelope<AdminFarmDetail>) => r.data,
       providesTags: ["AdminFarm"],
     }),
+    setFarmModule: build.mutation<void, { farmId: number; moduleKey: string; enabled: boolean }>({
+      query: ({ farmId, moduleKey, enabled }) => ({
+        url: `/api/v1/admin/farms/${farmId}/modules/${moduleKey}`,
+        method: enabled ? "POST" : "DELETE",
+      }),
+      invalidatesTags: ["AdminFarm"],
+    }),
     searchAdminUsers: build.query<AdminUserRow[], { q: string }>({
       query: ({ q }) => `/api/v1/admin/users?q=${encodeURIComponent(q)}`,
       transformResponse: (r: Envelope<AdminUserRow[]>) => r.data,
@@ -121,6 +128,7 @@ export const {
   useGetAdminMeQuery,
   useGetAdminFarmsQuery,
   useGetAdminFarmQuery,
+  useSetFarmModuleMutation,
   useLazySearchAdminUsersQuery,
   useResetAdminUserPasswordMutation,
   useSetAdminUserActiveMutation,

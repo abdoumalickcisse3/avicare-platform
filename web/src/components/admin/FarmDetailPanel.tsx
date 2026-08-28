@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, Card, CardContent, Chip, Stack, Typography } from "@mui/material";
-import { useGetAdminFarmQuery } from "@/store/api/adminApi";
+import { useGetAdminFarmQuery, useGetAdminMeQuery, useSetFarmModuleMutation } from "@/store/api/adminApi";
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "Jamais";
@@ -28,8 +28,27 @@ function Stat({ label, value }: { label: string; value: string | number }) {
 }
 
 /** The 360° sheet: who is on the farm, what it has enabled, and who else can see it. */
+/** Modules a staff member can toggle. Mirrors the platform's V1 module keys. */
+const TOGGLEABLE_MODULES = [
+  "poultry.broiler",
+  "poultry.layer",
+  "health.basic",
+  "inventory",
+  "commercial",
+  "finance",
+];
+
+function holds(permissions: string[], required: string): boolean {
+  if (permissions.includes("*") || permissions.includes(required)) return true;
+  const c = required.indexOf(":");
+  return c > 0 && permissions.includes(`${required.slice(0, c)}:*`);
+}
+
 export function FarmDetailPanel({ farmId }: { farmId: number }) {
   const { data: farm, isLoading } = useGetAdminFarmQuery({ farmId });
+  const { data: me } = useGetAdminMeQuery();
+  const [setModule] = useSetFarmModuleMutation();
+  const canWrite = holds(me?.permissions ?? [], "tenants:write");
 
   if (isLoading) return null;
   if (!farm) {
@@ -68,16 +87,29 @@ export function FarmDetailPanel({ farmId }: { farmId: number }) {
           <Typography variant="h6" sx={{ fontWeight: 600, mb: 1.5 }}>
             Modules activés
           </Typography>
-          {farm.enabledModules.length === 0 ? (
-            <Typography variant="body2" color="text.secondary">
-              Aucun module activé.
+          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+            {TOGGLEABLE_MODULES.map((m) => {
+              const enabled = farm.enabledModules.includes(m);
+              return (
+                <Chip
+                  key={m}
+                  size="small"
+                  label={m}
+                  color={enabled ? "success" : "default"}
+                  variant={enabled ? "filled" : "outlined"}
+                  onClick={
+                    canWrite
+                      ? () => setModule({ farmId, moduleKey: m, enabled: !enabled })
+                      : undefined
+                  }
+                />
+              );
+            })}
+          </Box>
+          {!canWrite && (
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
+              Lecture seule — permission tenants:write requise.
             </Typography>
-          ) : (
-            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-              {farm.enabledModules.map((m) => (
-                <Chip key={m} size="small" label={m} />
-              ))}
-            </Box>
           )}
         </CardContent>
       </Card>
