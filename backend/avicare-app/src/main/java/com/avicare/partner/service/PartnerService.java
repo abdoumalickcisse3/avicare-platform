@@ -1,6 +1,7 @@
 package com.avicare.partner.service;
 
 import com.avicare.common.api.exception.NotFoundException;
+import com.avicare.common.security.util.TemporaryPasswordGenerator;
 import com.avicare.partner.domain.Partner;
 import com.avicare.partner.domain.PartnerInviteCode;
 import com.avicare.partner.domain.PartnerStatus;
@@ -34,6 +35,7 @@ public class PartnerService {
   private final PartnerInviteCodeRepository inviteCodeRepository;
   private final PartnerUserRepository partnerUserRepository;
   private final PasswordEncoder passwordEncoder;
+  private final PartnerRefreshTokenService refreshTokenService;
 
   @Transactional
   public Partner create(
@@ -149,5 +151,59 @@ public class PartnerService {
       candidate = sb.toString();
     } while (inviteCodeRepository.findByCode(candidate).isPresent());
     return candidate;
+  }
+
+  /** Portal accounts of a partner, for the back-office. */
+  @Transactional(readOnly = true)
+  public List<PartnerUser> listPartnerUsers(Long partnerId) {
+    return partnerUserRepository.findByPartnerId(partnerId);
+  }
+
+  /**
+   * Enable or disable a portal account. Disabling revokes every session in the same transaction:
+   * otherwise a salesperson who left a feed supplier keeps their access until the refresh token
+   * expires.
+   */
+  @Transactional
+  public PartnerUser setPartnerUserActive(Long partnerUserId, boolean active) {
+    PartnerUser user =
+        partnerUserRepository
+            .findById(partnerUserId)
+            .orElseThrow(() -> NotFoundException.of("PartnerUser", partnerUserId));
+    user.setActive(active);
+    if (!active) {
+      refreshTokenService.revokeAllForPartnerUser(partnerUserId);
+    }
+    return user;
+  }
+
+  /** Issue a new temporary password and drop every existing session. */
+  @Transactional
+  public String resetPartnerUserPassword(Long partnerUserId) {
+    PartnerUser user =
+        partnerUserRepository
+            .findById(partnerUserId)
+            .orElseThrow(() -> NotFoundException.of("PartnerUser", partnerUserId));
+    String temporary = TemporaryPasswordGenerator.generate();
+    user.setPasswordHash(passwordEncoder.encode(temporary));
+    refreshTokenService.revokeAllForPartnerUser(partnerUserId);
+    return temporary;
+  }
+
+  /** Invite codes of a partner, including the revoked ones (the history matters). */
+  @Transactional(readOnly = true)
+  public List<PartnerInviteCode> listInviteCodes(Long partnerId) {
+    return inviteCodeRepository.findByPartnerId(partnerId);
+  }
+
+  /** Revoke an invite code. Kept as a row: a code that circulated is worth remembering. */
+  @Transactional
+  public PartnerInviteCode revokeInviteCode(Long codeId) {
+    PartnerInviteCode code =
+        inviteCodeRepository
+            .findById(codeId)
+            .orElseThrow(() -> NotFoundException.of("PartnerInviteCode", codeId));
+    code.setActive(false);
+    return inviteCodeRepository.save(code);
   }
 }

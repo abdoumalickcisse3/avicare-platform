@@ -8,6 +8,7 @@ import com.avicare.partner.dto.request.PartnerLoginRequest;
 import com.avicare.partner.dto.response.PartnerAuthTokens;
 import com.avicare.partner.exception.PartnerAuthException;
 import com.avicare.partner.repository.PartnerUserRepository;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,8 @@ public class PartnerAuthService {
     if (!user.isActive() || !passwordEncoder.matches(request.password(), user.getPasswordHash())) {
       throw new PartnerAuthException("Invalid credentials");
     }
+    // The only signal that says whether a signed partner actually uses the portal.
+    user.setLastLoginAt(LocalDateTime.now());
     return issue(user);
   }
 

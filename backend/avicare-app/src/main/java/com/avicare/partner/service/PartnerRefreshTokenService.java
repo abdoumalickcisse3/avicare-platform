@@ -71,6 +71,21 @@ public class PartnerRefreshTokenService {
             });
   }
 
+  /**
+   * Revoke every session of a partner account. Without it, disabling an account would leave the
+   * person signed in until their refresh token expires — the exact window that matters when a
+   * salesperson leaves a feed supplier.
+   */
+  @Transactional
+  public void revokeAllForPartnerUser(Long partnerUserId) {
+    LocalDateTime now = LocalDateTime.now();
+    for (PartnerRefreshToken row :
+        repository.findByPartnerUserIdAndRevokedAtIsNull(partnerUserId)) {
+      row.setRevokedAt(now);
+      repository.save(row);
+    }
+  }
+
   /** SHA-256 hex digest — the only form of a refresh token that ever reaches the database. */
   private static String hash(String raw) {
     try {
