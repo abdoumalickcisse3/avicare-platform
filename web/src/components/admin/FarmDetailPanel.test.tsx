@@ -4,12 +4,20 @@ import { renderWithProviders } from "@/test/render";
 import { adminTokenStorage } from "@/lib/adminStorage";
 import { FarmDetailPanel } from "./FarmDetailPanel";
 
-function mockFarm(over: Record<string, unknown> = {}) {
+function mockFarm(over: Record<string, unknown> = {}, permissions: string[] = ["*"]) {
   vi.stubGlobal(
     "fetch",
-    vi.fn(
-      async () =>
-        new Response(
+    vi.fn(async (input: RequestInfo | URL) => {
+      const url = input instanceof Request ? input.url : String(input);
+      if (url.includes("/admin/me")) {
+        return new Response(
+          JSON.stringify({
+            data: { userId: 1, email: "s@x.io", fullName: "S", permissions, superAdmin: false },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      }
+      return new Response(
           JSON.stringify({
             data: {
               farmId: 8,
@@ -26,9 +34,9 @@ function mockFarm(over: Record<string, unknown> = {}) {
               ...over,
             },
           }),
-          { status: 200, headers: { "Content-Type": "application/json" } },
-        ),
-    ),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }),
   );
 }
 
@@ -53,6 +61,21 @@ describe("FarmDetailPanel", () => {
     renderWithProviders(<FarmDetailPanel farmId={8} />);
 
     expect(await screen.findByText(/n'a rejoint aucun réseau/)).toBeInTheDocument();
+  });
+
+  it("marks the modules the farm has enabled", async () => {
+    mockFarm({ enabledModules: ["commercial"] });
+    renderWithProviders(<FarmDetailPanel farmId={8} />);
+
+    expect(await screen.findByText("commercial")).toBeInTheDocument();
+    expect(screen.getByText("finance")).toBeInTheDocument();
+  });
+
+  it("is read-only without tenants:write", async () => {
+    mockFarm({}, ["tenants:read"]);
+    renderWithProviders(<FarmDetailPanel farmId={8} />);
+
+    expect(await screen.findByText(/Lecture seule/)).toBeInTheDocument();
   });
 
   it("lists the partner networks the farm belongs to", async () => {
