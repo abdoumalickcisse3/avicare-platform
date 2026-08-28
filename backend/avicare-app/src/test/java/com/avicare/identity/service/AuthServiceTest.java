@@ -73,6 +73,9 @@ class AuthServiceTest {
     IdentityMapper mapper = Mappers.getMapper(IdentityMapper.class);
     // No-membership provider: A3-2 token-shape behavior is unchanged by tenancy.
     MembershipProvider membershipProvider = userId -> java.util.List.of();
+    // No admin context in this slice: staff sign-ins have nowhere to be traced, which is the
+    // no-op seam's whole purpose.
+    com.avicare.identity.spi.StaffLoginAuditor staffLoginAuditor = (userId, email) -> {};
     authService =
         new AuthService(
             userRepository,
@@ -80,6 +83,7 @@ class AuthServiceTest {
             jwtService,
             jwtProperties,
             ENCODER,
+            staffLoginAuditor,
             mapper,
             membershipProvider);
   }
