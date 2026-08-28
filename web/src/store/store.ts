@@ -1,6 +1,7 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { baseApi } from "./api/baseApi";
 import { partnerApi } from "./api/partnerApi";
+import { adminApi } from "./api/adminApi";
 import authReducer from "./slices/authSlice";
 import uiReducer from "./slices/uiSlice";
 
@@ -9,10 +10,11 @@ export const makeStore = () =>
     reducer: {
       [baseApi.reducerPath]: baseApi.reducer,
       [partnerApi.reducerPath]: partnerApi.reducer,
+      [adminApi.reducerPath]: adminApi.reducer,
       auth: authReducer,
       ui: uiReducer,
     },
-    middleware: (getDefault) => getDefault().concat(baseApi.middleware, partnerApi.middleware),
+    middleware: (getDefault) => getDefault().concat(baseApi.middleware, partnerApi.middleware, adminApi.middleware),
   });
 
 export const store = makeStore();
