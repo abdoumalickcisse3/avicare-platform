@@ -1455,3 +1455,14 @@ export interface PartnerAlert {
   body: string | null;
   createdAt: string;
 }
+
+// --- Platform back-office (super-admin console) ---
+
+/** The signed-in staff member. The console builds its navigation from `permissions`. */
+export interface AdminMe {
+  userId: number;
+  email: string;
+  fullName: string | null;
+  permissions: string[];
+  superAdmin: boolean;
+}

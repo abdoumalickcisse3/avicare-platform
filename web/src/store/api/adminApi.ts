@@ -1,0 +1,79 @@
+import {
+  createApi,
+  fetchBaseQuery,
+  type BaseQueryFn,
+  type FetchArgs,
+  type FetchBaseQueryError,
+} from "@reduxjs/toolkit/query/react";
+import { adminTokenStorage } from "@/lib/adminStorage";
+import type { AdminMe, AuthTokens } from "@/types";
+
+interface Envelope<T> {
+  data: T;
+}
+
+const rawBaseQuery = fetchBaseQuery({
+  baseUrl:
+    process.env.NEXT_PUBLIC_API_URL ||
+    (process.env.NODE_ENV === "production" ? "" : "http://localhost:8080"),
+  prepareHeaders: (headers) => {
+    const token = adminTokenStorage.getAccess();
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    return headers;
+  },
+});
+
+/**
+ * On a 401, refresh once against the shared auth endpoint and retry; on failure purge the staff
+ * token and return to the console login.
+ *
+ * A standalone `createApi`, never `injectEndpoints` on `baseApi`: sharing the slice would send the
+ * farmer token to back-office routes and the staff token to tenant routes. Same reasoning as
+ * `partnerApi`.
+ */
+const baseQueryWithReauth: BaseQueryFn<
+  string | FetchArgs,
+  unknown,
+  FetchBaseQueryError
+> = async (args, api, extraOptions) => {
+  const result = await rawBaseQuery(args, api, extraOptions);
+
+  if (result.error?.status === 401) {
+    const refreshToken = adminTokenStorage.getRefresh();
+    if (refreshToken) {
+      const refresh = await rawBaseQuery(
+        { url: "/api/v1/auth/refresh", method: "POST", body: { refreshToken } },
+        api,
+        extraOptions,
+      );
+      const data = (refresh.data as { data?: AuthTokens })?.data;
+      if (data?.accessToken) {
+        adminTokenStorage.set(data.accessToken, data.refreshToken);
+        return rawBaseQuery(args, api, extraOptions);
+      }
+    }
+    adminTokenStorage.clear();
+    if (typeof window !== "undefined") window.location.href = "/console/login";
+  }
+  return result;
+};
+
+export const adminApi = createApi({
+  reducerPath: "adminApi",
+  baseQuery: baseQueryWithReauth,
+  tagTypes: ["AdminMe", "AdminFarm", "AdminUser", "AdminPartner"],
+  endpoints: (build) => ({
+    /** Staff sign-in reuses the ordinary auth endpoint; the console then checks /admin/me. */
+    adminLogin: build.mutation<AuthTokens, { email: string; password: string }>({
+      query: (body) => ({ url: "/api/v1/auth/login", method: "POST", body }),
+      transformResponse: (r: Envelope<AuthTokens>) => r.data,
+    }),
+    getAdminMe: build.query<AdminMe, void>({
+      query: () => "/api/v1/admin/me",
+      transformResponse: (r: Envelope<AdminMe>) => r.data,
+      providesTags: ["AdminMe"],
+    }),
+  }),
+});
+
+export const { useAdminLoginMutation, useGetAdminMeQuery } = adminApi;

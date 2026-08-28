@@ -3,8 +3,9 @@
 #   {$DOMAIN}, www.{$DOMAIN}  -> landing (Astro vitrine)
 #   app.{$DOMAIN}            -> web (Next.js dashboard) + backend (/api, actuator…)
 #   partner.{$DOMAIN}        -> same web container, partner portal (/portal) + backend
+#   admin.{$DOMAIN}          -> same web container, platform back-office (/console) + backend
 #
-# Requires public DNS A/AAAA for all four names -> this VPS, ports 80/443 open.
+# Requires public DNS A/AAAA for all five names -> this VPS, ports 80/443 open.
 # If Cloudflare is in front, use DNS-only (grey cloud) for the first certs,
 # then optionally enable the orange-cloud proxy (Full/strict). See DEPLOY.md.
 
@@ -41,6 +42,24 @@ partner.{$DOMAIN} {
 	}
 
 	# Everything else -> Next.js web app (the (partner) route group serves /portal).
+	handle {
+		reverse_proxy web:3000
+	}
+}
+
+# --- Platform back-office (super-admin console), same containers, own subdomain ---
+# The Next middleware 404s /console/** on any other host, so the console is not even
+# discoverable from the farmer app or the partner portal.
+admin.{$DOMAIN} {
+	encode zstd gzip
+
+	# Backend: REST API, actuator, OpenAPI/Swagger.
+	@backend path /api/* /actuator/* /v3/api-docs* /swagger-ui*
+	handle @backend {
+		reverse_proxy backend:8080
+	}
+
+	# Everything else -> Next.js web app (the (admin) route group serves /console).
 	handle {
 		reverse_proxy web:3000
 	}
