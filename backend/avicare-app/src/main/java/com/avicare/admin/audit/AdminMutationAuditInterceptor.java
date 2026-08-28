@@ -24,6 +24,9 @@ import org.springframework.web.servlet.HandlerMapping;
  * the spec's invariant — every super-admin action is traced — false by construction, and would give
  * the console an assurance it does not have.
  *
+ * <p>It also covers support sessions: an impersonation token carries {@code role=USER}, so the
+ * actor is read from {@code effectiveActorId()} and the entry names the farmer being acted as.
+ *
  * <p>Runs {@code afterCompletion} so the recorded status reflects what actually happened: a refused
  * or failed attempt is as worth tracing as a successful one. Explicit {@link AdminAuditService}
  * calls in the admin endpoints stay on top of this, because a generic "PATCH /api/v1/farms/{id}" is
@@ -44,7 +47,10 @@ public class AdminMutationAuditInterceptor implements HandlerInterceptor {
       return;
     }
     AvicarePrincipal principal = currentPrincipal();
-    if (principal == null || !principal.isAdmin()) {
+    // Staff acting as themselves, OR staff acting as a farmer: a support token carries role=USER,
+    // so checking isAdmin alone would leave every action taken during a support session untraced —
+    // exactly the ones that most need a trail.
+    if (principal == null || (!principal.isAdmin() && !principal.isImpersonation())) {
       return;
     }
 
@@ -53,9 +59,13 @@ public class AdminMutationAuditInterceptor implements HandlerInterceptor {
     metadata.put("method", request.getMethod());
     metadata.put("path", request.getRequestURI());
     metadata.put("status", response.getStatus());
+    if (principal.isImpersonation()) {
+      // Otherwise the entry would read as the farmer's own action.
+      metadata.put("impersonating", principal.userId());
+    }
 
     auditService.record(
-        principal.userId(),
+        principal.effectiveActorId(),
         "staff." + request.getMethod().toLowerCase() + " " + pattern,
         "HttpRequest",
         null,
