@@ -22,6 +22,9 @@ class PermissionCatalogControllerTest {
 
   @Autowired private MockMvc mockMvc;
 
+  /** The global audit interceptor is a WebMvcConfigurer, so every @WebMvcTest slice loads it. */
+  @MockitoBean private com.avicare.admin.service.AdminAuditService adminAuditService;
+
   /** JwtFilter (picked up by @WebMvcTest as a Filter component) needs JwtService to instantiate. */
   @MockitoBean private JwtService jwtService;
 

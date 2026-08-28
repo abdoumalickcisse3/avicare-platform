@@ -25,10 +25,13 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
- * Slice test for {@link AdminPartnerController}'s ADMIN gate. Imports {@link SecurityConfig} so
- * {@code @EnableMethodSecurity} enforces {@code @PreAuthorize("hasRole('ADMIN')")}. The list
- * endpoint is used because it does not touch {@code TenancyContext} (which is only populated by a
- * real JWT via the filter). Services are mocked.
+ * Slice test for {@link AdminPartnerController}'s staff gate. Imports {@link SecurityConfig} so
+ * {@code @EnableMethodSecurity} enforces the per-method
+ * {@code @PreAuthorize("@adminAccess.can(…)")}.
+ *
+ * <p>The gate bean is mocked <b>by its SpEL name</b> so the slice verifies the wiring — that the
+ * annotation resolves to the bean and that a refusal becomes a 403. The gate's own logic
+ * (wildcards, staff marker, fail-closed) is covered by {@code StaffAccessCheckerTest}.
  */
 @WebMvcTest(AdminPartnerController.class)
 @Import(SecurityConfig.class)
@@ -40,25 +43,42 @@ class AdminPartnerControllerTest {
   @MockitoBean private JwtService jwtService;
 
   @MockitoBean private PartnerService partnerService;
+
+  /** The global audit interceptor is a WebMvcConfigurer, so every @WebMvcTest slice loads it. */
+  @MockitoBean private com.avicare.admin.service.AdminAuditService adminAuditService;
+
   @MockitoBean private PartnerNetworkService partnerNetworkService;
+
+  /** Mocked under its SpEL name: @PreAuthorize looks the gate up by bean name, not by type. */
+  @MockitoBean(name = "adminAccess")
+  private com.avicare.admin.access.StaffAccessChecker adminAccess;
+
+  private void grant(boolean allowed) {
+    when(adminAccess.can(org.mockito.ArgumentMatchers.anyString())).thenReturn(allowed);
+  }
 
   @Test
   @WithMockUser(roles = "ADMIN")
-  void listPartnersReturns200ForAdmin() throws Exception {
+  void listPartnersReturns200WithTheReadPermission() throws Exception {
+    grant(true);
     when(partnerService.list()).thenReturn(List.of());
 
     mockMvc.perform(get("/api/v1/admin/partners")).andExpect(status().isOk());
   }
 
   @Test
-  @WithMockUser(roles = "USER")
-  void listPartnersReturns403ForNonAdmin() throws Exception {
+  @WithMockUser(roles = "ADMIN")
+  void listPartnersReturns403WithoutThePermission() throws Exception {
+    // Being platform staff is no longer enough on its own: the permission decides.
+    grant(false);
+
     mockMvc.perform(get("/api/v1/admin/partners")).andExpect(status().isForbidden());
   }
 
   @Test
   @WithMockUser(roles = "ADMIN")
   void patchSetsTheLogoWithoutTouchingTheOmittedFields() throws Exception {
+    grant(true);
     Partner updated = new Partner();
     updated.setId(3L);
     updated.setName("Provende du Sahel");
@@ -82,8 +102,9 @@ class AdminPartnerControllerTest {
   }
 
   @Test
-  @WithMockUser(roles = "USER")
-  void patchReturns403ForNonAdmin() throws Exception {
+  @WithMockUser(roles = "ADMIN")
+  void patchReturns403WithoutThePermission() throws Exception {
+    grant(false);
     mockMvc
         .perform(
             patch("/api/v1/admin/partners/3")
