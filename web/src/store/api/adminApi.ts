@@ -6,7 +6,14 @@ import {
   type FetchBaseQueryError,
 } from "@reduxjs/toolkit/query/react";
 import { adminTokenStorage } from "@/lib/adminStorage";
-import type { AdminFarmDetail, AdminFarmRow, AdminMe, AuthTokens } from "@/types";
+import type {
+  AdminFarmDetail,
+  AdminFarmRow,
+  AdminMe,
+  AdminUserRow,
+  AuthTokens,
+  TemporaryPassword,
+} from "@/types";
 
 interface Envelope<T> {
   data: T;
@@ -83,6 +90,25 @@ export const adminApi = createApi({
       transformResponse: (r: Envelope<AdminFarmDetail>) => r.data,
       providesTags: ["AdminFarm"],
     }),
+    searchAdminUsers: build.query<AdminUserRow[], { q: string }>({
+      query: ({ q }) => `/api/v1/admin/users?q=${encodeURIComponent(q)}`,
+      transformResponse: (r: Envelope<AdminUserRow[]>) => r.data,
+      providesTags: ["AdminUser"],
+    }),
+    resetAdminUserPassword: build.mutation<TemporaryPassword, { userId: number }>({
+      query: ({ userId }) => ({
+        url: `/api/v1/admin/users/${userId}/reset-password`,
+        method: "POST",
+      }),
+      transformResponse: (r: Envelope<TemporaryPassword>) => r.data,
+    }),
+    setAdminUserActive: build.mutation<void, { userId: number; active: boolean }>({
+      query: ({ userId, active }) => ({
+        url: `/api/v1/admin/users/${userId}/${active ? "activate" : "deactivate"}`,
+        method: "POST",
+      }),
+      invalidatesTags: ["AdminUser"],
+    }),
   }),
 });
 
@@ -91,4 +117,7 @@ export const {
   useGetAdminMeQuery,
   useGetAdminFarmsQuery,
   useGetAdminFarmQuery,
+  useLazySearchAdminUsersQuery,
+  useResetAdminUserPasswordMutation,
+  useSetAdminUserActiveMutation,
 } = adminApi;
