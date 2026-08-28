@@ -1512,3 +1512,12 @@ export interface TemporaryPassword {
   userId: number;
   temporaryPassword: string;
 }
+
+export interface FarmHealthRow {
+  farmId: number;
+  name: string;
+  level: "OK" | "WATCH" | "AT_RISK";
+  /** null when the farm never recorded anything — it did not go quiet, it never started. */
+  daysSinceLastEntry: number | null;
+  reason: string;
+}
