@@ -113,6 +113,10 @@ class DashboardControllerIT {
   @MockitoBean private RefreshTokenRepository refreshTokenRepository;
   @MockitoBean private FarmRepository farmRepository;
   @MockitoBean private PartnerRepository partnerRepository;
+
+  @MockitoBean
+  private com.avicare.admin.repository.StaffPermissionRepository staffPermissionRepository;
+
   @MockitoBean private PartnerAlertRepository partnerAlertRepository;
   @MockitoBean private PartnerUserRepository partnerUserRepository;
   @MockitoBean private PartnerRefreshTokenRepository partnerRefreshTokenRepository;
