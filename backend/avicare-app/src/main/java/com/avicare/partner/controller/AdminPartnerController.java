@@ -41,6 +41,7 @@ public class AdminPartnerController {
   private final PartnerNetworkService partnerNetworkService;
 
   @PostMapping
+  @PreAuthorize("@adminAccess.can('partners:write')")
   public ApiResponse<PartnerResponse> create(@RequestBody @Valid CreatePartnerRequest req) {
     return ApiResponse.of(
         PartnerResponse.of(
@@ -56,6 +57,7 @@ public class AdminPartnerController {
 
   /** Partial update — the co-branding path: an ADMIN sets the logo shown in the farmer app. */
   @PatchMapping("/{partnerId}")
+  @PreAuthorize("@adminAccess.can('partners:write')")
   public ApiResponse<PartnerResponse> update(
       @PathVariable Long partnerId, @RequestBody @Valid UpdatePartnerRequest req) {
     return ApiResponse.of(
@@ -70,28 +72,33 @@ public class AdminPartnerController {
   }
 
   @GetMapping
+  @PreAuthorize("@adminAccess.can('partners:read')")
   public ApiResponse<List<PartnerResponse>> list() {
     return ApiResponse.of(partnerService.list().stream().map(PartnerResponse::of).toList());
   }
 
   @GetMapping("/{partnerId}")
+  @PreAuthorize("@adminAccess.can('partners:read')")
   public ApiResponse<PartnerResponse> get(@PathVariable Long partnerId) {
     return ApiResponse.of(PartnerResponse.of(partnerService.get(partnerId)));
   }
 
   @PostMapping("/{partnerId}/suspend")
+  @PreAuthorize("@adminAccess.can('partners:write')")
   public ApiResponse<PartnerResponse> suspend(@PathVariable Long partnerId) {
     return ApiResponse.of(
         PartnerResponse.of(partnerService.setStatus(partnerId, PartnerStatus.SUSPENDED)));
   }
 
   @PostMapping("/{partnerId}/activate")
+  @PreAuthorize("@adminAccess.can('partners:write')")
   public ApiResponse<PartnerResponse> activate(@PathVariable Long partnerId) {
     return ApiResponse.of(
         PartnerResponse.of(partnerService.setStatus(partnerId, PartnerStatus.ACTIVE)));
   }
 
   @PostMapping("/{partnerId}/farms")
+  @PreAuthorize("@adminAccess.can('partners:attach')")
   public ApiResponse<MembershipResponse> attachFarm(
       @PathVariable Long partnerId, @RequestBody @Valid AttachFarmRequest req) {
     return ApiResponse.of(
@@ -101,6 +108,7 @@ public class AdminPartnerController {
   }
 
   @GetMapping("/{partnerId}/farms")
+  @PreAuthorize("@adminAccess.can('partners:read')")
   public ApiResponse<List<MembershipResponse>> listFarms(@PathVariable Long partnerId) {
     return ApiResponse.of(
         partnerNetworkService.listForPartner(partnerId).stream()
@@ -109,6 +117,7 @@ public class AdminPartnerController {
   }
 
   @PostMapping("/{partnerId}/invite-codes")
+  @PreAuthorize("@adminAccess.can('partners:write')")
   public ApiResponse<InviteCodeResponse> generateInviteCode(
       @PathVariable Long partnerId, @RequestBody @Valid GenerateInviteCodeRequest req) {
     return ApiResponse.of(
@@ -118,6 +127,7 @@ public class AdminPartnerController {
   }
 
   @PostMapping("/{partnerId}/users")
+  @PreAuthorize("@adminAccess.can('partners:users')")
   public ApiResponse<PartnerUserResponse> createUser(
       @PathVariable Long partnerId, @RequestBody @Valid CreatePartnerUserRequest req) {
     var result = partnerService.createPartnerUser(partnerId, req.email(), req.fullName());
