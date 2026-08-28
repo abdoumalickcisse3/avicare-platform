@@ -75,9 +75,17 @@ public class JwtFilter extends OncePerRequestFilter {
       try {
         authenticate(jwtService.validateAccessToken(token));
       } catch (WrongTokenTypeException wrongType) {
-        // A farmer access token has the wrong type only for the partner audience: try that path.
+        // Not a farmer access token: try the two other audiences before giving up.
         try {
           authenticatePartner(jwtService.validatePartnerAccessToken(token));
+        } catch (WrongTokenTypeException notPartner) {
+          try {
+            // A support session: authenticates AS the farmer, so everything downstream behaves
+            // exactly as it does for them.
+            authenticate(jwtService.validateImpersonationToken(token));
+          } catch (TokenValidationException e) {
+            log.warn("Rejected JWT: {}", e.getMessage());
+          }
         } catch (TokenValidationException e) {
           log.warn("Rejected partner JWT: {}", e.getMessage());
         }
