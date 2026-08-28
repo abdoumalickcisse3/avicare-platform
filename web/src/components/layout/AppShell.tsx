@@ -5,13 +5,17 @@ import { Box, Drawer } from "@mui/material";
 import { Header } from "./Header";
 import { Sidebar, SIDEBAR_WIDTH } from "./Sidebar";
 import { colors } from "@/theme/tokens";
+import { ImpersonationBanner } from "@/components/admin/ImpersonationBanner";
 
 /** Responsive app shell: permanent sidebar on md+, temporary drawer on mobile. */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: colors.neutral[50] }}>
+    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: colors.neutral[50], flexDirection: "column" }}>
+      {/* Support mode: renders nothing outside a support session. */}
+      <ImpersonationBanner />
+      <Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
       {/* Permanent sidebar — desktop */}
       <Box
         component="nav"
@@ -49,6 +53,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Box component="main" sx={{ flex: 1, p: { xs: 2, sm: 3, md: 4 } }}>
           {children}
         </Box>
+      </Box>
       </Box>
     </Box>
   );

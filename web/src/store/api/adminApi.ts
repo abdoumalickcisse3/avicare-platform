@@ -102,6 +102,10 @@ export const adminApi = createApi({
       }),
       transformResponse: (r: Envelope<TemporaryPassword>) => r.data,
     }),
+    impersonate: build.mutation<{ accessToken: string }, { userId: number; reason?: string }>({
+      query: (body) => ({ url: "/api/v1/admin/impersonate", method: "POST", body }),
+      transformResponse: (r: Envelope<{ accessToken: string }>) => r.data,
+    }),
     setAdminUserActive: build.mutation<void, { userId: number; active: boolean }>({
       query: ({ userId, active }) => ({
         url: `/api/v1/admin/users/${userId}/${active ? "activate" : "deactivate"}`,
@@ -120,4 +124,5 @@ export const {
   useLazySearchAdminUsersQuery,
   useResetAdminUserPasswordMutation,
   useSetAdminUserActiveMutation,
+  useImpersonateMutation,
 } = adminApi;
