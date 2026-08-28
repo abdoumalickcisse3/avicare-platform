@@ -1466,3 +1466,34 @@ export interface AdminMe {
   permissions: string[];
   superAdmin: boolean;
 }
+
+export interface AdminFarmRow {
+  farmId: number;
+  name: string;
+  active: boolean;
+  memberCount: number;
+  activeUnitCount: number;
+  /** null when the farm never recorded anything — a real state, not a missing value. */
+  lastActivityAt: string | null;
+}
+
+export interface AdminPartnerLinkRow {
+  partnerId: number;
+  partnerName: string | null;
+  type: string | null;
+  status: string;
+}
+
+export interface AdminFarmDetail {
+  farmId: number;
+  name: string;
+  currency: string;
+  timezone: string;
+  active: boolean;
+  memberCount: number;
+  activeUnitCount: number;
+  totalHeadcount: number;
+  lastActivityAt: string | null;
+  enabledModules: string[];
+  partners: AdminPartnerLinkRow[];
+}
