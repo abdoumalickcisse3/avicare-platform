@@ -9,6 +9,10 @@ server:
   shutdown: graceful
 
 avicare:
+  # Platform back-office. The founder account is promoted to staff at startup and granted "*".
+  # Never creates an account: the email must already be signed up. Unset = no promotion at all.
+  admin:
+    founder-email: ${ADMIN_FOUNDER_EMAIL:}
   security:
     jwt:
       issuer: ${JWT_ISSUER:avicare-platform}

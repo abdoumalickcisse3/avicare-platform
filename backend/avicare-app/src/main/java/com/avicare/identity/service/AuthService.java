@@ -6,6 +6,7 @@ import com.avicare.common.api.exception.UnauthorizedException;
 import com.avicare.common.security.jwt.JwtProperties;
 import com.avicare.common.security.jwt.JwtService;
 import com.avicare.common.security.principal.AvicarePrincipal;
+import com.avicare.common.security.principal.UserRole;
 import com.avicare.identity.domain.User;
 import com.avicare.identity.dto.request.LoginRequest;
 import com.avicare.identity.dto.request.SignupRequest;
@@ -15,6 +16,7 @@ import com.avicare.identity.dto.response.UserResponse;
 import com.avicare.identity.mapper.IdentityMapper;
 import com.avicare.identity.repository.UserRepository;
 import com.avicare.identity.spi.MembershipProvider;
+import com.avicare.identity.spi.StaffLoginAuditor;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +41,7 @@ public class AuthService {
   private final JwtService jwtService;
   private final JwtProperties jwtProperties;
   private final PasswordEncoder passwordEncoder;
+  private final StaffLoginAuditor staffLoginAuditor;
   private final IdentityMapper identityMapper;
   private final MembershipProvider membershipProvider;
 
@@ -82,6 +85,10 @@ public class AuthService {
 
     user.setLastLoginAt(LocalDateTime.now());
     log.info("User logged in: id={}", user.getId());
+    if (user.getRole() == UserRole.ADMIN) {
+      // Platform staff can reach every tenant, so their sign-ins belong in the back-office trail.
+      staffLoginAuditor.recordStaffLogin(user.getId(), user.getEmail());
+    }
     return issueTokens(user);
   }
 
