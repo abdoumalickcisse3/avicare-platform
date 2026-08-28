@@ -119,6 +119,8 @@ class PartnerPortalControllerIT {
   @MockitoBean
   private com.avicare.admin.repository.StaffPermissionRepository staffPermissionRepository;
 
+  @MockitoBean private com.avicare.admin.repository.AdminAuditLogRepository adminAuditLogRepository;
+
   @MockitoBean private PartnerAlertRepository partnerAlertRepository;
   @MockitoBean private PartnerUserRepository partnerUserRepository;
   @MockitoBean private PartnerRefreshTokenRepository partnerRefreshTokenRepository;
