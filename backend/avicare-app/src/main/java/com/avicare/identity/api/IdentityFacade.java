@@ -30,4 +30,10 @@ public interface IdentityFacade {
 
   /** Set a new password for an existing user (BCrypt-encoded). */
   void resetPassword(Long userId, String rawPassword);
+
+  /**
+   * Enable or disable an account. There was no path to disable a user anywhere in the platform
+   * before the back-office needed one — {@link #isActive} was read-only.
+   */
+  void setActive(Long userId, boolean active);
 }

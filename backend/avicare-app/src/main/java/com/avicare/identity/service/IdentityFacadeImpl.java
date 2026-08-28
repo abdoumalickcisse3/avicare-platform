@@ -61,6 +61,12 @@ public class IdentityFacadeImpl implements IdentityFacade {
     user.setPasswordHash(passwordEncoder.encode(rawPassword));
   }
 
+  @Override
+  @Transactional
+  public void setActive(Long userId, boolean active) {
+    loadById(userId).setActive(active);
+  }
+
   private User loadById(Long userId) {
     return userRepository.findById(userId).orElseThrow(() -> NotFoundException.of("User", userId));
   }
