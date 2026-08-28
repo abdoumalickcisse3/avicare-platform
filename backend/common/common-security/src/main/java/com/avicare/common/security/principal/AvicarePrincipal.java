@@ -16,9 +16,18 @@ import java.util.Optional;
  * @param email user email (used for logging and audit)
  * @param role platform-wide role
  * @param memberships per-farm memberships
+ * @param impersonatedBy the staff user acting as this user, or {@code null} in a normal session.
+ *     Support sessions carry the TARGET's identity so authorization behaves exactly as it does for
+ *     the farmer; this is the only thing that says who is really behind the request, and the audit
+ *     trail depends on it.
  */
 public record AvicarePrincipal(
-    Long userId, String email, UserRole role, List<Membership> memberships) {
+    Long userId, String email, UserRole role, List<Membership> memberships, Long impersonatedBy) {
+
+  /** A normal session: nobody is acting on behalf of anyone. */
+  public AvicarePrincipal(Long userId, String email, UserRole role, List<Membership> memberships) {
+    this(userId, email, role, memberships, null);
+  }
 
   public AvicarePrincipal {
     Objects.requireNonNull(userId, "userId must not be null");
@@ -30,6 +39,19 @@ public record AvicarePrincipal(
   /** Whether the user is platform staff (bypasses every tenant-level check). */
   public boolean isAdmin() {
     return role == UserRole.ADMIN;
+  }
+
+  /** Whether this request is a staff member acting as a farmer. */
+  public boolean isImpersonation() {
+    return impersonatedBy != null;
+  }
+
+  /**
+   * Who is really behind the request: the staff member during a support session, the user
+   * otherwise. This is the identity the audit trail must record.
+   */
+  public Long effectiveActorId() {
+    return impersonatedBy != null ? impersonatedBy : userId;
   }
 
   /** This user's membership on the given farm, if any. */

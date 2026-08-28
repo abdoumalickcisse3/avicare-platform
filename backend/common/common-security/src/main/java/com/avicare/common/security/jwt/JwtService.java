@@ -16,6 +16,7 @@ import io.jsonwebtoken.Jwts;
 import jakarta.annotation.PostConstruct;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
@@ -50,6 +51,8 @@ public class JwtService {
   private static final String TYPE_REFRESH = "refresh";
   private static final String TYPE_PARTNER_ACCESS = "partner_access";
   private static final String TYPE_PARTNER_REFRESH = "partner_refresh";
+  private static final String TYPE_IMPERSONATION = "impersonation_access";
+  private static final String CLAIM_IMPERSONATED_BY = "impersonatedBy";
 
   private final JwtProperties props;
   private final KeyLoader keyLoader;
@@ -135,6 +138,59 @@ public class JwtService {
           objectMapper.convertValue(
               claims.get(CLAIM_MEMBERSHIPS), new TypeReference<List<Membership>>() {});
       return new AvicarePrincipal(userId, email, role, memberships);
+    } catch (IllegalArgumentException | NullPointerException e) {
+      throw new InvalidTokenException("Cannot reconstruct principal: " + e.getMessage(), e);
+    }
+  }
+
+  /**
+   * Mint a support token that acts AS {@code target}.
+   *
+   * <p>It carries the target's identity, role and memberships — so every authorization check
+   * behaves exactly as it does for the farmer — plus {@code impersonatedBy}, which is the only
+   * thing that says who is really behind the request.
+   *
+   * <p>It deliberately never carries {@code ADMIN}: that is the whole point. A staff claim bolted
+   * onto a staff token would keep the tenant bypass and prove nothing about what the farmer
+   * actually sees. There is no matching refresh token either — a support session expires, it does
+   * not renew itself.
+   */
+  public String generateImpersonationToken(
+      AvicarePrincipal target, Long staffUserId, Duration ttl) {
+    requireKeys();
+    Instant now = Instant.now();
+
+    return Jwts.builder()
+        .issuer(props.issuer())
+        .subject(target.userId().toString())
+        .id(UUID.randomUUID().toString())
+        .issuedAt(Date.from(now))
+        .expiration(Date.from(now.plus(ttl)))
+        .claims(
+            Map.of(
+                CLAIM_EMAIL, target.email(),
+                CLAIM_ROLE, target.role(),
+                CLAIM_MEMBERSHIPS, target.memberships(),
+                CLAIM_IMPERSONATED_BY, staffUserId,
+                CLAIM_TYPE, TYPE_IMPERSONATION))
+        .signWith(privateKey, Jwts.SIG.RS256)
+        .compact();
+  }
+
+  /** Verify a support token and rebuild the impersonated principal. */
+  public AvicarePrincipal validateImpersonationToken(String token) {
+    Claims claims = parseClaims(token);
+    requireType(claims, TYPE_IMPERSONATION);
+
+    try {
+      Long userId = Long.parseLong(claims.getSubject());
+      String email = claims.get(CLAIM_EMAIL, String.class);
+      UserRole role = UserRole.valueOf(claims.get(CLAIM_ROLE, String.class));
+      List<Membership> memberships =
+          objectMapper.convertValue(
+              claims.get(CLAIM_MEMBERSHIPS), new TypeReference<List<Membership>>() {});
+      Long impersonatedBy = claims.get(CLAIM_IMPERSONATED_BY, Integer.class).longValue();
+      return new AvicarePrincipal(userId, email, role, memberships, impersonatedBy);
     } catch (IllegalArgumentException | NullPointerException e) {
       throw new InvalidTokenException("Cannot reconstruct principal: " + e.getMessage(), e);
     }
