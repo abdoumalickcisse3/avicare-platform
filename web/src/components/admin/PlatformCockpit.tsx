@@ -21,6 +21,7 @@ import {
 } from "@mui/material";
 import { RefreshCw } from "lucide-react";
 import {
+  useGetBenchmarkCohortQuery,
   useGetPlatformOverviewQuery,
   useGetPlatformRuntimeQuery,
   useGetWhatsAppFailuresQuery,
@@ -73,6 +74,7 @@ export function PlatformCockpit() {
   const [days, setDays] = useState(30);
   const { data: overview, isLoading } = useGetPlatformOverviewQuery();
   const { data: runtime } = useGetPlatformRuntimeQuery();
+  const { data: cohort } = useGetBenchmarkCohortQuery();
   const { data: usage } = useGetWhatsAppUsageQuery({ days });
   const { data: failures = [] } = useGetWhatsAppFailuresQuery();
   const [retry, { isLoading: retrying }] = useRetryWhatsAppMutation();
@@ -245,6 +247,46 @@ export function PlatformCockpit() {
                 ))}
               </TableBody>
             </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card variant="outlined">
+        <CardContent>
+          <Typography variant="subtitle2" sx={{ mb: 1.5 }}>
+            Comparaison entre fermes
+          </Typography>
+          <Stack direction="row" sx={{ gap: 3, flexWrap: "wrap" }}>
+            <Box>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                {cohort?.enabled ? "activée" : "désactivée"}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                état
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                {cohort?.cohortSize ?? 0} / {cohort?.minCohort ?? 0}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                fermes comparables / seuil
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                {cohort?.platformMortalityRate ?? "—"}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                mortalité moyenne (%)
+              </Typography>
+            </Box>
+          </Stack>
+          {cohort && cohort.enabled && !cohort.available && (
+            <Alert severity="info" sx={{ mt: 1.5 }}>
+              Activée, mais rien n&apos;est publié : la cohorte est sous le seuil. C&apos;est le
+              garde-fou qui empêche de déduire les chiffres d&apos;une ferme voisine.
+            </Alert>
           )}
         </CardContent>
       </Card>

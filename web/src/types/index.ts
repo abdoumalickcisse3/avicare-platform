@@ -1467,6 +1467,20 @@ export interface AdminMe {
   superAdmin: boolean;
 }
 
+/**
+ * Anonymous comparison against other farms.
+ *
+ * `available` false means the platform has it switched off or the cohort is too small — the screen
+ * shows the reason, never a zero that would read as a real figure.
+ */
+export interface BenchmarkComparison {
+  available: boolean;
+  unavailableReason: string | null;
+  cohortSize: number;
+  platformMortalityRate: string | null;
+  farmMortalityRate: string | null;
+}
+
 /** A platform announcement, as both the console and the farmer banner render it. */
 export interface AnnouncementView {
   id: number;
