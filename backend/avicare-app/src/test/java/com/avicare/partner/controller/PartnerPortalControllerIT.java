@@ -47,6 +47,7 @@ import com.avicare.livestock.repository.VaccinationRepository;
 import com.avicare.livestock.repository.VetVisitRepository;
 import com.avicare.livestock.repository.VeterinarianRepository;
 import com.avicare.livestock.repository.WeighingSampleRepository;
+import com.avicare.notification.repository.AnnouncementRepository;
 import com.avicare.parameters.repository.AlertThresholdRepository;
 import com.avicare.parameters.repository.CatalogItemRepository;
 import com.avicare.parameters.repository.FarmCatalogItemRepository;
@@ -168,6 +169,7 @@ class PartnerPortalControllerIT {
   @MockitoBean private SaleRepository saleRepository;
   @MockitoBean private SaleItemRepository saleItemRepository;
   @MockitoBean private InvoiceItemRepository invoiceItemRepository;
+  @MockitoBean private AnnouncementRepository announcementRepository;
   @MockitoBean private ExpenseRepository expenseRepository;
   @MockitoBean private DeliveryRepository deliveryRepository;
   @MockitoBean private InvoiceRepository invoiceRepository;

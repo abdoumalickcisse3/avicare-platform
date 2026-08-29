@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Box, Drawer } from "@mui/material";
+import { AnnouncementBanner } from "@/components/layout/AnnouncementBanner";
 import { Header } from "./Header";
 import { Sidebar, SIDEBAR_WIDTH } from "./Sidebar";
 import { colors } from "@/theme/tokens";
@@ -51,6 +52,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Header onMenuClick={() => setMobileOpen(true)} />
         </Box>
         <Box component="main" sx={{ flex: 1, p: { xs: 2, sm: 3, md: 4 } }}>
+          <AnnouncementBanner />
           {children}
         </Box>
       </Box>

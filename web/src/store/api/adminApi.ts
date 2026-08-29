@@ -7,6 +7,7 @@ import {
 } from "@reduxjs/toolkit/query/react";
 import { adminTokenStorage } from "@/lib/adminStorage";
 import type {
+  AnnouncementView,
   PlatformOverview,
   PlatformRuntime,
   WhatsAppFailure,
@@ -82,7 +83,7 @@ const baseQueryWithReauth: BaseQueryFn<
 export const adminApi = createApi({
   reducerPath: "adminApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["AdminMe", "AdminFarm", "AdminUser", "AdminPartner", "AdminStaff", "AdminCatalog", "AdminCompliance", "AdminMetrics"],
+  tagTypes: ["AdminMe", "AdminFarm", "AdminUser", "AdminPartner", "AdminStaff", "AdminCatalog", "AdminCompliance", "AdminMetrics", "AdminAnnouncement"],
   endpoints: (build) => ({
     /** Staff sign-in reuses the ordinary auth endpoint; the console then checks /admin/me. */
     adminLogin: build.mutation<AuthTokens, { email: string; password: string }>({
@@ -191,6 +192,42 @@ export const adminApi = createApi({
         method: "POST",
       }),
       invalidatesTags: ["AdminUser"],
+    }),
+    getAnnouncements: build.query<AnnouncementView[], void>({
+      query: () => "/api/v1/admin/communication/announcements",
+      transformResponse: (r: Envelope<AnnouncementView[]>) => r.data,
+      providesTags: ["AdminAnnouncement"],
+    }),
+    saveAnnouncement: build.mutation<
+      AnnouncementView,
+      {
+        id?: number;
+        title: string;
+        body: string;
+        severity: string;
+        startsAt: string;
+        endsAt: string | null;
+        published: boolean;
+      }
+    >({
+      query: ({ id, ...body }) => ({
+        url: id
+          ? `/api/v1/admin/communication/announcements/${id}`
+          : "/api/v1/admin/communication/announcements",
+        method: id ? "PUT" : "POST",
+        body,
+      }),
+      transformResponse: (r: Envelope<AnnouncementView>) => r.data,
+      invalidatesTags: ["AdminAnnouncement"],
+    }),
+    getBroadcastRecipients: build.query<{ count: number }, void>({
+      query: () => "/api/v1/admin/communication/broadcast/recipients",
+      transformResponse: (r: Envelope<{ count: number }>) => r.data,
+    }),
+    sendBroadcast: build.mutation<{ queued: number }, { message: string; farmIds: number[] }>({
+      query: (body) => ({ url: "/api/v1/admin/communication/broadcast", method: "POST", body }),
+      transformResponse: (r: Envelope<{ queued: number }>) => r.data,
+      invalidatesTags: ["AdminMetrics"],
     }),
     getPlatformOverview: build.query<PlatformOverview, void>({
       query: () => "/api/v1/admin/metrics/overview",
@@ -306,6 +343,10 @@ export const adminApi = createApi({
 });
 
 export const {
+  useGetAnnouncementsQuery,
+  useSaveAnnouncementMutation,
+  useGetBroadcastRecipientsQuery,
+  useSendBroadcastMutation,
   useGetPlatformOverviewQuery,
   useGetPlatformRuntimeQuery,
   useGetWhatsAppUsageQuery,
