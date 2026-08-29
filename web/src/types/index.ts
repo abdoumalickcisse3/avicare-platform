@@ -1467,6 +1467,28 @@ export interface AdminMe {
   superAdmin: boolean;
 }
 
+/** One catalog category with its counts, as the console lists them. */
+export interface AdminCatalogCategory {
+  category: string;
+  total: number;
+  active: number;
+  /** Server-side truth: platform categories are served read-only and refused on write too. */
+  editable: boolean;
+}
+
+/** One catalog entry. `label` is lifted out of `value`, which stays the stored truth. */
+export interface AdminCatalogItemRow {
+  id: number;
+  category: string;
+  key: string;
+  locale: string | null;
+  label: string | null;
+  value: Record<string, unknown>;
+  active: boolean;
+  editable: boolean;
+  updatedAt: string | null;
+}
+
 /** One member of the platform staff, as the console lists them. */
 export interface StaffMemberRow {
   userId: number;

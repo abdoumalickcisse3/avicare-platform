@@ -16,6 +16,8 @@ import type {
   AdminPartnerMembership,
   AdminPartnerRow,
   AdminPartnerUser,
+  AdminCatalogCategory,
+  AdminCatalogItemRow,
   StaffCatalogResource,
   StaffMemberRow,
   FarmHealthRow,
@@ -75,7 +77,7 @@ const baseQueryWithReauth: BaseQueryFn<
 export const adminApi = createApi({
   reducerPath: "adminApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["AdminMe", "AdminFarm", "AdminUser", "AdminPartner", "AdminStaff"],
+  tagTypes: ["AdminMe", "AdminFarm", "AdminUser", "AdminPartner", "AdminStaff", "AdminCatalog"],
   endpoints: (build) => ({
     /** Staff sign-in reuses the ordinary auth endpoint; the console then checks /admin/me. */
     adminLogin: build.mutation<AuthTokens, { email: string; password: string }>({
@@ -185,6 +187,32 @@ export const adminApi = createApi({
       }),
       invalidatesTags: ["AdminUser"],
     }),
+    getCatalogCategories: build.query<AdminCatalogCategory[], void>({
+      query: () => "/api/v1/admin/catalog/categories",
+      transformResponse: (r: Envelope<AdminCatalogCategory[]>) => r.data,
+      providesTags: ["AdminCatalog"],
+    }),
+    getCatalogItems: build.query<AdminCatalogItemRow[], { category: string }>({
+      query: ({ category }) => `/api/v1/admin/catalog?category=${encodeURIComponent(category)}`,
+      transformResponse: (r: Envelope<AdminCatalogItemRow[]>) => r.data,
+      providesTags: ["AdminCatalog"],
+    }),
+    createCatalogItem: build.mutation<
+      AdminCatalogItemRow,
+      { category: string; key: string; locale?: string | null; value: Record<string, unknown>; active: boolean }
+    >({
+      query: (body) => ({ url: "/api/v1/admin/catalog", method: "POST", body }),
+      transformResponse: (r: Envelope<AdminCatalogItemRow>) => r.data,
+      invalidatesTags: ["AdminCatalog"],
+    }),
+    updateCatalogItem: build.mutation<
+      AdminCatalogItemRow,
+      { id: number; category: string; key: string; locale?: string | null; value: Record<string, unknown>; active: boolean }
+    >({
+      query: ({ id, ...body }) => ({ url: `/api/v1/admin/catalog/${id}`, method: "PUT", body }),
+      transformResponse: (r: Envelope<AdminCatalogItemRow>) => r.data,
+      invalidatesTags: ["AdminCatalog"],
+    }),
     getStaff: build.query<StaffMemberRow[], void>({
       query: () => "/api/v1/admin/staff",
       transformResponse: (r: Envelope<StaffMemberRow[]>) => r.data,
@@ -218,6 +246,10 @@ export const adminApi = createApi({
 });
 
 export const {
+  useGetCatalogCategoriesQuery,
+  useGetCatalogItemsQuery,
+  useCreateCatalogItemMutation,
+  useUpdateCatalogItemMutation,
   useGetStaffQuery,
   useGetStaffCatalogQuery,
   useGrantStaffMutation,
