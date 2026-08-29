@@ -16,6 +16,8 @@ import type {
   AdminPartnerMembership,
   AdminPartnerRow,
   AdminPartnerUser,
+  StaffCatalogResource,
+  StaffMemberRow,
   FarmHealthRow,
   TemporaryPassword,
 } from "@/types";
@@ -73,7 +75,7 @@ const baseQueryWithReauth: BaseQueryFn<
 export const adminApi = createApi({
   reducerPath: "adminApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["AdminMe", "AdminFarm", "AdminUser", "AdminPartner"],
+  tagTypes: ["AdminMe", "AdminFarm", "AdminUser", "AdminPartner", "AdminStaff"],
   endpoints: (build) => ({
     /** Staff sign-in reuses the ordinary auth endpoint; the console then checks /admin/me. */
     adminLogin: build.mutation<AuthTokens, { email: string; password: string }>({
@@ -183,10 +185,44 @@ export const adminApi = createApi({
       }),
       invalidatesTags: ["AdminUser"],
     }),
+    getStaff: build.query<StaffMemberRow[], void>({
+      query: () => "/api/v1/admin/staff",
+      transformResponse: (r: Envelope<StaffMemberRow[]>) => r.data,
+      providesTags: ["AdminStaff"],
+    }),
+    /** The taxonomy comes from the server so the screen never duplicates it. */
+    getStaffCatalog: build.query<StaffCatalogResource[], void>({
+      query: () => "/api/v1/admin/staff/catalog",
+      transformResponse: (r: Envelope<StaffCatalogResource[]>) => r.data,
+    }),
+    grantStaff: build.mutation<StaffMemberRow, { userId: number }>({
+      query: ({ userId }) => ({ url: `/api/v1/admin/staff/${userId}`, method: "POST" }),
+      transformResponse: (r: Envelope<StaffMemberRow>) => r.data,
+      invalidatesTags: ["AdminStaff", "AdminUser"],
+    }),
+    revokeStaff: build.mutation<void, { userId: number }>({
+      query: ({ userId }) => ({ url: `/api/v1/admin/staff/${userId}`, method: "DELETE" }),
+      invalidatesTags: ["AdminStaff", "AdminUser"],
+    }),
+    setStaffPermissions: build.mutation<StaffMemberRow, { userId: number; permissions: string[] }>({
+      query: ({ userId, permissions }) => ({
+        url: `/api/v1/admin/staff/${userId}/permissions`,
+        method: "PUT",
+        body: { permissions },
+      }),
+      transformResponse: (r: Envelope<StaffMemberRow>) => r.data,
+      // Also AdminMe: an operator editing their own console sees the menu follow.
+      invalidatesTags: ["AdminStaff", "AdminMe"],
+    }),
   }),
 });
 
 export const {
+  useGetStaffQuery,
+  useGetStaffCatalogQuery,
+  useGrantStaffMutation,
+  useRevokeStaffMutation,
+  useSetStaffPermissionsMutation,
   useAdminLoginMutation,
   useGetAdminMeQuery,
   useGetAdminFarmsQuery,

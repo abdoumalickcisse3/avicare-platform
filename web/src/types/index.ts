@@ -1467,6 +1467,25 @@ export interface AdminMe {
   superAdmin: boolean;
 }
 
+/** One member of the platform staff, as the console lists them. */
+export interface StaffMemberRow {
+  userId: number;
+  email: string;
+  fullName: string | null;
+  permissions: string[];
+  /** Derived from the "*" permission, not from the role — every row here is already ADMIN. */
+  superAdmin: boolean;
+  active: boolean;
+  lastLoginAt: string | null;
+}
+
+/** One assignable resource of the staff taxonomy, served by the API rather than hard-coded. */
+export interface StaffCatalogResource {
+  resource: string;
+  label: string;
+  verbs: string[];
+}
+
 export interface AdminFarmRow {
   farmId: number;
   name: string;

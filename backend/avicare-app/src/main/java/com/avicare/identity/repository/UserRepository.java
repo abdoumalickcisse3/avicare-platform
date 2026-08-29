@@ -1,5 +1,6 @@
 package com.avicare.identity.repository;
 
+import com.avicare.common.security.principal.UserRole;
 import com.avicare.identity.domain.User;
 import java.util.List;
 import java.util.Optional;
@@ -12,6 +13,9 @@ import org.springframework.data.repository.query.Param;
 public interface UserRepository extends JpaRepository<User, Long> {
 
   Optional<User> findByEmailIgnoreCase(String email);
+
+  /** Every account carrying a role — used by the console to list platform staff. */
+  List<User> findByRole(UserRole role);
 
   boolean existsByEmailIgnoreCase(String email);
 
