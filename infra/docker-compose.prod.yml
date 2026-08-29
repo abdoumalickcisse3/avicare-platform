@@ -60,6 +60,10 @@ services:
       # Promoted to platform staff at startup and granted "*". Never creates an account: the email
       # must already be signed up. Unset = nobody can enter the console, which is the safe default.
       ADMIN_FOUNDER_EMAIL: ${ADMIN_FOUNDER_EMAIL:-}
+      # WhatsApp (Konekt). Required for the self-service password reset AND the partner alerts.
+      # Disabled by default: with no key, the reset flow answers normally but no code goes out.
+      NOTIF_WHATSAPP_ENABLED: ${NOTIF_WHATSAPP_ENABLED:-false}
+      KONEKT_API_SECRET: ${KONEKT_API_SECRET:-}
       JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY:?export JWT_PRIVATE_KEY (deploy.sh does this)}
       JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY:?export JWT_PUBLIC_KEY (deploy.sh does this)}
       # Jawdi IA — set ANTHROPIC_ENABLED=true and ANTHROPIC_API_KEY in .env to use the
