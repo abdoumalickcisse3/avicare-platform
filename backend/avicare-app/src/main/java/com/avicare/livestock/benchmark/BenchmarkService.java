@@ -43,6 +43,9 @@ public class BenchmarkService {
   static final String SETTINGS_KEY = "benchmarks";
   static final int DEFAULT_MIN_COHORT = 5;
 
+  /** No cohort smaller than this is ever published, whatever the console asks for. */
+  static final int MIN_ALLOWED_COHORT = 3;
+
   private final DailyRecordRepository dailyRecords;
   private final PoultryBatchRepository batches;
   private final ParametersFacade parameters;
@@ -77,6 +80,26 @@ public class BenchmarkService {
   }
 
   /** Mortality rate per farm, as a percentage. Farms with no birds placed are absent. */
+  /**
+   * Turn comparison on or off, and move the cohort floor.
+   *
+   * <p>The floor is clamped to at least {@value #MIN_ALLOWED_COHORT}: a smaller one would publish
+   * an "average" narrow enough for a farm to read its neighbours' figures out of it, which is the
+   * one thing this feature must never do — so it is not left to whoever fills the form.
+   */
+  @Transactional
+  public Settings updateSettings(boolean enabled, int minCohort) {
+    int floor = Math.max(minCohort, MIN_ALLOWED_COHORT);
+    parameters.setPlatformEntry(
+        SETTINGS_CATEGORY,
+        SETTINGS_KEY,
+        Map.of(
+            "label", "Comparaison anonyme entre fermes",
+            "enabled", enabled,
+            "min_cohort", floor));
+    return new Settings(enabled, floor);
+  }
+
   @Transactional(readOnly = true)
   public Map<Long, BigDecimal> ratesByFarm() {
     Map<Long, Long> placed = totals(batches.sumInitialCountByFarm());

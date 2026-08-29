@@ -1,6 +1,10 @@
 package com.avicare.livestock.benchmark;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.avicare.livestock.repository.DailyRecordRepository;
@@ -13,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -165,5 +170,36 @@ class BenchmarkServiceTest {
 
     // A zero floor would publish an "average" of one farm — refused in favour of the default.
     assertThat(service.settings().minCohort()).isEqualTo(BenchmarkService.DEFAULT_MIN_COHORT);
+  }
+
+  // --- publishing the comparison ------------------------------------------
+
+  @Test
+  void writesTheSettingAsAPlatformCatalogEntry() {
+    service.updateSettings(true, 8);
+
+    // The generic catalog editor keeps `admin` read-only, so this row can only be written here.
+    verify(parameters)
+        .setPlatformEntry(
+            eq(BenchmarkService.SETTINGS_CATEGORY), eq(BenchmarkService.SETTINGS_KEY), any());
+  }
+
+  @Test
+  void clampsACohortFloorThatWouldExposeNeighbours() {
+    BenchmarkService.Settings saved = service.updateSettings(true, 1);
+
+    // A floor of one publishes a single farm's mortality as "the average".
+    assertThat(saved.minCohort()).isEqualTo(BenchmarkService.MIN_ALLOWED_COHORT);
+
+    ArgumentCaptor<Map<String, Object>> written = ArgumentCaptor.captor();
+    verify(parameters).setPlatformEntry(anyString(), anyString(), written.capture());
+    assertThat(written.getValue())
+        .containsEntry("min_cohort", BenchmarkService.MIN_ALLOWED_COHORT)
+        .containsEntry("enabled", true);
+  }
+
+  @Test
+  void keepsAFloorThatIsAlreadyHighEnough() {
+    assertThat(service.updateSettings(false, 25).minCohort()).isEqualTo(25);
   }
 }

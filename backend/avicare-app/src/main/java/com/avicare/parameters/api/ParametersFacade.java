@@ -33,4 +33,14 @@ public interface ParametersFacade {
 
   /** Remove/disable a farm-level catalog entry so it no longer appears in {@link #listForFarm}. */
   void delete(Long farmId, String category, String key);
+
+  /**
+   * Upsert a platform-level catalog entry (layer 1).
+   *
+   * <p>Deliberately narrow: platform settings such as the health thresholds or the benchmark floor
+   * live in the catalog rather than in constants, and the screens that own them need a way to write
+   * one — the generic catalog editor keeps those categories read-only precisely so they are edited
+   * here, in a shape the writing screen understands.
+   */
+  CatalogEntryInfo setPlatformEntry(String category, String key, Map<String, Object> value);
 }

@@ -4,12 +4,14 @@ import { useState } from "react";
 import {
   Alert,
   Box,
+  FormControlLabel,
   Button,
   Card,
   CardContent,
   Chip,
   CircularProgress,
   Stack,
+  Switch,
   Table,
   TableBody,
   TableCell,
@@ -22,6 +24,7 @@ import {
 import { RefreshCw } from "lucide-react";
 import {
   useGetBenchmarkCohortQuery,
+  useSetBenchmarkSettingsMutation,
   useGetPlatformOverviewQuery,
   useGetPlatformRuntimeQuery,
   useGetWhatsAppFailuresQuery,
@@ -75,6 +78,7 @@ export function PlatformCockpit() {
   const { data: overview, isLoading } = useGetPlatformOverviewQuery();
   const { data: runtime } = useGetPlatformRuntimeQuery();
   const { data: cohort } = useGetBenchmarkCohortQuery();
+  const [setBenchmarks, { isLoading: savingBenchmarks }] = useSetBenchmarkSettingsMutation();
   const { data: usage } = useGetWhatsAppUsageQuery({ days });
   const { data: failures = [] } = useGetWhatsAppFailuresQuery();
   const [retry, { isLoading: retrying }] = useRetryWhatsAppMutation();
@@ -287,6 +291,27 @@ export function PlatformCockpit() {
               Activée, mais rien n&apos;est publié : la cohorte est sous le seuil. C&apos;est le
               garde-fou qui empêche de déduire les chiffres d&apos;une ferme voisine.
             </Alert>
+          )}
+          {cohort && (
+            <>
+              <FormControlLabel
+                sx={{ mt: 1.5 }}
+                control={
+                  <Switch
+                    checked={cohort.enabled}
+                    disabled={savingBenchmarks}
+                    onChange={(e) =>
+                      setBenchmarks({ enabled: e.target.checked, minCohort: cohort.minCohort })
+                    }
+                  />
+                }
+                label="Publier la comparaison aux éleveurs"
+              />
+              <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+                Chaque ferme verra sa mortalité à côté de la moyenne des autres. Aucune ferme
+                n&apos;est nommée, et rien n&apos;est publié tant que la cohorte est sous le seuil.
+              </Typography>
+            </>
           )}
         </CardContent>
       </Card>
