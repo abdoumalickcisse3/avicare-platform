@@ -56,10 +56,7 @@ export function ProfileDialog({ open, onClose }: { open: boolean; onClose: () =>
 
   // Edge-triggered reset when the dialog opens, seeded from the current user.
   useEffect(() => {
-    if (open) {
-      reset({ fullName: user?.fullName ?? "", phone: user?.phone ?? "" });
-      setTab(0);
-    }
+    if (open) reset({ fullName: user?.fullName ?? "", phone: user?.phone ?? "" });
   }, [open, user, reset]);
 
   // The server revoked every refresh token, this one included — staying here would leave a shell
@@ -86,7 +83,16 @@ export function ProfileDialog({ open, onClose }: { open: boolean; onClose: () =>
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth="xs"
+      // The tab goes back to the profile on opening. Done here rather than in the effect above:
+      // setting state from an effect is what react-hooks/set-state-in-effect forbids, and this
+      // is an event — the dialog telling us it is opening.
+      slotProps={{ transition: { onEnter: () => setTab(0) } }}
+    >
       <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
         <Box sx={{ flex: 1, fontWeight: 700 }}>Mon profil</Box>
         <IconButton onClick={onClose} aria-label="Fermer" size="small">
