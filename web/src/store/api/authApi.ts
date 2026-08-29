@@ -44,6 +44,10 @@ export const authApi = baseApi.injectEndpoints({
     }),
 
     /** Ask for a WhatsApp reset code. Answers the same whether the number is known or not. */
+    /** Change your own password. Every session is revoked, so the caller signs in again. */
+    changePassword: build.mutation<void, { currentPassword: string; newPassword: string }>({
+      query: (body) => ({ url: "/api/v1/account/password", method: "POST", body }),
+    }),
     requestPasswordReset: build.mutation<{ message: string }, { phone: string }>({
       query: (body) => ({ url: "/api/v1/auth/password-reset/request", method: "POST", body }),
       transformResponse: (r: ApiEnvelope<{ message: string }>) => r.data,
@@ -65,6 +69,7 @@ export const {
   useRefreshMutation,
   useGetProfileQuery,
   useUpdateProfileMutation,
+  useChangePasswordMutation,
   useRequestPasswordResetMutation,
   useConfirmPasswordResetMutation,
 } = authApi;

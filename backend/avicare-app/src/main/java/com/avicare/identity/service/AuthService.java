@@ -3,11 +3,13 @@ package com.avicare.identity.service;
 import com.avicare.common.api.exception.ConflictException;
 import com.avicare.common.api.exception.NotFoundException;
 import com.avicare.common.api.exception.UnauthorizedException;
+import com.avicare.common.api.exception.ValidationException;
 import com.avicare.common.security.jwt.JwtProperties;
 import com.avicare.common.security.jwt.JwtService;
 import com.avicare.common.security.principal.AvicarePrincipal;
 import com.avicare.common.security.principal.UserRole;
 import com.avicare.identity.domain.User;
+import com.avicare.identity.dto.request.ChangePasswordRequest;
 import com.avicare.identity.dto.request.LoginRequest;
 import com.avicare.identity.dto.request.SignupRequest;
 import com.avicare.identity.dto.request.UpdateProfileRequest;
@@ -129,6 +131,33 @@ public class AuthService {
       user.setLocale(request.locale());
     }
     return identityMapper.toResponse(user);
+  }
+
+  /**
+   * Change your own password, proving you know the current one.
+   *
+   * <p>Every session is revoked, this one included: the point of changing a password is usually
+   * that someone else may know the old one, and leaving their session alive would defeat it. The
+   * caller signs in again — the same contract as the WhatsApp reset.
+   *
+   * @throws com.avicare.common.api.exception.ValidationException if the current password is wrong
+   *     or the new one repeats it
+   */
+  @Transactional
+  public void changePassword(Long userId, ChangePasswordRequest request) {
+    User user = loadUser(userId);
+    if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+      throw new ValidationException(
+          "PASSWORD_CURRENT_INVALID", "Le mot de passe actuel est incorrect.");
+    }
+    if (passwordEncoder.matches(request.newPassword(), user.getPasswordHash())) {
+      throw new ValidationException(
+          "PASSWORD_UNCHANGED", "Le nouveau mot de passe doit être différent de l'actuel.");
+    }
+    user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+    userRepository.save(user);
+    refreshTokenService.revokeAllForUser(userId);
+    log.info("Password changed by user {}", userId);
   }
 
   private AuthTokens issueTokens(User user) {

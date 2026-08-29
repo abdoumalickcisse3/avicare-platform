@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -152,6 +153,11 @@ export default function ConsoleLoginPage() {
               sx={{ height: 48 }}
             >
               Se connecter
+            </Button>
+            {/* Staff accounts recover the same way as everyone else: a code over WhatsApp, which
+                needs a phone number on the account. */}
+            <Button component={Link} href="/forgot-password" size="small" variant="text">
+              Mot de passe oublié ?
             </Button>
           </Stack>
         </Box>

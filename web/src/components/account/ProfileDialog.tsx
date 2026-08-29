@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -13,15 +13,20 @@ import {
   DialogTitle,
   IconButton,
   Stack,
+  Tab,
+  Tabs,
   TextField,
   Typography,
 } from "@mui/material";
 import { X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useUpdateProfileMutation } from "@/store/api/authApi";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { setCurrentUser } from "@/store/slices/authSlice";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { apiErrorMessage } from "@/lib/apiError";
+import { ChangePasswordForm } from "@/components/account/ChangePasswordForm";
+import { logout } from "@/store/authActions";
 import { colors } from "@/theme/tokens";
 
 const schema = z.object({
@@ -38,6 +43,8 @@ type FormValues = z.infer<typeof schema>;
 /** Edit the signed-in user's own profile (name + phone). The phone feeds WhatsApp alerts. */
 export function ProfileDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const dispatch = useAppDispatch();
+  const router = useRouter();
+  const [tab, setTab] = useState(0);
   const user = useAppSelector((s) => s.auth.currentUser);
   const { showToast } = useToast();
   const [updateProfile, { isLoading }] = useUpdateProfileMutation();
@@ -49,8 +56,20 @@ export function ProfileDialog({ open, onClose }: { open: boolean; onClose: () =>
 
   // Edge-triggered reset when the dialog opens, seeded from the current user.
   useEffect(() => {
-    if (open) reset({ fullName: user?.fullName ?? "", phone: user?.phone ?? "" });
+    if (open) {
+      reset({ fullName: user?.fullName ?? "", phone: user?.phone ?? "" });
+      setTab(0);
+    }
   }, [open, user, reset]);
+
+  // The server revoked every refresh token, this one included — staying here would leave a shell
+  // running on a session that can no longer be renewed.
+  const onPasswordChanged = () => {
+    setTimeout(() => {
+      dispatch(logout());
+      router.replace("/login");
+    }, 1800);
+  };
 
   const onSubmit = async (values: FormValues) => {
     try {
@@ -74,6 +93,17 @@ export function ProfileDialog({ open, onClose }: { open: boolean; onClose: () =>
           <X size={18} />
         </IconButton>
       </DialogTitle>
+      <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ px: 3 }}>
+        <Tab label="Profil" />
+        <Tab label="Mot de passe" />
+      </Tabs>
+      {/* Two panels rather than one form: a password form nested inside the profile form would be
+          invalid HTML, and submitting one would carry the other. */}
+      {tab === 1 ? (
+        <DialogContent>
+          <ChangePasswordForm onChanged={onPasswordChanged} />
+        </DialogContent>
+      ) : (
       <form onSubmit={handleSubmit(onSubmit)}>
         <DialogContent>
           <Stack spacing={2}>
@@ -108,7 +138,7 @@ export function ProfileDialog({ open, onClose }: { open: boolean; onClose: () =>
                   error={!!fieldState.error}
                   helperText={
                     fieldState.error?.message ??
-                    "Utilisé pour les alertes WhatsApp. Ex : 221770000000"
+                    "Alertes WhatsApp — et seule façon de récupérer un mot de passe perdu. Ex : 221770000000"
                   }
                 />
               )}
@@ -122,6 +152,7 @@ export function ProfileDialog({ open, onClose }: { open: boolean; onClose: () =>
           </Button>
         </DialogActions>
       </form>
+      )}
     </Dialog>
   );
 }

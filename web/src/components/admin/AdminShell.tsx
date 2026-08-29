@@ -1,12 +1,31 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Box, Button, Chip, Stack, Typography } from "@mui/material";
-import { Building2, Handshake, HeartPulse, LogOut, ShieldCheck, UserCog, Users } from "lucide-react";
+import {
+  Box,
+  Button,
+  Chip,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  Stack,
+  Typography,
+} from "@mui/material";
+import {
+  Building2,
+  Handshake,
+  HeartPulse,
+  KeyRound,
+  LogOut,
+  ShieldCheck,
+  UserCog,
+  Users,
+} from "lucide-react";
 import { useGetAdminMeQuery } from "@/store/api/adminApi";
 import { adminTokenStorage } from "@/lib/adminStorage";
+import { ChangePasswordForm } from "@/components/account/ChangePasswordForm";
 import { colors } from "@/theme/tokens";
 
 interface NavEntry {
@@ -40,6 +59,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { data: me } = useGetAdminMeQuery();
+  const [accountOpen, setAccountOpen] = useState(false);
 
   const entries = useMemo(
     () => NAV.filter((e) => holds(me?.permissions ?? [], e.permission)),
@@ -90,6 +110,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             })}
             <Button
               size="small"
+              onClick={() => setAccountOpen(true)}
+              startIcon={<KeyRound size={15} />}
+              sx={{ color: colors.neutral[300] }}
+            >
+              Mon compte
+            </Button>
+            <Button
+              size="small"
               onClick={onLogout}
               startIcon={<LogOut size={15} />}
               sx={{ color: colors.neutral[300] }}
@@ -103,6 +131,23 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       <Box sx={{ maxWidth: 1200, mx: "auto", px: { xs: 2, md: 3 }, py: { xs: 3, md: 4 } }}>
         {children}
       </Box>
+
+      <Dialog open={accountOpen} onClose={() => setAccountOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle sx={{ fontWeight: 700 }}>{me?.email ?? "Mon compte"}</DialogTitle>
+        <DialogContent>
+          {/* The console has no profile to edit — a staff account is an identity, not a tenant
+              member — so the password is the whole of it. */}
+          <ChangePasswordForm
+            onChanged={() => {
+              // Every refresh token was revoked, this one included.
+              setTimeout(() => {
+                adminTokenStorage.clear();
+                router.replace("/console/login");
+              }, 1800);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 }
