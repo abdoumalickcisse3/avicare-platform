@@ -50,6 +50,13 @@ export const authApi = baseApi.injectEndpoints({
       transformResponse: (r: ApiEnvelope<UserProfile>) => r.data,
       invalidatesTags: [{ type: 'Member', id: 'me' }],
     }),
+    /**
+     * Change your own password. Every session is revoked server-side, this one included, so the
+     * caller must sign in again — the screen logs out rather than leaving a dead token in place.
+     */
+    changePassword: build.mutation<void, { currentPassword: string; newPassword: string }>({
+      query: (body) => ({ url: '/api/v1/account/password', method: 'POST', body }),
+    }),
   }),
 });
 
@@ -59,4 +66,5 @@ export const {
   useSignupMutation,
   useGetProfileQuery,
   useUpdateProfileMutation,
+  useChangePasswordMutation,
 } = authApi;

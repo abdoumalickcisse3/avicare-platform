@@ -46,6 +46,8 @@ import { AppHeader } from '@/components/AppHeader';
 import { Sparkline } from '@/components/charts/Sparkline';
 import { MicButton } from '@/components/assistant/MicButton';
 import { MyNetworkCard } from '@/components/field/MyNetworkCard';
+import { AnnouncementBanner } from '@/components/field/AnnouncementBanner';
+import { BenchmarkCard } from '@/components/field/BenchmarkCard';
 import { useFarmAccess } from '@/auth/useSession';
 import { useListFarmsQuery } from '@/store/api/farmsApi';
 import { useGetDashboardQuery } from '@/store/api/dashboardApi';
@@ -258,6 +260,10 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <AppHeader />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Above everything, and outside the loading branch: a maintenance notice matters most
+            when the dashboard is the thing that is failing to load. */}
+        <AnnouncementBanner />
+
         {isLoading || !hero ? (
           <View style={styles.loading}><ActivityIndicator color={tokens.colors.primary[600]} /></View>
         ) : (
@@ -402,6 +408,9 @@ export default function HomeScreen() {
 
             {/* Co-branding: the networks this farm belongs to. Renders nothing when there is none. */}
             {farmId !== undefined && <MyNetworkCard farmId={farmId} />}
+
+            {/* Last: context, not a figure the morning check depends on. */}
+            {farmId !== undefined && <BenchmarkCard farmId={farmId} />}
           </>
         )}
       </ScrollView>

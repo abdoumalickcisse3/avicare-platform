@@ -7,6 +7,10 @@ jest.mock('@/components/charts/Sparkline', () => ({ Sparkline: () => null }));
 jest.mock('@/components/assistant/MicButton', () => ({ MicButton: () => null }));
 jest.mock('@/auth/useSession', () => ({ useFarmAccess: jest.fn(() => ({ can: () => true, isAdmin: true, farmRole: 'OWNER', session: null })) }));
 jest.mock('@/store/api/farmsApi', () => ({ useListFarmsQuery: jest.fn(() => ({ data: [{ id: 7, name: 'Ferme Test' }] })) }));
+// Added with the banner and the comparison card: mocks are per API module, so a component
+// gaining a hook fails every test that renders it until its module is stubbed here.
+jest.mock('@/store/api/announcementsApi', () => ({ useGetActiveAnnouncementsQuery: jest.fn(() => ({ data: [] })) }));
+jest.mock('@/store/api/benchmarksApi', () => ({ useGetBenchmarkComparisonQuery: jest.fn(() => ({ data: undefined })) }));
 jest.mock('@/store/api/partnersApi', () => ({ useGetMyPartnersQuery: jest.fn(() => ({ data: [] })) }));
 jest.mock('@/store/api/activityApi', () => ({ useGetFarmActivityQuery: jest.fn(() => ({ data: [{ kind: 'SALE', at: '2026-08-13T09:00:00', label: 'Vente enregistrée', detail: null }] })) }));
 jest.mock('@/store/api/dashboardApi', () => ({
