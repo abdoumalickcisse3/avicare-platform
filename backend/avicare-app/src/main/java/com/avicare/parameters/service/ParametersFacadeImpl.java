@@ -59,4 +59,11 @@ public class ParametersFacadeImpl implements ParametersFacade {
   public void delete(Long farmId, String category, String key) {
     catalogService.disable(farmId, category, key);
   }
+
+  @Override
+  public CatalogEntryInfo setPlatformEntry(String category, String key, Map<String, Object> value) {
+    var item = catalogService.setPlatformEntry(category, key, value);
+    // custom = false: this is the platform layer, not a farm's customisation of it.
+    return new CatalogEntryInfo(item.getCategory(), item.getKey(), item.getValue(), false);
+  }
 }

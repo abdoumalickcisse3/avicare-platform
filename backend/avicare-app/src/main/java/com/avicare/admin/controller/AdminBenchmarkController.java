@@ -1,11 +1,15 @@
 package com.avicare.admin.controller;
 
+import com.avicare.admin.dto.request.BenchmarkSettingsRequest;
 import com.avicare.common.api.response.ApiResponse;
 import com.avicare.livestock.benchmark.BenchmarkService;
+import jakarta.validation.Valid;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,6 +26,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminBenchmarkController {
 
   private final BenchmarkService benchmarkService;
+
+  @PutMapping
+  @PreAuthorize("@adminAccess.can('catalog:write')")
+  public ApiResponse<Map<String, Object>> update(
+      @RequestBody @Valid BenchmarkSettingsRequest request) {
+    BenchmarkService.Settings saved =
+        benchmarkService.updateSettings(request.enabled(), request.minCohort());
+    return ApiResponse.of(Map.of("enabled", saved.enabled(), "minCohort", saved.minCohort()));
+  }
 
   @GetMapping
   @PreAuthorize("@adminAccess.can('metrics:read')")

@@ -106,4 +106,28 @@ public class CatalogService {
     item.setDisabled(true);
     farmCatalogItemRepository.save(item);
   }
+
+  /**
+   * Upsert a platform-level catalog entry (layer 1).
+   *
+   * <p>Used by the screens that own a platform setting — health thresholds, benchmark floor. The
+   * key is created if it is missing, so a setting introduced by a migration and one introduced by a
+   * screen behave the same.
+   */
+  @Transactional
+  public CatalogItem setPlatformEntry(String category, String key, Map<String, Object> value) {
+    CatalogItem item =
+        catalogItemRepository
+            .findByCategoryAndKeyAndLocale(category, key, null)
+            .orElseGet(
+                () -> {
+                  CatalogItem fresh = new CatalogItem();
+                  fresh.setCategory(category);
+                  fresh.setKey(key);
+                  return fresh;
+                });
+    item.setValue(value);
+    item.setActive(true);
+    return catalogItemRepository.save(item);
+  }
 }

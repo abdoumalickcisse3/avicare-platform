@@ -4,6 +4,7 @@ import { useMemo, useSyncExternalStore } from "react";
 import { Box, Button, Stack, Typography } from "@mui/material";
 import { ShieldAlert } from "lucide-react";
 import { impersonation } from "@/lib/impersonation";
+import { useCloseImpersonationMutation } from "@/store/api/adminApi";
 import { tokenStorage } from "@/lib/storage";
 import { colors } from "@/theme/tokens";
 
@@ -25,10 +26,14 @@ export function ImpersonationBanner() {
     () => null,
   );
   const state = useMemo(() => impersonation.parse(raw), [raw]);
+  const [closeSession] = useCloseImpersonationMutation();
 
   if (!state) return null;
 
   const onExit = () => {
+    // Best-effort: the trail wants both ends of a support session, but leaving one must never
+    // hang on a request. The opening is recorded server-side regardless.
+    closeSession({ userId: state.targetUserId }).unwrap().catch(() => {});
     if (state.previousAccess && state.previousRefresh) {
       tokenStorage.set(state.previousAccess, state.previousRefresh);
     } else {

@@ -183,6 +183,13 @@ export const adminApi = createApi({
       }),
       transformResponse: (r: Envelope<TemporaryPassword>) => r.data,
     }),
+    /** Records the end of a support session. Best-effort: leaving must never depend on it. */
+    closeImpersonation: build.mutation<void, { userId: number }>({
+      query: ({ userId }) => ({
+        url: `/api/v1/admin/impersonate/${userId}/close`,
+        method: "POST",
+      }),
+    }),
     impersonate: build.mutation<{ accessToken: string }, { userId: number; reason?: string }>({
       query: (body) => ({ url: "/api/v1/admin/impersonate", method: "POST", body }),
       transformResponse: (r: Envelope<{ accessToken: string }>) => r.data,
@@ -253,6 +260,14 @@ export const adminApi = createApi({
       }),
       transformResponse: (r: Envelope<{ enabled: boolean }>) => r.data,
       invalidatesTags: ["AdminAssistant"],
+    }),
+    setBenchmarkSettings: build.mutation<
+      { enabled: boolean; minCohort: number },
+      { enabled: boolean; minCohort: number }
+    >({
+      query: (body) => ({ url: "/api/v1/admin/benchmarks", method: "PUT", body }),
+      transformResponse: (r: Envelope<{ enabled: boolean; minCohort: number }>) => r.data,
+      invalidatesTags: ["AdminMetrics"],
     }),
     getBenchmarkCohort: build.query<
       {
@@ -388,11 +403,13 @@ export const adminApi = createApi({
 });
 
 export const {
+  useCloseImpersonationMutation,
   useGetAssistantTurnsQuery,
   useGetAssistantStatsQuery,
   useGetAssistantFarmStatusQuery,
   useSetAssistantEnabledMutation,
   useGetBenchmarkCohortQuery,
+  useSetBenchmarkSettingsMutation,
   useGetAnnouncementsQuery,
   useSaveAnnouncementMutation,
   useGetBroadcastRecipientsQuery,

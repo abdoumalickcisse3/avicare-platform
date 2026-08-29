@@ -53,7 +53,9 @@ function mockApi(runtime: PlatformRuntime = { schemaVersion: "45", appliedMigrat
       const request = input instanceof Request ? input : null;
       const url = request ? request.url : String(input);
       calls.push({ url, method: request ? request.method : (init?.method ?? "GET") });
-      const payload = url.includes("/whatsapp/failures")
+      const payload = url.includes("/admin/benchmarks")
+        ? { enabled: false, minCohort: 5, cohortSize: 3, available: false, platformMortalityRate: "—" }
+        : url.includes("/whatsapp/failures")
         ? failures
         : url.includes("/metrics/whatsapp")
           ? USAGE
@@ -155,5 +157,27 @@ describe("PlatformCockpit", () => {
     renderWithProviders(<PlatformCockpit />);
 
     expect(await screen.findByText("inconnu")).toBeInTheDocument();
+  });
+
+  it("offers the switch that publishes the comparison", async () => {
+    const calls = mockApi();
+    renderWithProviders(<PlatformCockpit />);
+
+    // Without this the feature could not be turned on at all: the generic catalog editor keeps
+    // the `admin` category read-only.
+    const toggle = await screen.findByLabelText(/Publier la comparaison/);
+    await userEvent.click(toggle);
+
+    await waitFor(() => expect(calls.some((c) => c.method === "PUT")).toBe(true));
+    expect(calls.find((c) => c.method === "PUT")!.url).toContain("/admin/benchmarks");
+  });
+
+  it("says what publishing actually does before it is switched on", async () => {
+    mockApi();
+    renderWithProviders(<PlatformCockpit />);
+
+    expect(
+      await screen.findByText(/Aucune ferme n'est nommée/),
+    ).toBeInTheDocument();
   });
 });
