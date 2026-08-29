@@ -117,6 +117,9 @@ class SecurityE2ETest {
 
   @MockitoBean private com.avicare.admin.repository.AdminAuditLogRepository adminAuditLogRepository;
 
+  @MockitoBean
+  private com.avicare.identity.repository.PasswordResetCodeRepository passwordResetCodeRepository;
+
   @MockitoBean private PartnerAlertRepository partnerAlertRepository;
   @MockitoBean private PartnerUserRepository partnerUserRepository;
   @MockitoBean private PartnerRefreshTokenRepository partnerRefreshTokenRepository;

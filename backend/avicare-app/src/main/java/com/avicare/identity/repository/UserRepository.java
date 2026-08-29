@@ -25,4 +25,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
           + "OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', :q, '%')) "
           + "OR u.phone LIKE CONCAT('%', :q, '%') ORDER BY u.id DESC")
   List<User> search(@Param("q") String q, Pageable pageable);
+
+  /**
+   * Accounts whose phone matches on digits only. Farmers type their number the way they say it —
+   * with spaces, a +221, or neither — while the stored value has whatever shape it was entered in.
+   */
+  @Query(
+      value = "SELECT * FROM users u WHERE regexp_replace(u.phone, '[^0-9]', '', 'g') = :digits",
+      nativeQuery = true)
+  List<User> findByPhoneDigits(@Param("digits") String digits);
 }
