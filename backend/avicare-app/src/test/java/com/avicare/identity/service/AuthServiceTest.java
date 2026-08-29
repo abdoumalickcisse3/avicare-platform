@@ -9,10 +9,12 @@ import static org.mockito.Mockito.when;
 
 import com.avicare.common.api.exception.ConflictException;
 import com.avicare.common.api.exception.UnauthorizedException;
+import com.avicare.common.api.exception.ValidationException;
 import com.avicare.common.security.jwt.JwtProperties;
 import com.avicare.common.security.jwt.JwtService;
 import com.avicare.common.security.jwt.KeyLoader;
 import com.avicare.identity.domain.User;
+import com.avicare.identity.dto.request.ChangePasswordRequest;
 import com.avicare.identity.dto.request.LoginRequest;
 import com.avicare.identity.dto.request.SignupRequest;
 import com.avicare.identity.dto.response.AuthTokens;
@@ -171,5 +173,59 @@ class AuthServiceTest {
     user.setPasswordHash(ENCODER.encode(rawPassword));
     user.setFullName("Test User");
     return user;
+  }
+
+  // --- changing your own password -----------------------------------------
+
+  private User existingUser(String rawPassword) {
+    User user = new User();
+    user.setId(4L);
+    user.setEmail("awa@avicare.io");
+    user.setPasswordHash(ENCODER.encode(rawPassword));
+    user.setActive(true);
+    when(userRepository.findById(4L)).thenReturn(Optional.of(user));
+    return user;
+  }
+
+  @Test
+  void changePassword_replacesTheHash_andRevokesEverySession() {
+    User user = existingUser("ancien-mot-de-passe");
+
+    authService.changePassword(
+        4L, new ChangePasswordRequest("ancien-mot-de-passe", "NouveauPass1"));
+
+    assertThat(ENCODER.matches("NouveauPass1", user.getPasswordHash())).isTrue();
+    // Changing a password usually means someone else may know the old one; leaving their session
+    // alive would defeat the point.
+    verify(refreshTokenService).revokeAllForUser(4L);
+  }
+
+  @Test
+  void changePassword_wrongCurrent_isRefusedAndChangesNothing() {
+    User user = existingUser("ancien-mot-de-passe");
+    String before = user.getPasswordHash();
+
+    // An authenticated token is not enough on its own: a machine left unlocked must not hand the
+    // account over for good.
+    assertThatThrownBy(
+            () -> authService.changePassword(4L, new ChangePasswordRequest("faux", "NouveauPass1")))
+        .isInstanceOf(ValidationException.class)
+        .hasMessageContaining("actuel");
+    assertThat(user.getPasswordHash()).isEqualTo(before);
+    verify(refreshTokenService, never()).revokeAllForUser(any());
+  }
+
+  @Test
+  void changePassword_sameAsCurrent_isRefused() {
+    existingUser("ancien-mot-de-passe");
+
+    // Otherwise "change your password" is satisfiable without changing anything.
+    assertThatThrownBy(
+            () ->
+                authService.changePassword(
+                    4L, new ChangePasswordRequest("ancien-mot-de-passe", "ancien-mot-de-passe")))
+        .isInstanceOf(ValidationException.class)
+        .hasMessageContaining("différent");
+    verify(refreshTokenService, never()).revokeAllForUser(any());
   }
 }
