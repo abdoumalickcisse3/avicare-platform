@@ -16,4 +16,13 @@ public interface WhatsAppOutboxFacade {
    * failure to notify can never roll back the caller's business transaction.
    */
   void enqueue(String rawPhone, String message);
+
+  /**
+   * Queue one message of a deliberate campaign, attributed to a farm.
+   *
+   * <p>Separate from {@link #enqueue} so the ledger can tell a campaign apart from an alert: both
+   * spend a credit, and "why did we spend 400 credits last week" has no answer if they look alike.
+   * Adds a method, not a dependency — this facade's graph is deliberately narrow.
+   */
+  void enqueueBroadcast(String rawPhone, String message, Long farmId);
 }

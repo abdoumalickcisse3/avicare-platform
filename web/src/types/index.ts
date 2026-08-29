@@ -1467,6 +1467,17 @@ export interface AdminMe {
   superAdmin: boolean;
 }
 
+/** A platform announcement, as both the console and the farmer banner render it. */
+export interface AnnouncementView {
+  id: number;
+  title: string;
+  body: string;
+  severity: "INFO" | "WARNING" | "CRITICAL";
+  startsAt: string;
+  endsAt: string | null;
+  published: boolean;
+}
+
 /** The platform cockpit. `volumes` is open-ended: each context contributes its own counters. */
 export interface PlatformOverview {
   farms: number;
