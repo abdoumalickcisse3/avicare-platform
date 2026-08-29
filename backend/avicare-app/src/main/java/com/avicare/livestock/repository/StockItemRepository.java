@@ -16,6 +16,9 @@ public interface StockItemRepository extends JpaRepository<StockItem, Long> {
   Optional<StockItem> findByFarmIdAndArticleSourceAndArticleKey(
       Long farmId, ArticleSource articleSource, String articleKey);
 
+  /** Every stock line, inactive ones included. */
+  List<StockItem> findByFarmIdOrderById(Long farmId);
+
   Optional<StockItem> findByFarmIdAndId(Long farmId, Long id);
 
   /** Active stocks of a farm whose quantity has gone negative (Décision 19 fallout). */

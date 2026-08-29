@@ -27,9 +27,13 @@ function mockApi(users: unknown[], temporaryPassword = "TEMP1234") {
     vi.fn(async (input: RequestInfo | URL) => {
       const url = input instanceof Request ? input.url : String(input);
       calls.push(url);
+      // /admin/me joined the component with the anonymise action; without it `me.permissions`
+      // is undefined and every render in this file throws.
       const body = url.includes("reset-password")
         ? { data: { userId: 7, temporaryPassword } }
-        : { data: users };
+        : url.includes("/admin/me")
+          ? { data: { userId: 1, email: "me@jawdi.app", permissions: ["*"], superAdmin: true } }
+          : { data: users };
       return new Response(JSON.stringify(body), {
         status: 200,
         headers: { "Content-Type": "application/json" },

@@ -18,6 +18,7 @@ import type {
   AdminPartnerUser,
   AdminCatalogCategory,
   AdminCatalogItemRow,
+  FarmPurgePreview,
   StaffCatalogResource,
   StaffMemberRow,
   FarmHealthRow,
@@ -77,7 +78,7 @@ const baseQueryWithReauth: BaseQueryFn<
 export const adminApi = createApi({
   reducerPath: "adminApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["AdminMe", "AdminFarm", "AdminUser", "AdminPartner", "AdminStaff", "AdminCatalog"],
+  tagTypes: ["AdminMe", "AdminFarm", "AdminUser", "AdminPartner", "AdminStaff", "AdminCatalog", "AdminCompliance"],
   endpoints: (build) => ({
     /** Staff sign-in reuses the ordinary auth endpoint; the console then checks /admin/me. */
     adminLogin: build.mutation<AuthTokens, { email: string; password: string }>({
@@ -187,6 +188,33 @@ export const adminApi = createApi({
       }),
       invalidatesTags: ["AdminUser"],
     }),
+    getDeletedFarms: build.query<FarmPurgePreview[], void>({
+      query: () => "/api/v1/admin/compliance/farms/deleted",
+      transformResponse: (r: Envelope<FarmPurgePreview[]>) => r.data,
+      providesTags: ["AdminCompliance"],
+    }),
+    /** Returns the bundle so the screen can hand it to the browser as a file. */
+    exportFarmData: build.mutation<Record<string, unknown>, { farmId: number }>({
+      query: ({ farmId }) => `/api/v1/admin/compliance/farms/${farmId}/export`,
+      transformResponse: (r: Envelope<Record<string, unknown>>) => r.data,
+      invalidatesTags: ["AdminCompliance"],
+    }),
+    purgeFarm: build.mutation<void, { farmId: number; confirmationName: string }>({
+      query: ({ farmId, confirmationName }) => ({
+        url: `/api/v1/admin/compliance/farms/${farmId}`,
+        method: "DELETE",
+        body: { confirmationName },
+      }),
+      invalidatesTags: ["AdminCompliance", "AdminFarm"],
+    }),
+    anonymizeUser: build.mutation<{ email: string }, { userId: number }>({
+      query: ({ userId }) => ({
+        url: `/api/v1/admin/compliance/users/${userId}/anonymize`,
+        method: "POST",
+      }),
+      transformResponse: (r: Envelope<{ email: string }>) => r.data,
+      invalidatesTags: ["AdminUser"],
+    }),
     getCatalogCategories: build.query<AdminCatalogCategory[], void>({
       query: () => "/api/v1/admin/catalog/categories",
       transformResponse: (r: Envelope<AdminCatalogCategory[]>) => r.data,
@@ -246,6 +274,10 @@ export const adminApi = createApi({
 });
 
 export const {
+  useGetDeletedFarmsQuery,
+  useExportFarmDataMutation,
+  usePurgeFarmMutation,
+  useAnonymizeUserMutation,
   useGetCatalogCategoriesQuery,
   useGetCatalogItemsQuery,
   useCreateCatalogItemMutation,

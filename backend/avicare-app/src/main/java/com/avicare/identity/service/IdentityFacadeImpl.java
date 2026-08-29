@@ -70,4 +70,17 @@ public class IdentityFacadeImpl implements IdentityFacade {
   private User loadById(Long userId) {
     return userRepository.findById(userId).orElseThrow(() -> NotFoundException.of("User", userId));
   }
+
+  @Override
+  @Transactional
+  public String anonymize(Long userId) {
+    User user = loadById(userId);
+    String placeholder = "anonymise-" + userId + "@supprime.invalid";
+    user.setEmail(placeholder);
+    user.setFullName("Compte anonymisé");
+    user.setPhone(null);
+    user.setActive(false);
+    userRepository.save(user);
+    return placeholder;
+  }
 }
