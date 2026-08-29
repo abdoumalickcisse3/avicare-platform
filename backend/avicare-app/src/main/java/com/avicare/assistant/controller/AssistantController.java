@@ -1,5 +1,6 @@
 package com.avicare.assistant.controller;
 
+import com.avicare.assistant.access.AssistantAvailability;
 import com.avicare.assistant.audit.AssistantAuditService;
 import com.avicare.assistant.audit.AssistantQuotaService;
 import com.avicare.assistant.confirm.PendingActionService;
@@ -37,12 +38,16 @@ public class AssistantController {
   private final InterpretService interpretService;
   private final AssistantAuditService auditService;
   private final AssistantQuotaService quotaService;
+  private final AssistantAvailability availability;
   private final PendingActionService pendingActions;
 
   @PostMapping("/interpret")
   @PreAuthorize("@farmAccess.hasAccess(#farmId)")
   public ApiResponse<InterpretResponse> interpret(
       @PathVariable Long farmId, @RequestBody @Valid InterpretRequest request) {
+    // Staff can switch the assistant off for a farm; refused here rather than after
+    // the model has been called and paid for.
+    availability.requireEnabled(farmId);
     Long userId = TenancyContext.currentUserId();
 
     // Cost guard: turn the user away before the LLM once the daily cap is reached
@@ -70,6 +75,7 @@ public class AssistantController {
   @PreAuthorize("@farmAccess.hasAccess(#farmId)")
   public ApiResponse<InterpretResponse> chat(
       @PathVariable Long farmId, @RequestBody @Valid ChatRequest request) {
+    availability.requireEnabled(farmId);
     Long userId = TenancyContext.currentUserId();
 
     if (quotaService.isExhausted(userId)) {

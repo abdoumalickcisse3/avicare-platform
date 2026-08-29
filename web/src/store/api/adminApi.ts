@@ -7,6 +7,7 @@ import {
 } from "@reduxjs/toolkit/query/react";
 import { adminTokenStorage } from "@/lib/adminStorage";
 import type {
+  AssistantTurn,
   AnnouncementView,
   PlatformOverview,
   PlatformRuntime,
@@ -83,7 +84,7 @@ const baseQueryWithReauth: BaseQueryFn<
 export const adminApi = createApi({
   reducerPath: "adminApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["AdminMe", "AdminFarm", "AdminUser", "AdminPartner", "AdminStaff", "AdminCatalog", "AdminCompliance", "AdminMetrics", "AdminAnnouncement"],
+  tagTypes: ["AdminMe", "AdminFarm", "AdminUser", "AdminPartner", "AdminStaff", "AdminCatalog", "AdminCompliance", "AdminMetrics", "AdminAnnouncement", "AdminAssistant"],
   endpoints: (build) => ({
     /** Staff sign-in reuses the ordinary auth endpoint; the console then checks /admin/me. */
     adminLogin: build.mutation<AuthTokens, { email: string; password: string }>({
@@ -229,6 +230,30 @@ export const adminApi = createApi({
       transformResponse: (r: Envelope<{ queued: number }>) => r.data,
       invalidatesTags: ["AdminMetrics"],
     }),
+    getAssistantTurns: build.query<AssistantTurn[], { farmId?: number; limit?: number }>({
+      query: ({ farmId, limit = 20 }) =>
+        `/api/v1/admin/assistant/turns?limit=${limit}${farmId ? `&farmId=${farmId}` : ""}`,
+      transformResponse: (r: Envelope<AssistantTurn[]>) => r.data,
+      providesTags: ["AdminAssistant"],
+    }),
+    getAssistantStats: build.query<Record<string, number>, { days: number }>({
+      query: ({ days }) => `/api/v1/admin/assistant/stats?days=${days}`,
+      transformResponse: (r: Envelope<Record<string, number>>) => r.data,
+      providesTags: ["AdminAssistant"],
+    }),
+    getAssistantFarmStatus: build.query<{ enabled: boolean }, { farmId: number }>({
+      query: ({ farmId }) => `/api/v1/admin/assistant/farms/${farmId}`,
+      transformResponse: (r: Envelope<{ enabled: boolean }>) => r.data,
+      providesTags: ["AdminAssistant"],
+    }),
+    setAssistantEnabled: build.mutation<{ enabled: boolean }, { farmId: number; enabled: boolean }>({
+      query: ({ farmId, enabled }) => ({
+        url: `/api/v1/admin/assistant/farms/${farmId}/${enabled ? "enable" : "disable"}`,
+        method: "POST",
+      }),
+      transformResponse: (r: Envelope<{ enabled: boolean }>) => r.data,
+      invalidatesTags: ["AdminAssistant"],
+    }),
     getBenchmarkCohort: build.query<
       {
         enabled: boolean;
@@ -363,6 +388,10 @@ export const adminApi = createApi({
 });
 
 export const {
+  useGetAssistantTurnsQuery,
+  useGetAssistantStatsQuery,
+  useGetAssistantFarmStatusQuery,
+  useSetAssistantEnabledMutation,
   useGetBenchmarkCohortQuery,
   useGetAnnouncementsQuery,
   useSaveAnnouncementMutation,
