@@ -1481,6 +1481,18 @@ export interface BenchmarkComparison {
   farmMortalityRate: string | null;
 }
 
+/** One assistant turn, as the console reviews it. The text is the point, not a counter. */
+export interface AssistantTurn {
+  id: number;
+  farmId: number;
+  userId: number;
+  kind: string | null;
+  action: string | null;
+  text: string;
+  summary: string | null;
+  createdAt: string;
+}
+
 /** A platform announcement, as both the console and the farmer banner render it. */
 export interface AnnouncementView {
   id: number;

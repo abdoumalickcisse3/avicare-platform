@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import {
   Activity,
+  Bot,
   Building2,
   Handshake,
   HeartPulse,
@@ -47,6 +48,7 @@ const NAV: NavEntry[] = [
   { href: "/console/sante", label: "Santé", icon: HeartPulse, permission: "tenants:read" },
   { href: "/console/partenaires", label: "Partenaires", icon: Handshake, permission: "partners:read" },
   { href: "/console/catalogue", label: "Catalogue", icon: Library, permission: "catalog:write" },
+  { href: "/console/assistant", label: "Assistant", icon: Bot, permission: "assistant:review" },
   { href: "/console/communication", label: "Communication", icon: Megaphone, permission: "broadcast:send" },
   { href: "/console/conformite", label: "Conformité", icon: ScrollText, permission: "compliance:export" },
   { href: "/console/personnel", label: "Personnel", icon: UserCog, permission: "staff:manage" },

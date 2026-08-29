@@ -11,16 +11,17 @@ public final class StaffPermissionCatalog {
   public record ResourceDef(String resource, String label, List<String> verbs) {}
 
   private static final Map<String, String> LABELS =
-      Map.of(
-          "tenants", "Fermes",
-          "users", "Utilisateurs",
-          "impersonate", "Mode support",
-          "catalog", "Catalogue plateforme",
-          "broadcast", "Annonces",
-          "compliance", "Conformité",
-          "staff", "Personnel",
-          "metrics", "Pilotage",
-          "partners", "Partenaires");
+      Map.ofEntries(
+          Map.entry("tenants", "Fermes"),
+          Map.entry("users", "Utilisateurs"),
+          Map.entry("impersonate", "Mode support"),
+          Map.entry("catalog", "Catalogue plateforme"),
+          Map.entry("broadcast", "Annonces"),
+          Map.entry("compliance", "Conformité"),
+          Map.entry("staff", "Personnel"),
+          Map.entry("metrics", "Pilotage"),
+          Map.entry("assistant", "Assistant IA"),
+          Map.entry("partners", "Partenaires"));
 
   /** Resources in a stable display order. */
   public static final List<ResourceDef> RESOURCES =
@@ -33,6 +34,7 @@ public final class StaffPermissionCatalog {
               "compliance",
               "staff",
               "metrics",
+              "assistant",
               "partners")
           .stream()
           .map(

@@ -55,16 +55,23 @@ public final class StaffPermissionConstants {
 
   public static final String PARTNERS_PROSPECT = "partners:prospect";
 
-  /** Verbs assignable per resource, the source of truth for validation. */
+  /**
+   * Verbs assignable per resource, the source of truth for validation.
+   *
+   * <p>{@code Map.ofEntries} rather than {@code Map.of}: the latter caps at ten pairs, and this map
+   * is already there — an eleventh resource would fail to compile for a reason that has nothing to
+   * do with permissions.
+   */
   public static final Map<String, List<String>> RESOURCE_VERBS =
-      Map.of(
-          "tenants", List.of("read", "write"),
-          "users", List.of("read", "reset-password", "deactivate"),
-          "impersonate", List.of("open"),
-          "catalog", List.of("write"),
-          "broadcast", List.of("send"),
-          "compliance", List.of("export", "delete"),
-          "staff", List.of("manage"),
-          "metrics", List.of("read"),
-          "partners", List.of("read", "write", "users", "attach", "prospect"));
+      Map.ofEntries(
+          Map.entry("tenants", List.of("read", "write")),
+          Map.entry("users", List.of("read", "reset-password", "deactivate")),
+          Map.entry("impersonate", List.of("open")),
+          Map.entry("catalog", List.of("write")),
+          Map.entry("broadcast", List.of("send")),
+          Map.entry("compliance", List.of("export", "delete")),
+          Map.entry("staff", List.of("manage")),
+          Map.entry("metrics", List.of("read")),
+          Map.entry("assistant", List.of("review", "configure")),
+          Map.entry("partners", List.of("read", "write", "users", "attach", "prospect")));
 }

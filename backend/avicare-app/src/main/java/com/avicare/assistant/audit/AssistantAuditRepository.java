@@ -27,4 +27,24 @@ public interface AssistantAuditRepository extends JpaRepository<AssistantAudit, 
       @Param("userId") Long userId,
       @Param("since") LocalDateTime since,
       Pageable pageable);
+
+  /** Every farm's turns, newest first — the console's review feed. */
+  List<AssistantAudit> findAllByOrderByCreatedAtDesc(Pageable pageable);
+
+  /** Turns per kind over a window: a shape of what the assistant is being asked, not a score. */
+  @Query(
+      """
+      SELECT a.kind AS kind, COUNT(a) AS total
+      FROM AssistantAudit a
+      WHERE a.createdAt >= :since
+      GROUP BY a.kind
+      """)
+  List<KindCount> countByKindSince(@Param("since") LocalDateTime since);
+
+  /** Projection for {@link #countByKindSince}. */
+  interface KindCount {
+    String getKind();
+
+    long getTotal();
+  }
 }
