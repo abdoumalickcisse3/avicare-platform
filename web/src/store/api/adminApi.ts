@@ -7,6 +7,10 @@ import {
 } from "@reduxjs/toolkit/query/react";
 import { adminTokenStorage } from "@/lib/adminStorage";
 import type {
+  PlatformOverview,
+  PlatformRuntime,
+  WhatsAppFailure,
+  WhatsAppUsage,
   AdminFarmDetail,
   AdminFarmRow,
   AdminMe,
@@ -78,7 +82,7 @@ const baseQueryWithReauth: BaseQueryFn<
 export const adminApi = createApi({
   reducerPath: "adminApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["AdminMe", "AdminFarm", "AdminUser", "AdminPartner", "AdminStaff", "AdminCatalog", "AdminCompliance"],
+  tagTypes: ["AdminMe", "AdminFarm", "AdminUser", "AdminPartner", "AdminStaff", "AdminCatalog", "AdminCompliance", "AdminMetrics"],
   endpoints: (build) => ({
     /** Staff sign-in reuses the ordinary auth endpoint; the console then checks /admin/me. */
     adminLogin: build.mutation<AuthTokens, { email: string; password: string }>({
@@ -188,6 +192,34 @@ export const adminApi = createApi({
       }),
       invalidatesTags: ["AdminUser"],
     }),
+    getPlatformOverview: build.query<PlatformOverview, void>({
+      query: () => "/api/v1/admin/metrics/overview",
+      transformResponse: (r: Envelope<PlatformOverview>) => r.data,
+      providesTags: ["AdminMetrics"],
+    }),
+    getPlatformRuntime: build.query<PlatformRuntime, void>({
+      query: () => "/api/v1/admin/metrics/runtime",
+      transformResponse: (r: Envelope<PlatformRuntime>) => r.data,
+      providesTags: ["AdminMetrics"],
+    }),
+    getWhatsAppUsage: build.query<WhatsAppUsage, { days: number }>({
+      query: ({ days }) => `/api/v1/admin/metrics/whatsapp?days=${days}`,
+      transformResponse: (r: Envelope<WhatsAppUsage>) => r.data,
+      providesTags: ["AdminMetrics"],
+    }),
+    getWhatsAppFailures: build.query<WhatsAppFailure[], void>({
+      query: () => "/api/v1/admin/metrics/whatsapp/failures",
+      transformResponse: (r: Envelope<WhatsAppFailure[]>) => r.data,
+      providesTags: ["AdminMetrics"],
+    }),
+    retryWhatsApp: build.mutation<{ requeued: boolean }, { outboxId: number }>({
+      query: ({ outboxId }) => ({
+        url: `/api/v1/admin/metrics/whatsapp/${outboxId}/retry`,
+        method: "POST",
+      }),
+      transformResponse: (r: Envelope<{ requeued: boolean }>) => r.data,
+      invalidatesTags: ["AdminMetrics"],
+    }),
     getDeletedFarms: build.query<FarmPurgePreview[], void>({
       query: () => "/api/v1/admin/compliance/farms/deleted",
       transformResponse: (r: Envelope<FarmPurgePreview[]>) => r.data,
@@ -274,6 +306,11 @@ export const adminApi = createApi({
 });
 
 export const {
+  useGetPlatformOverviewQuery,
+  useGetPlatformRuntimeQuery,
+  useGetWhatsAppUsageQuery,
+  useGetWhatsAppFailuresQuery,
+  useRetryWhatsAppMutation,
   useGetDeletedFarmsQuery,
   useExportFarmDataMutation,
   usePurgeFarmMutation,

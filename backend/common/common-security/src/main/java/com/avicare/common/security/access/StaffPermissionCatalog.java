@@ -19,6 +19,7 @@ public final class StaffPermissionCatalog {
           "broadcast", "Annonces",
           "compliance", "Conformité",
           "staff", "Personnel",
+          "metrics", "Pilotage",
           "partners", "Partenaires");
 
   /** Resources in a stable display order. */
@@ -31,6 +32,7 @@ public final class StaffPermissionCatalog {
               "broadcast",
               "compliance",
               "staff",
+              "metrics",
               "partners")
           .stream()
           .map(

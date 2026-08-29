@@ -41,4 +41,11 @@ public interface FarmRepository extends JpaRepository<Farm, Long> {
   @Modifying
   @Query(value = "DELETE FROM farms WHERE id = :farmId", nativeQuery = true)
   void hardDeleteById(@Param("farmId") Long farmId);
+
+  /** Every farm, soft-deleted included — the entity's @SQLRestriction hides them from count(). */
+  @Query(value = "SELECT COUNT(*) FROM farms", nativeQuery = true)
+  long countAll();
+
+  @Query(value = "SELECT COUNT(*) FROM farms WHERE deleted_at IS NOT NULL", nativeQuery = true)
+  long countSoftDeleted();
 }

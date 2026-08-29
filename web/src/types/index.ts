@@ -1467,6 +1467,48 @@ export interface AdminMe {
   superAdmin: boolean;
 }
 
+/** The platform cockpit. `volumes` is open-ended: each context contributes its own counters. */
+export interface PlatformOverview {
+  farms: number;
+  activeFarms: number;
+  deletedFarms: number;
+  users: number;
+  activeUsers: number;
+  monthlyActiveUsers: number;
+  staffAccounts: number;
+  volumes: Record<string, number>;
+  generatedAt: string;
+}
+
+/** What is actually running, for the "is the fix deployed?" question. */
+export interface PlatformRuntime {
+  schemaVersion: string | null;
+  appliedMigrations: number;
+  applicationVersion: string | null;
+  serverTime: string;
+  whatsappEnabled: boolean;
+}
+
+/** WhatsApp spend over a window. Every send costs a credit, whichever path produced it. */
+export interface WhatsAppUsage {
+  days: number;
+  sent: number;
+  failed: number;
+  pending: number;
+  bySource: Record<string, number>;
+  byFarm: Record<string, number>;
+}
+
+/** One failed send. The phone keeps only its last digits — it identifies a person. */
+export interface WhatsAppFailure {
+  id: number;
+  maskedPhone: string;
+  source: string | null;
+  attempts: number;
+  lastError: string | null;
+  createdAt: string;
+}
+
 /** A soft-deleted farm and whether it may yet be purged. */
 export interface FarmPurgePreview {
   farmId: number;

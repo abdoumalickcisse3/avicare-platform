@@ -14,6 +14,7 @@ import {
   Typography,
 } from "@mui/material";
 import {
+  Activity,
   Building2,
   Handshake,
   HeartPulse,
@@ -39,6 +40,7 @@ interface NavEntry {
 }
 
 const NAV: NavEntry[] = [
+  { href: "/console/pilotage", label: "Pilotage", icon: Activity, permission: "metrics:read" },
   { href: "/console/fermes", label: "Fermes", icon: Building2, permission: "tenants:read" },
   { href: "/console/utilisateurs", label: "Utilisateurs", icon: Users, permission: "users:read" },
   { href: "/console/sante", label: "Santé", icon: HeartPulse, permission: "tenants:read" },
