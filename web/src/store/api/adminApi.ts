@@ -229,6 +229,26 @@ export const adminApi = createApi({
       transformResponse: (r: Envelope<{ queued: number }>) => r.data,
       invalidatesTags: ["AdminMetrics"],
     }),
+    getBenchmarkCohort: build.query<
+      {
+        enabled: boolean;
+        minCohort: number;
+        cohortSize: number;
+        available: boolean;
+        platformMortalityRate: string;
+      },
+      void
+    >({
+      query: () => "/api/v1/admin/benchmarks",
+      transformResponse: (r: Envelope<{
+        enabled: boolean;
+        minCohort: number;
+        cohortSize: number;
+        available: boolean;
+        platformMortalityRate: string;
+      }>) => r.data,
+      providesTags: ["AdminMetrics"],
+    }),
     getPlatformOverview: build.query<PlatformOverview, void>({
       query: () => "/api/v1/admin/metrics/overview",
       transformResponse: (r: Envelope<PlatformOverview>) => r.data,
@@ -343,6 +363,7 @@ export const adminApi = createApi({
 });
 
 export const {
+  useGetBenchmarkCohortQuery,
   useGetAnnouncementsQuery,
   useSaveAnnouncementMutation,
   useGetBroadcastRecipientsQuery,

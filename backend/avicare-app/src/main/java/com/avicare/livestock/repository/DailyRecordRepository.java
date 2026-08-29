@@ -88,4 +88,13 @@ public interface DailyRecordRepository extends JpaRepository<DailyRecord, Long> 
           + "AND d.recordDate BETWEEN :from AND :to")
   long countFeedDaysByFarmAndPeriod(
       @Param("farmId") Long farmId, @Param("from") LocalDate from, @Param("to") LocalDate to);
+
+  /** Deaths recorded per farm, all flocks and all time — the mortality benchmark's numerator. */
+  @Query(
+      """
+      SELECT pu.farmId AS farmId, SUM(d.mortalityCount) AS total
+      FROM DailyRecord d JOIN d.productionUnit pu
+      GROUP BY pu.farmId
+      """)
+  List<FarmTotal> mortalityTotalsByFarm();
 }

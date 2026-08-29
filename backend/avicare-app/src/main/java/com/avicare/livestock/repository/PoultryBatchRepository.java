@@ -21,4 +21,14 @@ public interface PoultryBatchRepository extends JpaRepository<PoultryBatch, Long
   /** All batches across the farms the caller can access (tenant scoping done by the caller). */
   @Query("SELECT b FROM PoultryBatch b WHERE b.farmId IN :farmIds")
   List<PoultryBatch> findAccessibleBatches(@Param("farmIds") List<Long> farmIds);
+
+  /** Birds placed per farm — the denominator of the mortality benchmark. */
+  @Query(
+      """
+      SELECT b.farmId AS farmId, SUM(b.initialCount) AS total
+      FROM PoultryBatch b
+      WHERE b.initialCount > 0
+      GROUP BY b.farmId
+      """)
+  List<FarmTotal> sumInitialCountByFarm();
 }

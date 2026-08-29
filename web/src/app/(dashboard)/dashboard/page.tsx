@@ -29,6 +29,7 @@ import { LivestockPanel } from "@/components/dashboard/LivestockPanel";
 import { MiniStat } from "@/components/dashboard/MiniStat";
 import { AreaTrend, type Point } from "@/components/dashboard/charts/RechartsWidgets";
 import { pickHeroTiles } from "@/lib/dashboardHero";
+import { BenchmarkCard } from "@/components/dashboard/BenchmarkCard";
 import { DashboardWelcome } from "@/components/onboarding/DashboardWelcome";
 import { periodToQuery } from "@/lib/dashboard";
 import { formatCurrency, formatNumber } from "@/lib/format";
@@ -247,6 +248,9 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Last: it is context, not a figure the morning check depends on. */}
+      {farmId && <BenchmarkCard farmId={farmId} />}
     </Stack>
   );
 }
