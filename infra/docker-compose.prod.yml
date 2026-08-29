@@ -57,6 +57,11 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: "6379"
       JWT_ISSUER: ${JWT_ISSUER:-avicare-platform}
+      # Every browser front that calls /api, derived from DOMAIN (already required by caddy).
+      # The full list is the fallback, not a bare ${CORS_ALLOWED_ORIGINS}: Docker turns an unset
+      # variable into an empty string, and Spring would take that empty value over its own
+      # default — locking every browser out of the API.
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://app.${DOMAIN},https://partner.${DOMAIN},https://admin.${DOMAIN},https://${DOMAIN},https://www.${DOMAIN}}
       # Promoted to platform staff at startup and granted "*". Never creates an account: the email
       # must already be signed up. Unset = nobody can enter the console, which is the safe default.
       ADMIN_FOUNDER_EMAIL: ${ADMIN_FOUNDER_EMAIL:-}
