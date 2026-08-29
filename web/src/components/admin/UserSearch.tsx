@@ -23,6 +23,8 @@ import {
 } from "@mui/material";
 import { KeyRound, LifeBuoy, Search } from "lucide-react";
 import {
+  useAnonymizeUserMutation,
+  useGetAdminMeQuery,
   useImpersonateMutation,
   useLazySearchAdminUsersQuery,
   useResetAdminUserPasswordMutation,
@@ -45,6 +47,23 @@ export function UserSearch() {
   const [resetPassword] = useResetAdminUserPasswordMutation();
   const [setActive] = useSetAdminUserActiveMutation();
   const [openSupport] = useImpersonateMutation();
+  const [anonymize] = useAnonymizeUserMutation();
+  const { data: me } = useGetAdminMeQuery();
+  const [toAnonymize, setToAnonymize] = useState<AdminUserRow | null>(null);
+
+  // Erasure is its own permission: answering a data request and destroying an identity are not
+  // the same right, and holding the first must not imply the second.
+  const canAnonymize =
+    me?.permissions.includes("*") ||
+    me?.permissions.includes("compliance:delete") ||
+    me?.permissions.includes("compliance:*") ||
+    false;
+
+  const onAnonymize = async () => {
+    if (!toAnonymize) return;
+    await anonymize({ userId: toAnonymize.userId }).unwrap().catch(() => {});
+    setToAnonymize(null);
+  };
   const [issued, setIssued] = useState<{ email: string; password: string } | null>(null);
 
   const onSearch = () => {
@@ -162,6 +181,16 @@ export function UserSearch() {
                         >
                           {u.active ? "Désactiver" : "Réactiver"}
                         </Button>
+                        {canAnonymize && (
+                          <Button
+                            size="small"
+                            color="error"
+                            disabled={u.role === "ADMIN"}
+                            onClick={() => setToAnonymize(u)}
+                          >
+                            Anonymiser
+                          </Button>
+                        )}
                       </Stack>
                     </TableCell>
                   </TableRow>

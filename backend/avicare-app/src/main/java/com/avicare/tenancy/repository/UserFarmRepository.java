@@ -18,6 +18,9 @@ public interface UserFarmRepository extends JpaRepository<UserFarm, Long> {
 
   List<UserFarm> findByFarmIdAndActiveTrue(Long farmId);
 
+  /** Every membership, revoked ones included — an export must show who ever had access. */
+  List<UserFarm> findByFarmId(Long farmId);
+
   Optional<UserFarm> findByUserIdAndFarmId(Long userId, Long farmId);
 
   boolean existsByUserIdAndFarmId(Long userId, Long farmId);

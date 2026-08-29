@@ -36,4 +36,16 @@ public interface IdentityFacade {
    * before the back-office needed one — {@link #isActive} was read-only.
    */
   void setActive(Long userId, boolean active);
+
+  /**
+   * Strip an account of its personal data and disable it, keeping the row.
+   *
+   * <p>Not a deletion: 59 columns across the schema reference {@code users(id)}, 45 of them with no
+   * {@code ON DELETE} clause, so removing the row would simply fail for anyone who has ever created
+   * anything. Anonymising keeps the history readable — who did what stays true — while the person
+   * behind it becomes unidentifiable. It cannot be undone.
+   *
+   * @return the placeholder email the account now carries
+   */
+  String anonymize(Long userId);
 }

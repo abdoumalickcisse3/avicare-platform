@@ -1467,6 +1467,19 @@ export interface AdminMe {
   superAdmin: boolean;
 }
 
+/** A soft-deleted farm and whether it may yet be purged. */
+export interface FarmPurgePreview {
+  farmId: number;
+  farmName: string;
+  deletedAt: string | null;
+  daysSinceDeletion: number | null;
+  lastExportAt: string | null;
+  exportDone: boolean;
+  retentionElapsed: boolean;
+  purgeable: boolean;
+  counts: Record<string, number>;
+}
+
 /** One catalog category with its counts, as the console lists them. */
 export interface AdminCatalogCategory {
   category: string;

@@ -11,6 +11,9 @@ public interface ClientRepository extends JpaRepository<Client, Long> {
 
   List<Client> findByFarmIdAndActiveTrueOrderByDisplayName(Long farmId);
 
+  /** Every client, inactive ones included — an export is a snapshot, not a working list. */
+  List<Client> findByFarmIdOrderById(Long farmId);
+
   Optional<Client> findByFarmIdAndId(Long farmId, Long id);
 
   /**

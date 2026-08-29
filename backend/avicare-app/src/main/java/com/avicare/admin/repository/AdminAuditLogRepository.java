@@ -1,6 +1,7 @@
 package com.avicare.admin.repository;
 
 import com.avicare.admin.domain.AdminAuditLog;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,4 +15,11 @@ public interface AdminAuditLogRepository extends JpaRepository<AdminAuditLog, Lo
   Page<AdminAuditLog> findByActorUserIdOrderByCreatedAtDesc(Long actorUserId, Pageable pageable);
 
   Page<AdminAuditLog> findByTenantIdOrderByCreatedAtDesc(Long tenantId, Pageable pageable);
+
+  /**
+   * Most recent entry for one action on one target. The append-only trail is the proof that an
+   * export happened — no second table to keep in sync with it.
+   */
+  Optional<AdminAuditLog> findFirstByActionAndTargetIdOrderByCreatedAtDesc(
+      String action, Long targetId);
 }
