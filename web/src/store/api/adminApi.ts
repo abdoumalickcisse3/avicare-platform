@@ -7,6 +7,7 @@ import {
 } from "@reduxjs/toolkit/query/react";
 import { adminTokenStorage } from "@/lib/adminStorage";
 import type {
+  PlatformBackups,
   AssistantTurn,
   AnnouncementView,
   PlatformOverview,
@@ -299,6 +300,11 @@ export const adminApi = createApi({
       transformResponse: (r: Envelope<PlatformRuntime>) => r.data,
       providesTags: ["AdminMetrics"],
     }),
+    getPlatformBackups: build.query<PlatformBackups, void>({
+      query: () => "/api/v1/admin/metrics/backups",
+      transformResponse: (r: Envelope<PlatformBackups>) => r.data,
+      providesTags: ["AdminMetrics"],
+    }),
     getWhatsAppUsage: build.query<WhatsAppUsage, { days: number }>({
       query: ({ days }) => `/api/v1/admin/metrics/whatsapp?days=${days}`,
       transformResponse: (r: Envelope<WhatsAppUsage>) => r.data,
@@ -416,6 +422,7 @@ export const {
   useSendBroadcastMutation,
   useGetPlatformOverviewQuery,
   useGetPlatformRuntimeQuery,
+  useGetPlatformBackupsQuery,
   useGetWhatsAppUsageQuery,
   useGetWhatsAppFailuresQuery,
   useRetryWhatsAppMutation,

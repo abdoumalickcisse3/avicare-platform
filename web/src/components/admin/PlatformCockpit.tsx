@@ -26,6 +26,7 @@ import {
   useGetBenchmarkCohortQuery,
   useSetBenchmarkSettingsMutation,
   useGetPlatformOverviewQuery,
+  useGetPlatformBackupsQuery,
   useGetPlatformRuntimeQuery,
   useGetWhatsAppFailuresQuery,
   useGetWhatsAppUsageQuery,
@@ -78,6 +79,7 @@ export function PlatformCockpit() {
   const { data: overview, isLoading } = useGetPlatformOverviewQuery();
   const { data: runtime } = useGetPlatformRuntimeQuery();
   const { data: cohort } = useGetBenchmarkCohortQuery();
+  const { data: backups } = useGetPlatformBackupsQuery();
   const [setBenchmarks, { isLoading: savingBenchmarks }] = useSetBenchmarkSettingsMutation();
   const { data: usage } = useGetWhatsAppUsageQuery({ days });
   const { data: failures = [] } = useGetWhatsAppFailuresQuery();
@@ -311,6 +313,70 @@ export function PlatformCockpit() {
                 Chaque ferme verra sa mortalité à côté de la moyenne des autres. Aucune ferme
                 n&apos;est nommée, et rien n&apos;est publié tant que la cohorte est sous le seuil.
               </Typography>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card variant="outlined">
+        <CardContent>
+          <Typography variant="subtitle2" sx={{ mb: 1.5 }}>
+            Sauvegardes
+          </Typography>
+          {!backups ? null : !backups.mounted ? (
+            <Alert severity="info">
+              Le répertoire des sauvegardes n&apos;est pas visible depuis l&apos;application. Les
+              dumps tournent peut-être très bien — la console ne peut simplement pas le vérifier.
+            </Alert>
+          ) : (
+            <>
+              {backups.stale && (
+                <Alert severity="error" sx={{ mb: 1.5 }}>
+                  {backups.dumpCount === 0
+                    ? "Aucune sauvegarde dans le répertoire."
+                    : `Dernière sauvegarde il y a ${backups.ageHours} h. Les dumps sont censés être quotidiens.`}
+                </Alert>
+              )}
+              <Stack direction="row" sx={{ gap: 3, flexWrap: "wrap" }}>
+                <Box>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    {backups.ageHours === null ? "—" : `il y a ${backups.ageHours} h`}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    dernière sauvegarde
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    {backups.dumpCount}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    dumps conservés
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    {(backups.totalBytes / 1024 / 1024).toFixed(1)} Mo
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    volume total
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    {backups.offsiteConfigured ? "configurée" : "aucune"}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    copie hors site
+                  </Typography>
+                </Box>
+              </Stack>
+              {backups.offsiteConfigured && (
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
+                  « Configurée » dit qu&apos;un dépôt distant est renseigné, pas que le dernier
+                  envoi a réussi : la console ne voit pas le dépôt.
+                </Typography>
+              )}
             </>
           )}
         </CardContent>

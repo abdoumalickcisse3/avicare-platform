@@ -44,7 +44,25 @@ interface Call {
   method: string;
 }
 
-function mockApi(runtime: PlatformRuntime = { schemaVersion: "45", appliedMigrations: 45, applicationVersion: null, serverTime: "2026-08-29T18:00:00", whatsappEnabled: true }, failures: unknown[] = [FAILURE]) {
+const DEFAULT_RUNTIME: PlatformRuntime = {
+  schemaVersion: '47',
+  appliedMigrations: 47,
+  applicationVersion: null,
+  serverTime: '2026-08-29T18:00:00',
+  whatsappEnabled: true,
+};
+
+const FRESH_BACKUPS = {
+  mounted: true,
+  lastDumpAt: '2026-08-29T02:00:00',
+  ageHours: 6,
+  dumpCount: 14,
+  totalBytes: 52428800,
+  stale: false,
+  offsiteConfigured: true,
+};
+
+function mockApi(runtime: PlatformRuntime | undefined = { schemaVersion: "45", appliedMigrations: 45, applicationVersion: null, serverTime: "2026-08-29T18:00:00", whatsappEnabled: true }, failures: unknown[] = [FAILURE], backups: unknown = FRESH_BACKUPS) {
   const calls: Call[] = [];
   vi.stubGlobal(
     "fetch",
@@ -53,14 +71,17 @@ function mockApi(runtime: PlatformRuntime = { schemaVersion: "45", appliedMigrat
       const request = input instanceof Request ? input : null;
       const url = request ? request.url : String(input);
       calls.push({ url, method: request ? request.method : (init?.method ?? "GET") });
-      const payload = url.includes("/admin/benchmarks")
+      const resolvedRuntime = runtime ?? DEFAULT_RUNTIME;
+      const payload = url.includes("/metrics/backups")
+        ? backups
+        : url.includes("/admin/benchmarks")
         ? { enabled: false, minCohort: 5, cohortSize: 3, available: false, platformMortalityRate: "—" }
         : url.includes("/whatsapp/failures")
         ? failures
         : url.includes("/metrics/whatsapp")
           ? USAGE
           : url.includes("/metrics/runtime")
-            ? runtime
+            ? resolvedRuntime
             : OVERVIEW;
       return new Response(JSON.stringify({ data: payload }), {
         status: 200,
@@ -179,5 +200,42 @@ describe("PlatformCockpit", () => {
     expect(
       await screen.findByText(/Aucune ferme n'est nommée/),
     ).toBeInTheDocument();
+  });
+
+  it("shows the age of the last backup", async () => {
+    mockApi();
+    renderWithProviders(<PlatformCockpit />);
+
+    expect(await screen.findByText("il y a 6 h")).toBeInTheDocument();
+    expect(screen.getByText("14")).toBeInTheDocument();
+  });
+
+  it("raises an alarm when a nightly dump was missed", async () => {
+    mockApi(undefined, [FAILURE], { ...FRESH_BACKUPS, ageHours: 40, stale: true });
+    renderWithProviders(<PlatformCockpit />);
+
+    // A backup that silently stopped is discovered on the day it is needed.
+    expect(await screen.findByText(/Dernière sauvegarde il y a 40 h/)).toBeInTheDocument();
+  });
+
+  it("distinguishes an empty backup directory from an unmounted one", async () => {
+    mockApi(undefined, [FAILURE], {
+      ...FRESH_BACKUPS,
+      dumpCount: 0,
+      ageHours: null,
+      stale: true,
+    });
+    renderWithProviders(<PlatformCockpit />);
+
+    expect(await screen.findByText(/Aucune sauvegarde dans le répertoire/)).toBeInTheDocument();
+  });
+
+  it("does not claim backups are missing when it simply cannot see them", async () => {
+    mockApi(undefined, [FAILURE], { ...FRESH_BACKUPS, mounted: false, stale: true });
+    renderWithProviders(<PlatformCockpit />);
+
+    // The dumps may well be running; a false alarm here would be worse than silence.
+    expect(await screen.findByText(/ne peut simplement pas le vérifier/)).toBeInTheDocument();
+    expect(screen.queryByText(/Aucune sauvegarde dans le répertoire/)).not.toBeInTheDocument();
   });
 });

@@ -1,5 +1,6 @@
 package com.avicare.admin.controller;
 
+import com.avicare.admin.dto.response.PlatformBackups;
 import com.avicare.admin.dto.response.PlatformOverview;
 import com.avicare.admin.dto.response.PlatformRuntime;
 import com.avicare.admin.service.AdminMetricsService;
@@ -34,6 +35,12 @@ public class AdminMetricsController {
   @PreAuthorize("@adminAccess.can('metrics:read')")
   public ApiResponse<PlatformRuntime> runtime() {
     return ApiResponse.of(metricsService.runtime());
+  }
+
+  @GetMapping("/backups")
+  @PreAuthorize("@adminAccess.can('metrics:read')")
+  public ApiResponse<PlatformBackups> backups() {
+    return ApiResponse.of(metricsService.backups());
   }
 
   @GetMapping("/whatsapp")

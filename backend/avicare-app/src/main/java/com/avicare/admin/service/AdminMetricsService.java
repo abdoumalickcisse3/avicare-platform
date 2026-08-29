@@ -1,5 +1,6 @@
 package com.avicare.admin.service;
 
+import com.avicare.admin.dto.response.PlatformBackups;
 import com.avicare.admin.dto.response.PlatformOverview;
 import com.avicare.admin.dto.response.PlatformRuntime;
 import com.avicare.admin.repository.StaffPermissionRepository;
@@ -7,10 +8,17 @@ import com.avicare.admin.spi.PlatformMetricsContributor;
 import com.avicare.identity.repository.UserRepository;
 import com.avicare.notification.api.WhatsAppLedger;
 import com.avicare.tenancy.repository.FarmRepository;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,9 +36,13 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 @RequiredArgsConstructor
+@lombok.extern.slf4j.Slf4j
 public class AdminMetricsService {
 
   private static final int MAU_DAYS = 30;
+
+  /** Dumps are nightly; past this, a run was missed. */
+  static final int STALE_AFTER_HOURS = 36;
 
   private final List<PlatformMetricsContributor> contributors;
   private final FarmRepository farms;
@@ -47,6 +59,14 @@ public class AdminMetricsService {
 
   @Value("${notifications.whatsapp.enabled:false}")
   private boolean whatsappEnabled;
+
+  /** Where the nightly dumps land, as the container sees them. Empty when nothing is mounted. */
+  @Value("${BACKUP_DIR_MOUNTED:}")
+  private String backupDir;
+
+  /** An rclone remote is configured. Not a claim that the last upload worked. */
+  @Value("${BACKUP_REMOTE_CONFIGURED:false}")
+  private String offsiteConfigured;
 
   @Transactional(readOnly = true)
   public PlatformOverview overview() {
@@ -110,6 +130,65 @@ public class AdminMetricsService {
         getClass().getPackage().getImplementationVersion(),
         LocalDateTime.now(),
         whatsappEnabled);
+  }
+
+  /**
+   * Freshness of the database dumps.
+   *
+   * <p>Nightly, so anything older than {@value #STALE_AFTER_HOURS} hours means a run was missed —
+   * which is the only thing worth an alarm here. A backup that silently stopped is discovered on
+   * the day it is needed, and that is the worst possible day to discover it.
+   */
+  public PlatformBackups backups() {
+    if (backupDir == null || backupDir.isBlank()) {
+      return new PlatformBackups(false, null, null, 0, 0L, false, offsite());
+    }
+    Path dir = Path.of(backupDir);
+    if (!Files.isDirectory(dir)) {
+      return new PlatformBackups(false, null, null, 0, 0L, false, offsite());
+    }
+
+    try (Stream<Path> files = Files.list(dir)) {
+      List<Path> dumps =
+          files
+              .filter(Files::isRegularFile)
+              .filter(p -> p.getFileName().toString().endsWith(".sql.gz"))
+              .toList();
+
+      if (dumps.isEmpty()) {
+        // Mounted and empty is a real state, and a worrying one — not the same as not mounted.
+        return new PlatformBackups(true, null, null, 0, 0L, true, offsite());
+      }
+
+      long totalBytes = 0L;
+      FileTime newest = null;
+      for (Path dump : dumps) {
+        totalBytes += Files.size(dump);
+        FileTime modified = Files.getLastModifiedTime(dump);
+        if (newest == null || modified.compareTo(newest) > 0) {
+          newest = modified;
+        }
+      }
+
+      LocalDateTime lastDumpAt =
+          LocalDateTime.ofInstant(newest.toInstant(), ZoneId.systemDefault());
+      long ageHours = Duration.between(lastDumpAt, LocalDateTime.now()).toHours();
+      return new PlatformBackups(
+          true,
+          lastDumpAt,
+          ageHours,
+          dumps.size(),
+          totalBytes,
+          ageHours > STALE_AFTER_HOURS,
+          offsite());
+    } catch (IOException e) {
+      log.warn("Could not read the backup directory {}: {}", backupDir, e.getMessage());
+      return new PlatformBackups(false, null, null, 0, 0L, false, offsite());
+    }
+  }
+
+  private boolean offsite() {
+    return "true".equalsIgnoreCase(offsiteConfigured);
   }
 
   /** The window, in days, behind {@code monthlyActiveUsers}. */
