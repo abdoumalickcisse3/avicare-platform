@@ -3,8 +3,10 @@ name: Backend CI
 on:
   push:
     branches: [main, develop]
+  # No `branches:` filter on purpose: a stacked PR targets another feature branch, and filtering
+  # by base left those PRs with no checks at all — which is how #242 reached main unverified and
+  # then closed itself when its base was deleted at merge.
   pull_request:
-    branches: [main, develop]
     types: [opened, synchronize, reopened]
   workflow_dispatch:
 
