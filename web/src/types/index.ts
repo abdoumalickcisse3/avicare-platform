@@ -1517,6 +1517,22 @@ export interface PlatformOverview {
   generatedAt: string;
 }
 
+/**
+ * Freshness of the database dumps.
+ *
+ * `offsiteConfigured` says a remote is set, not that the last upload worked — the container cannot
+ * see the remote, and a green light that means nothing is worse than none.
+ */
+export interface PlatformBackups {
+  mounted: boolean;
+  lastDumpAt: string | null;
+  ageHours: number | null;
+  dumpCount: number;
+  totalBytes: number;
+  stale: boolean;
+  offsiteConfigured: boolean;
+}
+
 /** What is actually running, for the "is the fix deployed?" question. */
 export interface PlatformRuntime {
   schemaVersion: string | null;
