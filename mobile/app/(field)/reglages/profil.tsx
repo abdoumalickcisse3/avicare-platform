@@ -9,15 +9,24 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import { tokens } from '@/theme';
-import { useGetProfileQuery, useUpdateProfileMutation } from '@/store/api/authApi';
+import {
+  useChangePasswordMutation,
+  useGetProfileQuery,
+  useUpdateProfileMutation,
+} from '@/store/api/authApi';
+import { clearTokens } from '@/auth/tokens';
 
 export default function ProfilScreen() {
   const router = useRouter();
   const { data: profile } = useGetProfileQuery();
   const [updateProfile, { isLoading }] = useUpdateProfileMutation();
+  const [changePassword, { isLoading: changingPassword }] = useChangePasswordMutation();
 
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   useEffect(() => {
     if (profile) {
@@ -36,6 +45,27 @@ export default function ProfilScreen() {
       Alert.alert('Profil mis à jour');
     } catch {
       Alert.alert('Erreur', "La mise à jour a échoué. Réessayez.");
+    }
+  };
+
+  const submitPassword = async () => {
+    if (newPassword.length < 8) {
+      Alert.alert('Mot de passe trop court', 'Huit caractères au minimum.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      Alert.alert('Confirmation différente', 'Les deux mots de passe ne correspondent pas.');
+      return;
+    }
+    try {
+      await changePassword({ currentPassword, newPassword }).unwrap();
+      // The server revoked every refresh token, this one included: staying would leave the app
+      // running on a session that can no longer be renewed.
+      await clearTokens();
+      Alert.alert('Mot de passe modifié', 'Reconnectez-vous avec le nouveau mot de passe.');
+      router.replace('/(auth)/login');
+    } catch {
+      Alert.alert('Échec', "Mot de passe actuel incorrect, ou nouveau mot de passe identique à l'ancien.");
     }
   };
 
@@ -78,7 +108,58 @@ export default function ProfilScreen() {
           keyboardType="phone-pad"
           accessibilityLabel="Téléphone"
         />
-        <Text style={styles.hint}>Utilisé pour les alertes WhatsApp. Format : 221XXXXXXXXX.</Text>
+        <Text style={styles.hint}>
+          Alertes WhatsApp — et seule façon de récupérer un mot de passe perdu. Format :
+          221XXXXXXXXX.
+        </Text>
+
+        <View style={styles.separator} />
+
+        <Text style={styles.sectionTitle}>Mot de passe</Text>
+        <Text style={styles.label}>Mot de passe actuel</Text>
+        <TextInput
+          value={currentPassword}
+          onChangeText={setCurrentPassword}
+          style={styles.input}
+          secureTextEntry
+          autoComplete="current-password"
+          accessibilityLabel="Mot de passe actuel"
+        />
+        <Text style={styles.label}>Nouveau mot de passe</Text>
+        <TextInput
+          value={newPassword}
+          onChangeText={setNewPassword}
+          style={styles.input}
+          secureTextEntry
+          autoComplete="new-password"
+          accessibilityLabel="Nouveau mot de passe"
+        />
+        <Text style={styles.label}>Confirmer</Text>
+        <TextInput
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          style={styles.input}
+          secureTextEntry
+          autoComplete="new-password"
+          accessibilityLabel="Confirmer le nouveau mot de passe"
+        />
+        <Text style={styles.hint}>
+          Toutes vos sessions seront fermées, y compris celle-ci. Vous devrez vous reconnecter.
+        </Text>
+        <Pressable
+          onPress={submitPassword}
+          disabled={changingPassword || !currentPassword || !newPassword}
+          style={[
+            styles.passwordBtn,
+            (changingPassword || !currentPassword || !newPassword) && styles.saveBtnDisabled,
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel="Changer mon mot de passe"
+        >
+          <Text style={styles.saveText}>
+            {changingPassword ? 'Modification…' : 'Changer mon mot de passe'}
+          </Text>
+        </Pressable>
       </ScrollView>
 
       <View style={styles.footer}>
@@ -98,6 +179,24 @@ export default function ProfilScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: tokens.colors.neutral[50] },
+  separator: {
+    height: 1,
+    backgroundColor: tokens.colors.neutral[200],
+    marginVertical: tokens.spacing[5],
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: tokens.colors.field.text,
+    marginBottom: tokens.spacing[2],
+  },
+  passwordBtn: {
+    marginTop: tokens.spacing[4],
+    backgroundColor: tokens.colors.field.text,
+    borderRadius: tokens.radii.lg,
+    paddingVertical: tokens.spacing[4],
+    alignItems: 'center',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
