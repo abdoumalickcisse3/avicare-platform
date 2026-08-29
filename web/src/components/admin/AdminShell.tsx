@@ -17,6 +17,7 @@ import {
   Building2,
   Handshake,
   HeartPulse,
+  Library,
   KeyRound,
   LogOut,
   ShieldCheck,
@@ -41,6 +42,7 @@ const NAV: NavEntry[] = [
   { href: "/console/utilisateurs", label: "Utilisateurs", icon: Users, permission: "users:read" },
   { href: "/console/sante", label: "Santé", icon: HeartPulse, permission: "tenants:read" },
   { href: "/console/partenaires", label: "Partenaires", icon: Handshake, permission: "partners:read" },
+  { href: "/console/catalogue", label: "Catalogue", icon: Library, permission: "catalog:write" },
   { href: "/console/personnel", label: "Personnel", icon: UserCog, permission: "staff:manage" },
 ];
 
