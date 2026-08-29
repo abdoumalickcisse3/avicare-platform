@@ -24,6 +24,10 @@ or OVH/Scaleway Paris for lowest Senegal latency). Ubuntu 22.04/24.04 LTS.
   gratuitement" → `app.DOMAIN/signup`. Override via repo **Variables** if the
   domain differs from the workflow defaults (jawdi.app).
 - Backend runs the `prod` Spring profile (feature gating **enforced**, ADR-004).
+- **Back-office** (`admin.DOMAIN`): set `ADMIN_FOUNDER_EMAIL` in `infra/.env` to an email that is
+  **already signed up**. On every restart that account is promoted to platform staff and granted
+  every permission; the app never creates it. Left empty, the console refuses everyone — the safe
+  default. The promotion is itself written to `admin_audit_log`.
 
 ## 1. Provision the VPS
 

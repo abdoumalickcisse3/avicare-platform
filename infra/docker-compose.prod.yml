@@ -57,6 +57,9 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: "6379"
       JWT_ISSUER: ${JWT_ISSUER:-avicare-platform}
+      # Promoted to platform staff at startup and granted "*". Never creates an account: the email
+      # must already be signed up. Unset = nobody can enter the console, which is the safe default.
+      ADMIN_FOUNDER_EMAIL: ${ADMIN_FOUNDER_EMAIL:-}
       JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY:?export JWT_PRIVATE_KEY (deploy.sh does this)}
       JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY:?export JWT_PUBLIC_KEY (deploy.sh does this)}
       # Jawdi IA — set ANTHROPIC_ENABLED=true and ANTHROPIC_API_KEY in .env to use the
