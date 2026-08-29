@@ -19,6 +19,7 @@ import {
   Handshake,
   HeartPulse,
   Library,
+  Megaphone,
   ScrollText,
   KeyRound,
   LogOut,
@@ -46,6 +47,7 @@ const NAV: NavEntry[] = [
   { href: "/console/sante", label: "Santé", icon: HeartPulse, permission: "tenants:read" },
   { href: "/console/partenaires", label: "Partenaires", icon: Handshake, permission: "partners:read" },
   { href: "/console/catalogue", label: "Catalogue", icon: Library, permission: "catalog:write" },
+  { href: "/console/communication", label: "Communication", icon: Megaphone, permission: "broadcast:send" },
   { href: "/console/conformite", label: "Conformité", icon: ScrollText, permission: "compliance:export" },
   { href: "/console/personnel", label: "Personnel", icon: UserCog, permission: "staff:manage" },
 ];

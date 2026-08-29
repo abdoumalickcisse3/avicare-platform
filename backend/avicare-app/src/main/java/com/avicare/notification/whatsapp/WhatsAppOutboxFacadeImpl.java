@@ -28,6 +28,15 @@ public class WhatsAppOutboxFacadeImpl implements WhatsAppOutboxFacade {
 
   @Override
   public void enqueue(String rawPhone, String message) {
+    queue(rawPhone, message, OutboxSource.ALERT, null);
+  }
+
+  @Override
+  public void enqueueBroadcast(String rawPhone, String message, Long farmId) {
+    queue(rawPhone, message, OutboxSource.BROADCAST, farmId);
+  }
+
+  private void queue(String rawPhone, String message, OutboxSource source, Long farmId) {
     if (!whatsappEnabled || message == null || message.isBlank()) {
       return;
     }
@@ -39,6 +48,8 @@ public class WhatsAppOutboxFacadeImpl implements WhatsAppOutboxFacade {
     WhatsappOutbox row = new WhatsappOutbox();
     row.setPhone(phone);
     row.setMessage(message);
+    row.setSource(source);
+    row.setFarmId(farmId);
     outbox.save(row);
   }
 }
