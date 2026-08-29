@@ -65,5 +65,6 @@ public final class StaffPermissionConstants {
           "broadcast", List.of("send"),
           "compliance", List.of("export", "delete"),
           "staff", List.of("manage"),
+          "metrics", List.of("read"),
           "partners", List.of("read", "write", "users", "attach", "prospect"));
 }

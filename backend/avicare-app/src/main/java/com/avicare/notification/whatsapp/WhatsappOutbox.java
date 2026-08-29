@@ -53,6 +53,17 @@ public class WhatsappOutbox {
   @Column(nullable = false)
   private int attempts = 0;
 
+  /** Which path produced this message — alert scan, interactive send, or broadcast. */
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private OutboxSource source = OutboxSource.ALERT;
+
+  /**
+   * The farm the message was sent on behalf of, when there is one. Null for account-level sends.
+   */
+  @Column(name = "farm_id")
+  private Long farmId;
+
   @Column(name = "last_error")
   private String lastError;
 

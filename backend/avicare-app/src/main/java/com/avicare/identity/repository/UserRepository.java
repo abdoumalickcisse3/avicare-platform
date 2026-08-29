@@ -38,4 +38,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
       value = "SELECT * FROM users u WHERE regexp_replace(u.phone, '[^0-9]', '', 'g') = :digits",
       nativeQuery = true)
   List<User> findByPhoneDigits(@Param("digits") String digits);
+
+  long countByActiveTrue();
+
+  /** Accounts that signed in since a date — the platform's only universal activity signal. */
+  long countByLastLoginAtAfter(java.time.LocalDateTime since);
 }
