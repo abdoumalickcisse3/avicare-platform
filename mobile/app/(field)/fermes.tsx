@@ -12,13 +12,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Redirect } from 'expo-router';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
-import { MapPin, Plus, Settings2 } from 'lucide-react-native';
+import { Building2, MapPin, Plus, Settings2 } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { AppHeader } from '@/components/AppHeader';
 import { useFarmAccess } from '@/auth/useSession';
-import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
+import { selectSelectedFarmId, setSelectedFarmId } from '@/store/slices/selectionSlice';
 import { useListFarmsQuery } from '@/store/api/farmsApi';
 import { useGetDashboardQuery } from '@/store/api/dashboardApi';
 import { useGetFarmActivityQuery } from '@/store/api/activityApi';
@@ -30,7 +30,12 @@ import {
   useUpdateMemberMutation,
 } from '@/store/api/membersApi';
 import { useGetPermissionCatalogQuery } from '@/store/api/permissionsApi';
-import { useDeleteFarmMutation, useGetFarmQuery, useUpdateFarmMutation } from '@/store/api/farmsApi';
+import {
+  useCreateFarmMutation,
+  useDeleteFarmMutation,
+  useGetFarmQuery,
+  useUpdateFarmMutation,
+} from '@/store/api/farmsApi';
 import { MemberSheet } from '@/team/MemberSheet';
 import { FarmSheet } from '@/team/FarmSheet';
 import { TemporaryPassword } from '@/team/TemporaryPassword';
@@ -47,6 +52,7 @@ const fr = (iso: string) => new Date(iso).toLocaleString('fr-FR');
 
 export default function FermesScreen() {
   const selectedFarmId = useSelector(selectSelectedFarmId);
+  const dispatch = useDispatch();
   const { isAdmin, farmRole, session } = useFarmAccess();
   const [seg, setSeg] = useState<Segment>('overview');
 
@@ -73,13 +79,14 @@ export default function FermesScreen() {
   const [resetPassword] = useResetMemberPasswordMutation();
   const [removeMember] = useRemoveMemberMutation();
   const [updateFarm, { isLoading: savingFarm }] = useUpdateFarmMutation();
+  const [createFarm, { isLoading: creatingFarm }] = useCreateFarmMutation();
   const [deleteFarm] = useDeleteFarmMutation();
 
   const [memberSheet, setMemberSheet] = useState<{ open: boolean; member: Member | null }>({
     open: false,
     member: null,
   });
-  const [farmSheet, setFarmSheet] = useState(false);
+  const [farmSheet, setFarmSheet] = useState<'closed' | 'edit' | 'create'>('closed');
   /** Set only while a one-time password is on screen; it cannot be fetched again. */
   const [issued, setIssued] = useState<{ password: string; fullName: string; email: string } | null>(
     null,
@@ -181,12 +188,22 @@ export default function FermesScreen() {
   };
 
   const submitFarm = async (body: FarmInput) => {
-    if (selectedFarmId === null) return;
     try {
-      await updateFarm({ id: selectedFarmId, body }).unwrap();
-      setFarmSheet(false);
+      if (farmSheet === 'create') {
+        // Switch to what was just created: an owner adding a second site means to work on it,
+        // and leaving the header pointing at the old farm reads as "nothing happened".
+        const created = await createFarm(body).unwrap();
+        dispatch(setSelectedFarmId(created.id));
+      } else {
+        if (selectedFarmId === null) return;
+        await updateFarm({ id: selectedFarmId, body }).unwrap();
+      }
+      setFarmSheet('closed');
     } catch {
-      Alert.alert('Enregistrement refusé', "Les paramètres n'ont pas été enregistrés.");
+      Alert.alert(
+        farmSheet === 'create' ? 'Ferme non créée' : 'Enregistrement refusé',
+        "Rien n'a été enregistré.",
+      );
     }
   };
 
@@ -194,7 +211,7 @@ export default function FermesScreen() {
     if (selectedFarmId === null) return;
     try {
       await deleteFarm(selectedFarmId).unwrap();
-      setFarmSheet(false);
+      setFarmSheet('closed');
     } catch {
       Alert.alert('Suppression refusée', "La ferme n'a pas été supprimée.");
     }
@@ -362,13 +379,27 @@ export default function FermesScreen() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Modifier la ferme"
-                onPress={() => setFarmSheet(true)}
+                onPress={() => setFarmSheet('edit')}
                 style={styles.addBtn}
               >
                 <Settings2 size={18} color={tokens.colors.action.accumulate.fg} />
                 <Text style={styles.addText}>Modifier la ferme</Text>
               </Pressable>
             ) : null}
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Créer une ferme"
+              onPress={() => setFarmSheet('create')}
+              style={styles.secondaryBtn}
+            >
+              <Building2 size={18} color={tokens.colors.field.text} />
+              <Text style={styles.secondaryBtnText}>Créer une autre ferme</Text>
+            </Pressable>
+            <Text style={styles.settingHint}>
+              Vous en devenez propriétaire, et elle s&apos;ajoute au sélecteur en haut de
+              l&apos;écran.
+            </Text>
           </View>
         )}
       </ScrollView>
@@ -386,11 +417,11 @@ export default function FermesScreen() {
       />
 
       <FarmSheet
-        open={farmSheet}
-        farm={fullFarm}
-        saving={savingFarm}
-        canDelete={canDeleteFarm}
-        onClose={() => setFarmSheet(false)}
+        open={farmSheet !== 'closed'}
+        farm={farmSheet === 'edit' ? fullFarm : undefined}
+        saving={savingFarm || creatingFarm}
+        canDelete={canDeleteFarm && farmSheet === 'edit'}
+        onClose={() => setFarmSheet('closed')}
         onSubmit={submitFarm}
         onDelete={submitDeleteFarm}
       />
@@ -527,5 +558,23 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: tokens.radii.xl,
     borderTopRightRadius: tokens.radii.xl,
     paddingBottom: tokens.spacing[6],
+  },
+  secondaryBtn: {
+    minHeight: tokens.touch.button,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: tokens.spacing[2],
+    borderRadius: tokens.radii.lg,
+    borderWidth: tokens.layout.borderWidth,
+    borderColor: tokens.colors.action.secondary.border,
+    backgroundColor: tokens.colors.action.secondary.bg,
+  },
+  secondaryBtnText: { ...tokens.typography.button, color: tokens.colors.action.secondary.fg },
+  settingHint: {
+    ...tokens.typography.bodySm,
+    color: tokens.colors.field.textMuted,
+    lineHeight: 18,
+    marginTop: tokens.spacing[2],
   },
 });
