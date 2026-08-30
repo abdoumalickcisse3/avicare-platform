@@ -1054,3 +1054,32 @@ export interface ExpenseSummary {
   categories: { categoryKey: string; amountXof: number }[];
   totalXof: number;
 }
+
+export interface TrayStockUpdateInput {
+  fullTraysCount: number;
+  emptyTraysCount: number;
+}
+
+/**
+ * A relative correction to the tray stock.
+ *
+ * The adjust endpoint exists alongside the absolute update for a reason worth keeping: two people
+ * counting trays at the same time overwrite each other with an absolute value, while deltas
+ * compose. "+12 pleins" is also what a farmer actually knows after a collection round.
+ */
+export interface TrayStockAdjustInput {
+  fullDelta: number;
+  emptyDelta: number;
+}
+
+/** Tray size and price — farm settings (`tray_size`, `tray_price_xof`), not catalog items. */
+export interface TraySettings {
+  traySize: number;
+  trayPriceXof: number;
+}
+
+/** One farm-level setting row (mirrors backend SettingResponse). */
+export interface FarmSetting {
+  key: string;
+  value: string;
+}

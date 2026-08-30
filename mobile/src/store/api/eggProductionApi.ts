@@ -5,7 +5,16 @@
  * the offline sync queue, not this slice.
  */
 import { baseApi } from './baseApi';
-import type { DailyProduction, EggCollection, RollingRate, TrayStock } from '@/types';
+import type {
+  DailyProduction,
+  EggCollection,
+  RollingRate,
+  TrayStock,
+  TrayStockAdjustInput,
+  TrayStockUpdateInput,
+  TraySettings,
+} from '@/types';
+import type { LayerConfigEntry } from './layerConfigApi';
 
 interface ApiEnvelope<T> {
   data: T;
@@ -58,10 +67,56 @@ export const eggProductionApi = baseApi.injectEndpoints({
         { type: 'TrayStock', id: 'CURRENT' },
       ],
     }),
+    /**
+     * Absolute tray count — use when someone has physically counted the store.
+     * `adjustTrayStock` is the safer default for a collection round; see its note.
+     */
+    updateTrayStock: build.mutation<TrayStock, { farmId: number; body: TrayStockUpdateInput }>({
+      query: ({ farmId, body }) => ({ url: `${base(farmId)}/tray-stock`, method: 'PUT', body }),
+      transformResponse: (r: ApiEnvelope<TrayStock>) => r.data,
+      invalidatesTags: [{ type: 'TrayStock', id: 'CURRENT' }],
+    }),
+
+    /** Relative correction — deltas compose where two absolute writes would overwrite. */
+    adjustTrayStock: build.mutation<TrayStock, { farmId: number; body: TrayStockAdjustInput }>({
+      query: ({ farmId, body }) => ({
+        url: `${base(farmId)}/tray-stock/adjust`,
+        method: 'POST',
+        body,
+      }),
+      transformResponse: (r: ApiEnvelope<TrayStock>) => r.data,
+      invalidatesTags: [{ type: 'TrayStock', id: 'CURRENT' }],
+    }),
+
+    /** Removing a collection re-opens the day's totals, hence the DailyProduction invalidation. */
+    deleteCollection: build.mutation<void, { farmId: number; id: number; unitId: number }>({
+      query: ({ farmId, id }) => ({ url: `${base(farmId)}/collections/${id}`, method: 'DELETE' }),
+      invalidatesTags: (_r, _e, { unitId }) => [
+        { type: 'EggCollection', id: unitId },
+        { type: 'DailyProduction', id: unitId },
+      ],
+    }),
+
+    getGrades: build.query<LayerConfigEntry[], { farmId: number }>({
+      query: ({ farmId }) => `${base(farmId)}/config/grades`,
+      transformResponse: (r: ApiEnvelope<LayerConfigEntry[]>) => r.data,
+      providesTags: [{ type: 'LayerConfig', id: 'GRADES' }],
+    }),
+
+    getTraySettings: build.query<TraySettings, { farmId: number }>({
+      query: ({ farmId }) => `${base(farmId)}/config/tray-settings`,
+      transformResponse: (r: ApiEnvelope<TraySettings>) => r.data,
+      providesTags: [{ type: 'LayerConfig', id: 'TRAY-SETTINGS' }],
+    }),
   }),
 });
 
 export const {
+  useUpdateTrayStockMutation,
+  useAdjustTrayStockMutation,
+  useDeleteCollectionMutation,
+  useGetGradesQuery,
+  useGetTraySettingsQuery,
   useGetTrayStockQuery,
   useGetRollingRateQuery,
   useGetCollectionsQuery,

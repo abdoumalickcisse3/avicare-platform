@@ -10,6 +10,7 @@
  * configured set and lets the farmer pick from it.
  */
 import { baseApi } from './baseApi';
+import type { FarmSetting } from '@/types';
 
 /** Backend wraps every payload in { data, meta }; unwrap to the data field. */
 interface ApiEnvelope<T> {
@@ -34,7 +35,34 @@ export const layerConfigApi = baseApi.injectEndpoints({
             ]
           : [{ type: 'LayerConfig' as const, id: `LIST-${farmId}` }],
     }),
+    listFarmSettings: build.query<FarmSetting[], number>({
+      query: (farmId) => `/api/v1/farms/${farmId}/settings`,
+      transformResponse: (r: ApiEnvelope<FarmSetting[]>) => r.data,
+      providesTags: [{ type: 'Setting', id: 'LIST' }],
+    }),
+
+    /**
+     * Farm settings are key/value strings, not typed columns — `tray_size` and `tray_price_xof`
+     * live here rather than in the catalog, which is why editing tray settings goes through this
+     * endpoint and not the catalog manager.
+     */
+    upsertFarmSetting: build.mutation<FarmSetting, { farmId: number; key: string; value: string }>({
+      query: ({ farmId, key, value }) => ({
+        url: `/api/v1/farms/${farmId}/settings/${key}`,
+        method: 'PUT',
+        body: { value },
+      }),
+      transformResponse: (r: ApiEnvelope<FarmSetting>) => r.data,
+      invalidatesTags: [
+        { type: 'Setting', id: 'LIST' },
+        { type: 'LayerConfig', id: 'TRAY-SETTINGS' },
+      ],
+    }),
   }),
 });
 
-export const { useListTimeslotsQuery } = layerConfigApi;
+export const {
+  useListTimeslotsQuery,
+  useListFarmSettingsQuery,
+  useUpsertFarmSettingMutation,
+} = layerConfigApi;

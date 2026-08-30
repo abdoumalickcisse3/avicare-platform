@@ -5,7 +5,7 @@
  * unit that isn't a broiler batch (`selectLayerUnits`). Tapping a card opens
  * the layer detail.
  */
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useRouter } from 'expo-router';
@@ -17,7 +17,12 @@ import { AppHeader } from '@/components/AppHeader';
 import { KpiCard } from '@/components/ui';
 import { useListProductionUnitsQuery, type ProductionUnit } from '@/store/api/productionUnitsApi';
 import { useGetBatchesQuery } from '@/store/api/poultryBatchesApi';
-import { useGetTrayStockQuery } from '@/store/api/eggProductionApi';
+import {
+  useAdjustTrayStockMutation,
+  useGetTrayStockQuery,
+  useUpdateTrayStockMutation,
+} from '@/store/api/eggProductionApi';
+import { TrayStockSheet } from '@/eggs/TrayStockSheet';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { formatNumber } from '@/lib/format';
 
@@ -36,6 +41,9 @@ export default function OeufsScreen() {
   const { data: units, isLoading } = useListProductionUnitsQuery(skip ? skipToken : selectedFarmId);
   const { data: batches } = useGetBatchesQuery(skip ? skipToken : { farmId: selectedFarmId });
   const { data: trayStock } = useGetTrayStockQuery(skip ? skipToken : { farmId: selectedFarmId });
+  const [adjustTray, { isLoading: adjusting }] = useAdjustTrayStockMutation();
+  const [updateTray, { isLoading: updatingTray }] = useUpdateTrayStockMutation();
+  const [trayOpen, setTrayOpen] = useState(false);
 
   const layerUnits = useMemo(() => {
     const broilerIds = new Set((batches ?? []).map((b) => b.id));
@@ -57,8 +65,22 @@ export default function OeufsScreen() {
         <View style={styles.kpiGrid}>
           <View style={styles.kpiCell}><KpiCard label="Lots en ponte" value={formatNumber(activeCount)} icon={Egg} tint={tokens.colors.accent[400]} /></View>
           <View style={styles.kpiCell}><KpiCard label="Cheptel pondeuses" value={formatNumber(flock)} icon={Bird} tint={tokens.colors.primary[500]} /></View>
-          <View style={styles.kpiCell}><KpiCard label="Plateaux pleins" value={formatNumber(trayStock?.fullTraysCount ?? 0)} icon={Package} tint={tokens.colors.success} /></View>
-          <View style={styles.kpiCell}><KpiCard label="Plateaux vides" value={formatNumber(trayStock?.emptyTraysCount ?? 0)} icon={PackageOpen} tint={tokens.colors.info} /></View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Corriger les plateaux"
+            onPress={() => setTrayOpen(true)}
+            style={styles.kpiCell}
+          >
+            <KpiCard label="Plateaux pleins" value={formatNumber(trayStock?.fullTraysCount ?? 0)} icon={Package} tint={tokens.colors.success} />
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Corriger les plateaux vides"
+            onPress={() => setTrayOpen(true)}
+            style={styles.kpiCell}
+          >
+            <KpiCard label="Plateaux vides" value={formatNumber(trayStock?.emptyTraysCount ?? 0)} icon={PackageOpen} tint={tokens.colors.info} />
+          </Pressable>
         </View>
 
         <Text style={styles.section}>Lots de ponte</Text>
@@ -90,6 +112,24 @@ export default function OeufsScreen() {
           </View>
         )}
       </ScrollView>
+
+      <TrayStockSheet
+        open={trayOpen}
+        fullTraysCount={trayStock?.fullTraysCount ?? 0}
+        emptyTraysCount={trayStock?.emptyTraysCount ?? 0}
+        saving={adjusting || updatingTray}
+        onClose={() => setTrayOpen(false)}
+        onAdjust={async (body) => {
+          if (selectedFarmId === null) return;
+          await adjustTray({ farmId: selectedFarmId, body });
+          setTrayOpen(false);
+        }}
+        onRecount={async (body) => {
+          if (selectedFarmId === null) return;
+          await updateTray({ farmId: selectedFarmId, body });
+          setTrayOpen(false);
+        }}
+      />
     </SafeAreaView>
   );
 }
