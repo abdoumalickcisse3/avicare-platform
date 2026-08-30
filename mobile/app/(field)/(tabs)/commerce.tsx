@@ -7,16 +7,17 @@
  * Shown only to roles with `commercial:read`.
  */
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
-import { Phone, Search, ShoppingCart, Users } from 'lucide-react-native';
+import { Phone, Search, ShoppingCart, UserPlus, Users } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { AppHeader } from '@/components/AppHeader';
 import { useFarmAccess } from '@/auth/useSession';
-import { useGetClientsQuery } from '@/store/api/clientsApi';
+import { useCreateClientMutation, useGetClientsQuery } from '@/store/api/clientsApi';
+import { ClientSheet } from '@/commerce/ClientSheet';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { formatCurrency, formatNumber } from '@/lib/format';
 import { CLIENT_TYPE_LABELS, creditColor, creditRatio, initials } from '@/lib/commercial';
@@ -31,6 +32,8 @@ export default function CommerceScreen() {
   const selectedFarmId = useSelector(selectSelectedFarmId);
   const [tab, setTab] = useState<Tab>('all');
   const [q, setQ] = useState('');
+  const [clientSheet, setClientSheet] = useState(false);
+  const [createClient, { isLoading: creatingClient }] = useCreateClientMutation();
 
   const { data: clients, isLoading } = useGetClientsQuery(
     selectedFarmId === null ? skipToken : { farmId: selectedFarmId },
@@ -166,15 +169,43 @@ export default function CommerceScreen() {
       </ScrollView>
 
       {canSell && (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Nouvelle vente"
-          onPress={() => router.push('/(field)/commerce/vente')}
-          style={styles.fab}
-        >
-          <ShoppingCart size={24} color={tokens.colors.primary[900]} />
-        </Pressable>
+        <View style={styles.fabStack}>
+          {/* Adding a client used to be possible only during onboarding — a directory you
+              cannot add to stops being a directory the first time a new buyer turns up. */}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Nouveau client"
+            onPress={() => setClientSheet(true)}
+            style={styles.fabSecondary}
+          >
+            <UserPlus size={20} color={tokens.colors.field.text} />
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Nouvelle vente"
+            onPress={() => router.push('/(field)/commerce/vente')}
+            style={styles.fab}
+          >
+            <ShoppingCart size={24} color={tokens.colors.primary[900]} />
+          </Pressable>
+        </View>
       )}
+
+      <ClientSheet
+        open={clientSheet}
+        client={null}
+        saving={creatingClient}
+        onClose={() => setClientSheet(false)}
+        onSubmit={async (body) => {
+          if (selectedFarmId === null) return;
+          try {
+            await createClient({ farmId: selectedFarmId, body }).unwrap();
+            setClientSheet(false);
+          } catch {
+            Alert.alert('Client non créé', "Vérifiez le nom et réessayez.");
+          }
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -182,10 +213,24 @@ export default function CommerceScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: tokens.colors.neutral[50] },
   content: { paddingHorizontal: tokens.layout.screenPadding, paddingTop: tokens.spacing[2], paddingBottom: tokens.spacing[16] },
-  fab: {
+  fabStack: {
     position: 'absolute',
     right: tokens.layout.screenPadding,
     bottom: tokens.spacing[6],
+    alignItems: 'center',
+    gap: tokens.spacing[3],
+  },
+  fabSecondary: {
+    width: 52,
+    height: 52,
+    borderRadius: tokens.radii.full,
+    backgroundColor: tokens.colors.neutral[0],
+    borderWidth: tokens.layout.borderWidth,
+    borderColor: tokens.colors.field.rule,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fab: {
     width: 56,
     height: 56,
     borderRadius: tokens.radii.full,

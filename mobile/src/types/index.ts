@@ -808,8 +808,11 @@ export interface Payment {
   clientId: number | null;
   amountXof: number;
   method: PaymentMethod;
+  /** A voided payment keeps its row and flips to CANCELLED — it is never deleted. */
+  status: 'COMPLETED' | 'CANCELLED';
   paymentDate: string;
   reference: string | null;
+  notes: string | null;
 }
 
 export interface PaymentInput {
@@ -988,4 +991,20 @@ export interface FeedFormulaInput {
   targetAgeDaysMax?: number | null;
   ingredients: FormulaIngredient[];
   notes?: string;
+}
+
+/**
+ * Indicative credit standing of a client (Décision D26).
+ *
+ * Indicative is the operative word: the backend computes and exposes it, and never blocks a sale
+ * on it. Treating `overLimit` as a stop condition in the app would invent a rule the platform
+ * deliberately does not have.
+ */
+export interface ClientCreditInfo {
+  clientId: number;
+  displayName: string;
+  creditLimitXof: number | null;
+  currentBalanceXof: number;
+  overLimit: boolean;
+  overLimitPercent: number | null;
 }
