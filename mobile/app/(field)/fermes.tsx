@@ -7,14 +7,14 @@
  * member provisioning stays on the web.
  */
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Redirect } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
-import { MapPin, Users } from 'lucide-react-native';
+import { MapPin, Plus, Settings2 } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { AppHeader } from '@/components/AppHeader';
 import { useFarmAccess } from '@/auth/useSession';
@@ -22,10 +22,22 @@ import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { useListFarmsQuery } from '@/store/api/farmsApi';
 import { useGetDashboardQuery } from '@/store/api/dashboardApi';
 import { useGetFarmActivityQuery } from '@/store/api/activityApi';
-import { useGetMembersQuery } from '@/store/api/membersApi';
+import {
+  useCreateMemberMutation,
+  useGetMembersQuery,
+  useRemoveMemberMutation,
+  useResetMemberPasswordMutation,
+  useUpdateMemberMutation,
+} from '@/store/api/membersApi';
+import { useGetPermissionCatalogQuery } from '@/store/api/permissionsApi';
+import { useDeleteFarmMutation, useGetFarmQuery, useUpdateFarmMutation } from '@/store/api/farmsApi';
+import { MemberSheet } from '@/team/MemberSheet';
+import { FarmSheet } from '@/team/FarmSheet';
+import { TemporaryPassword } from '@/team/TemporaryPassword';
 import { formatNumber } from '@/lib/format';
 import { FARM_ROLE_LABELS, memberInitials } from '@/lib/members';
-import type { FarmRole } from '@/types';
+import type { FarmInput } from '@/store/api/farmsApi';
+import type { AssignableFarmRole, FarmRole, Member } from '@/types';
 
 type Segment = 'overview' | 'team' | 'settings';
 
@@ -35,7 +47,7 @@ const fr = (iso: string) => new Date(iso).toLocaleString('fr-FR');
 
 export default function FermesScreen() {
   const selectedFarmId = useSelector(selectSelectedFarmId);
-  const { isAdmin, session } = useFarmAccess();
+  const { isAdmin, farmRole, session } = useFarmAccess();
   const [seg, setSeg] = useState<Segment>('overview');
 
   const { data: farms } = useListFarmsQuery();
@@ -49,6 +61,28 @@ export default function FermesScreen() {
   );
   const { data: members, isLoading: membersLoading } = useGetMembersQuery(
     seg === 'team' && selectedFarmId !== null ? selectedFarmId : skipToken,
+  );
+  const { data: catalog } = useGetPermissionCatalogQuery(seg === 'team' ? undefined : skipToken);
+  // The list projection carries no description and no GPS, and `PUT` erases what it is not sent.
+  const { data: fullFarm } = useGetFarmQuery(
+    seg === 'settings' && selectedFarmId !== null ? selectedFarmId : skipToken,
+  );
+
+  const [createMember, { isLoading: creating }] = useCreateMemberMutation();
+  const [updateMember, { isLoading: updatingMember }] = useUpdateMemberMutation();
+  const [resetPassword] = useResetMemberPasswordMutation();
+  const [removeMember] = useRemoveMemberMutation();
+  const [updateFarm, { isLoading: savingFarm }] = useUpdateFarmMutation();
+  const [deleteFarm] = useDeleteFarmMutation();
+
+  const [memberSheet, setMemberSheet] = useState<{ open: boolean; member: Member | null }>({
+    open: false,
+    member: null,
+  });
+  const [farmSheet, setFarmSheet] = useState(false);
+  /** Set only while a one-time password is on screen; it cannot be fetched again. */
+  const [issued, setIssued] = useState<{ password: string; fullName: string; email: string } | null>(
+    null,
   );
 
   const ls = dashboard?.livestock;
@@ -69,6 +103,102 @@ export default function FermesScreen() {
   if (session && !isAdmin) return <Redirect href="/(field)" />;
 
   const roleLabel = (r: FarmRole) => FARM_ROLE_LABELS[r] ?? r;
+  // Membership, not tier: the backend gates these on the farm role.
+  const canManageTeam = farmRole === 'OWNER' || farmRole === 'MANAGER';
+  const canDeleteFarm = farmRole === 'OWNER';
+
+  const submitCreate = async (body: {
+    fullName: string;
+    email: string;
+    phone?: string;
+    role: AssignableFarmRole;
+    permissions: string[];
+  }) => {
+    if (selectedFarmId === null) return;
+    try {
+      const result = await createMember({ farmId: selectedFarmId, body }).unwrap();
+      setMemberSheet({ open: false, member: null });
+      setIssued({
+        password: result.temporaryPassword,
+        fullName: result.member.fullName,
+        email: result.member.email,
+      });
+    } catch {
+      Alert.alert(
+        'Compte non créé',
+        "Vérifiez l'adresse e-mail : cette personne est peut-être déjà membre de la ferme.",
+      );
+    }
+  };
+
+  const submitUpdate = async (body: { role: AssignableFarmRole; permissions: string[] }) => {
+    const member = memberSheet.member;
+    if (selectedFarmId === null || !member) return;
+    try {
+      await updateMember({ farmId: selectedFarmId, userId: member.userId, body }).unwrap();
+      setMemberSheet({ open: false, member: null });
+    } catch {
+      Alert.alert('Modification refusée', "Les accès n'ont pas été enregistrés.");
+    }
+  };
+
+  const toggleActive = async (active: boolean) => {
+    const member = memberSheet.member;
+    if (selectedFarmId === null || !member) return;
+    try {
+      if (active) {
+        await updateMember({
+          farmId: selectedFarmId,
+          userId: member.userId,
+          body: { role: member.role as AssignableFarmRole, permissions: member.permissions, active: true },
+        }).unwrap();
+      } else {
+        await removeMember({ farmId: selectedFarmId, userId: member.userId }).unwrap();
+      }
+      setMemberSheet({ open: false, member: null });
+    } catch {
+      Alert.alert('Action refusée', "Le statut du membre n'a pas changé.");
+    }
+  };
+
+  const doResetPassword = async () => {
+    const member = memberSheet.member;
+    if (selectedFarmId === null || !member) return;
+    try {
+      const result = await resetPassword({
+        farmId: selectedFarmId,
+        userId: member.userId,
+      }).unwrap();
+      setMemberSheet({ open: false, member: null });
+      setIssued({
+        password: result.temporaryPassword,
+        fullName: member.fullName,
+        email: member.email,
+      });
+    } catch {
+      Alert.alert('Réinitialisation refusée', "Le mot de passe n'a pas été changé.");
+    }
+  };
+
+  const submitFarm = async (body: FarmInput) => {
+    if (selectedFarmId === null) return;
+    try {
+      await updateFarm({ id: selectedFarmId, body }).unwrap();
+      setFarmSheet(false);
+    } catch {
+      Alert.alert('Enregistrement refusé', "Les paramètres n'ont pas été enregistrés.");
+    }
+  };
+
+  const submitDeleteFarm = async () => {
+    if (selectedFarmId === null) return;
+    try {
+      await deleteFarm(selectedFarmId).unwrap();
+      setFarmSheet(false);
+    } catch {
+      Alert.alert('Suppression refusée', "La ferme n'a pas été supprimée.");
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -152,44 +282,132 @@ export default function FermesScreen() {
 
         {seg === 'team' && (
           <View>
-            <View style={styles.note}>
-              <Users size={16} color={tokens.colors.primary[600]} />
-              <Text style={styles.noteText}>
-                Ajoutez ou modifiez des membres depuis l&apos;application web.
-              </Text>
-            </View>
+            {canManageTeam ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Ajouter un membre"
+                onPress={() => setMemberSheet({ open: true, member: null })}
+                style={styles.addBtn}
+              >
+                <Plus size={18} color={tokens.colors.action.accumulate.fg} />
+                <Text style={styles.addText}>Ajouter un membre</Text>
+              </Pressable>
+            ) : null}
             {membersLoading ? (
               <Text style={styles.muted}>Chargement…</Text>
             ) : (members ?? []).length === 0 ? (
               <Text style={styles.muted}>Aucun membre.</Text>
             ) : (
               <View style={styles.list}>
-                {(members ?? []).map((m, i) => (
-                  <Animated.View key={m.userId} entering={FadeInDown.delay(i * 40).springify().damping(18)} style={styles.memberRow}>
-                    <View style={styles.avatar}>
-                      <Text style={styles.avatarText}>{memberInitials(m.fullName) || '?'}</Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.memberName} numberOfLines={1}>{m.fullName}</Text>
-                      <Text style={styles.memberEmail} numberOfLines={1}>{m.email}</Text>
-                    </View>
-                    <View style={styles.memberRight}>
-                      <View style={styles.roleChip}>
-                        <Text style={styles.roleText}>{roleLabel(m.role)}</Text>
-                      </View>
-                      {!m.active && <Text style={styles.inactive}>Inactif</Text>}
-                    </View>
-                  </Animated.View>
-                ))}
+                {(members ?? []).map((m, i) => {
+                  // OWNER has no editable role and the backend refuses to assign one, so the
+                  // owner's own row is informational — opening a sheet on it would dead-end.
+                  const editable = canManageTeam && m.role !== 'OWNER';
+                  return (
+                    <Animated.View
+                      key={m.userId}
+                      entering={FadeInDown.delay(i * 40).springify().damping(18)}
+                    >
+                      <Pressable
+                        accessibilityRole={editable ? 'button' : undefined}
+                        accessibilityLabel={editable ? `Modifier ${m.fullName}` : m.fullName}
+                        disabled={!editable}
+                        onPress={() => setMemberSheet({ open: true, member: m })}
+                        style={[styles.memberRow, !m.active && styles.memberRowOff]}
+                      >
+                        <View style={[styles.avatar, !m.active && styles.avatarOff]}>
+                          <Text style={styles.avatarText}>{memberInitials(m.fullName) || '?'}</Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.memberName} numberOfLines={1}>{m.fullName}</Text>
+                          <Text style={styles.memberEmail} numberOfLines={1}>{m.email}</Text>
+                        </View>
+                        <View style={styles.memberRight}>
+                          <View style={styles.roleChip}>
+                            <Text style={styles.roleText}>{roleLabel(m.role)}</Text>
+                          </View>
+                          {!m.active && <Text style={styles.inactive}>Retiré</Text>}
+                        </View>
+                      </Pressable>
+                    </Animated.View>
+                  );
+                })}
               </View>
             )}
           </View>
         )}
 
         {seg === 'settings' && (
-          <Text style={styles.muted}>Paramètres de la ferme — à venir.</Text>
+          <View style={styles.list}>
+            <View style={styles.settingRow}>
+              <Text style={styles.settingLabel}>Nom</Text>
+              <Text style={styles.settingValue}>{fullFarm?.name ?? farm?.name ?? '—'}</Text>
+            </View>
+            <View style={styles.settingRow}>
+              <Text style={styles.settingLabel}>Localisation</Text>
+              <Text style={styles.settingValue}>{fullFarm?.location ?? '—'}</Text>
+            </View>
+            <View style={styles.settingRow}>
+              <Text style={styles.settingLabel}>Capacité</Text>
+              <Text style={styles.settingValue}>
+                {fullFarm?.capacity != null ? `${formatNumber(fullFarm.capacity)} sujets` : '—'}
+              </Text>
+            </View>
+            <View style={styles.settingRow}>
+              <Text style={styles.settingLabel}>Devise</Text>
+              <Text style={styles.settingValue}>{fullFarm?.currency ?? '—'}</Text>
+            </View>
+
+            {canManageTeam ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Modifier la ferme"
+                onPress={() => setFarmSheet(true)}
+                style={styles.addBtn}
+              >
+                <Settings2 size={18} color={tokens.colors.action.accumulate.fg} />
+                <Text style={styles.addText}>Modifier la ferme</Text>
+              </Pressable>
+            ) : null}
+          </View>
         )}
       </ScrollView>
+
+      <MemberSheet
+        open={memberSheet.open}
+        member={memberSheet.member}
+        catalog={catalog}
+        saving={creating || updatingMember}
+        onClose={() => setMemberSheet({ open: false, member: null })}
+        onCreate={submitCreate}
+        onUpdate={submitUpdate}
+        onResetPassword={doResetPassword}
+        onToggleActive={toggleActive}
+      />
+
+      <FarmSheet
+        open={farmSheet}
+        farm={fullFarm}
+        saving={savingFarm}
+        canDelete={canDeleteFarm}
+        onClose={() => setFarmSheet(false)}
+        onSubmit={submitFarm}
+        onDelete={submitDeleteFarm}
+      />
+
+      {issued ? (
+        <Modal visible transparent animationType="slide" onRequestClose={() => setIssued(null)}>
+          <View style={styles.issuedBackdrop} />
+          <View style={styles.issuedSheet}>
+            <TemporaryPassword
+              password={issued.password}
+              fullName={issued.fullName}
+              email={issued.email}
+              onDone={() => setIssued(null)}
+            />
+          </View>
+        </Modal>
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -277,4 +495,37 @@ const styles = StyleSheet.create({
   roleChip: { borderRadius: tokens.radii.full, borderWidth: 1, borderColor: tokens.colors.primary[300], paddingHorizontal: tokens.spacing[2], paddingVertical: 1 },
   roleText: { ...tokens.typography.bodySm, fontSize: 10, fontWeight: '700', color: tokens.colors.primary[700] },
   inactive: { ...tokens.typography.bodySm, fontSize: 10, color: tokens.colors.warning, fontWeight: '600' },
+  addBtn: {
+    minHeight: tokens.touch.primaryButton,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: tokens.spacing[2],
+    borderRadius: tokens.radii.lg,
+    backgroundColor: tokens.colors.action.accumulate.bg,
+    borderWidth: tokens.layout.borderWidth,
+    borderColor: tokens.colors.action.accumulate.border,
+    marginBottom: tokens.spacing[3],
+  },
+  addText: { ...tokens.typography.button, color: tokens.colors.action.accumulate.fg },
+  memberRowOff: { opacity: 0.62 },
+  avatarOff: { backgroundColor: tokens.colors.neutral[300] },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: tokens.spacing[3],
+    paddingVertical: tokens.spacing[3],
+    borderBottomWidth: 1,
+    borderBottomColor: tokens.colors.field.ruleSubtle,
+  },
+  settingLabel: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted },
+  settingValue: { ...tokens.typography.bodyMd, color: tokens.colors.field.text, flexShrink: 1, textAlign: 'right' },
+  issuedBackdrop: { flex: 1, backgroundColor: 'rgba(28, 25, 23, 0.45)' },
+  issuedSheet: {
+    backgroundColor: tokens.colors.field.background,
+    borderTopLeftRadius: tokens.radii.xl,
+    borderTopRightRadius: tokens.radii.xl,
+    paddingBottom: tokens.spacing[6],
+  },
 });
