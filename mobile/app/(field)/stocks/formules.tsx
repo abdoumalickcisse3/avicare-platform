@@ -13,7 +13,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Redirect, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
-import { ArrowLeft, Check, Copy, MoreVertical, Wheat } from 'lucide-react-native';
+import { ArrowLeft, Check, Copy, MoreVertical, Pencil, Wheat } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { useFarmAccess } from '@/auth/useSession';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
@@ -67,6 +67,10 @@ export default function FormulesScreen() {
 
   const openActions = (f: FarmFeedFormula) => {
     Alert.alert(f.name, undefined, [
+      {
+        text: 'Modifier la composition',
+        onPress: () => router.push(`/(field)/stocks/formule-edition?formulaId=${f.id}`),
+      },
       {
         text: 'Recalculer le coût',
         onPress: async () => {
@@ -167,10 +171,24 @@ export default function FormulesScreen() {
         )}
       </ScrollView>
 
-      {canWrite && farmFormulas.length > 0 && (
-        <Pressable accessibilityRole="button" accessibilityLabel="Cloner un modèle" onPress={openClone} style={styles.fab}>
-          <Copy size={22} color={tokens.colors.primary[900]} />
-        </Pressable>
+      {canWrite && (
+        <View style={styles.fabStack}>
+          {/* Cloning a platform template is the shortcut; composing from scratch is the escape
+              hatch when no template matches what the farm actually mixes. */}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Composer une formule"
+            onPress={() => router.push('/(field)/stocks/formule-edition')}
+            style={styles.fabSecondary}
+          >
+            <Pencil size={20} color={tokens.colors.field.text} />
+          </Pressable>
+          {farmFormulas.length > 0 && (
+            <Pressable accessibilityRole="button" accessibilityLabel="Cloner un modèle" onPress={openClone} style={styles.fab}>
+              <Copy size={22} color={tokens.colors.primary[900]} />
+            </Pressable>
+          )}
+        </View>
       )}
 
       <Modal visible={cloneOpen} transparent animationType="slide" onRequestClose={() => setCloneOpen(false)}>
@@ -275,10 +293,24 @@ const styles = StyleSheet.create({
   ingredients: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted },
   actionsBtn: { padding: 2 },
 
-  fab: {
+  fabStack: {
     position: 'absolute',
     right: tokens.layout.screenPadding,
     bottom: tokens.spacing[6],
+    alignItems: 'center',
+    gap: tokens.spacing[3],
+  },
+  fabSecondary: {
+    width: 52,
+    height: 52,
+    borderRadius: tokens.radii.full,
+    backgroundColor: tokens.colors.neutral[0],
+    borderWidth: tokens.layout.borderWidth,
+    borderColor: tokens.colors.field.rule,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fab: {
     width: 56,
     height: 56,
     borderRadius: tokens.radii.full,

@@ -1,10 +1,11 @@
 /**
  * Bon d'achat detail — mirrors the web `/stocks/achats/[id]`: header (number +
  * status), supplier, line items (commandé / reçu), total, and the workflow
- * actions. DRAFT → Envoyer (submit), SENT → Réceptionner (receive everything at
- * the ordered quantity — cascades IN stock movements). Annuler until received.
+ * actions. DRAFT → Envoyer (submit), SENT → Réceptionner, which now opens a
+ * line-by-line sheet instead of assuming everything arrived. Annuler until received.
  * All gated `inventory:write`.
  */
+import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -14,6 +15,7 @@ import { ArrowLeft } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { useFarmAccess } from '@/auth/useSession';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
+import { ReceptionSheet } from '@/inventory/ReceptionSheet';
 import {
   useCancelPurchaseOrderMutation,
   useGetPurchaseOrderQuery,
@@ -38,6 +40,7 @@ export default function AchatDetailScreen() {
   );
   const [submitPO, { isLoading: submitting }] = useSubmitPurchaseOrderMutation();
   const [receivePO, { isLoading: receiving }] = useReceivePurchaseOrderMutation();
+  const [receptionOpen, setReceptionOpen] = useState(false);
   const [cancelPO] = useCancelPurchaseOrderMutation();
 
   if (selectedFarmId === null) {
@@ -53,23 +56,7 @@ export default function AchatDetailScreen() {
   };
 
   const doSubmit = () => run(() => submitPO({ farmId: selectedFarmId, id: poId }).unwrap(), 'Envoyer');
-  const doReceive = () =>
-    Alert.alert('Réceptionner', `Réceptionner ${po?.orderNumber} en entier ? Le stock sera crédité.`, [
-      { text: 'Retour', style: 'cancel' },
-      {
-        text: 'Réceptionner',
-        onPress: () =>
-          run(
-            () =>
-              receivePO({
-                farmId: selectedFarmId,
-                id: poId,
-                body: { lines: (po?.items ?? []).map((it) => ({ itemId: it.id, receivedQuantity: it.orderedQuantity })) },
-              }).unwrap(),
-            'Réceptionner',
-          ),
-      },
-    ]);
+  const doReceive = () => setReceptionOpen(true);
   const doCancel = () =>
     Alert.alert('Annuler le bon d\'achat', `Annuler ${po?.orderNumber} ?`, [
       { text: 'Retour', style: 'cancel' },
@@ -143,6 +130,20 @@ export default function AchatDetailScreen() {
           </Pressable>
         </View>
       )}
+
+      <ReceptionSheet
+        open={receptionOpen}
+        order={po}
+        saving={receiving}
+        onClose={() => setReceptionOpen(false)}
+        onSubmit={async (lines) => {
+          await run(
+            () => receivePO({ farmId: selectedFarmId, id: poId, body: { lines } }).unwrap(),
+            'Réceptionner',
+          );
+          setReceptionOpen(false);
+        }}
+      />
     </SafeAreaView>
   );
 }

@@ -971,44 +971,19 @@ export interface StockMovement {
   notes: string | null;
 }
 
-/** One line of a feed formula: an article and its share of 100 kg. */
-export interface FormulaIngredient {
-  articleKey: string;
-  articleSource: ArticleSource;
-  percentage: number;
-}
-
 /**
- * A farm's own feed formula.
+ * What the formula editor submits.
  *
- * `totalPercentage` is deliberately allowed to differ from 100: the backend treats that as a
- * non-blocking warning so a formula can be saved half-composed and finished later.
- * `estimatedCostPer100kgXof` follows from `Σ percentage × unit price`, because a percentage is
- * also the number of kilograms in 100 kg.
+ * `ingredients` may total anything: the backend treats a total other than 100 % as a
+ * NON-BLOCKING warning, so a formula can be saved half-composed and finished later. Each
+ * individual percentage must be between 0 and 100, every article must exist in the farm's
+ * inventory catalog, and V1 accepts INVENTORY ingredients only.
  */
-export interface FeedFormulaDetail {
-  id: number;
-  farmId: number;
-  name: string;
-  description: string | null;
-  sourceFormulaKey: string | null;
-  targetBreedKeys: string[];
-  targetPhase: string;
-  targetAgeDaysMin: number | null;
-  targetAgeDaysMax: number | null;
-  ingredients: FormulaIngredient[];
-  totalPercentage: number | null;
-  estimatedCostPer100kgXof: number | null;
-  estimatedCostCalculatedAt: string | null;
-  active: boolean;
-  notes: string | null;
-}
-
 export interface FeedFormulaInput {
   name: string;
   description?: string;
   targetBreedKeys?: string[];
-  targetPhase: string;
+  targetPhase: FeedPhase;
   targetAgeDaysMin?: number | null;
   targetAgeDaysMax?: number | null;
   ingredients: FormulaIngredient[];
