@@ -97,12 +97,16 @@ describe('MortalityEntryScreen', () => {
   it('enqueues one mutation per submission, each with its own clientRef', async () => {
     await render(<MortalityEntryScreen />);
 
-    // The backend requires a strictly positive count (@Positive); the field is
-    // cleared after each submit, so each distinct event is retyped.
-    await type(screen.getByLabelText('Mortalité constatée'), '2');
+    // The count is now tapped in on a counter rather than typed: the gesture changed with
+    // the primitives, the contract below did not. The counter resets after each submit, so
+    // each distinct event is counted afresh.
+    await press(screen.getByLabelText('Ajouter 1'));
+    await press(screen.getByLabelText('Ajouter 1'));
     await press(screen.getByLabelText('Enregistrer la mortalité'));
 
-    await type(screen.getByLabelText('Mortalité constatée'), '3');
+    await press(screen.getByLabelText('Ajouter 1'));
+    await press(screen.getByLabelText('Ajouter 1'));
+    await press(screen.getByLabelText('Ajouter 1'));
     await press(screen.getByLabelText('Enregistrer la mortalité'));
 
     const refs = queue.listAll().map((m) => m.clientRef);
@@ -113,7 +117,9 @@ describe('MortalityEntryScreen', () => {
   it('puts the SAME clientRef in the payload and the queue row — the whole point of Task 2', async () => {
     await render(<MortalityEntryScreen />);
 
-    await type(screen.getByLabelText('Mortalité constatée'), '5');
+    for (let i = 0; i < 5; i += 1) {
+      await press(screen.getByLabelText('Ajouter 1'));
+    }
     await press(screen.getByLabelText('Enregistrer la mortalité'));
 
     const [entry] = queue.listAll();

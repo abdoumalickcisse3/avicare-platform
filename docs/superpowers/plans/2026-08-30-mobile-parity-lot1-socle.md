@@ -195,9 +195,15 @@ La preuve que les primitives tiennent en usage réel, et pas seulement en test.
 deux saisies produisent deux `clientRef` distincts et que le `clientRef` du payload et
 celui de la ligne de file coïncident.
 
-**Contrainte :** ces tests existants doivent continuer de passer **sans être réécrits pour
-s'accommoder du nouveau composant**. S'ils doivent changer au-delà des sélecteurs, c'est
-que la primitive a changé le comportement — et il faut s'arrêter.
+**Critère révisé pendant l'implémentation.** Il disait : « ces tests doivent passer sans
+être réécrits ». C'était le mauvais critère — il confondait *ne pas casser le contrat* et
+*ne pas changer le geste*. Passer d'un champ de saisie à un compteur change le geste
+(`changeText` → `press`), et c'est précisément l'amélioration demandée.
+
+Le contrat à préserver est **comportemental** : mêmes `clientRef` distincts par soumission,
+même `clientRef` dans la charge utile et dans la ligne de file, même compte transmis, même
+remise à zéro. Toutes ces assertions sont inchangées — seule la façon d'amener le compteur
+à 5 diffère.
 
 ---
 
@@ -208,7 +214,8 @@ que la primitive a changé le comportement — et il faut s'arrêter.
 2. Le test de couverture de navigation passe — et échoue si l'on retire `file` de
    `SCREEN_TO_TAB`, vérifié en le cassant.
 3. `KIND_LABELS` couvre `MutationKind`, testé.
-4. `mortalite.tsx` fonctionne sur les nouvelles primitives, ses tests d'origine intacts.
+4. `mortalite.tsx` fonctionne sur les nouvelles primitives, **ses assertions d'origine
+   intactes** (le geste change, le contrat non — voir tâche 7).
 5. `npx tsc --noEmit` propre ; suite mobile verte ; aucune régression sur les 238 tests
    existants.
 6. Aucun écran métier nouveau — ce lot est un socle, pas une livraison fonctionnelle.

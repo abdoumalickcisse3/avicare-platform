@@ -217,6 +217,9 @@ export const SCREEN_TO_TAB: Record<string, string> = {
   '[clientId]': 'commerce',
   '[id]': 'commerce',
   file: 'home',
+  // Opened from the header bell on any screen: without this the list renders with no bottom
+  // bar, and the only way out is the back gesture.
+  notifications: 'home',
 };
 
 /** Unused today but kept for parity with UVDistribution's leaf icon. */

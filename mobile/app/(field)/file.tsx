@@ -20,19 +20,9 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { tokens } from '@/theme';
+import { KIND_LABELS } from '@/sync/kindLabels';
 import { queue, subscribe, syncEngine } from '@/sync';
 import type { MutationKind, QueuedMutation } from '@/sync/types';
-
-const KIND_LABELS: Record<MutationKind, string> = {
-  DAILY_RECORD: 'Journalier',
-  MORTALITY: 'Mortalité',
-  WEIGHING: 'Pesée',
-  EGG_COLLECTION: "Collecte d'œufs",
-  VACCINATION: 'Vaccination',
-  HEALTH_OBSERVATION: 'Observation santé',
-  CREATE_CLIENT: 'Nouveau client',
-  STOCK_ADJUSTMENT: 'Ajustement stock',
-};
 
 export default function QueueScreen() {
   const router = useRouter();

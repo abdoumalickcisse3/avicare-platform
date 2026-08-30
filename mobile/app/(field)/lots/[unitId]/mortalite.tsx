@@ -21,6 +21,8 @@ import * as Crypto from 'expo-crypto';
 import { ArrowLeft } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { FormField, TodayDateField } from '@/components/field/FormField';
+import { ActionBar } from '@/components/field/ActionBar';
+import { Counter } from '@/components/field/Counter';
 import { useListProductionUnitsQuery } from '@/store/api/productionUnitsApi';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { formatNumber } from '@/lib/format';
@@ -53,7 +55,7 @@ export default function MortalityEntryScreen() {
   const { data: units } = useListProductionUnitsQuery(selectedFarmId ?? skipToken);
   const unit = units?.find((u) => u.id === unitId);
 
-  const [count, setCount] = useState('');
+  const [count, setCount] = useState(0);
   const [reason, setReason] = useState('');
 
   // Hooks above run unconditionally (rules of hooks); the redirect below
@@ -62,8 +64,9 @@ export default function MortalityEntryScreen() {
     return <Redirect href="/(field)" />;
   }
 
-  const countNum = /^\d+$/.test(count.trim()) ? Number(count.trim()) : NaN;
-  const canSubmit = !Number.isNaN(unitId) && Number.isInteger(countNum) && countNum >= 1;
+  // The backend requires a strictly positive count (@Positive), and the counter cannot go
+  // below zero — so "at least one" is the only rule left to state here.
+  const canSubmit = !Number.isNaN(unitId) && count >= 1;
 
   function handleSubmit(): void {
     if (selectedFarmId === null || !canSubmit) return;
@@ -73,11 +76,11 @@ export default function MortalityEntryScreen() {
       farmId: selectedFarmId,
       kind: 'MORTALITY',
       endpoint: `/api/v1/farms/${selectedFarmId}/production-units/${unitId}/mortality`,
-      payload: { count: countNum, reason: reason.trim() || undefined, clientRef: ref },
+      payload: { count, reason: reason.trim() || undefined, clientRef: ref },
       clientRef: ref,
     });
 
-    setCount('');
+    setCount(0);
     setReason('');
     router.back();
   }
@@ -108,14 +111,14 @@ export default function MortalityEntryScreen() {
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <TodayDateField />
-        <FormField
+        {/* A counter rather than a text field: mortality is counted as the birds are found,
+            one at a time, with one hand — not typed once on a phone keyboard that hides the
+            value it is entering. Long press steps by ten for a bad morning. */}
+        <Counter
           label="Mortalité constatée"
-          required
           value={count}
-          onChangeText={setCount}
-          keyboardType="number-pad"
-          inputMode="numeric"
-          placeholder="0"
+          onChange={setCount}
+          max={unit?.currentCount}
           helperText={effectifHelper}
         />
         <FormField
@@ -127,10 +130,10 @@ export default function MortalityEntryScreen() {
         />
       </ScrollView>
 
-      <View style={styles.actionBar}>
-        <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Annuler">
-          <Text style={styles.cancelLabel}>Annuler</Text>
-        </TouchableOpacity>
+      {/* One commit action, in the thumb zone. Cancel moved into the header's back arrow:
+          the design's golden rule is a single committing button per screen, and a "Annuler"
+          sitting next to "Enregistrer" is the pair people mis-tap in a hurry. */}
+      <ActionBar>
         <TouchableOpacity
           style={[styles.validateButton, !canSubmit && styles.validateButtonDisabled]}
           onPress={handleSubmit}
@@ -140,7 +143,7 @@ export default function MortalityEntryScreen() {
         >
           <Text style={styles.validateLabel}>Enregistrer</Text>
         </TouchableOpacity>
-      </View>
+      </ActionBar>
     </SafeAreaView>
   );
 }
@@ -154,10 +157,7 @@ const styles = StyleSheet.create({
 
   content: { paddingHorizontal: tokens.layout.screenPadding, paddingTop: tokens.spacing[2], paddingBottom: tokens.spacing[8], gap: tokens.spacing[4] },
 
-  actionBar: { flexDirection: 'row', gap: tokens.spacing[3], paddingHorizontal: tokens.layout.screenPadding, paddingTop: tokens.spacing[3], paddingBottom: tokens.spacing[4], borderTopWidth: tokens.layout.ruleWidth, borderTopColor: tokens.colors.neutral[200], backgroundColor: tokens.colors.neutral[0] },
-  cancelButton: { minHeight: tokens.touch.primaryButton, borderRadius: tokens.radii.lg, borderWidth: 1, borderColor: tokens.colors.neutral[300], alignItems: 'center', justifyContent: 'center', paddingHorizontal: tokens.spacing[6] },
-  cancelLabel: { ...tokens.typography.button, fontSize: 16, color: tokens.colors.field.textMuted },
-  validateButton: { flex: 1, minHeight: tokens.touch.primaryButton, borderRadius: tokens.radii.lg, backgroundColor: tokens.colors.primary[600], alignItems: 'center', justifyContent: 'center' },
+  validateButton: { minHeight: tokens.touch.cta, borderRadius: tokens.radii.lg, backgroundColor: tokens.colors.action.commit.bg, borderWidth: tokens.layout.borderWidth, borderColor: tokens.colors.action.commit.border, alignItems: 'center', justifyContent: 'center' },
   validateButtonDisabled: { opacity: 0.4 },
-  validateLabel: { ...tokens.typography.button, fontSize: 16, color: tokens.colors.neutral[0] },
+  validateLabel: { ...tokens.typography.button, color: tokens.colors.action.commit.fg },
 });
