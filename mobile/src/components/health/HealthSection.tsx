@@ -13,7 +13,7 @@
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Eye, Pill, ShieldCheck, Stethoscope, Syringe } from 'lucide-react-native';
-import { tokens } from '@/theme';
+import { fontFamily, tokens } from '@/theme';
 import {
   useAssignProgramMutation,
   useGetObservationsQuery,
@@ -78,38 +78,45 @@ export function HealthSection({ farmId, unitId }: { farmId: number; unitId: numb
   const lateDoses = schedule.filter((s) => s.status === 'LATE').length;
   const healthy = recentCritical === 0 && lateDoses === 0;
 
+  // What is wrong, named. Empty when nothing is — the banner then says so itself.
+  const reasons: string[] = [];
+  if (lateDoses > 0) reasons.push(`${lateDoses} dose${lateDoses > 1 ? 's' : ''} en retard`);
+  if (recentCritical > 0) {
+    reasons.push(
+      `${recentCritical} observation${recentCritical > 1 ? 's' : ''} à surveiller`,
+    );
+  }
+
+  // Context, not the answer: the ratio matters only against the programme's own length.
+  const doneDoses = schedule.filter((s) => s.status === 'DONE').length;
+  const facts = [
+    schedule.length > 0
+      ? `${doneDoses}/${schedule.length} doses`
+      : `${formatNumber(vaccinations?.length ?? 0)} vaccination${(vaccinations?.length ?? 0) > 1 ? 's' : ''}`,
+    `${formatNumber(observations?.length ?? 0)} observation${(observations?.length ?? 0) > 1 ? 's' : ''}`,
+  ];
+
   return (
     <View style={{ gap: tokens.spacing[4] }}>
-      {/* Lot-level KPI tiles (parity with the web HealthLotKpis). */}
-      <View style={styles.kpiRow}>
-        <View style={styles.kpiTile}>
-          <View style={styles.kpiHead}>
-            <Syringe size={16} color={tokens.colors.primary[600]} />
-            <Text style={styles.kpiLabel}>Vaccinations</Text>
-          </View>
-          {/* With a programme, the ratio is the number that matters: 4 doses done means
-              nothing without knowing the programme asks for 9. */}
-          <Text style={styles.kpiVal}>
-            {schedule.length > 0
-              ? `${schedule.filter((s) => s.status === 'DONE').length}/${schedule.length}`
-              : formatNumber(vaccinations?.length ?? 0)}
+      {/*
+        One verdict, not three tiles.
+        The three cards that used to sit here — Vaccinations 4/7, Observations 0, État VIGILANCE —
+        were the same fact told three times: the status was *derived* from the other two, and the
+        late doses were then repeated a third time by the programme card below. Three boxes to
+        read before learning one thing.
+        This says the thing: what is wrong, in words, or that nothing is. The supporting counts
+        stay as one quiet line underneath, because they are context, not the answer.
+      */}
+      <View style={[styles.verdict, healthy ? styles.verdictOk : styles.verdictWarn]}>
+        <ShieldCheck
+          size={22}
+          color={healthy ? tokens.colors.successDark : tokens.colors.warningDark}
+        />
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.verdictTitle, healthy ? styles.verdictTextOk : styles.verdictTextWarn]}>
+            {healthy ? 'Tout est à jour' : reasons.join(' · ')}
           </Text>
-        </View>
-        <View style={styles.kpiTile}>
-          <View style={styles.kpiHead}>
-            <Eye size={16} color={tokens.colors.warning} />
-            <Text style={styles.kpiLabel}>Observations</Text>
-          </View>
-          <Text style={styles.kpiVal}>{formatNumber(observations?.length ?? 0)}</Text>
-        </View>
-        <View style={styles.kpiTile}>
-          <View style={styles.kpiHead}>
-            <ShieldCheck size={16} color={healthy ? tokens.colors.success : tokens.colors.warning} />
-            <Text style={styles.kpiLabel}>État</Text>
-          </View>
-          <View style={[styles.statusChip, { backgroundColor: healthy ? tokens.colors.successLight : tokens.colors.warningLight }]}>
-            <Text style={[styles.statusText, { color: healthy ? tokens.colors.successDark : tokens.colors.warningDark }]}>{healthy ? 'SAIN' : 'VIGILANCE'}</Text>
-          </View>
+          <Text style={styles.verdictSub}>{facts.join(' · ')}</Text>
         </View>
       </View>
 
@@ -262,16 +269,48 @@ export function HealthSection({ farmId, unitId }: { farmId: number; unitId: numb
 }
 
 const styles = StyleSheet.create({
-  kpiRow: { flexDirection: 'row', gap: tokens.spacing[2] },
-  kpiTile: { flex: 1, backgroundColor: tokens.colors.neutral[0], borderWidth: 1, borderColor: tokens.colors.neutral[200], borderRadius: tokens.radii.lg, padding: tokens.spacing[3], gap: tokens.spacing[2] },
-  kpiHead: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  kpiLabel: { ...tokens.typography.bodySm, fontSize: 10.5, color: tokens.colors.field.textMuted },
-  kpiVal: { ...tokens.typography.numericSm, fontSize: 20, color: tokens.colors.field.text },
-  statusChip: { alignSelf: 'flex-start', borderRadius: tokens.radii.full, paddingHorizontal: tokens.spacing[2], paddingVertical: 2 },
-  statusText: { ...tokens.typography.bodySm, fontWeight: '700', fontSize: 10 },
-  actions: { flexDirection: 'row', gap: tokens.spacing[3] },
-  actionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: tokens.spacing[2], minHeight: tokens.touch.primaryButton, borderRadius: tokens.radii.lg, borderWidth: tokens.layout.borderWidth, borderColor: tokens.colors.primary[600], backgroundColor: tokens.colors.primary[50] },
-  actionText: { ...tokens.typography.button, fontSize: 14, color: tokens.colors.primary[700] },
+  verdict: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.spacing[3],
+    borderRadius: tokens.radii.lg,
+    padding: tokens.spacing[4],
+  },
+  verdictOk: { backgroundColor: tokens.colors.successLight },
+  verdictWarn: { backgroundColor: tokens.colors.warningLight },
+  verdictTitle: { ...tokens.typography.bodyLg, fontFamily: fontFamily.sansSemiBold },
+  verdictTextOk: { color: tokens.colors.successDark },
+  verdictTextWarn: { color: tokens.colors.warningDark },
+  verdictSub: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginTop: 2 },
+
+  /*
+    A 2-column grid, not a 4-across row.
+    The row gave each button `flex: 1` with the icon and label side by side; the labels do not
+    shrink, so "Visite véto" ran off the screen and the icons landed on top of the neighbouring
+    label. Half-width cells with the icon above the label cannot overflow — the label has the
+    whole cell to wrap in — and a fifth action later just starts a third row.
+  */
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.spacing[3] },
+  actionBtn: {
+    width: '47%',
+    flexGrow: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: tokens.spacing[1],
+    minHeight: tokens.touch.primaryButton,
+    paddingVertical: tokens.spacing[3],
+    paddingHorizontal: tokens.spacing[2],
+    borderRadius: tokens.radii.lg,
+    borderWidth: tokens.layout.borderWidth,
+    borderColor: tokens.colors.primary[600],
+    backgroundColor: tokens.colors.primary[50],
+  },
+  actionText: {
+    ...tokens.typography.button,
+    fontSize: 14,
+    color: tokens.colors.primary[700],
+    textAlign: 'center',
+  },
   card: { backgroundColor: tokens.colors.neutral[0], borderWidth: 1, borderColor: tokens.colors.neutral[200], borderRadius: tokens.radii.xl, padding: tokens.spacing[4] },
   title: { ...tokens.typography.headingMd, color: tokens.colors.field.text, marginBottom: tokens.spacing[2] },
   muted: { ...tokens.typography.bodyMd, color: tokens.colors.field.textMuted, textAlign: 'center', paddingVertical: tokens.spacing[3] },

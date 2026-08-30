@@ -80,7 +80,10 @@ describe('VaccinationProgramSection', () => {
       ],
     });
 
-    expect(getByText('1 dose en retard')).toBeTruthy();
+    // The count moved to the tab's verdict banner — repeating it inside the card made the
+    // reader check that the two numbers agreed. What the card must still do is put the late
+    // dose first, which is what this asserts.
+    expect(getByText('En retard')).toBeTruthy();
   });
 
   it('says so plainly when nothing is late', async () => {

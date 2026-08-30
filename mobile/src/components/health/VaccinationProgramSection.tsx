@@ -107,13 +107,11 @@ export function VaccinationProgramSection({
         <Text style={styles.title}>{program?.label ?? humanizeKey(assignment.programKey)}</Text>
       </View>
 
-      {late.length > 0 ? (
-        <Text style={styles.lateSummary}>
-          {late.length} dose{late.length > 1 ? 's' : ''} en retard
-        </Text>
-      ) : (
-        <Text style={styles.muted}>Aucune dose en retard.</Text>
-      )}
+      {/* The late count used to be repeated here. The verdict banner at the top of the tab now
+          says it once, and saying it twice on one screen made the reader check whether the two
+          numbers agreed. Only the "nothing late" case stays, because the banner's silence about
+          this programme is not the same as this programme being clear. */}
+      {late.length === 0 && <Text style={styles.muted}>Aucune dose en retard.</Text>}
 
       {/* Late first, and the only group that shouts: it is the reason this screen is opened. */}
       {[...late, ...upcoming].map((step) => (
@@ -129,15 +127,19 @@ export function VaccinationProgramSection({
             {/* One Text per string: nesting them splits the label across nodes, which reads
                 the same on screen and cannot be found by name in a test or by a screen reader. */}
             <Text style={styles.stepVaccine}>{humanizeKey(step.vaccineKey)}</Text>
+            {/* The status sits under the name, not at the far right.
+                Pinned right, it landed underneath the floating action button on a narrow screen —
+                the one word that says "act on this" was the one covered. Nothing lives at the
+                right edge now, so no overlay can ever reach it. */}
+            <Text style={[styles.stepStatus, { color: scheduleStatusColor(step.status) }]}>
+              {scheduleStatusLabel(step.status)}
+            </Text>
             <Text style={styles.muted}>
               {`${ageLabel(step.ageValue, step.ageUnit)} · prévue le ${frenchDate(step.dueDate)}${
                 step.mandatory ? ' · obligatoire' : ''
               }`}
             </Text>
           </View>
-          <Text style={[styles.stepStatus, { color: scheduleStatusColor(step.status) }]}>
-            {scheduleStatusLabel(step.status)}
-          </Text>
         </Pressable>
       ))}
 
