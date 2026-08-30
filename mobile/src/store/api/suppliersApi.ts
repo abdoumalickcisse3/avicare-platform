@@ -34,7 +34,32 @@ export const suppliersApi = baseApi.injectEndpoints({
       transformResponse: (r: ApiEnvelope<Supplier>) => r.data,
       invalidatesTags: [{ type: 'Supplier', id: 'LIST' }],
     }),
+    getSupplier: build.query<Supplier, { farmId: number; id: number }>({
+      query: ({ farmId, id }) => `${base(farmId)}/${id}`,
+      transformResponse: (r: ApiEnvelope<Supplier>) => r.data,
+      providesTags: (_r, _e, { id }) => [{ type: 'Supplier', id }],
+    }),
+
+    updateSupplier: build.mutation<
+      Supplier,
+      { farmId: number; id: number; body: SupplierInput }
+    >({
+      query: ({ farmId, id, body }) => ({ url: `${base(farmId)}/${id}`, method: 'PUT', body }),
+      transformResponse: (r: ApiEnvelope<Supplier>) => r.data,
+      invalidatesTags: (_r, _e, { id }) => [
+        { type: 'Supplier', id },
+        { type: 'Supplier', id: 'LIST' },
+      ],
+    }),
+
+    deleteSupplier: build.mutation<void, { farmId: number; id: number }>({
+      query: ({ farmId, id }) => ({ url: `${base(farmId)}/${id}`, method: 'DELETE' }),
+      invalidatesTags: [{ type: 'Supplier', id: 'LIST' }],
+    }),
   }),
 });
 
-export const { useGetSuppliersQuery, useCreateSupplierMutation } = suppliersApi;
+export const {
+  useGetSupplierQuery,
+  useUpdateSupplierMutation,
+  useDeleteSupplierMutation, useGetSuppliersQuery, useCreateSupplierMutation } = suppliersApi;

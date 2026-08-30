@@ -8,7 +8,12 @@
  * `module.inventory` on the backend (403 when inactive).
  */
 import { baseApi } from './baseApi';
-import type { AvailableFeedFormulas, FarmFeedFormula } from '@/types';
+import type {
+  AvailableFeedFormulas,
+  FarmFeedFormula,
+  FeedFormulaDetail,
+  FeedFormulaInput,
+} from '@/types';
 
 interface ApiEnvelope<T> {
   data: T;
@@ -42,10 +47,40 @@ export const feedFormulasApi = baseApi.injectEndpoints({
       query: ({ farmId, id }) => ({ url: `${base(farmId)}/${id}/deactivate`, method: 'POST' }),
       invalidatesTags: [{ type: 'FeedFormula', id: 'available' }],
     }),
+    /** One formula in full, ingredients included — the editor's starting point. */
+    getFeedFormula: build.query<FeedFormulaDetail, { farmId: number; id: number }>({
+      query: ({ farmId, id }) => `${base(farmId)}/${id}`,
+      transformResponse: (r: ApiEnvelope<FeedFormulaDetail>) => r.data,
+      providesTags: (_r, _e, { id }) => [{ type: 'FeedFormula', id }],
+    }),
+
+    createFeedFormula: build.mutation<
+      FeedFormulaDetail,
+      { farmId: number; body: FeedFormulaInput }
+    >({
+      query: ({ farmId, body }) => ({ url: base(farmId), method: 'POST', body }),
+      transformResponse: (r: ApiEnvelope<FeedFormulaDetail>) => r.data,
+      invalidatesTags: [{ type: 'FeedFormula', id: 'LIST' }],
+    }),
+
+    updateFeedFormula: build.mutation<
+      FeedFormulaDetail,
+      { farmId: number; id: number; body: FeedFormulaInput }
+    >({
+      query: ({ farmId, id, body }) => ({ url: `${base(farmId)}/${id}`, method: 'PUT', body }),
+      transformResponse: (r: ApiEnvelope<FeedFormulaDetail>) => r.data,
+      invalidatesTags: (_r, _e, { id }) => [
+        { type: 'FeedFormula', id },
+        { type: 'FeedFormula', id: 'LIST' },
+      ],
+    }),
   }),
 });
 
 export const {
+  useGetFeedFormulaQuery,
+  useCreateFeedFormulaMutation,
+  useUpdateFeedFormulaMutation,
   useGetAvailableFormulasQuery,
   useCloneFeedFormulaMutation,
   useRecomputeFormulaCostMutation,

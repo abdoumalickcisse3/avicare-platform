@@ -45,10 +45,21 @@ export const inventoryCatalogApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [{ type: 'InventoryCatalog', id: 'articles' }],
     }),
+    /**
+     * Every article the farm can reference, active or not. The formula editor needs this rather
+     * than the active-only list: an ingredient may point at an article that has since been
+     * archived, and dropping it from the picker would make the formula un-editable.
+     */
+    getAllArticles: build.query<InventoryCatalogItem[], { farmId: number }>({
+      query: ({ farmId }) => `${base(farmId)}/articles/all`,
+      transformResponse: (r: ApiEnvelope<InventoryCatalogItem[]>) => r.data,
+      providesTags: [{ type: 'InventoryCatalog', id: 'ALL' }],
+    }),
   }),
 });
 
 export const {
+  useGetAllArticlesQuery,
   useGetInventoryArticlesQuery,
   useGetPlatformFormulasQuery,
   useCreateArticleMutation,

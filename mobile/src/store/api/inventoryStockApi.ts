@@ -7,7 +7,7 @@
  * Gated behind `module.inventory` on the backend (403 when inactive).
  */
 import { baseApi } from './baseApi';
-import type { StockItem, StockMovementInput, StockValuation } from '@/types';
+import type { StockItem, StockMovement, StockMovementInput, StockValuation } from '@/types';
 
 interface ApiEnvelope<T> {
   data: T;
@@ -46,6 +46,72 @@ export const inventoryStockApi = baseApi.injectEndpoints({
         { type: 'Dashboard', id: 'current' },
       ],
     }),
+    /** One article's stock row — the detail screen's spine. */
+    getStockItem: build.query<StockItem, { farmId: number; id: number }>({
+      query: ({ farmId, id }) => `${base(farmId)}/stock-items/${id}`,
+      transformResponse: (r: ApiEnvelope<StockItem>) => r.data,
+      providesTags: (_r, _e, { id }) => [{ type: 'StockItem', id }],
+    }),
+
+    /**
+     * The ledger for one article. Every movement carries `quantityBefore` and `quantityAfter`,
+     * so the history reads as a running balance rather than a list of deltas to add up.
+     */
+    getMovementsByItem: build.query<StockMovement[], { farmId: number; stockItemId: number }>({
+      query: ({ farmId, stockItemId }) => `${base(farmId)}/movements?stockItemId=${stockItemId}`,
+      transformResponse: (r: ApiEnvelope<StockMovement[]>) => r.data,
+      providesTags: (_r, _e, { stockItemId }) => [{ type: 'StockMovement', id: stockItemId }],
+    }),
+
+    /** What one flock has consumed — the D18 cross-context coupling, read back. */
+    getMovementsByLot: build.query<StockMovement[], { farmId: number; unitId: number }>({
+      query: ({ farmId, unitId }) => `${base(farmId)}/movements/by-lot?unitId=${unitId}`,
+      transformResponse: (r: ApiEnvelope<StockMovement[]>) => r.data,
+      providesTags: (_r, _e, { unitId }) => [{ type: 'StockMovement', id: `lot-${unitId}` }],
+    }),
+
+    updateStockThreshold: build.mutation<
+      StockItem,
+      { farmId: number; id: number; threshold: number }
+    >({
+      query: ({ farmId, id, threshold }) => ({
+        url: `${base(farmId)}/stock-items/${id}/threshold`,
+        method: 'PUT',
+        body: { threshold },
+      }),
+      transformResponse: (r: ApiEnvelope<StockItem>) => r.data,
+      invalidatesTags: (_r, _e, { id }) => [
+        { type: 'StockItem', id },
+        { type: 'StockItem', id: 'list' },
+        { type: 'StockItem', id: 'low-stock' },
+        { type: 'InventoryAlert', id: 'farm' },
+      ],
+    }),
+
+    updateStockNotes: build.mutation<StockItem, { farmId: number; id: number; notes: string }>({
+      query: ({ farmId, id, notes }) => ({
+        url: `${base(farmId)}/stock-items/${id}/notes`,
+        method: 'PUT',
+        body: { notes },
+      }),
+      transformResponse: (r: ApiEnvelope<StockItem>) => r.data,
+      invalidatesTags: (_r, _e, { id }) => [
+        { type: 'StockItem', id },
+        { type: 'StockItem', id: 'list' },
+      ],
+    }),
+
+    /** Archives the row; the movements it accumulated stay readable. */
+    deactivateStockItem: build.mutation<void, { farmId: number; id: number }>({
+      query: ({ farmId, id }) => ({
+        url: `${base(farmId)}/stock-items/${id}/deactivate`,
+        method: 'POST',
+      }),
+      invalidatesTags: (_r, _e, { id }) => [
+        { type: 'StockItem', id },
+        { type: 'StockItem', id: 'list' },
+      ],
+    }),
   }),
 });
 
@@ -53,5 +119,11 @@ export const {
   useGetStockItemsQuery,
   useGetLowStockItemsQuery,
   useGetStockValuationQuery,
+  useGetStockItemQuery,
+  useGetMovementsByItemQuery,
+  useGetMovementsByLotQuery,
   useRecordMovementMutation,
+  useUpdateStockThresholdMutation,
+  useUpdateStockNotesMutation,
+  useDeactivateStockItemMutation,
 } = inventoryStockApi;

@@ -942,3 +942,75 @@ export interface CreateMemberResult {
   member: Member;
   temporaryPassword: string;
 }
+
+/**
+ * One line of an article's stock ledger. `quantityBefore` / `quantityAfter` are what make the
+ * history readable as a running balance instead of a list of deltas to add up by hand.
+ *
+ * The four nullable origin ids say where a movement came from: a purchase order, a daily record
+ * (feed consumption, D18), a vaccination or an executed treatment. A movement with none of them
+ * was recorded by hand.
+ */
+export interface StockMovement {
+  id: number;
+  stockItemId: number;
+  articleKey: string;
+  movementType: MovementType;
+  movementDate: string;
+  quantity: number;
+  quantityBefore: number;
+  quantityAfter: number;
+  reason: MovementReason;
+  productionUnitId: number | null;
+  purchaseOrderId: number | null;
+  dailyRecordId: number | null;
+  vaccinationId: number | null;
+  treatmentExecutedId: number | null;
+  unitPriceXof: number | null;
+  totalValueXof: number | null;
+  notes: string | null;
+}
+
+/** One line of a feed formula: an article and its share of 100 kg. */
+export interface FormulaIngredient {
+  articleKey: string;
+  articleSource: ArticleSource;
+  percentage: number;
+}
+
+/**
+ * A farm's own feed formula.
+ *
+ * `totalPercentage` is deliberately allowed to differ from 100: the backend treats that as a
+ * non-blocking warning so a formula can be saved half-composed and finished later.
+ * `estimatedCostPer100kgXof` follows from `Σ percentage × unit price`, because a percentage is
+ * also the number of kilograms in 100 kg.
+ */
+export interface FeedFormulaDetail {
+  id: number;
+  farmId: number;
+  name: string;
+  description: string | null;
+  sourceFormulaKey: string | null;
+  targetBreedKeys: string[];
+  targetPhase: string;
+  targetAgeDaysMin: number | null;
+  targetAgeDaysMax: number | null;
+  ingredients: FormulaIngredient[];
+  totalPercentage: number | null;
+  estimatedCostPer100kgXof: number | null;
+  estimatedCostCalculatedAt: string | null;
+  active: boolean;
+  notes: string | null;
+}
+
+export interface FeedFormulaInput {
+  name: string;
+  description?: string;
+  targetBreedKeys?: string[];
+  targetPhase: string;
+  targetAgeDaysMin?: number | null;
+  targetAgeDaysMax?: number | null;
+  ingredients: FormulaIngredient[];
+  notes?: string;
+}
