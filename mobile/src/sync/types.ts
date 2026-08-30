@@ -6,7 +6,13 @@ export type MutationKind =
   | 'VACCINATION'
   | 'HEALTH_OBSERVATION'
   | 'CREATE_CLIENT'
-  | 'STOCK_ADJUSTMENT';
+  | 'STOCK_ADJUSTMENT'
+  // Added for the parity effort (spec 2026-08-30, D1): writes a farmer makes standing in a
+  // barn. Money writes — payments, sales, invoices — deliberately stay online: the server
+  // only deduplicates mortality and weighings today, so a replayed payment would create a
+  // second one.
+  | 'EXPENSE'
+  | 'TREATMENT';
 
 export type MutationStatus = 'PENDING' | 'IN_FLIGHT' | 'FAILED';
 

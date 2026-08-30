@@ -77,6 +77,22 @@ export const baseApi = createApi({
     'Sale', 'Invoice', 'Payment', 'Order', 'Delivery',
     'Expense', 'Salary', 'Member',
     'Notification', 'Partner',
+  
+    // Declared ahead of the endpoints that will use them (parity spec 2026-08-30). A missing
+    // tagType fails invalidation *silently*: the mutation succeeds, the screen does not
+    // refresh, and the bug looks like a caching problem rather than a missing declaration.
+    'User',
+    'Permission',
+    'Setting',
+    'Subscription',
+    'UnitEvent',
+    'Treatment',
+    'Veterinarian',
+    'VetVisit',
+    'HealthProgram',
+    'HealthSchedule',
+    'StockMovement',
+    'Advance',
   ],
   endpoints: () => ({}),
 });
