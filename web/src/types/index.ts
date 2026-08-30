@@ -1713,3 +1713,51 @@ export interface AdminInviteCode {
   maxUses: number | null;
   usesCount: number;
 }
+
+/** One line of the console trace list (chantier P1). Payload-free on purpose. */
+export interface RequestTraceRow {
+  id: number;
+  requestId: string;
+  method: string;
+  path: string;
+  statusCode: number | null;
+  durationMs: number | null;
+  userEmail: string | null;
+  farmId: number | null;
+  hasError: boolean;
+  startedAt: string;
+}
+
+/** One trace, opened: payloads (masked server-side) and the audited actions it produced. */
+export interface RequestTraceDetail extends RequestTraceRow {
+  routePattern: string | null;
+  userId: number | null;
+  ip: string | null;
+  requestBody: string | null;
+  responseBody: string | null;
+  errorMessage: string | null;
+  stackTrace: string | null;
+  endedAt: string;
+  auditActions: string[];
+}
+
+/** Filters accepted by the trace search. */
+export interface TraceSearchArgs {
+  requestId?: string;
+  email?: string;
+  farmId?: number;
+  path?: string;
+  status?: number;
+  errorsOnly?: boolean;
+  page?: number;
+  size?: number;
+}
+
+/** Backend pagination envelope (`PageResponse<T>`). */
+export interface Paged<T> {
+  items: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}

@@ -44,7 +44,14 @@ class AdminAuditLogRepositoryIT {
   private AdminAuditLog persistEntry() {
     AdminAuditLog entry =
         new AdminAuditLog(
-            42L, "farm.module.enable", "Farm", 8L, 8L, Map.of("module", "poultry"), "10.0.0.1");
+            42L,
+            "farm.module.enable",
+            "Farm",
+            8L,
+            8L,
+            Map.of("module", "poultry"),
+            "10.0.0.1",
+            "corr-1234");
     return repository.saveAndFlush(entry);
   }
 

@@ -13,6 +13,18 @@ avicare:
   # Never creates an account: the email must already be signed up. Unset = no promotion at all.
   admin:
     founder-email: ${ADMIN_FOUNDER_EMAIL:}
+  # Traçabilité des requêtes HTTP (chantier P1). Le X-Correlation-Id circule toujours (MDC + logs
+  # + traceId des erreurs) même si la persistance est coupée : `enabled: false` n'éteint que la
+  # table. capture=ERRORS_AND_MUTATIONS garde les erreurs, les écritures et les lectures lentes ;
+  # ALL garde tout (fenêtre de debug, pas régime permanent).
+  tracing:
+    enabled: ${TRACING_ENABLED:true}
+    capture: ${TRACING_CAPTURE:ERRORS_AND_MUTATIONS}
+    slow-ms: ${TRACING_SLOW_MS:1000}
+    max-request-body-chars: ${TRACING_MAX_REQUEST_BODY:4000}
+    max-response-body-chars: ${TRACING_MAX_RESPONSE_BODY:10000}
+    retention-days: ${TRACING_RETENTION_DAYS:30}
+    purge-cron: ${TRACING_PURGE_CRON:0 45 3 * * *}
   security:
     jwt:
       issuer: ${JWT_ISSUER:avicare-platform}

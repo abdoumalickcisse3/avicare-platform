@@ -58,6 +58,14 @@ public class AdminAuditLog {
 
   @Column private String ip;
 
+  /**
+   * The correlation id of the request that produced this entry, when there was one. Joins the trail
+   * to {@code request_traces}: from an action, its payload and timing; from a trace, the action it
+   * stood for.
+   */
+  @Column(name = "request_id")
+  private String requestId;
+
   @Column(name = "created_at", insertable = false, updatable = false)
   private LocalDateTime createdAt;
 
@@ -69,7 +77,8 @@ public class AdminAuditLog {
       Long targetId,
       Long tenantId,
       Map<String, Object> metadata,
-      String ip) {
+      String ip,
+      String requestId) {
     this.actorUserId = actorUserId;
     this.action = action;
     this.targetType = targetType;
@@ -77,5 +86,6 @@ public class AdminAuditLog {
     this.tenantId = tenantId;
     this.metadata = metadata == null ? Map.of() : metadata;
     this.ip = ip;
+    this.requestId = requestId;
   }
 }

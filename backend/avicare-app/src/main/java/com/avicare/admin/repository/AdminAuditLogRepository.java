@@ -1,6 +1,7 @@
 package com.avicare.admin.repository;
 
 import com.avicare.admin.domain.AdminAuditLog;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,4 +23,7 @@ public interface AdminAuditLogRepository extends JpaRepository<AdminAuditLog, Lo
    */
   Optional<AdminAuditLog> findFirstByActionAndTargetIdOrderByCreatedAtDesc(
       String action, Long targetId);
+
+  /** Everything the trail recorded under one correlation id (console trace detail). */
+  List<AdminAuditLog> findByRequestIdOrderByCreatedAtAsc(String requestId);
 }

@@ -26,6 +26,14 @@ public class GlobalExceptionHandler {
 
   private static final String ERROR_TYPE_BASE = "https://avicare.com/errors/";
 
+  /**
+   * Request attribute carrying the exception that produced a 500, for whoever wants it after the
+   * response is written. The request-tracing filter reads it to store a real stack trace: once an
+   * exception is turned into a Problem response here, it never reaches the filter chain again, and
+   * "Internal Server Error" alone is not something anyone can debug from.
+   */
+  public static final String TRACE_ERROR_ATTRIBUTE = "avicare.trace.error";
+
   @ExceptionHandler(BusinessException.class)
   public ResponseEntity<ProblemDetailResponse> handleBusiness(
       BusinessException ex, HttpServletRequest request) {
@@ -104,6 +112,7 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ProblemDetailResponse> handleGeneric(
       Exception ex, HttpServletRequest request) {
     log.error("Unhandled exception", ex);
+    request.setAttribute(TRACE_ERROR_ATTRIBUTE, ex);
 
     ProblemDetailResponse body =
         ProblemDetailResponse.builder()

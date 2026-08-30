@@ -117,13 +117,23 @@ CREATE INDEX idx_traces_errors ON request_traces(started_at DESC) WHERE status_c
 **Permission requise** : `metrics:read` (existant, pas de nouvelle perm).
 
 ### Acceptance criteria
-- [ ] Toute requête HTTP a un X-Request-Id (généré si absent en input)
-- [ ] Tous les logs backend contiennent le requestId
-- [ ] Frontend : ErrorBoundary affiche `Request ID: xxx` dans erreurs
-- [ ] Écran /console/traces recherche fonctionne par request-id
-- [ ] Test IT : POST /some-endpoint → GET /console/traces?requestId=... retrouve la trace
-- [ ] Rétention 30 jours vérifiée (job cron)
-- [ ] Migration V48 appliquée
+- [x] Toute requête HTTP a un identifiant de corrélation (généré si absent en input).
+      **Header canonique `X-Correlation-Id`** — déjà en place et conservé ; `X-Request-Id` est
+      accepté en alias d'entrée (cf. ADR-010, décision 1)
+- [x] Tous les logs backend contiennent le requestId (`logback-spring.xml`, `[%X{correlationId}]`)
+- [x] Frontend : la référence courte s'affiche dans les erreurs — `apiErrorMessage()` la suffixe
+      sur les 5xx (un seul point de modification pour les ~79 appelants), `app/error.tsx` affiche
+      le `digest` d'une erreur de rendu
+- [x] Écran /console/traces : recherche par référence, email, endpoint, filtre « erreurs seulement »,
+      détail avec payloads masqués, stack trace et actions d'audit liées
+- [x] Test IT : `AdminTraceApiIT` — POST authentifié → `GET /admin/traces?requestId=…` retrouve la
+      trace (+ masquage du mot de passe, + 401/403 pour tout le monde sauf `metrics:read`)
+- [x] Rétention 30 jours : `RequestTracePurgeJob` (cron configurable) + `RequestTraceRepositoryIT`
+- [x] Migration V48 appliquée (validée en PSQL réel BEGIN/ROLLBACK puis par Flyway au démarrage)
+
+**Décisions d'architecture** : `docs/decisions/010-request-tracing.md` (header canonique, politique
+de capture erreurs+écritures+lectures lentes, masquage/troncature, écriture asynchrone, jointure
+avec `admin_audit_log`).
 
 ### Estimation : **1-2 jours**
 

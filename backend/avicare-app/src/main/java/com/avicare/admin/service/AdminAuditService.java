@@ -2,11 +2,13 @@ package com.avicare.admin.service;
 
 import com.avicare.admin.domain.AdminAuditLog;
 import com.avicare.admin.repository.AdminAuditLogRepository;
+import com.avicare.common.api.filter.CorrelationIdFilter;
 import com.avicare.common.tenancy.context.TenancyContext;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,7 +58,14 @@ public class AdminAuditService {
     try {
       repository.save(
           new AdminAuditLog(
-              actorUserId, action, targetType, targetId, tenantId, metadata, currentIp()));
+              actorUserId,
+              action,
+              targetType,
+              targetId,
+              tenantId,
+              metadata,
+              currentIp(),
+              MDC.get(CorrelationIdFilter.MDC_KEY)));
     } catch (RuntimeException e) {
       // Loud, because a silent hole in an audit trail is the worst of both worlds.
       log.error(
