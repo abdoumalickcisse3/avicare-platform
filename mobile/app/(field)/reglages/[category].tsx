@@ -30,40 +30,6 @@ const CATEGORY_NAMES: Record<string, string> = {
   comptabilite: 'Comptabilité',
 };
 
-function SanitaireLibrary({ farmId }: { farmId: number }) {
-  const { data: vaccines } = useGetVaccinesQuery({ farmId });
-  const { data: treatments } = useGetTreatmentCatalogQuery({ farmId });
-
-  const Section = ({ label, entries }: { label: string; entries?: { key: string }[] }) => (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{label}</Text>
-      {(entries ?? []).length === 0 ? (
-        <Text style={styles.muted}>Aucune entrée.</Text>
-      ) : (
-        <View style={styles.rows}>
-          {(entries ?? []).map((e) => (
-            <View key={e.key} style={styles.row}>
-              <Text style={styles.rowLabel}>{humanizeKey(e.key)}</Text>
-            </View>
-          ))}
-        </View>
-      )}
-    </View>
-  );
-
-  return (
-    <View style={{ gap: tokens.spacing[4] }}>
-      <View style={styles.note}>
-        <Syringe size={16} color={tokens.colors.primary[600]} />
-        <Text style={styles.noteText}>
-          Ajoutez des vaccins ou traitements personnalisés depuis l&apos;application web.
-        </Text>
-      </View>
-      <Section label="Vaccins" entries={vaccines} />
-      <Section label="Traitements" entries={treatments} />
-    </View>
-  );
-}
 
 export default function ReglagesCategoryScreen() {
   const router = useRouter();
@@ -92,9 +58,10 @@ export default function ReglagesCategoryScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {slug === 'sanitaire' ? (
-          <SanitaireLibrary farmId={selectedFarmId} />
-        ) : config ? (
+        {/* `sanitaire` never reaches here: `reglages/sanitaire.tsx` is a static route and Expo
+            Router resolves it before this `[category]` sibling. The read-only library that used
+            to live here has been replaced by that screen, which can also edit. */}
+        {config ? (
           <ManagedCatalogList farmId={selectedFarmId} config={config} />
         ) : (
           <Text style={styles.muted}>Cette catégorie arrivera dans une prochaine version.</Text>
