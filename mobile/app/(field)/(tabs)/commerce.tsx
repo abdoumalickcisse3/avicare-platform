@@ -212,7 +212,7 @@ export default function CommerceScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: tokens.colors.neutral[50] },
-  content: { paddingHorizontal: tokens.layout.screenPadding, paddingTop: tokens.spacing[2], paddingBottom: tokens.spacing[16] },
+  content: { paddingHorizontal: tokens.layout.screenPadding, paddingTop: tokens.spacing[2], paddingBottom: tokens.layout.fabScrollClearance },
   fabStack: {
     position: 'absolute',
     right: tokens.layout.screenPadding,

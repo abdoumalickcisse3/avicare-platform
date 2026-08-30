@@ -3,8 +3,9 @@
  * actions each role is offered.
  *
  * Nothing rendered this component before, which is how its status rule drifted from the web's:
- * mobile flagged VIGILANCE on a recent critical observation only, so a lot with three overdue
- * doses still read SAIN.
+ * mobile flagged the lot on a recent critical observation only, so a lot with three overdue
+ * doses still read as healthy. The status is now a sentence naming the reason rather than a
+ * one-word label, but the rule it guards is the same one.
  */
 import { render } from '@testing-library/react-native';
 import { HealthSection } from '../HealthSection';
@@ -59,21 +60,33 @@ beforeEach(() => {
 });
 
 describe('HealthSection', () => {
-  it('flags VIGILANCE on an overdue dose, not only on an observation', async () => {
+  it('names what is wrong instead of labelling the lot', async () => {
     state.schedule = [step({ status: 'LATE' })];
 
     const { getByText } = await render(<HealthSection farmId={7} unitId={12} />);
 
-    // The rule mobile was missing: three overdue vaccines used to read SAIN.
-    expect(getByText('VIGILANCE')).toBeTruthy();
+    // The rule mobile was missing: an overdue dose used to leave the lot reading "healthy".
+    // The banner now states the reason rather than a status word the reader has to decode.
+    expect(getByText('1 dose en retard')).toBeTruthy();
   });
 
-  it('reads SAIN when nothing is late and nothing was observed', async () => {
+  it('counts several late doses in one phrase', async () => {
+    state.schedule = [
+      step({ vaccineKey: 'marek', status: 'LATE' }),
+      step({ vaccineKey: 'gumboro', status: 'LATE' }),
+    ];
+
+    const { getByText } = await render(<HealthSection farmId={7} unitId={12} />);
+
+    expect(getByText('2 doses en retard')).toBeTruthy();
+  });
+
+  it('says so plainly when nothing is late and nothing was observed', async () => {
     state.schedule = [step({ status: 'DONE' })];
 
     const { getByText } = await render(<HealthSection farmId={7} unitId={12} />);
 
-    expect(getByText('SAIN')).toBeTruthy();
+    expect(getByText('Tout est à jour')).toBeTruthy();
   });
 
   it('shows the vaccination ratio once a programme is followed', async () => {
@@ -86,7 +99,7 @@ describe('HealthSection', () => {
     const { getByText } = await render(<HealthSection farmId={7} unitId={12} />);
 
     // "2 doses done" means nothing without knowing the programme asks for three.
-    expect(getByText('2/3')).toBeTruthy();
+    expect(getByText(/2\/3 doses/)).toBeTruthy();
   });
 
   it('falls back to a plain count with no programme', async () => {
@@ -97,7 +110,7 @@ describe('HealthSection', () => {
 
     const { getByText } = await render(<HealthSection farmId={7} unitId={12} />);
 
-    expect(getByText('2')).toBeTruthy();
+    expect(getByText(/2 vaccinations/)).toBeTruthy();
   });
 
   it('offers treatment and vet visit to an owner', async () => {
@@ -127,5 +140,32 @@ describe('HealthSection', () => {
     const { queryByLabelText } = await render(<HealthSection farmId={7} unitId={12} />);
 
     expect(queryByLabelText('Nouvelle vaccination')).toBeNull();
+  });
+});
+
+describe('HealthSection — layout guarantees', () => {
+  it('offers every record action with a label that cannot be clipped', async () => {
+    // The four buttons used to sit in one row at flex: 1 with the icon beside the label. Labels
+    // do not shrink, so "Visite véto" ran off the right edge and the icons overlapped their
+    // neighbours. Half-width cells give each label the whole cell to wrap in.
+    const { getByLabelText } = await render(<HealthSection farmId={7} unitId={12} />);
+
+    expect(getByLabelText('Nouvelle vaccination')).toBeTruthy();
+    expect(getByLabelText('Nouvelle observation')).toBeTruthy();
+    expect(getByLabelText('Nouveau traitement')).toBeTruthy();
+    expect(getByLabelText('Nouvelle visite vétérinaire')).toBeTruthy();
+  });
+
+  it('states the reason and the counts as two separate lines', async () => {
+    state.schedule = [
+      step({ vaccineKey: 'marek', status: 'LATE' }),
+      step({ vaccineKey: 'gumboro', status: 'DONE' }),
+    ];
+
+    const { getByText } = await render(<HealthSection farmId={7} unitId={12} />);
+
+    // The verdict answers the question; the counts are context under it, not three cards above.
+    expect(getByText('1 dose en retard')).toBeTruthy();
+    expect(getByText(/1\/2 doses · 0 observation/)).toBeTruthy();
   });
 });

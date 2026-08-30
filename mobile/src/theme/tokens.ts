@@ -363,6 +363,14 @@ export const tokens = {
     actionBarHeight: 88,
     /** Sync banner — sized to remain a legal target. */
     syncRibbonHeight: 44,
+    /**
+     * Bottom padding a scroll needs when a floating action button hovers over it.
+     *
+     * The FAB is 60dp tall and sits 24dp from the bottom, so it occupies the last 84dp; a scroll
+     * that stops short of that leaves its final row underneath the button. That is how the
+     * "En retard" badge came to sit behind the orange plus.
+     */
+    fabScrollClearance: 104,
     /** Header stripe of the sync banner. */
     syncStripeWidth: 6,
     /** Thickness of structural rules. A 1dp rule is invisible in full daylight. */

@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: tokens.colors.neutral[50] },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: tokens.layout.screenPadding, paddingVertical: tokens.spacing[3] },
   headerTitle: { ...tokens.typography.headingLg, color: tokens.colors.field.text, flex: 1, textAlign: 'center' },
-  content: { paddingHorizontal: tokens.layout.screenPadding, paddingBottom: tokens.spacing[16] },
+  content: { paddingHorizontal: tokens.layout.screenPadding, paddingBottom: tokens.layout.fabScrollClearance },
   kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.spacing[3] },
   kpi: { width: '47%', flexGrow: 1, backgroundColor: tokens.colors.neutral[0], borderWidth: 1, borderColor: tokens.colors.neutral[200], borderRadius: tokens.radii.lg, padding: tokens.spacing[4] },
   kpiLabel: { ...tokens.typography.bodySm, fontSize: 10.5, letterSpacing: 0.4, fontWeight: '700', color: tokens.colors.field.textMuted },
