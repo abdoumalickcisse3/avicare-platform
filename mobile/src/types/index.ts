@@ -1008,3 +1008,49 @@ export interface ClientCreditInfo {
   overLimit: boolean;
   overLimitPercent: number | null;
 }
+
+/** Lifecycle of a salary advance (mirrors backend AdvanceStatus). */
+export type AdvanceStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+/**
+ * A salary advance.
+ *
+ * `remainingXof` is what is still to be deducted from future salaries: it is set to the full
+ * amount at approval and drawn down each time a salary is generated. Approving also books a
+ * `staff` expense straight away — the decision moves money the moment it is taken.
+ */
+export interface Advance {
+  id: number;
+  userId: number;
+  amountXof: number;
+  reason: string | null;
+  status: AdvanceStatus;
+  requestedAt: string;
+  remainingXof: number;
+}
+
+export interface AdvanceInput {
+  farmId: number;
+  amountXof: number;
+  reason?: string;
+}
+
+/** A member's monthly salary, the basis every generated line is computed from. */
+export interface SalarySetting {
+  id: number;
+  userId: number;
+  monthlySalaryXof: number;
+  active: boolean;
+}
+
+export interface SalarySettingInput {
+  userId: number;
+  monthlySalaryXof: number;
+  active?: boolean;
+}
+
+/** Spend per category over a window (mirrors backend ExpenseSummary). */
+export interface ExpenseSummary {
+  categories: { categoryKey: string; amountXof: number }[];
+  totalXof: number;
+}
