@@ -18,7 +18,8 @@ import { Building2, MapPin, Plus, Settings2 } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { AppHeader } from '@/components/AppHeader';
 import { useFarmAccess } from '@/auth/useSession';
-import { selectSelectedFarmId, setSelectedFarmId } from '@/store/slices/selectionSlice';
+import { PERIOD_LABELS, selectPeriod, selectSelectedFarmId, setSelectedFarmId } from '@/store/slices/selectionSlice';
+import { PeriodSelector } from '@/components/PeriodSelector';
 import { useListFarmsQuery } from '@/store/api/farmsApi';
 import { useGetDashboardQuery } from '@/store/api/dashboardApi';
 import { useGetFarmActivityQuery } from '@/store/api/activityApi';
@@ -53,6 +54,7 @@ const fr = (iso: string) => new Date(iso).toLocaleString('fr-FR');
 export default function FermesScreen() {
   const selectedFarmId = useSelector(selectSelectedFarmId);
   const dispatch = useDispatch();
+  const period = useSelector(selectPeriod);
   const { isAdmin, farmRole, session } = useFarmAccess();
   const [seg, setSeg] = useState<Segment>('overview');
 
@@ -60,7 +62,7 @@ export default function FermesScreen() {
   const farm = farms?.find((f) => f.id === selectedFarmId);
 
   const { data: dashboard, isLoading: dashLoading } = useGetDashboardQuery(
-    selectedFarmId === null ? skipToken : { farmId: selectedFarmId, query: { period: '7d' } },
+    selectedFarmId === null ? skipToken : { farmId: selectedFarmId, query: { period } },
   );
   const { data: activity = [], isLoading: activityLoading } = useGetFarmActivityQuery(
     selectedFarmId === null ? skipToken : { farmId: selectedFarmId, limit: 20 },
@@ -96,8 +98,8 @@ export default function FermesScreen() {
   const cards = useMemo(
     () => [
       { label: 'Effectif total', hint: 'Sujets actifs', value: dashLoading ? '…' : ls ? formatNumber(ls.totalHeadcount) : 'n/d' },
-      { label: 'Mortalité', hint: 'Sur 7 jours', value: dashLoading ? '…' : pct(ls?.mortalityRate) },
-      { label: 'Ponte (7j)', hint: 'Taux de ponte', value: dashLoading ? '…' : pct(ls?.layingRate) },
+      { label: 'Mortalité', hint: `Sur ${PERIOD_LABELS[period]}`, value: dashLoading ? '…' : pct(ls?.mortalityRate) },
+      { label: `Ponte (${PERIOD_LABELS[period]})`, hint: 'Taux de ponte', value: dashLoading ? '…' : pct(ls?.layingRate) },
       { label: 'Aliment / jour', hint: 'Conso. moyenne', value: dashLoading ? '…' : kg(ls?.dailyFeedKg) },
     ],
     [dashLoading, ls],
@@ -266,6 +268,7 @@ export default function FermesScreen() {
 
         {seg === 'overview' && (
           <View>
+            <PeriodSelector />
             <View style={styles.kpiGrid}>
               {cards.map((c, i) => (
                 <Animated.View key={c.label} entering={FadeInDown.delay(i * 40).springify().damping(18)} style={styles.kpi}>

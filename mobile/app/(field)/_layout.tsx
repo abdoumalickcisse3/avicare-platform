@@ -21,12 +21,15 @@
  */
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import { Redirect, Stack } from 'expo-router';
+import { Redirect, Stack, useRouter } from 'expo-router';
 import { getAccessToken } from '@/auth/tokens';
 import { decodeSession, hasFieldAccess } from '@/auth/session';
 import { useFarmAccess } from '@/auth/useSession';
 import { tokens } from '@/theme';
 import { BottomNavBar } from '@/components/ui/BottomNavBar';
+import { SyncStatusBar } from '@/components/SyncStatusBar';
+import { FieldTour } from '@/tour/FieldTour';
+import { useSyncStatus } from '@/sync/useSyncStatus';
 import { DrawerOverlay } from '@/components/navigation/DrawerOverlay';
 import { NavProvider } from '@/navigation/NavContext';
 import { startSyncTriggers } from '@/sync/triggers';
@@ -37,7 +40,12 @@ type GuardStatus = 'loading' | 'unauthenticated' | 'forbidden' | 'authorized';
 export default function FieldLayout() {
   const [status, setStatus] = useState<GuardStatus>('loading');
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const { isAdmin, can } = useFarmAccess();
+  const { isAdmin, can, farmRole } = useFarmAccess();
+  const router = useRouter();
+  // Mounted here, once, rather than per screen: the ribbon is the answer to "is my work saved?"
+  // and that question does not depend on which screen is open. It was built and tested in the
+  // socle lot and rendered nowhere — the same trap as the numeric keypad.
+  const sync = useSyncStatus();
 
   useEffect(() => {
     let cancelled = false;
@@ -108,9 +116,19 @@ export default function FieldLayout() {
     <NavProvider value={{ isAdmin, can, openDrawer: () => setDrawerOpen(true) }}>
       <View style={styles.authorized}>
         <Stack screenOptions={{ headerShown: false }} />
+        <SyncStatusBar
+          online={sync.online}
+          pending={sync.pending}
+          failed={sync.failed}
+          syncing={sync.syncing}
+          // Tapping goes to the queue, so a "à corriger" is one tap from being acted on rather
+          // than a message with nowhere to go.
+          onPress={() => router.push('/(field)/file')}
+        />
         <BottomNavBar />
       </View>
       <DrawerOverlay visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <FieldTour farmRole={farmRole} />
     </NavProvider>
   );
 }
