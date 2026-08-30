@@ -1,16 +1,37 @@
 /**
- * Sanitaire tab content, shared by the broiler and layer lot details (mirrors
- * the web `HealthTab`, trimmed to the two reads that aren't behind the advanced
- * module): the unit's vaccinations and observations. Treatments / vet visits
- * are an advanced-module feature — shown as a locked note, like the web.
+ * Sanitaire tab content, shared by the broiler and layer lot details.
+ *
+ * Now the full web `HealthTab`: the vaccination programme and its schedule, the treatments with
+ * their withdrawal delays, the vet visits, on top of the vaccinations and observations that were
+ * already here.
+ *
+ * The advanced sections render whatever the server sends. A farm without `module.health.advanced`
+ * gets a 403 on those reads, RTK Query hands back no data, and the sections say "none recorded" —
+ * which is true for that farm. Hard-guarding them in the client would only duplicate a rule the
+ * backend already enforces, and duplicated rules drift.
  */
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Eye, Lock, ShieldCheck, Syringe } from 'lucide-react-native';
+import { Eye, Pill, ShieldCheck, Stethoscope, Syringe } from 'lucide-react-native';
 import { tokens } from '@/theme';
-import { useGetObservationsQuery, useGetVaccinationsQuery } from '@/store/api/healthApi';
+import {
+  useAssignProgramMutation,
+  useGetObservationsQuery,
+  useGetProgramAssignmentQuery,
+  useGetProgramCatalogQuery,
+  useGetScheduleQuery,
+  useGetTreatmentsQuery,
+  useGetVaccinationsQuery,
+  useGetVeterinariansQuery,
+  useGetVetVisitsQuery,
+  useRemoveProgramMutation,
+} from '@/store/api/healthApi';
 import { useFarmAccess } from '@/auth/useSession';
 import { formatNumber } from '@/lib/format';
+import { humanizeKey, severityChip } from '@/lib/health';
+import { TreatmentsSection } from './TreatmentsSection';
+import { VaccinationProgramSection } from './VaccinationProgramSection';
+import { VetVisitsSection } from './VetVisitsSection';
 import type { HealthObservation, Vaccination } from '@/types';
 
 const MS_PER_DAY = 86_400_000;
@@ -20,26 +41,38 @@ function daysSince(iso: string): number {
   return Number.isNaN(t) ? Infinity : Math.floor((Date.now() - t) / MS_PER_DAY);
 }
 
-function severityStyle(sev: string): { bg: string; fg: string } {
-  const s = sev.toUpperCase();
-  if (s.includes('CRIT') || s.includes('SEV') || s.includes('HIGH')) return { bg: tokens.colors.errorLight, fg: tokens.colors.errorDark };
-  if (s.includes('WARN') || s.includes('MOD') || s.includes('MED')) return { bg: tokens.colors.warningLight, fg: tokens.colors.warningDark };
-  return { bg: tokens.colors.infoLight, fg: tokens.colors.infoDark };
-}
-
 export function HealthSection({ farmId, unitId }: { farmId: number; unitId: number }) {
   const router = useRouter();
-  const { can } = useFarmAccess();
+  const { can, isAdmin, farmRole } = useFarmAccess();
   const canWrite = can('health:write');
+  // The server gates writes on the programme and deletes on the role, not on a permission.
+  const canManage = isAdmin || farmRole === 'OWNER' || farmRole === 'MANAGER';
+  const canDeleteTreatment = isAdmin || farmRole === 'OWNER';
+
   const { data: vaccinations } = useGetVaccinationsQuery({ farmId, unitId });
   const { data: observations } = useGetObservationsQuery({ farmId, unitId });
+  const { data: assignment, isLoading: assignmentLoading } = useGetProgramAssignmentQuery({
+    farmId,
+    unitId,
+  });
+  const { data: schedule = [] } = useGetScheduleQuery({ farmId, unitId });
+  const { data: programs = [] } = useGetProgramCatalogQuery({ farmId });
+  const { data: treatments = [] } = useGetTreatmentsQuery({ farmId, unitId });
+  const { data: vetVisits = [] } = useGetVetVisitsQuery({ farmId, unitId });
+  const { data: veterinarians = [] } = useGetVeterinariansQuery({ farmId });
 
-  // Lot health status (mirrors the web HealthLotKpis logic — derived from the
-  // health module's own data; mortality lives in the production tabs).
+  const [assignProgram] = useAssignProgramMutation();
+  const [removeProgram] = useRemoveProgramMutation();
+
+  // Lot health status. The web flags VIGILANCE on a recent critical observation **or** a late
+  // dose; mobile only looked at observations, so a lot with three overdue vaccines still read
+  // "SAIN". A status that cannot say "something is wrong" is worse than no status.
   const recentCritical = (observations ?? []).filter(
-    (o) => (o.severity.toUpperCase().includes('CRIT') || o.severity.toUpperCase().includes('WARN')) && daysSince(o.observationDate) <= 7,
+    (o) =>
+      (o.severity === 'CRITICAL' || o.severity === 'WARNING') && daysSince(o.observationDate) <= 7,
   ).length;
-  const healthy = recentCritical === 0;
+  const lateDoses = schedule.filter((s) => s.status === 'LATE').length;
+  const healthy = recentCritical === 0 && lateDoses === 0;
 
   return (
     <View style={{ gap: tokens.spacing[4] }}>
@@ -50,7 +83,13 @@ export function HealthSection({ farmId, unitId }: { farmId: number; unitId: numb
             <Syringe size={16} color={tokens.colors.primary[600]} />
             <Text style={styles.kpiLabel}>Vaccinations</Text>
           </View>
-          <Text style={styles.kpiVal}>{formatNumber(vaccinations?.length ?? 0)}</Text>
+          {/* With a programme, the ratio is the number that matters: 4 doses done means
+              nothing without knowing the programme asks for 9. */}
+          <Text style={styles.kpiVal}>
+            {schedule.length > 0
+              ? `${schedule.filter((s) => s.status === 'DONE').length}/${schedule.length}`
+              : formatNumber(vaccinations?.length ?? 0)}
+          </Text>
         </View>
         <View style={styles.kpiTile}>
           <View style={styles.kpiHead}>
@@ -81,8 +120,67 @@ export function HealthSection({ farmId, unitId }: { farmId: number; unitId: numb
             <Eye size={18} color={tokens.colors.primary[700]} />
             <Text style={styles.actionText}>Observation</Text>
           </Pressable>
+          {/* Recording a treatment or a visit is OWNER/MANAGER server-side, so the buttons are
+              absent for anyone else rather than present and answered with a 403. */}
+          {canManage && (
+            <Pressable
+              style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.85 }]}
+              onPress={() => router.push(`/(field)/lots/${unitId}/traitement`)}
+              accessibilityRole="button"
+              accessibilityLabel="Nouveau traitement"
+            >
+              <Pill size={18} color={tokens.colors.primary[700]} />
+              <Text style={styles.actionText}>Traitement</Text>
+            </Pressable>
+          )}
+          {canManage && (
+            <Pressable
+              style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.85 }]}
+              onPress={() => router.push(`/(field)/lots/${unitId}/visite-veto`)}
+              accessibilityRole="button"
+              accessibilityLabel="Nouvelle visite vétérinaire"
+            >
+              <Stethoscope size={18} color={tokens.colors.primary[700]} />
+              <Text style={styles.actionText}>Visite véto</Text>
+            </Pressable>
+          )}
         </View>
       )}
+
+      <VaccinationProgramSection
+        assignment={assignment}
+        schedule={schedule}
+        programs={programs}
+        loading={assignmentLoading}
+        canManage={canManage}
+        onAssign={(programKey) => {
+          assignProgram({ farmId, unitId, programKey });
+        }}
+        onRemove={() => {
+          removeProgram({ farmId, unitId });
+        }}
+        onRecordDose={(step) =>
+          router.push({
+            pathname: '/(field)/lots/[unitId]/vaccination',
+            params: { unitId: String(unitId), vaccineKey: step.vaccineKey },
+          })
+        }
+      />
+
+      <TreatmentsSection
+        treatments={treatments}
+        canDelete={canDeleteTreatment}
+        onDelete={() => {
+          /* Deleting is offered from the web for now — see lot 2b. */
+        }}
+      />
+
+      <VetVisitsSection
+        visits={vetVisits}
+        veterinarians={veterinarians}
+        canDelete={false}
+        onDelete={() => {}}
+      />
 
       {/* Vaccinations */}
       <View style={styles.card}>
@@ -94,7 +192,7 @@ export function HealthSection({ farmId, unitId }: { farmId: number; unitId: numb
             <View key={v.id} style={[styles.row, i > 0 && styles.border]}>
               <View style={[styles.disc, { backgroundColor: tokens.colors.successLight }]}><Syringe size={16} color={tokens.colors.success} /></View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.rowTitle}>{v.vaccineKey}</Text>
+                <Text style={styles.rowTitle}>{humanizeKey(v.vaccineKey)}</Text>
                 <Text style={styles.rowSub}>{v.administeredDate} · {formatNumber(v.subjectsCount)} sujets{v.route ? ` · ${v.route}` : ''}</Text>
               </View>
             </View>
@@ -109,14 +207,14 @@ export function HealthSection({ farmId, unitId }: { farmId: number; unitId: numb
           <Text style={styles.muted}>Aucune observation.</Text>
         ) : (
           observations.slice().reverse().map((o: HealthObservation, i) => {
-            const sev = severityStyle(o.severity);
+            const sev = severityChip(o.severity);
             return (
               <View key={o.id} style={[styles.row, i > 0 && styles.border]}>
                 <View style={[styles.disc, { backgroundColor: sev.bg }]}><Eye size={16} color={sev.fg} /></View>
                 <View style={{ flex: 1 }}>
                   <View style={styles.obsHead}>
                     <Text style={styles.rowTitle} numberOfLines={1}>{o.title}</Text>
-                    <View style={[styles.sevChip, { backgroundColor: sev.bg }]}><Text style={[styles.sevText, { color: sev.fg }]}>{o.severity}</Text></View>
+                    <View style={[styles.sevChip, { backgroundColor: sev.bg }]}><Text style={[styles.sevText, { color: sev.fg }]}>{sev.label}</Text></View>
                   </View>
                   <Text style={styles.rowSub}>{o.observationDate}{o.description ? ` · ${o.description}` : ''}</Text>
                 </View>
@@ -124,12 +222,6 @@ export function HealthSection({ farmId, unitId }: { farmId: number; unitId: numb
             );
           })
         )}
-      </View>
-
-      {/* Advanced-module lock (treatments / vet visits) */}
-      <View style={[styles.card, styles.lockCard]}>
-        <Lock size={18} color={tokens.colors.neutral[400]} />
-        <Text style={styles.lockText}>Traitements et visites vétérinaires — module sanitaire avancé.</Text>
       </View>
     </View>
   );
