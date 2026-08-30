@@ -14,6 +14,7 @@ jest.mock('react-redux', () => ({
 jest.mock('@/components/AppHeader', () => ({ AppHeader: () => null }));
 jest.mock('@/store/api/clientsApi', () => ({
   useGetClientsQuery: jest.fn(() => ({ data: [], isLoading: false })),
+  useCreateClientMutation: () => [jest.fn(), { isLoading: false }],
 }));
 jest.mock('@/auth/useSession', () => ({ useFarmAccess: jest.fn(() => mockAccess) }));
 

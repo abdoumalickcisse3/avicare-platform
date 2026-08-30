@@ -25,7 +25,33 @@ export const paymentsApi = baseApi.injectEndpoints({
         { type: 'Dashboard', id: 'current' },
       ],
     }),
+    getPayments: build.query<Payment[], { farmId: number; invoiceId?: number }>({
+      query: ({ farmId, invoiceId }) =>
+        invoiceId != null ? `${base(farmId)}?invoiceId=${invoiceId}` : base(farmId),
+      transformResponse: (r: ApiEnvelope<Payment[]>) => r.data,
+      providesTags: [{ type: 'Payment', id: 'LIST' }],
+    }),
+
+    /**
+     * Voiding a payment puts the amount back on the invoice and on the client's balance, so it
+     * invalidates both. It is not a delete: the voided row stays visible in the history.
+     */
+    voidPayment: build.mutation<Payment, { farmId: number; id: number; reason?: string }>({
+      query: ({ farmId, id, reason }) => ({
+        url: `${base(farmId)}/${id}/void`,
+        method: 'POST',
+        body: reason ? { reason } : undefined,
+      }),
+      transformResponse: (r: ApiEnvelope<Payment>) => r.data,
+      invalidatesTags: [
+        { type: 'Payment', id: 'LIST' },
+        { type: 'Invoice', id: 'LIST' },
+        { type: 'Client', id: 'list' },
+      ],
+    }),
   }),
 });
 
-export const { useRecordPaymentMutation } = paymentsApi;
+export const {
+  useGetPaymentsQuery,
+  useVoidPaymentMutation, useRecordPaymentMutation } = paymentsApi;

@@ -52,10 +52,33 @@ export const invoicesApi = baseApi.injectEndpoints({
         { type: 'Dashboard', id: 'current' },
       ],
     }),
+    getOverdueInvoices: build.query<Invoice[], { farmId: number }>({
+      query: ({ farmId }) => `${base(farmId)}/overdue`,
+      transformResponse: (r: ApiEnvelope<Invoice[]>) => r.data,
+      providesTags: [{ type: 'Invoice', id: 'OVERDUE' }],
+    }),
+
+    /** Cancelling an invoice clears what it claimed from the client's running account. */
+    cancelInvoice: build.mutation<Invoice, { farmId: number; id: number; reason?: string }>({
+      query: ({ farmId, id, reason }) => ({
+        url: `${base(farmId)}/${id}/cancel`,
+        method: 'POST',
+        body: reason ? { reason } : undefined,
+      }),
+      transformResponse: (r: ApiEnvelope<Invoice>) => r.data,
+      invalidatesTags: (_r, _e, { id }) => [
+        { type: 'Invoice', id },
+        { type: 'Invoice', id: 'LIST' },
+        { type: 'Invoice', id: 'OVERDUE' },
+        { type: 'Client', id: 'list' },
+      ],
+    }),
   }),
 });
 
 export const {
+  useGetOverdueInvoicesQuery,
+  useCancelInvoiceMutation,
   useGetInvoicesQuery,
   useGetInvoiceQuery,
   useCreateInvoiceFromSaleMutation,

@@ -46,7 +46,13 @@ export const salesApi = baseApi.injectEndpoints({
       transformResponse: (r: ApiEnvelope<Sale>) => r.data,
       invalidatesTags: (_r, _e, { farmId }) => [...saleStockTags(farmId)],
     }),
+    getSale: build.query<Sale, { farmId: number; id: number }>({
+      query: ({ farmId, id }) => `${base(farmId)}/${id}`,
+      transformResponse: (r: ApiEnvelope<Sale>) => r.data,
+      providesTags: (_r, _e, { id }) => [{ type: 'Sale', id }],
+    }),
   }),
 });
 
-export const { useGetSalesQuery, useCreateSaleMutation, useCancelSaleMutation } = salesApi;
+export const {
+  useGetSaleQuery, useGetSalesQuery, useCreateSaleMutation, useCancelSaleMutation } = salesApi;
