@@ -52,7 +52,8 @@ import { useFarmAccess } from '@/auth/useSession';
 import { useListFarmsQuery } from '@/store/api/farmsApi';
 import { useGetDashboardQuery } from '@/store/api/dashboardApi';
 import { useGetFarmActivityQuery } from '@/store/api/activityApi';
-import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
+import { selectPeriod, selectSelectedFarmId } from '@/store/slices/selectionSlice';
+import { PeriodSelector } from '@/components/PeriodSelector';
 import { formatCurrency, formatNumber, formatRelative } from '@/lib/format';
 import type { DashboardResponse } from '@/types/dashboard';
 import type { ActivityItem } from '@/types';
@@ -220,9 +221,10 @@ export default function HomeScreen() {
   const { can } = useFarmAccess();
   const { data: farms } = useListFarmsQuery();
   const farmId = selectedFarmId ?? undefined;
+  const period = useSelector(selectPeriod);
 
   const { data, isLoading } = useGetDashboardQuery(
-    { farmId: farmId as number, query: { period: '30d' } },
+    { farmId: farmId as number, query: { period } },
     { skip: farmId === undefined },
   );
   const { data: activity } = useGetFarmActivityQuery(
@@ -320,7 +322,8 @@ export default function HomeScreen() {
               </View>
             )}
 
-            {/* Stat tiles */}
+            {/* Stat tiles — the period below applies to every one of them. */}
+            <PeriodSelector />
             <View style={styles.tileGrid}>
               {tiles.map((t, i) => {
                 const Icon = t.icon;
