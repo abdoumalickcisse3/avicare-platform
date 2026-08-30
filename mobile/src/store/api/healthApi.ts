@@ -115,6 +115,49 @@ export const healthApi = baseApi.injectEndpoints({
       providesTags: [{ type: 'HealthCatalog', id: 'programs' }],
     }),
 
+    /* --- Custom catalog entries (OWNER / MANAGER) ---------------------- */
+    // Create and update are the same call: the backend upserts on `key`, so editing an entry
+    // posts its existing key and creating one posts a slug derived from the label. Two hooks
+    // for one route would only invite the caller to wonder which is which.
+    upsertVaccine: build.mutation<
+      Vaccine,
+      { farmId: number; key: string; value: Record<string, unknown> }
+    >({
+      query: ({ farmId, key, value }) => ({
+        url: `${base(farmId)}/catalog/vaccines`,
+        method: 'POST',
+        body: { key, value },
+      }),
+      transformResponse: (r: ApiEnvelope<Vaccine>) => r.data,
+      invalidatesTags: [{ type: 'HealthCatalog', id: 'vaccines' }],
+    }),
+    deleteVaccine: build.mutation<void, { farmId: number; key: string }>({
+      query: ({ farmId, key }) => ({
+        url: `${base(farmId)}/catalog/vaccines/${key}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: [{ type: 'HealthCatalog', id: 'vaccines' }],
+    }),
+    upsertTreatmentCatalog: build.mutation<
+      Treatment,
+      { farmId: number; key: string; value: Record<string, unknown> }
+    >({
+      query: ({ farmId, key, value }) => ({
+        url: `${base(farmId)}/catalog/treatments`,
+        method: 'POST',
+        body: { key, value },
+      }),
+      transformResponse: (r: ApiEnvelope<Treatment>) => r.data,
+      invalidatesTags: [{ type: 'HealthCatalog', id: 'treatments' }],
+    }),
+    deleteTreatmentCatalog: build.mutation<void, { farmId: number; key: string }>({
+      query: ({ farmId, key }) => ({
+        url: `${base(farmId)}/catalog/treatments/${key}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: [{ type: 'HealthCatalog', id: 'treatments' }],
+    }),
+
     /* --- Vaccination program assigned to a lot ------------------------ */
     getProgramAssignment: build.query<
       ProgramAssignment | null,
@@ -275,6 +318,10 @@ export const healthApi = baseApi.injectEndpoints({
 });
 
 export const {
+  useUpsertVaccineMutation,
+  useDeleteVaccineMutation,
+  useUpsertTreatmentCatalogMutation,
+  useDeleteTreatmentCatalogMutation,
   useGetVaccineCatalogQuery,
   useGetTreatmentLibraryQuery,
   useGetProgramCatalogQuery,
