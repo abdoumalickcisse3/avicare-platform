@@ -25,6 +25,10 @@ import type {
   AdminPartnerUser,
   AdminCatalogCategory,
   AdminCatalogItemRow,
+  Paged,
+  RequestTraceDetail,
+  RequestTraceRow,
+  TraceSearchArgs,
   FarmPurgePreview,
   StaffCatalogResource,
   StaffMemberRow,
@@ -85,7 +89,7 @@ const baseQueryWithReauth: BaseQueryFn<
 export const adminApi = createApi({
   reducerPath: "adminApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["AdminMe", "AdminFarm", "AdminUser", "AdminPartner", "AdminStaff", "AdminCatalog", "AdminCompliance", "AdminMetrics", "AdminAnnouncement", "AdminAssistant"],
+  tagTypes: ["AdminMe", "AdminFarm", "AdminUser", "AdminPartner", "AdminStaff", "AdminCatalog", "AdminCompliance", "AdminMetrics", "AdminAnnouncement", "AdminAssistant", "AdminTrace"],
   endpoints: (build) => ({
     /** Staff sign-in reuses the ordinary auth endpoint; the console then checks /admin/me. */
     adminLogin: build.mutation<AuthTokens, { email: string; password: string }>({
@@ -295,6 +299,30 @@ export const adminApi = createApi({
       transformResponse: (r: Envelope<PlatformOverview>) => r.data,
       providesTags: ["AdminMetrics"],
     }),
+    /**
+     * Trace search. The list is deliberately unpaginated in the UI beyond one page: support looks
+     * up an identifier or the last errors, it does not browse the table.
+     */
+    searchTraces: build.query<Paged<RequestTraceRow>, TraceSearchArgs>({
+      query: (args) => {
+        const params = new URLSearchParams();
+        if (args.requestId) params.set("requestId", args.requestId);
+        if (args.email) params.set("email", args.email);
+        if (args.farmId !== undefined) params.set("farmId", String(args.farmId));
+        if (args.path) params.set("path", args.path);
+        if (args.status !== undefined) params.set("status", String(args.status));
+        if (args.errorsOnly) params.set("errorsOnly", "true");
+        params.set("page", String(args.page ?? 0));
+        params.set("size", String(args.size ?? 25));
+        return `/api/v1/admin/traces?${params.toString()}`;
+      },
+      providesTags: ["AdminTrace"],
+    }),
+    getTrace: build.query<RequestTraceDetail, { id: number }>({
+      query: ({ id }) => `/api/v1/admin/traces/${id}`,
+      transformResponse: (r: Envelope<RequestTraceDetail>) => r.data,
+      providesTags: ["AdminTrace"],
+    }),
     getPlatformRuntime: build.query<PlatformRuntime, void>({
       query: () => "/api/v1/admin/metrics/runtime",
       transformResponse: (r: Envelope<PlatformRuntime>) => r.data,
@@ -458,4 +486,6 @@ export const {
   useResetAdminUserPasswordMutation,
   useSetAdminUserActiveMutation,
   useImpersonateMutation,
+  useSearchTracesQuery,
+  useGetTraceQuery,
 } = adminApi;

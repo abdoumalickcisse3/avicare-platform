@@ -118,6 +118,7 @@ class SecurityE2ETest {
   private com.avicare.admin.repository.StaffPermissionRepository staffPermissionRepository;
 
   @MockitoBean private com.avicare.admin.repository.AdminAuditLogRepository adminAuditLogRepository;
+  @MockitoBean private com.avicare.admin.repository.RequestTraceRepository requestTraceRepository;
 
   @MockitoBean
   private com.avicare.identity.repository.PasswordResetCodeRepository passwordResetCodeRepository;

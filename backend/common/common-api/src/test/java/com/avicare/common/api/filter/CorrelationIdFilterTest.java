@@ -46,6 +46,25 @@ class CorrelationIdFilterTest {
   }
 
   @Test
+  void acceptsTheRequestIdAlias() throws Exception {
+    mockMvc
+        .perform(get("/__test/ping").header(CorrelationIdFilter.HEADER_ALIAS, "from-proxy-9"))
+        .andExpect(status().isOk())
+        // Read under either name, always answered under the canonical one.
+        .andExpect(header().string(CorrelationIdFilter.HEADER_NAME, "from-proxy-9"));
+  }
+
+  @Test
+  void canonicalHeaderWinsOverTheAlias() throws Exception {
+    mockMvc
+        .perform(
+            get("/__test/ping")
+                .header(CorrelationIdFilter.HEADER_NAME, "canonical-1")
+                .header(CorrelationIdFilter.HEADER_ALIAS, "alias-2"))
+        .andExpect(header().string(CorrelationIdFilter.HEADER_NAME, "canonical-1"));
+  }
+
+  @Test
   void generatesIdWhenHeaderIsBlank() throws Exception {
     mockMvc
         .perform(get("/__test/ping").header(CorrelationIdFilter.HEADER_NAME, "   "))
