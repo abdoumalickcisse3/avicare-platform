@@ -9,7 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { ChevronRight, LogOut, User, Wifi, WifiOff } from 'lucide-react-native';
-import { tokens } from '@/theme';
+import { fontFamily, tokens } from '@/theme';
 import { AppHeader } from '@/components/AppHeader';
 import { Card, PrimaryButton } from '@/components/ui';
 import { useListFarmsQuery } from '@/store/api/farmsApi';
@@ -17,7 +17,7 @@ import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { useFarmAccess } from '@/auth/useSession';
 import { getDrawerItems } from '@/constants/navigation';
 import { useSyncStatus } from '@/sync/useSyncStatus';
-import { clearTokens } from '@/auth/tokens';
+import { signOut } from '@/auth/signOut';
 
 export default function MenuScreen() {
   const router = useRouter();
@@ -30,7 +30,7 @@ export default function MenuScreen() {
   const sections = getDrawerItems(isAdmin, can, selectedFarm?.productionFocus ?? []);
 
   const logout = async () => {
-    await clearTokens();
+    await signOut();
     router.replace('/(auth)/login');
   };
 
@@ -80,6 +80,23 @@ export default function MenuScreen() {
             {sync.pending > 0 ? `${sync.pending} saisie${sync.pending > 1 ? 's' : ''} en attente` : 'Tout est synchronisé'}
             {sync.failed > 0 ? ` · ${sync.failed} à corriger` : ''}
           </Text>
+          {/* The queue screen was built, tested, and reachable from nowhere: a farmer whose entry
+              failed for good had no way to see it, let alone fix it. That is data-loss-shaped, so
+              the row is always here — not only when something is already wrong. */}
+          <Pressable
+            onPress={() => router.push('/(field)/file')}
+            style={styles.queueRow}
+            accessibilityRole="button"
+            accessibilityLabel="Ouvrir la file d'attente"
+          >
+            <Text style={[styles.queueText, sync.failed > 0 && styles.queueTextAlert]}>
+              {sync.failed > 0 ? 'Corriger les saisies en échec' : "Voir la file d'attente"}
+            </Text>
+            <ChevronRight
+              size={20}
+              color={sync.failed > 0 ? tokens.colors.error : tokens.colors.field.textMuted}
+            />
+          </Pressable>
         </Card>
 
         <View style={styles.logout}>
@@ -91,6 +108,21 @@ export default function MenuScreen() {
 }
 
 const styles = StyleSheet.create({
+  queueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: tokens.touch.button,
+    marginTop: tokens.spacing[2],
+  },
+  queueText: {
+    ...tokens.typography.bodyMd,
+    color: tokens.colors.field.text,
+  },
+  queueTextAlert: {
+    color: tokens.colors.error,
+    fontFamily: fontFamily.sansSemiBold,
+  },
   container: { flex: 1, backgroundColor: tokens.colors.neutral[50] },
   content: { paddingHorizontal: tokens.layout.screenPadding, paddingTop: tokens.spacing[2], paddingBottom: tokens.spacing[16], gap: tokens.spacing[3] },
   profile: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[3] },
