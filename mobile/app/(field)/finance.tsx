@@ -2,10 +2,11 @@
  * Finance — mobile port of the web finance module (`/finance/depenses` +
  * `/finance/salaires`), reshaped into a single field screen with a Dépenses /
  * Salaires segmented control. Same backend (`financeApi`), same
- * `expense_categories` catalog. The field slice keeps what a farm owner touches
- * on the go: list + record an expense, and list + pay salaries. Analytics,
- * advances and salary settings stay on the web. Reachable by OWNER / MANAGER
- * (finance tab); writes are OWNER / MANAGER.
+ * `expense_categories` catalog. Four segments: Dépenses (record, correct, delete
+ * — only MANUAL ones, the rest are refused by the backend), Salaires (generate a
+ * month, pay a line), Avances (grant or refuse), Analyse.
+ *
+ * Reachable by OWNER / MANAGER (finance tab); writes are OWNER / MANAGER.
  */
 import { useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -22,16 +23,24 @@ import { useFarmAccess } from '@/auth/useSession';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { useGetCatalogQuery } from '@/store/api/catalogApi';
 import {
+  useApproveAdvanceMutation,
+  useGenerateSalariesMutation,
+  useGetAdvancesQuery,
   useGetExpensesQuery,
   useGetSalariesQuery,
+  useGetSalarySettingsQuery,
   usePaySalaryMutation,
+  useRejectAdvanceMutation,
 } from '@/store/api/financeApi';
+import { useGetMembersQuery } from '@/store/api/membersApi';
+import { AdvancesPanel } from '@/finance/AdvancesPanel';
+import { SalaryGenerateSheet } from '@/finance/SalaryGenerateSheet';
 import { formatCurrency } from '@/lib/format';
 import { ExpenseSheet } from '@/finance/ExpenseSheet';
 import { FinanceAnalytics } from '@/finance/FinanceAnalytics';
 import type { Expense, ExpenseSource, Salary, SalaryStatus } from '@/types';
 
-type Tab = 'expenses' | 'salaries' | 'analytics';
+type Tab = 'expenses' | 'salaries' | 'advances' | 'analytics';
 
 const SOURCE_LABELS: Record<ExpenseSource, string> = {
   MANUAL: 'Manuelle',
@@ -57,6 +66,8 @@ export default function FinanceScreen() {
   const canManage = isAdmin || farmRole === 'OWNER' || farmRole === 'MANAGER';
 
   const [tab, setTab] = useState<Tab>('expenses');
+  const [editing, setEditing] = useState<Expense | null>(null);
+  const [generateOpen, setGenerateOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const period = useMemo(currentPeriod, []);
 
@@ -69,6 +80,23 @@ export default function FinanceScreen() {
     selectedFarmId === null ? skipToken : { farmId: selectedFarmId, category: 'expense_categories' },
   );
   const [paySalary, { isLoading: paying }] = usePaySalaryMutation();
+  const { data: advances = [] } = useGetAdvancesQuery(tab === 'advances' ? arg : skipToken);
+  const { data: salarySettings = [] } = useGetSalarySettingsQuery(
+    tab === 'salaries' ? arg : skipToken,
+  );
+  const { data: members = [] } = useGetMembersQuery(
+    selectedFarmId === null || (tab !== 'advances' && tab !== 'salaries')
+      ? skipToken
+      : selectedFarmId,
+  );
+  const [approveAdvance] = useApproveAdvanceMutation();
+  const [rejectAdvance] = useRejectAdvanceMutation();
+  const [generateSalaries, { isLoading: generating }] = useGenerateSalariesMutation();
+
+  // The finance payloads carry a userId and nothing else; the roster is what turns it into a
+  // person. Falling back to the id keeps the row readable while the roster loads.
+  const memberName = (userId: number) =>
+    members.find((m) => m.userId === userId)?.fullName ?? `Salarié #${userId}`;
 
   const totalExpenses = useMemo(
     () => (expenses ?? []).reduce((sum, e) => sum + e.amountXof, 0),
@@ -155,6 +183,14 @@ export default function FinanceScreen() {
           </Pressable>
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel="Onglet Avances"
+            onPress={() => setTab('advances')}
+            style={[styles.segmentBtn, tab === 'advances' && styles.segmentBtnOn]}
+          >
+            <Text style={[styles.segmentText, tab === 'advances' && styles.segmentTextOn]}>Avances</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
             accessibilityLabel="Onglet Analytique"
             onPress={() => setTab('analytics')}
             style={[styles.segmentBtn, tab === 'analytics' && styles.segmentBtnOn]}
@@ -177,7 +213,19 @@ export default function FinanceScreen() {
           ) : (
             <View style={styles.list}>
               {(expenses ?? []).map((e: Expense, i) => (
-                <Animated.View key={e.id} entering={FadeInDown.delay(i * 40).springify().damping(18)} style={styles.card}>
+                <Animated.View key={e.id} entering={FadeInDown.delay(i * 40).springify().damping(18)}>
+                  <Pressable
+                    // Only MANUAL expenses are editable: the backend answers 422
+                    // EXPENSE_NOT_EDITABLE on one derived from a purchase, a vet visit or a
+                    // salary, so those rows open nothing.
+                    disabled={!canManage || e.source !== 'MANUAL'}
+                    accessibilityRole={canManage && e.source === 'MANUAL' ? 'button' : undefined}
+                    accessibilityLabel={
+                      canManage && e.source === 'MANUAL' ? `Corriger ${e.label}` : undefined
+                    }
+                    onPress={() => setEditing(e)}
+                    style={styles.card}
+                  >
                   <View style={styles.cardTop}>
                     <Text style={styles.cardLabel} numberOfLines={1}>{e.label}</Text>
                     <Text style={styles.cardAmount}>{formatCurrency(e.amountXof)}</Text>
@@ -202,10 +250,23 @@ export default function FinanceScreen() {
                       </Text>
                     </View>
                   </View>
+                  </Pressable>
                 </Animated.View>
               ))}
             </View>
           )
+        ) : tab === 'advances' ? (
+          <AdvancesPanel
+            advances={advances}
+            canDecide={canManage}
+            memberName={memberName}
+            onApprove={(a) => {
+              if (selectedFarmId !== null) approveAdvance({ farmId: selectedFarmId, id: a.id });
+            }}
+            onReject={(a) => {
+              if (selectedFarmId !== null) rejectAdvance({ farmId: selectedFarmId, id: a.id });
+            }}
+          />
         ) : tab === 'analytics' ? (
           <FinanceAnalytics farmId={selectedFarmId} />
         ) : salariesLoading ? (
@@ -215,10 +276,21 @@ export default function FinanceScreen() {
             <View style={styles.emptyDisc}>
               <Wallet size={28} color={tokens.colors.primary[600]} />
             </View>
-            <Text style={styles.emptyText}>Aucun salaire.</Text>
-            <Text style={styles.emptySub}>
-              Générez les salaires du mois depuis l&apos;application web.
-            </Text>
+            <Text style={styles.emptyText}>Aucun salaire pour {period}.</Text>
+            {canManage ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Générer les salaires"
+                onPress={() => setGenerateOpen(true)}
+                style={styles.emptyCta}
+              >
+                <Text style={styles.emptyCtaText}>Générer les salaires du mois</Text>
+              </Pressable>
+            ) : (
+              <Text style={styles.emptySub}>
+                Seuls le propriétaire et le gestionnaire génèrent les salaires.
+              </Text>
+            )}
           </View>
         ) : (
           <View style={styles.list}>
@@ -269,9 +341,36 @@ export default function FinanceScreen() {
 
       <ExpenseSheet
         farmId={selectedFarmId}
-        open={sheetOpen}
-        onClose={() => setSheetOpen(false)}
-        onDone={() => setSheetOpen(false)}
+        open={sheetOpen || editing !== null}
+        expense={editing}
+        onClose={() => {
+          setSheetOpen(false);
+          setEditing(null);
+        }}
+        onDone={() => {
+          setSheetOpen(false);
+          setEditing(null);
+        }}
+      />
+
+      <SalaryGenerateSheet
+        open={generateOpen}
+        settings={salarySettings}
+        saving={generating}
+        memberName={memberName}
+        onClose={() => setGenerateOpen(false)}
+        onSubmit={async (p) => {
+          if (selectedFarmId === null) return;
+          try {
+            await generateSalaries({ farmId: selectedFarmId, period: p }).unwrap();
+            setGenerateOpen(false);
+          } catch {
+            Alert.alert(
+              'Salaires non générés',
+              `Des salaires existent déjà pour ${p}. La génération se fait une seule fois par mois, pour tout le monde.`,
+            );
+          }
+        }}
       />
     </SafeAreaView>
   );
@@ -349,4 +448,16 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
   },
+  emptyCta: {
+    minHeight: tokens.touch.button,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: tokens.spacing[5],
+    borderRadius: tokens.radii.lg,
+    backgroundColor: tokens.colors.action.commit.bg,
+    borderWidth: tokens.layout.borderWidth,
+    borderColor: tokens.colors.action.commit.border,
+    marginTop: tokens.spacing[2],
+  },
+  emptyCtaText: { ...tokens.typography.button, color: tokens.colors.action.commit.fg },
 });
