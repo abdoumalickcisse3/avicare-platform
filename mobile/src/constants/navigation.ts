@@ -217,6 +217,7 @@ export const SCREEN_TO_TAB: Record<string, string> = {
   reglages: 'reglages',
   '[category]': 'reglages',
   '[clientId]': 'commerce',
+  '[itemId]': 'stocks',
   '[id]': 'commerce',
   file: 'home',
   // Opened from the header bell on any screen: without this the list renders with no bottom

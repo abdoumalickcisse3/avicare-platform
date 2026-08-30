@@ -2,13 +2,13 @@
  * Stocks tab — the farm inventory, ported from the web `/stocks` overview
  * (same data via `inventoryStockApi`) and reshaped for the field: KPI cards
  * (articles / alertes / valeur), a low-stock highlight section, a search box
- * and the full stock-item list. Read-only for now — movements stay on the web.
- * Shown only to roles with `inventory:read`.
+ * and the full stock-item list. Tapping an article opens its detail (quantity,
+ * days of cover, threshold, ledger). Shown only to roles with `inventory:read`.
  */
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Redirect } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
 import { AlertTriangle, PackageOpen, Search, Wallet } from 'lucide-react-native';
@@ -20,7 +20,6 @@ import {
   useGetStockValuationQuery,
 } from '@/store/api/inventoryStockApi';
 import { useFarmAccess } from '@/auth/useSession';
-import { StockMovementSheet } from '@/inventory/StockMovementSheet';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { formatCurrency, formatNumber, formatRelative } from '@/lib/format';
 import type { ArticleSource, StockItem } from '@/types';
@@ -43,11 +42,11 @@ function isLow(i: StockItem): boolean {
 }
 
 export default function StocksScreen() {
+  const router = useRouter();
   const { can } = useFarmAccess();
   const canWrite = can('inventory:write');
   const selectedFarmId = useSelector(selectSelectedFarmId);
   const [q, setQ] = useState('');
-  const [selected, setSelected] = useState<StockItem | null>(null);
 
   const arg = selectedFarmId === null ? skipToken : { farmId: selectedFarmId };
   const { data: items, isLoading } = useGetStockItemsQuery(arg);
@@ -140,9 +139,12 @@ export default function StocksScreen() {
                 <Pressable
                   key={i.id}
                   style={styles.card}
-                  onPress={canWrite ? () => setSelected(i) : undefined}
-                  accessibilityRole={canWrite ? 'button' : undefined}
-                  accessibilityLabel={canWrite ? `Mouvement ${articleLabel(i.articleKey)}` : undefined}
+                  // The detail screen, not the movement sheet: consulting a stock — how much is
+                  // left, how long it lasts, where it went — is the frequent act. Recording a
+                  // movement by hand is a correction, and lives one tap away on that screen.
+                  onPress={() => router.push(`/(field)/stocks/${i.id}`)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Ouvrir ${articleLabel(i.articleKey)}`}
                 >
                   <View style={styles.cardTop}>
                     <View style={{ flex: 1 }}>
@@ -176,16 +178,6 @@ export default function StocksScreen() {
         )}
       </ScrollView>
 
-      {selected && (
-        <StockMovementSheet
-          farmId={selectedFarmId}
-          item={selected}
-          name={articleLabel(selected.articleKey)}
-          open={!!selected}
-          onClose={() => setSelected(null)}
-          onDone={() => setSelected(null)}
-        />
-      )}
     </SafeAreaView>
   );
 }
