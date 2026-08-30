@@ -17,6 +17,7 @@ import com.avicare.tenancy.domain.UserFarm;
 import com.avicare.tenancy.dto.request.CreateMemberRequest;
 import com.avicare.tenancy.dto.request.UpdateMemberRequest;
 import com.avicare.tenancy.dto.response.CreateMemberResult;
+import com.avicare.tenancy.dto.response.MemberResponse;
 import com.avicare.tenancy.repository.UserFarmRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -94,5 +95,31 @@ class MembershipServiceTest {
     membershipService.removeMember(3L, 5L);
 
     assertThat(membership.isActive()).isFalse();
+  }
+
+  @Test
+  void listMembers_includesRevokedOnes_activeFirstThenByName() {
+    // Removal only flips `active`. Hiding those rows here made it a one-way door: nothing could
+    // flip the flag back, and re-adding the person failed on MEMBERSHIP_ALREADY_EXISTS.
+    when(userFarmRepository.findByFarmId(3L))
+        .thenReturn(java.util.List.of(membership(9L, false), membership(7L, true)));
+    when(identityFacade.findById(9L))
+        .thenReturn(new UserInfo(9L, "awa@x.io", "Awa Ba", null, UserRole.USER, true));
+    when(identityFacade.findById(7L))
+        .thenReturn(new UserInfo(7L, "zed@x.io", "Zed Fall", null, UserRole.USER, true));
+
+    var roster = membershipService.listMembers(3L);
+
+    assertThat(roster).extracting(MemberResponse::fullName).containsExactly("Zed Fall", "Awa Ba");
+    assertThat(roster).extracting(MemberResponse::active).containsExactly(true, false);
+  }
+
+  private UserFarm membership(Long userId, boolean active) {
+    UserFarm m = new UserFarm();
+    m.setUserId(userId);
+    m.setFarmId(3L);
+    m.setRole(FarmRole.FARMER);
+    m.setActive(active);
+    return m;
   }
 }

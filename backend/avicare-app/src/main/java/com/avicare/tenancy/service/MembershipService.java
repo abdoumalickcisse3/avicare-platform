@@ -15,6 +15,7 @@ import com.avicare.tenancy.dto.request.UpdateMemberRequest;
 import com.avicare.tenancy.dto.response.CreateMemberResult;
 import com.avicare.tenancy.dto.response.MemberResponse;
 import com.avicare.tenancy.repository.UserFarmRepository;
+import java.util.Comparator;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -84,10 +85,27 @@ public class MembershipService {
     return tempPassword;
   }
 
+  /**
+   * The roster, revoked members included.
+   *
+   * <p>It deliberately does NOT filter on {@code active}. Removing a member only flips that flag,
+   * and filtering here made the removal a one-way door: the row vanished from every screen, so
+   * nothing could flip it back, and re-adding the same person failed on {@code
+   * MEMBERSHIP_ALREADY_EXISTS} because the membership still existed. Access is revoked where it
+   * belongs — {@code MembershipProviderImpl} reads {@code findByUserIdAndActiveTrue} — not by
+   * hiding the row from the people who manage it.
+   *
+   * <p>Active members first, then alphabetically, so the roster does not reorder itself as people
+   * come and go.
+   */
   @Transactional(readOnly = true)
   public List<MemberResponse> listMembers(Long farmId) {
-    return userFarmRepository.findByFarmIdAndActiveTrue(farmId).stream()
+    return userFarmRepository.findByFarmId(farmId).stream()
         .map(this::toResponse)
+        .sorted(
+            Comparator.comparing(MemberResponse::active)
+                .reversed()
+                .thenComparing(MemberResponse::fullName, String.CASE_INSENSITIVE_ORDER))
         .toList();
   }
 
