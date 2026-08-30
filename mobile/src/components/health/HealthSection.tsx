@@ -10,7 +10,7 @@
  * which is true for that farm. Hard-guarding them in the client would only duplicate a rule the
  * backend already enforces, and duplicated rules drift.
  */
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Eye, Pill, ShieldCheck, Stethoscope, Syringe } from 'lucide-react-native';
 import { tokens } from '@/theme';
@@ -24,6 +24,8 @@ import {
   useGetVaccinationsQuery,
   useGetVeterinariansQuery,
   useGetVetVisitsQuery,
+  useDeleteTreatmentMutation,
+  useDeleteVetVisitMutation,
   useRemoveProgramMutation,
 } from '@/store/api/healthApi';
 import { useFarmAccess } from '@/auth/useSession';
@@ -63,6 +65,8 @@ export function HealthSection({ farmId, unitId }: { farmId: number; unitId: numb
 
   const [assignProgram] = useAssignProgramMutation();
   const [removeProgram] = useRemoveProgramMutation();
+  const [deleteTreatment] = useDeleteTreatmentMutation();
+  const [deleteVetVisit] = useDeleteVetVisitMutation();
 
   // Lot health status. The web flags VIGILANCE on a recent critical observation **or** a late
   // dose; mobile only looked at observations, so a lot with three overdue vaccines still read
@@ -170,16 +174,46 @@ export function HealthSection({ farmId, unitId }: { farmId: number; unitId: numb
       <TreatmentsSection
         treatments={treatments}
         canDelete={canDeleteTreatment}
-        onDelete={() => {
-          /* Deleting is offered from the web for now — see lot 2b. */
-        }}
+        onDelete={(treatment) =>
+          Alert.alert(
+            'Supprimer ce traitement ?',
+            "Le traitement et le délai d'attente qu'il a ouvert disparaîtront de l'historique du lot. Cette action est irréversible.",
+            [
+              { text: 'Annuler', style: 'cancel' },
+              {
+                text: 'Supprimer',
+                style: 'destructive',
+                onPress: () => {
+                  deleteTreatment({ farmId, id: treatment.id, unitId });
+                },
+              },
+            ],
+          )
+        }
       />
 
       <VetVisitsSection
         visits={vetVisits}
         veterinarians={veterinarians}
-        canDelete={false}
-        onDelete={() => {}}
+        canDelete={canManage}
+        onDelete={(visit) =>
+          Alert.alert(
+            'Supprimer cette visite ?',
+            visit.costXof
+              ? `La dépense de ${formatNumber(visit.costXof)} F enregistrée pour cette visite sera annulée dans votre comptabilité.`
+              : 'La visite disparaîtra de l\'historique du lot.',
+            [
+              { text: 'Annuler', style: 'cancel' },
+              {
+                text: 'Supprimer',
+                style: 'destructive',
+                onPress: () => {
+                  deleteVetVisit({ farmId, id: visit.id, unitId });
+                },
+              },
+            ],
+          )
+        }
       />
 
       {/* Vaccinations */}

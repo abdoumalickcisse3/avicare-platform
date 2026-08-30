@@ -33,6 +33,8 @@ jest.mock('@/store/api/healthApi', () => ({
   useGetVeterinariansQuery: () => ({ data: [] }),
   useAssignProgramMutation: () => [jest.fn()],
   useRemoveProgramMutation: () => [jest.fn()],
+  useDeleteTreatmentMutation: () => [jest.fn()],
+  useDeleteVetVisitMutation: () => [jest.fn()],
 }));
 
 function step(over: Partial<VaccinationScheduleStatus> = {}): VaccinationScheduleStatus {
