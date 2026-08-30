@@ -16,18 +16,37 @@ export interface Farm {
   name: string;
   /** These come from the same backend payload as the web `Farm`; optional so
    *  older/minimal responses don't break typing. */
+  description?: string | null;
   location?: string | null;
+  gpsLatitude?: number | null;
+  gpsLongitude?: number | null;
   capacity?: number | null;
+  timezone?: string | null;
+  currency?: string | null;
   active?: boolean;
+  createdAt?: string;
   /** Métier focus tokens: "broiler" / "layer". */
   productionFocus?: string[];
 }
 
+/**
+ * `PUT /farms/{id}` is a REPLACEMENT, not a patch: the service assigns
+ * description, location, gps and capacity straight from the request, so any
+ * field left out is written as null and the value is lost. Only timezone,
+ * currency and productionFocus are protected by an explicit null check.
+ *
+ * Callers must therefore send the farm back whole. `FarmInput` makes that hard
+ * to get wrong by keeping every erasable field in one place.
+ */
 export interface FarmInput {
   name: string;
-  description?: string;
-  location?: string;
-  capacity?: number;
+  description?: string | null;
+  location?: string | null;
+  gpsLatitude?: number | null;
+  gpsLongitude?: number | null;
+  capacity?: number | null;
+  timezone?: string;
+  currency?: string;
   productionFocus?: string[];
 }
 
@@ -44,6 +63,11 @@ export const farmsApi = baseApi.injectEndpoints({
             ]
           : [{ type: 'Farm' as const, id: 'LIST' }],
     }),
+    getFarm: build.query<Farm, number>({
+      query: (id) => `/api/v1/farms/${id}`,
+      transformResponse: (r: ApiEnvelope<Farm>) => r.data,
+      providesTags: (_r, _e, id) => [{ type: 'Farm', id }],
+    }),
     createFarm: build.mutation<Farm, FarmInput>({
       query: (body) => ({ url: '/api/v1/farms', method: 'POST', body }),
       transformResponse: (r: ApiEnvelope<Farm>) => r.data,
@@ -52,9 +76,26 @@ export const farmsApi = baseApi.injectEndpoints({
     updateFarm: build.mutation<Farm, { id: number; body: FarmInput }>({
       query: ({ id, body }) => ({ url: `/api/v1/farms/${id}`, method: 'PUT', body }),
       transformResponse: (r: ApiEnvelope<Farm>) => r.data,
+      invalidatesTags: (_r, _e, { id }) => [
+        { type: 'Farm', id },
+        { type: 'Farm', id: 'LIST' },
+      ],
+    }),
+    /**
+     * Soft delete (`@SQLDelete` sets `deleted_at`), OWNER only, and the server applies no
+     * further guard: a farm with live flocks goes just as quietly as an empty one.
+     */
+    deleteFarm: build.mutation<void, number>({
+      query: (id) => ({ url: `/api/v1/farms/${id}`, method: 'DELETE' }),
       invalidatesTags: [{ type: 'Farm', id: 'LIST' }],
     }),
   }),
 });
 
-export const { useListFarmsQuery, useCreateFarmMutation, useUpdateFarmMutation } = farmsApi;
+export const {
+  useListFarmsQuery,
+  useGetFarmQuery,
+  useCreateFarmMutation,
+  useUpdateFarmMutation,
+  useDeleteFarmMutation,
+} = farmsApi;
