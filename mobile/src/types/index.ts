@@ -898,3 +898,47 @@ export interface SharingScopes {
   finances: boolean;
   restockForecast: boolean;
 }
+
+/** One manageable resource and the verbs it accepts (`GET /permissions/catalog`). */
+export interface PermissionResourceDef {
+  resource: string;
+  label: string;
+  verbs: string[];
+}
+
+/** The assignable permission vocabulary plus the baseline each role grants. */
+export interface PermissionCatalog {
+  resources: PermissionResourceDef[];
+  /** Keyed by `FarmRole` name; OWNER is `["*"]`. */
+  roleDefaults: Record<string, string[]>;
+}
+
+/**
+ * Roles a member can be given. OWNER is absent on purpose: the backend answers
+ * 422 OWNER_NOT_ASSIGNABLE on both create and update, so offering it would only
+ * produce an error the operator cannot act on.
+ */
+export type AssignableFarmRole = Exclude<FarmRole, 'OWNER'>;
+
+export interface CreateMemberInput {
+  fullName: string;
+  email: string;
+  phone?: string;
+  role: AssignableFarmRole;
+  /** Omit to take the role's defaults. */
+  permissions?: string[];
+}
+
+export interface UpdateMemberInput {
+  role: AssignableFarmRole;
+  /** Omit to reset to the role's defaults — the backend treats null that way. */
+  permissions?: string[];
+  /** Omit to leave the flag unchanged. */
+  active?: boolean;
+}
+
+/** Creating a member returns the one-time password, shown once and never again. */
+export interface CreateMemberResult {
+  member: Member;
+  temporaryPassword: string;
+}
