@@ -6,7 +6,7 @@ export interface CatalogField {
   const?: string;
 }
 export interface CategoryConfig {
-  slug: 'stock' | 'lots' | 'ventes' | 'comptabilite';
+  slug: 'stock' | 'lots' | 'ventes' | 'comptabilite' | 'creneaux' | 'calibres';
   backendCategory: string;
   title: string;
   labelField: string;
@@ -60,6 +60,23 @@ export const CATALOG_CATEGORIES: CategoryConfig[] = [
     title: 'Circuits de vente',
     labelField: 'label',
     fields: [{ name: 'label', label: 'Nom du circuit', kind: 'text' }],
+  },
+  {
+    slug: 'creneaux',
+    backendCategory: 'egg_timeslots',
+    title: 'Créneaux de ramassage',
+    labelField: 'label',
+    fields: [
+      { name: 'label', label: 'Nom du créneau', kind: 'text' },
+      { name: 'default_time', label: 'Heure indicative', kind: 'text' },
+    ],
+  },
+  {
+    slug: 'calibres',
+    backendCategory: 'egg_grades',
+    title: 'Calibres',
+    labelField: 'label',
+    fields: [{ name: 'label', label: 'Nom du calibre', kind: 'text' }],
   },
   {
     slug: 'comptabilite',

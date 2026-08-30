@@ -217,6 +217,7 @@ export const SCREEN_TO_TAB: Record<string, string> = {
   fermes: 'fermes',
   reglages: 'reglages',
   '[category]': 'reglages',
+  ponte: 'reglages',
   '[clientId]': 'commerce',
   '[itemId]': 'stocks',
   '[id]': 'commerce',
