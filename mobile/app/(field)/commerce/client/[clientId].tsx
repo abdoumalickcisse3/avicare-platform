@@ -1,22 +1,32 @@
 /**
  * Client detail — the running account (compte courant) for one commercial
- * client: encours hero, open invoices, and an "Encaisser" action (OWNER/MANAGER
- * only, mirroring WRITE_MANAGER) that opens the payment sheet. Read data from
- * the same slices as the web. Bold polish lands in a later task.
+ * client: encours hero, credit standing, open invoices, the payment history, and the actions
+ * OWNER/MANAGER hold — encaisser, modifier la fiche, annuler un paiement.
+ *
+ * The credit limit is shown but never enforced: the backend computes `overLimit` and exposes it
+ * without ever blocking a sale on it (Décision D26). Turning it into a stop condition here would
+ * invent a rule the platform deliberately does not have.
  */
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, Pencil } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { useFarmAccess } from '@/auth/useSession';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
-import { useGetClientsQuery } from '@/store/api/clientsApi';
+import {
+  useDeactivateClientMutation,
+  useGetClientCreditQuery,
+  useGetClientQuery,
+  useUpdateClientMutation,
+} from '@/store/api/clientsApi';
+import { useGetPaymentsQuery, useVoidPaymentMutation } from '@/store/api/paymentsApi';
+import { ClientSheet } from '@/commerce/ClientSheet';
 import { useGetInvoicesQuery } from '@/store/api/invoicesApi';
 import { PaymentSheet } from '@/commerce/PaymentSheet';
 import { CLIENT_TYPE_LABELS, creditColor, initials } from '@/lib/commercial';
@@ -40,7 +50,18 @@ export default function ClientDetailScreen() {
   const { farmRole } = useFarmAccess();
   const canCollect = farmRole === 'OWNER' || farmRole === 'MANAGER';
 
-  const { data: clients } = useGetClientsQuery(
+  // The detail call, not a find() in the list: an edit must round-trip fields the list omits.
+  const { data: client } = useGetClientQuery(
+    selectedFarmId === null || !Number.isFinite(clientId)
+      ? skipToken
+      : { farmId: selectedFarmId, id: clientId },
+  );
+  const { data: credit } = useGetClientCreditQuery(
+    selectedFarmId === null || !Number.isFinite(clientId)
+      ? skipToken
+      : { farmId: selectedFarmId, id: clientId },
+  );
+  const { data: payments = [] } = useGetPaymentsQuery(
     selectedFarmId === null ? skipToken : { farmId: selectedFarmId },
   );
   const { data: invoices, isLoading } = useGetInvoicesQuery(
@@ -48,8 +69,12 @@ export default function ClientDetailScreen() {
   );
 
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [updateClient, { isLoading: savingClient }] = useUpdateClientMutation();
+  const [deactivateClient] = useDeactivateClientMutation();
+  const [voidPayment] = useVoidPaymentMutation();
 
-  const client = clients?.find((c) => c.id === clientId);
+  const clientPayments = payments.filter((p) => p.clientId === clientId);
   const openInvoices: Invoice[] = (invoices ?? []).filter(
     (i) => i.status !== 'PAID' && i.status !== 'CANCELLED',
   );
@@ -80,6 +105,17 @@ export default function ClientDetailScreen() {
           </Text>
           {client && <Text style={styles.subtitle}>{CLIENT_TYPE_LABELS[client.clientType]}</Text>}
         </View>
+        {canCollect && client ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Modifier le client"
+            onPress={() => setEditOpen(true)}
+            hitSlop={8}
+            style={styles.backBtn}
+          >
+            <Pencil size={20} color={tokens.colors.field.text} />
+          </Pressable>
+        ) : null}
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
@@ -98,6 +134,19 @@ export default function ClientDetailScreen() {
             {formatCurrency(client?.currentBalanceXof ?? 0)}
           </Text>
         </LinearGradient>
+
+        {credit?.creditLimitXof != null ? (
+          <View style={[styles.creditRow, credit.overLimit && styles.creditRowOver]}>
+            <Text style={styles.creditLabel}>
+              Plafond {formatCurrency(credit.creditLimitXof)}
+            </Text>
+            <Text style={credit.overLimit ? styles.creditOver : styles.creditOk}>
+              {credit.overLimit
+                ? `Dépassé de ${credit.overLimitPercent ?? 0} %`
+                : 'Dans la limite'}
+            </Text>
+          </View>
+        ) : null}
 
         <Text style={styles.sectionTitle}>Factures ouvertes</Text>
         {isLoading ? (
@@ -119,6 +168,51 @@ export default function ClientDetailScreen() {
             ))}
           </View>
         )}
+        <Text style={styles.sectionTitle}>Paiements</Text>
+        {clientPayments.length === 0 ? (
+          <Text style={styles.muted}>Aucun paiement enregistré.</Text>
+        ) : (
+          <View style={styles.invoiceList}>
+            {clientPayments.map((p) => (
+              <View key={p.id} style={styles.invoiceRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.invoiceNumber}>{formatCurrency(p.amountXof)}</Text>
+                  <Text style={styles.invoiceStatus}>
+                    {p.paymentDate}
+                    {p.status === 'CANCELLED' ? ' · annulé' : ''}
+                  </Text>
+                </View>
+                {canCollect && p.status !== 'CANCELLED' ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Annuler le paiement de ${formatCurrency(p.amountXof)}`}
+                    onPress={() =>
+                      Alert.alert(
+                        'Annuler ce paiement ?',
+                        `Les ${formatCurrency(p.amountXof)} reviennent sur la facture et sur l'encours du client. Le paiement reste visible dans l'historique, marqué annulé.`,
+                        [
+                          { text: 'Retour', style: 'cancel' },
+                          {
+                            text: 'Annuler le paiement',
+                            style: 'destructive',
+                            onPress: () => {
+                              if (selectedFarmId !== null) {
+                                voidPayment({ farmId: selectedFarmId, id: p.id });
+                              }
+                            },
+                          },
+                        ],
+                      )
+                    }
+                    style={styles.voidBtn}
+                  >
+                    <Text style={styles.voidText}>Annuler</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            ))}
+          </View>
+        )}
       </ScrollView>
 
       {canCollect && openInvoices.length > 0 && (
@@ -133,6 +227,28 @@ export default function ClientDetailScreen() {
           </Pressable>
         </View>
       )}
+
+      <ClientSheet
+        open={editOpen}
+        client={client ?? null}
+        saving={savingClient}
+        onClose={() => setEditOpen(false)}
+        onSubmit={async (body) => {
+          if (selectedFarmId === null) return;
+          try {
+            await updateClient({ farmId: selectedFarmId, id: clientId, body }).unwrap();
+            setEditOpen(false);
+          } catch {
+            Alert.alert('Modification refusée', "La fiche n'a pas été enregistrée.");
+          }
+        }}
+        onDeactivate={async () => {
+          if (selectedFarmId === null) return;
+          await deactivateClient({ farmId: selectedFarmId, id: clientId });
+          setEditOpen(false);
+          router.back();
+        }}
+      />
 
       {sheetOpen && (
         <PaymentSheet
@@ -226,4 +342,29 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   commitLabel: { ...tokens.typography.button, fontSize: 16, color: tokens.colors.primary[900] },
+  creditRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: tokens.spacing[3],
+    borderRadius: tokens.radii.lg,
+    borderWidth: tokens.layout.borderWidth,
+    borderColor: tokens.colors.field.rule,
+    backgroundColor: tokens.colors.neutral[0],
+    padding: tokens.spacing[3],
+    marginTop: tokens.spacing[3],
+  },
+  creditRowOver: {
+    borderColor: tokens.colors.warningDark,
+    backgroundColor: tokens.colors.warningLight,
+  },
+  creditLabel: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted },
+  creditOk: { ...tokens.typography.bodySm, color: tokens.colors.successDark },
+  creditOver: { ...tokens.typography.bodySm, color: tokens.colors.warningDark },
+  voidBtn: {
+    minHeight: tokens.touch.min,
+    justifyContent: 'center',
+    paddingHorizontal: tokens.spacing[3],
+  },
+  voidText: { ...tokens.typography.bodySm, color: tokens.colors.errorDark },
 });
