@@ -58,7 +58,15 @@ export function subscribeAuthInvalidated(listener: () => void): () => void {
   return () => authInvalidatedListeners.delete(listener);
 }
 
-function notifyAuthInvalidated(): void {
+/**
+ * Tell the app the session is gone.
+ *
+ * <p>Exported so a deliberate logout goes through the same path as a refresh that gave up: both
+ * must purge the persisted cache and flip the route guard. Before this was exported, the two
+ * logout buttons cleared the tokens directly and left the previous account's cached data — and its
+ * selected farm — on disk for whoever signed in next on a shared field phone.
+ */
+export function notifyAuthInvalidated(): void {
   for (const listener of authInvalidatedListeners) listener();
 }
 

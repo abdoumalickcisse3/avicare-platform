@@ -33,7 +33,11 @@ export const inventoryStockApi = baseApi.injectEndpoints({
       providesTags: [{ type: 'StockItem', id: 'valuation' }],
     }),
     recordMovement: build.mutation<unknown, { farmId: number; body: StockMovementInput }>({
-      query: ({ farmId, body }) => ({ url: `${base(farmId)}/stock-items/movements`, method: 'POST', body }),
+      // `/inventory/movements`, not `/inventory/stock-items/movements`: the second route does not
+      // exist and every stock movement recorded from the app was failing. The unit test mocked the
+      // mutation hook, so a wrong path stayed green — the offline queue had it right all along
+      // (see `assistant/intentRegistry.ts`), which is why voice-dictated adjustments worked.
+      query: ({ farmId, body }) => ({ url: `${base(farmId)}/movements`, method: 'POST', body }),
       invalidatesTags: [
         { type: 'StockItem', id: 'list' },
         { type: 'StockItem', id: 'low-stock' },

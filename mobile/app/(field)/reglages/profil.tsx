@@ -14,7 +14,7 @@ import {
   useGetProfileQuery,
   useUpdateProfileMutation,
 } from '@/store/api/authApi';
-import { clearTokens } from '@/auth/tokens';
+import { signOut } from '@/auth/signOut';
 
 export default function ProfilScreen() {
   const router = useRouter();
@@ -61,7 +61,7 @@ export default function ProfilScreen() {
       await changePassword({ currentPassword, newPassword }).unwrap();
       // The server revoked every refresh token, this one included: staying would leave the app
       // running on a session that can no longer be renewed.
-      await clearTokens();
+      await signOut();
       Alert.alert('Mot de passe modifié', 'Reconnectez-vous avec le nouveau mot de passe.');
       router.replace('/(auth)/login');
     } catch {
