@@ -199,6 +199,8 @@ export const SCREEN_TO_TAB: Record<string, string> = {
   journalier: 'elevage',
   sanitaire: 'elevage',
   vaccination: 'elevage',
+  traitement: 'elevage',
+  'visite-veto': 'elevage',
   observation: 'elevage',
   vente: 'commerce',
   ventes: 'commerce',
