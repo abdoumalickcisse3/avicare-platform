@@ -15,6 +15,7 @@ import type { Farm, FarmInput } from '@/store/api/farmsApi';
 
 export type FarmSheetProps = {
   open: boolean;
+  /** The farm to edit, or undefined to create one. */
   farm: Farm | undefined;
   saving: boolean;
   /** Only an OWNER sees the delete path; MANAGER may edit but not delete. */
@@ -74,7 +75,9 @@ export function FarmSheet({
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} accessibilityLabel="Fermer" onPress={onClose} />
       <View style={styles.sheet}>
-        <Text style={styles.title}>Paramètres de la ferme</Text>
+        <Text style={styles.title}>
+          {farm ? 'Paramètres de la ferme' : 'Nouvelle ferme'}
+        </Text>
 
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <FormField
@@ -82,6 +85,7 @@ export function FarmSheet({
             required
             value={name}
             onChangeText={setName}
+            placeholder="Ferme de Thiès"
             maxLength={200}
           />
           <FormField
@@ -161,10 +165,12 @@ export function FarmSheet({
             onPress={submit}
             disabled={!canSubmit}
             accessibilityRole="button"
-            accessibilityLabel="Enregistrer la ferme"
+            accessibilityLabel={farm ? 'Enregistrer la ferme' : 'Créer la ferme'}
             style={[styles.save, !canSubmit && styles.disabled]}
           >
-            <Text style={styles.saveText}>{saving ? 'Enregistrement…' : 'Enregistrer'}</Text>
+            <Text style={styles.saveText}>
+              {saving ? 'Enregistrement…' : farm ? 'Enregistrer' : 'Créer la ferme'}
+            </Text>
           </Pressable>
         </View>
       </View>

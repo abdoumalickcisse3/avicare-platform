@@ -13,6 +13,7 @@ jest.mock('@/store/api/farmsApi', () => ({
   useListFarmsQuery: jest.fn(() => ({ data: [{ id: 7, name: 'Ferme Test', location: 'Thiès', active: true }] })),
   useGetFarmQuery: jest.fn(() => ({ data: { id: 7, name: 'Ferme Test', location: 'Thiès', capacity: 5000, currency: 'XOF', gpsLatitude: 14.79, gpsLongitude: -16.93, description: 'Ferme pilote' } })),
   useUpdateFarmMutation: () => [jest.fn(), { isLoading: false }],
+  useCreateFarmMutation: () => [jest.fn(), { isLoading: false }],
   useDeleteFarmMutation: () => [jest.fn(), { isLoading: false }],
 }));
 jest.mock('@/store/api/permissionsApi', () => ({
@@ -116,5 +117,15 @@ describe('Fermes', () => {
     expect(screen.getByText('XOF')).toBeTruthy();
     expect(screen.getByText(/5\s?000 sujets/)).toBeTruthy();
     expect(screen.getByLabelText('Modifier la ferme')).toBeTruthy();
+  });
+
+  it('offers a second farm, and says what creating one does', async () => {
+    (useFarmAccess as jest.Mock).mockReturnValue({ isAdmin: true, can: () => true, farmRole: 'OWNER', session: { role: 'USER' } });
+
+    await render(<FermesScreen />);
+    await press(screen.getByLabelText('Onglet Paramètres'));
+
+    expect(screen.getByLabelText('Créer une ferme')).toBeTruthy();
+    expect(screen.getByText(/s'ajoute au sélecteur/)).toBeTruthy();
   });
 });

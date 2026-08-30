@@ -108,3 +108,27 @@ describe('FarmSheet', () => {
     expect(screen.getByText(/lots, les saisies, les ventes et la comptabilité/)).toBeTruthy();
   });
 });
+
+describe('FarmSheet — creation', () => {
+  it('opens empty, names itself for the task, and offers no deletion', async () => {
+    const { props } = setup({ farm: undefined, canDelete: false });
+    await render(<FarmSheet {...props} />);
+
+    expect(screen.getByText('Nouvelle ferme')).toBeTruthy();
+    expect(screen.getByLabelText('Créer la ferme')).toBeTruthy();
+    expect(screen.queryByLabelText('Supprimer la ferme')).toBeNull();
+  });
+
+  it('sends nulls rather than empty strings for what was left blank', async () => {
+    // The column is nullable; an empty string would be a value the farm does not have.
+    const { onSubmit, props } = setup({ farm: undefined, canDelete: false });
+    await render(<FarmSheet {...props} />);
+
+    await type(screen.getByPlaceholderText('Ferme de Thiès'), 'Ferme Sud');
+    await press(screen.getByLabelText('Créer la ferme'));
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ location: null, capacity: null, gpsLatitude: null }),
+    );
+  });
+});
