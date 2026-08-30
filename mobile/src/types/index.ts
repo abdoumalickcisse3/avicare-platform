@@ -57,6 +57,166 @@ export interface WeighingSample {
   notes: string | null;
 }
 
+/* ---- Health, lot 2 (parity spec 2026-08-30) ------------------------------ */
+
+/** Platform vaccine catalog entry. */
+export interface Vaccine {
+  key: string;
+  label: string;
+  disease: string;
+  route: string;
+  activeStrain: boolean;
+  usage: string;
+  wave: string;
+  custom: boolean;
+}
+
+/** Platform treatment catalog entry. Withdrawal days are null when none is declared. */
+export interface Treatment {
+  key: string;
+  label: string;
+  molecule: string;
+  drugClass: string;
+  withdrawalDaysMeat: number | null;
+  withdrawalDaysEggs: number | null;
+  routes: string[];
+  wave: string;
+  custom: boolean;
+}
+
+/** A standard vaccination program, applicable to one or more breeds. */
+export interface VaccinationProgram {
+  key: string;
+  label: string;
+  species: string;
+  breedKeys: string[];
+  schedule: VaccinationScheduleEntry[];
+}
+
+export interface VaccinationScheduleEntry {
+  ageValue: number;
+  ageUnit: string;
+  vaccineKey: string;
+  route: string;
+  mandatory: boolean;
+}
+
+/** One program step with its computed due date and status for a given lot. */
+export interface VaccinationScheduleStatus {
+  vaccineKey: string;
+  ageValue: number;
+  ageUnit: string;
+  dueDate: string;
+  status: ScheduleStatus;
+  mandatory: boolean;
+}
+
+/** The program assigned to a lot. One per lot; assigning again replaces it. */
+export interface ProgramAssignment {
+  unitId: number;
+  programKey: string;
+  assignedBy: number | null;
+  assignedAt: string;
+}
+
+/**
+ * A treatment administered on a lot.
+ *
+ * The withdrawal days are a *snapshot* taken when the treatment was recorded, frozen against
+ * later catalog edits — so an old treatment keeps the delay that applied on the day.
+ */
+export interface ExecutedTreatment {
+  id: number;
+  unitId: number;
+  treatmentKey: string;
+  startDate: string;
+  durationDays: number;
+  endDate: string;
+  doseAmount: number;
+  doseUnit: string;
+  route: string;
+  subjectsCount: number;
+  reason: string | null;
+  prescribedBy: string | null;
+  veterinarianId: number | null;
+  withdrawalDaysMeat: number | null;
+  withdrawalDaysEggs: number | null;
+  withdrawalEndDateMeat: string | null;
+  withdrawalEndDateEggs: string | null;
+  notes: string | null;
+  createdBy: number | null;
+  createdAt: string;
+}
+
+export interface TreatmentInput {
+  unitId: number;
+  treatmentKey: string;
+  startDate: string;
+  durationDays: number;
+  doseAmount: number;
+  doseUnit: string;
+  route: string;
+  subjectsCount: number;
+  reason?: string;
+  prescribedBy?: string;
+  veterinarianId?: number;
+  notes?: string;
+}
+
+/** A per-farm veterinarian. Deactivating one keeps it for the visits that reference it. */
+export interface Veterinarian {
+  id: number;
+  farmId: number;
+  fullName: string;
+  phone: string | null;
+  email: string | null;
+  speciality: string | null;
+  licenseNumber: string | null;
+  location: string | null;
+  notes: string | null;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface VeterinarianInput {
+  fullName: string;
+  phone?: string;
+  email?: string;
+  speciality?: string;
+  licenseNumber?: string;
+  location?: string;
+  notes?: string;
+}
+
+/** A vet visit. A cost above zero books a matching farm expense server-side. */
+export interface VetVisit {
+  id: number;
+  unitId: number;
+  veterinarianId: number | null;
+  visitDate: string;
+  reason: string;
+  diagnosis: string | null;
+  recommendations: string | null;
+  costXof: number | null;
+  followUpNeeded: boolean;
+  followUpDate: string | null;
+  notes: string | null;
+  createdBy: number | null;
+  createdAt: string;
+}
+
+export interface VetVisitInput {
+  unitId: number;
+  veterinarianId?: number;
+  visitDate: string;
+  reason: string;
+  diagnosis?: string;
+  recommendations?: string;
+  costXof?: number;
+  followUpNeeded: boolean;
+  followUpDate?: string;
+}
+
 /** A recorded vaccination (mirrors the web `Vaccination`). */
 export interface Vaccination {
   id: number;
@@ -68,7 +228,15 @@ export interface Vaccination {
   notes: string | null;
 }
 
-export type ObservationSeverity = string;
+/**
+ * Was `string`, which let the English enum reach the screen: `HealthSection` printed the raw
+ * `severity` in its chip and matched it with `sev.toUpperCase().includes('CRIT')`. The union
+ * is what the backend actually sends, and it makes the FR label a total function.
+ */
+export type ObservationSeverity = 'NORMAL' | 'WARNING' | 'CRITICAL';
+
+/** A step of a lot's vaccination schedule, compared against what was recorded. */
+export type ScheduleStatus = 'DONE' | 'LATE' | 'UPCOMING';
 
 /** A health observation (mirrors the web `HealthObservation`). */
 export interface HealthObservation {
