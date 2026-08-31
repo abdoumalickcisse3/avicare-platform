@@ -45,8 +45,11 @@ public class StockQuantityCheck extends SqlIntegrityCheck {
     return """
         SELECT si.id            AS entity_id,
                si.farm_id       AS farm_id,
-               last.quantity_after::text AS expected,
-               si.current_quantity::text AS actual
+               -- trim_scale: la colonne est NUMERIC(14,3), et « 40.000 ≠ 100.000 » à l'écran est
+               -- plus dur à lire que « 40 ≠ 100 ». Le moteur de recalcul normalise déjà de son
+               -- côté ; les deux doivent afficher le même nombre de la même façon.
+               trim_scale(last.quantity_after)::text AS expected,
+               trim_scale(si.current_quantity)::text AS actual
           FROM stock_items si
           JOIN LATERAL (
                  SELECT sm.quantity_after
