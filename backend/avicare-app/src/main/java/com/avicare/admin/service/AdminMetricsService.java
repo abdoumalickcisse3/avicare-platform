@@ -60,6 +60,10 @@ public class AdminMetricsService {
   @Value("${notifications.whatsapp.enabled:false}")
   private boolean whatsappEnabled;
 
+  /** Where urgent platform alerts go. Empty means they go nowhere — see {@link PlatformRuntime}. */
+  @Value("${avicare.admin.oncall-phone:}")
+  private String onCallPhone;
+
   /** Where the nightly dumps land, as the container sees them. Empty when nothing is mounted. */
   @Value("${BACKUP_DIR_MOUNTED:}")
   private String backupDir;
@@ -129,7 +133,8 @@ public class AdminMetricsService {
         // Null outside a packaged jar, which is exactly what a local run should show.
         getClass().getPackage().getImplementationVersion(),
         LocalDateTime.now(),
-        whatsappEnabled);
+        whatsappEnabled,
+        onCallPhone != null && !onCallPhone.isBlank());
   }
 
   /**
