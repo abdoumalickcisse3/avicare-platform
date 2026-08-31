@@ -28,6 +28,11 @@ or OVH/Scaleway Paris for lowest Senegal latency). Ubuntu 22.04/24.04 LTS.
   **already signed up**. On every restart that account is promoted to platform staff and granted
   every permission; the app never creates it. Left empty, the console refuses everyone — the safe
   default. The promotion is itself written to `admin_audit_log`.
+- **Emergency contact** (`ADMIN_EMERGENCY_PHONE` in `infra/.env`): a **different person** from the
+  on-call one below. Told when the platform owner has not been seen on the console for 72 hours, so
+  that a solo-run platform is not left unattended during an accident or a hospital stay. Left empty,
+  the watch still runs and records but reaches nobody — the backend says so at startup. Read
+  `docs/continuity/` before setting it: the number is the easy part, briefing the person is not.
 - **On-call number** (`ADMIN_ONCALL_PHONE` in `infra/.env`): where urgent platform alerts are sent —
   a module cut by the kill switch, a cut lifted or expired, a CRITICAL data-integrity finding.
   Left empty, those alerts are still written to `admin_audit_log` but **reach nobody**; the backend

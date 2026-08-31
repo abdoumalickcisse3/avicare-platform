@@ -76,6 +76,11 @@ services:
       # a CRITICAL integrity finding. Unset = those alerts are still audited but reach nobody, and
       # the backend says so at startup. Takes the same WhatsApp rail as everything else.
       ADMIN_ONCALL_PHONE: ${ADMIN_ONCALL_PHONE:-}
+      # Contact de secours (P6) : prévenu si Malick n'a pas été vu sur la console depuis 72 h.
+      # Ce n'est PAS le numéro d'astreinte ci-dessus — celui-ci est le sien.
+      ADMIN_EMERGENCY_PHONE: ${ADMIN_EMERGENCY_PHONE:-}
+      CONTINUITY_ENABLED: ${CONTINUITY_ENABLED:-true}
+      CONTINUITY_SILENCE_HOURS: ${CONTINUITY_SILENCE_HOURS:-72}
       # WhatsApp (Konekt). Required for the self-service password reset AND the partner alerts.
       # Disabled by default: with no key, the reset flow answers normally but no code goes out.
       NOTIF_WHATSAPP_ENABLED: ${NOTIF_WHATSAPP_ENABLED:-false}
