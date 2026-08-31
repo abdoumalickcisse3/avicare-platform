@@ -37,8 +37,8 @@ public class RecomputeService {
 
   /**
    * Optional, like every other JDBC user here: the DB-less test contexts boot the web layer without
-   * a {@code DataSource}. Unlike a check, though, a recompute asked for with no database is a wiring
-   * mistake and says so rather than quietly returning zeros.
+   * a {@code DataSource}. Unlike a check, though, a recompute asked for with no database is a
+   * wiring mistake and says so rather than quietly returning zeros.
    */
   private final ObjectProvider<NamedParameterJdbcTemplate> jdbcProvider;
 
