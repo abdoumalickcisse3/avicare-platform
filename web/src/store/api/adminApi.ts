@@ -26,7 +26,12 @@ import type {
   AdminCatalogCategory,
   AdminCatalogItemRow,
   FeatureFlagRow,
+  FindingRow,
   FlagHistoryEntry,
+  IntegrityCheckRow,
+  IntegritySummary,
+  RecomputeResult,
+  SweepReport,
   Paged,
   RequestTraceDetail,
   RequestTraceRow,
@@ -91,7 +96,7 @@ const baseQueryWithReauth: BaseQueryFn<
 export const adminApi = createApi({
   reducerPath: "adminApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["AdminMe", "AdminFarm", "AdminUser", "AdminPartner", "AdminStaff", "AdminCatalog", "AdminCompliance", "AdminMetrics", "AdminAnnouncement", "AdminAssistant", "AdminTrace", "AdminFlag"],
+  tagTypes: ["AdminMe", "AdminFarm", "AdminUser", "AdminPartner", "AdminStaff", "AdminCatalog", "AdminCompliance", "AdminMetrics", "AdminAnnouncement", "AdminAssistant", "AdminTrace", "AdminFlag", "AdminIntegrity"],
   endpoints: (build) => ({
     /** Staff sign-in reuses the ordinary auth endpoint; the console then checks /admin/me. */
     adminLogin: build.mutation<AuthTokens, { email: string; password: string }>({
@@ -325,6 +330,52 @@ export const adminApi = createApi({
       transformResponse: (r: Envelope<RequestTraceDetail>) => r.data,
       providesTags: ["AdminTrace"],
     }),
+    getIntegritySummary: build.query<IntegritySummary, { page?: number; size?: number } | void>({
+      query: (args) =>
+        `/api/v1/admin/integrity?page=${args?.page ?? 0}&size=${args?.size ?? 25}`,
+      transformResponse: (r: Envelope<IntegritySummary>) => r.data,
+      providesTags: ["AdminIntegrity"],
+    }),
+    getIntegrityChecks: build.query<IntegrityCheckRow[], void>({
+      query: () => "/api/v1/admin/integrity/checks",
+      transformResponse: (r: Envelope<IntegrityCheckRow[]>) => r.data,
+    }),
+    runIntegrityChecks: build.mutation<SweepReport, void>({
+      query: () => ({ url: "/api/v1/admin/integrity/run", method: "POST" }),
+      transformResponse: (r: Envelope<SweepReport>) => r.data,
+      invalidatesTags: ["AdminIntegrity"],
+    }),
+    previewRecompute: build.query<RecomputeResult, { id: number }>({
+      query: ({ id }) => `/api/v1/admin/integrity/findings/${id}/preview`,
+      transformResponse: (r: Envelope<RecomputeResult>) => r.data,
+    }),
+    applyRecompute: build.mutation<RecomputeResult, { id: number; reason: string }>({
+      query: ({ id, reason }) => ({
+        url: `/api/v1/admin/integrity/findings/${id}/recompute`,
+        method: "POST",
+        body: { reason },
+      }),
+      transformResponse: (r: Envelope<RecomputeResult>) => r.data,
+      invalidatesTags: ["AdminIntegrity"],
+    }),
+    acceptDrift: build.mutation<FindingRow, { id: number; reason: string }>({
+      query: ({ id, reason }) => ({
+        url: `/api/v1/admin/integrity/findings/${id}/accept`,
+        method: "POST",
+        body: { reason },
+      }),
+      transformResponse: (r: Envelope<FindingRow>) => r.data,
+      invalidatesTags: ["AdminIntegrity"],
+    }),
+    markManuallyFixed: build.mutation<FindingRow, { id: number; reason: string }>({
+      query: ({ id, reason }) => ({
+        url: `/api/v1/admin/integrity/findings/${id}/manual-fix`,
+        method: "POST",
+        body: { reason },
+      }),
+      transformResponse: (r: Envelope<FindingRow>) => r.data,
+      invalidatesTags: ["AdminIntegrity"],
+    }),
     getFlags: build.query<FeatureFlagRow[], void>({
       query: () => "/api/v1/admin/flags",
       transformResponse: (r: Envelope<FeatureFlagRow[]>) => r.data,
@@ -540,4 +591,11 @@ export const {
   useExtendKillswitchMutation,
   useLiftKillswitchMutation,
   useSetFlagEnabledMutation,
+  useGetIntegritySummaryQuery,
+  useGetIntegrityChecksQuery,
+  useRunIntegrityChecksMutation,
+  useLazyPreviewRecomputeQuery,
+  useApplyRecomputeMutation,
+  useAcceptDriftMutation,
+  useMarkManuallyFixedMutation,
 } = adminApi;

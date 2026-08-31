@@ -22,6 +22,17 @@ avicare:
   flags:
     enabled: ${FLAGS_ENABLED:true}
     sweep-cron: ${FLAGS_SWEEP_CRON:0 */5 * * * *}
+  # Contrôles d'intégrité (chantier P2). Le balayage tourne la nuit, après les scans de
+  # notifications et de partenaires, pour lire une journée close.
+  # grace-minutes : on ignore tout ce qui a été écrit à l'instant — une ferme en pleine saisie n'est
+  # pas une anomalie, et une alerte pour une facture en cours de paiement décrédibiliserait l'outil.
+  integrity:
+    enabled: ${INTEGRITY_ENABLED:true}
+    cron: ${INTEGRITY_CRON:0 0 3 * * *}
+    zone: ${INTEGRITY_ZONE:Africa/Dakar}
+    grace-minutes: ${INTEGRITY_GRACE_MINUTES:15}
+    silent-unit-days: ${INTEGRITY_SILENT_UNIT_DAYS:30}
+    manual-trigger-enabled: ${INTEGRITY_MANUAL_TRIGGER:true}
   # Traçabilité des requêtes HTTP (chantier P1). Le X-Correlation-Id circule toujours (MDC + logs
   # + traceId des erreurs) même si la persistance est coupée : `enabled: false` n'éteint que la
   # table. capture=ERRORS_AND_MUTATIONS garde les erreurs, les écritures et les lectures lentes ;
