@@ -683,14 +683,32 @@ Updated à chaque login admin par Malick.
 - Suivi : logger toutes actions faites pour Malick à son retour
 
 ### Acceptance criteria
-- [ ] Doc emergency-access.md rédigé (contact de secours identifié + briefé)
-- [ ] Contact de secours confirmé + a testé login console 1 fois
-- [ ] Dead man switch implémenté (notification 72h)
-- [ ] Runbook what-to-do-if-owner-unavailable.md rédigé
-- [ ] Credentials vault créé (Bitwarden/1Password)
-- [ ] Test complet : simuler "Malick indispo" → contact de secours 
-      arrive à faire kill switch + envoyer notif clients
-- [ ] Contrat clair (même informel) avec contact de secours
+
+**Livré (technique)**
+- [x] **Dead man switch** : alerte le contact de secours après 72 h de silence, se tait 24 h avant de
+      le redire, et écrit dans le journal même quand personne n'est joignable. 8 tests unitaires
+- [x] **Aucune migration** : la table `owner_heartbeat` prévue au plan est inutile — chaque connexion
+      et chaque action du personnel est déjà dans `admin_audit_log` avec auteur et horodatage. Le
+      signal dérivé est aussi plus riche (toute activité compte, pas seulement une connexion)
+- [x] `docs/continuity/README.md` — comment ça marche, et ce qui reste à la main de Malick
+- [x] `docs/continuity/emergency-access.md` — **modèle**, avec les permissions suggérées du compte de
+      secours (assez pour tenir, pas assez pour aggraver) et celles délibérément absentes
+- [x] Runbook [propriétaire indisponible](runbooks/recovery/proprietaire-indisponible.md) — écrit
+      pour le contact de secours, pas pour Malick
+- [x] `ADMIN_EMERGENCY_PHONE` transmis au conteneur, documenté, et **absence signalée au démarrage**
+
+**À la main de Malick — le code ne peut pas le faire**
+- [ ] Identifier la personne de confiance
+- [ ] La briefer et compléter les `<À REMPLIR>` de `emergency-access.md`
+- [ ] Lui créer un compte staff dédié (jamais celui de Malick) et **vérifier qu'elle se connecte une
+      fois**, tranquillement
+- [ ] Créer le coffre de mots de passe et l'y donner accès
+- [ ] Convenir d'une contrepartie, même informelle
+- [ ] **Faire l'exercice une fois** : elle coupe un module, le remet, envoie une annonce
+
+⚠️ **Tant que ces six lignes ne sont pas cochées, il n'y a pas de plan de continuité** — il y a un
+mécanisme d'alerte qui prévient un numéro vide. C'est la partie qui compte, et c'est la seule que
+personne ne peut faire à la place de Malick.
 
 ### Estimation : **2-3 jours** (surtout coordination + test)
 

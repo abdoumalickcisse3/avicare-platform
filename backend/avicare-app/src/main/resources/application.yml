@@ -16,6 +16,9 @@ avicare:
     # Numéro WhatsApp d'astreinte prévenu à chaque coupure d'urgence (et à sa levée).
     # Vide = pas de notification ; l'audit, lui, est écrit dans tous les cas.
     oncall-phone: ${ADMIN_ONCALL_PHONE:}
+    # Contact de secours — PAS le numéro d'astreinte, qui est celui de Malick lui-même. Prévenu
+    # uniquement si Malick n'a pas été vu sur la console depuis 72 h (chantier P6).
+    emergency-phone: ${ADMIN_EMERGENCY_PHONE:}
   # Kill switch plateforme (chantier P3). `enabled: false` neutralise les coupures sans toucher au
   # gating par ferme — soupape si le mécanisme lui-même posait problème.
   # Une coupure expire seule au bout de 30 min ; le balayage la lève et prévient l'astreinte.
@@ -45,6 +48,14 @@ avicare:
     max-response-body-chars: ${TRACING_MAX_RESPONSE_BODY:10000}
     retention-days: ${TRACING_RETENTION_DAYS:30}
     purge-cron: ${TRACING_PURGE_CRON:0 45 3 * * *}
+  # Plan de continuité (chantier P6). Le battement de cœur est dérivé de admin_audit_log : toute
+  # action du fondateur compte, pas seulement une connexion. Aucune table dédiée — une donnée de
+  # plus à garder synchrone d'une autre serait une donnée de plus à voir diverger.
+  continuity:
+    enabled: ${CONTINUITY_ENABLED:true}
+    cron: ${CONTINUITY_CRON:0 15 * * * *}
+    silence-hours: ${CONTINUITY_SILENCE_HOURS:72}
+    re-alert-hours: ${CONTINUITY_REALERT_HOURS:24}
   # Détection de menaces et limitation de débit (chantier P4).
   # Les compteurs de débit vivent en mémoire (une seule instance backend) ; les blocages d'IP, eux,
   # sont en base : ils doivent survivre à un redémarrage, contrairement à une fenêtre glissante.
