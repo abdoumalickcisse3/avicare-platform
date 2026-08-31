@@ -63,11 +63,20 @@ public class RequestTraceInterceptor implements HandlerInterceptor {
     return pattern instanceof String s ? s : null;
   }
 
+  /**
+   * The authenticated caller, read the way the rest of the platform reads it.
+   *
+   * <p>{@code JwtFilter} puts the {@code userId} in {@code getPrincipal()} and the full {@link
+   * AvicarePrincipal} in {@code getDetails()} — the shape {@code FarmAccessChecker}, {@code
+   * StaffAccessChecker} and {@code AdminMutationAuditInterceptor} all read. Looking in {@code
+   * getPrincipal()} finds a {@code Long} and silently attributes every trace to nobody.
+   */
   private static AvicarePrincipal currentPrincipal() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    return authentication != null && authentication.getPrincipal() instanceof AvicarePrincipal p
-        ? p
-        : null;
+    if (authentication == null || !authentication.isAuthenticated()) {
+      return null;
+    }
+    return authentication.getDetails() instanceof AvicarePrincipal principal ? principal : null;
   }
 
   /** The farm a tenant-scoped call targeted, so a trace is searchable per tenant. */
