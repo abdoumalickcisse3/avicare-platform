@@ -26,4 +26,10 @@ public interface AdminAuditLogRepository extends JpaRepository<AdminAuditLog, Lo
 
   /** Everything the trail recorded under one correlation id (console trace detail). */
   List<AdminAuditLog> findByRequestIdOrderByCreatedAtAsc(String requestId);
+
+  /**
+   * Recent entries whose action starts with {@code prefix} — the flag screen reads its own history
+   * from the trail rather than keeping a second journal in step with it.
+   */
+  List<AdminAuditLog> findTop30ByActionStartingWithOrderByCreatedAtDesc(String prefix);
 }

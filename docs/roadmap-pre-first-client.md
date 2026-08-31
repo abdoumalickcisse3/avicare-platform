@@ -245,7 +245,8 @@ CREATE INDEX idx_integrity_entity ON integrity_findings(entity_type, entity_id);
 **Permission requise** : `integrity:read` + `integrity:recompute` (nouvelles).
 
 ### Acceptance criteria
-- [ ] Table integrity_findings + migration V49
+- [ ] Table integrity_findings + migration **V50** (et non V49 : P3 a été mergé avant P2
+      et a pris V49 — Flyway tourne sans `out-of-order`, cf. ADR-011)
 - [ ] IntegrityCheckService avec 8 checks (liste ci-dessus)
 - [ ] RecomputeService avec 3 fonctions principales (stock, balance, invoice)
 - [ ] Cron job wired + configurable via env
@@ -329,14 +330,23 @@ public boolean isEnabled(Long farmId, String moduleKey) {
 **Permission requise** : `flags:manage` (nouvelle, réservée à `*` super-admin).
 
 ### Acceptance criteria
-- [ ] Table feature_flags + seed + migration V50
-- [ ] FeatureFlagService avec cache 30s
-- [ ] SubscriptionFacade check killswitch avant feature gating
-- [ ] Écran /console/urgence fonctionnel
-- [ ] Kill switch auto-expire 30 min via cron
-- [ ] Test IT : killswitch actif → endpoint gaté retourne 503 Service Unavailable
-- [ ] Notification staff (Slack ou WhatsApp interne) sur activation killswitch
-- [ ] Audit log chaque toggle
+- [x] Table feature_flags + seed (15 flags) + migration **V49** (et non V50 : ordre de merge
+      P1 → P3 → P2 et Flyway sans `out-of-order`, cf. ADR-011)
+- [x] `FeatureFlagService` avec cache 30 s, **fail open** si la table est illisible, invalidé à
+      chaque écriture (une coupure prend effet immédiatement)
+- [x] `SubscriptionFacadeImpl.isModuleEnabled` **et** `FeatureChecker` vérifient la coupure —
+      le second **avant** les bypass ADMIN et dev, sinon le personnel écrirait dans le module coupé
+- [x] Écran `/console/urgence` : coupure avec raison obligatoire, compte à rebours, prolonger,
+      lever, interrupteur permanent, 30 derniers changements
+- [x] Auto-expiration 30 min : balayage cron toutes les 5 min **et** fenêtre honorée à la lecture
+      (une coupure échue cesse de bloquer à la seconde, sans attendre le balayage)
+- [x] Test IT `KillSwitchApiIT` : coupure → endpoint gaté en **503** avec la raison ; le staff
+      ADMIN reçoit 503 lui aussi ; RBAC ; raison vide refusée ; balayage + historique
+- [x] Notification staff par WhatsApp (rail Konekt existant) à la coupure, à la levée et à
+      l'expiration ; `ADMIN_ONCALL_PHONE` vide = pas de notif, l'audit reste écrit
+- [x] Audit de chaque bascule, y compris celles du balayage (acteur nul = la plateforme)
+
+**Décisions d'architecture** : `docs/decisions/011-platform-kill-switch.md`.
 
 ### Estimation : **1-2 jours**
 
@@ -693,7 +703,9 @@ Updated à chaque login admin par Malick.
 - **COMMITS SANS SIGNATURE CLAUDE** (toujours)
 - **1 PR par chantier** (P1, P2, P3, P4, P5, P6 = 6 PRs distinctes)
 - **CI verte obligatoire** avant merge
-- **Migration Flyway numérotée** (V48, V49, V50, V51 dans l'ordre)
+- **Migration Flyway numérotée**, dans l'ordre de **merge** et non dans l'ordre du plan :
+  V48 (P1), V49 (P3), V50 (P2), V51 (P4). Flyway tourne sans `out-of-order` — une migration
+  numérotée plus bas qu'une migration déjà appliquée est refusée au démarrage
 - **@MockitoBean pour nouveaux repos** dans SecurityE2ETest + SecurityIntegrationTest (gotcha connu)
 - **Tests Testcontainers IT** pour chaque check métier (P2 notamment)
 - **Validation PSQL réelle** (BEGIN/ROLLBACK) avant push migrations

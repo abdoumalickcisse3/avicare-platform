@@ -37,7 +37,11 @@ public class AdminAuditLog {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(name = "actor_user_id", nullable = false)
+  /**
+   * The staff member behind the action, or {@code null} when the platform acted on its own (a
+   * scheduled sweep). Nullable since V49 — see that migration.
+   */
+  @Column(name = "actor_user_id")
   private Long actorUserId;
 
   @Column(nullable = false)
