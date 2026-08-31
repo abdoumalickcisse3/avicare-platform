@@ -35,6 +35,12 @@ import org.springframework.transaction.annotation.Transactional;
  * permanent automatic block would eventually lock out a real farmer with nobody able to say why.
  * The block buys time against a script, it is not a verdict.
  *
+ * <p><b>The loopback interface is exempt.</b> Behind Caddy a real caller is never loopback — the
+ * address comes from {@code X-Forwarded-For} — so a request that appears to originate from the box
+ * itself is a test, a health probe, or something that already has the machine. Treating those as
+ * suspects would mean the platform locking out its own tooling, and it is what made the entire
+ * integration suite fail the first time this shipped.
+ *
  * <p><b>Recording runs in its own transaction.</b> A failed sign-in is recorded from inside {@code
  * AuthService.login}, which then throws — and an event that joined that transaction would be rolled
  * back with it. Every failure would vanish, and the detector would sit there counting to zero
@@ -77,7 +83,16 @@ public class ThreatDetectionService {
 
   /** Whether {@code ip} is currently refused. Cheap, cached, and forgiving on failure. */
   public boolean isBlocked(String ip) {
-    return currentlyBlocked().contains(ip);
+    return !isLoopback(ip) && currentlyBlocked().contains(ip);
+  }
+
+  /** Local callers are never suspects — see the class javadoc. */
+  public static boolean isLoopback(String ip) {
+    return ip == null
+        || ip.startsWith("127.")
+        || "::1".equals(ip)
+        || "0:0:0:0:0:0:0:1".equals(ip)
+        || "localhost".equals(ip);
   }
 
   /**
@@ -88,6 +103,9 @@ public class ThreatDetectionService {
    */
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public void recordFailedLogin(String ip, String email, String userAgent) {
+    if (isLoopback(ip)) {
+      return;
+    }
     LocalDateTime since = LocalDateTime.now().minusMinutes(windowMinutes);
     long recent = events.countRecent(ip, SecurityEventType.FAILED_LOGIN, since) + 1;
 
@@ -123,6 +141,9 @@ public class ThreatDetectionService {
   /** A rejected request, recorded at most once a minute per address. */
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public void recordRateLimitExceeded(String ip, String path) {
+    if (isLoopback(ip)) {
+      return;
+    }
     Instant last = lastRateLimitEvent.get(ip);
     if (last != null && last.isAfter(Instant.now().minusSeconds(60))) {
       return;
@@ -141,6 +162,9 @@ public class ThreatDetectionService {
   /** Several accounts created from one address in an hour — worth a look, never an auto-block. */
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public void recordSignup(String ip, String email) {
+    if (isLoopback(ip)) {
+      return;
+    }
     long recent =
         events.countRecent(ip, SecurityEventType.SIGNUP_ANOMALY, LocalDateTime.now().minusHours(1));
     if (recent + 1 < maxSignupsPerHour) {

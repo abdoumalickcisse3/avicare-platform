@@ -55,15 +55,28 @@ Cf. `docs/roadmap-pre-first-client.md` §P4.
 7. **Les événements de débit sont limités en mémoire à un par adresse et par minute.** Sous un vrai
    flot, une ligne (et une requête) par requête rejetée est la façon dont l'incident en devient deux.
 
-8. **`security:read` et `security:manage` séparées.** Lire le journal et débloquer une adresse ne
+8. **Le loopback est exempté**, des deux filtres et de l'enregistrement. Derrière Caddy, un vrai
+   appelant n'est jamais en loopback — son adresse vient de `X-Forwarded-For` — donc une requête qui
+   semble venir de la machine elle-même est un test, une sonde de santé, ou quelque chose qui a déjà
+   la machine. Découvert de la pire façon : la première version a fait tomber **douze classes d'IT**,
+   qui parlent toutes depuis `127.0.0.1`. Le même raisonnement vaut en production, où la plateforme
+   n'a aucune raison de se bloquer elle-même.
+
+9. **Plafond d'inscription à 10/h, pas 3/h.** La roadmap disait 3, mais une coopérative qui inscrit
+   ses membres depuis un même bureau partage une adresse d'opérateur : refuser le quatrième serait la
+   plateforme se mettant en travers de sa propre adoption. La rafale est toujours **remarquée** à
+   trois par heure (le détecteur avertit) ; le filtre ne **refuse** que bien au-delà. Détecter et
+   refuser ne sont pas le même geste.
+
+10. **`security:read` et `security:manage` séparées.** Lire le journal et débloquer une adresse ne
    sont pas la même autorité — et débloquer est justement le geste qui remet en ligne un éleveur
    attrapé à tort.
 
-9. **`ip_address` en `VARCHAR(45)`, pas `INET`.** C'est le type déjà utilisé par `admin_audit_log.ip`
+11. **`ip_address` en `VARCHAR(45)`, pas `INET`.** C'est le type déjà utilisé par `admin_audit_log.ip`
    et `request_traces.ip` ; une seule représentation de l'IP dans le schéma vaut mieux que le typage
    plus fin d'une troisième table isolée, et évite un convertisseur JPA pour rien.
 
-10. **Helper `ClientIp` extrait** (`common-api`). L'adresse réelle est le premier saut de
+12. **Helper `ClientIp` extrait** (`common-api`). L'adresse réelle est le premier saut de
     `X-Forwarded-For` derrière Caddy ; trois endroits en avaient besoin et trois copies des mêmes
     quatre lignes est la façon dont elles commencent à diverger. Sa fiabilité repose sur une
     **invariante de déploiement** : Caddy réécrit l'en-tête et rien d'autre ne peut joindre le

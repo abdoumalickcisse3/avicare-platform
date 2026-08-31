@@ -39,8 +39,13 @@ public class RateLimitFilter extends OncePerRequestFilter {
   private enum Route {
     /** Sign-in: tight, because this is what gets brute-forced. */
     LOGIN(5, Duration.ofMinutes(1)),
-    /** Account creation: a real farm signs up once, a script signs up all night. */
-    SIGNUP(3, Duration.ofHours(1)),
+    /**
+     * Account creation. Not as tight as it first looks it should be: a cooperative onboarding its
+     * members from one office shares a single operator address, and refusing the fourth of them
+     * would be the platform getting in the way of its own adoption. Bursts are still <i>noticed</i>
+     * at three an hour — the detector warns, this filter only refuses well past that.
+     */
+    SIGNUP(10, Duration.ofHours(1)),
     /** Password reset: sends a WhatsApp credit downrange with every request. */
     PASSWORD_RESET(5, Duration.ofHours(1)),
     /** Back-office: generous for a human, obviously wrong for a scraper. */
@@ -89,7 +94,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
   protected boolean shouldNotFilter(HttpServletRequest request) {
     return !enabled
         || "OPTIONS".equals(request.getMethod())
-        || request.getRequestURI().startsWith("/actuator");
+        || request.getRequestURI().startsWith("/actuator")
+        // Local callers are exempt: behind Caddy a real one never looks loopback, so this is a
+        // test, a probe, or something already on the box. See ThreatDetectionService.
+        || ThreatDetectionService.isLoopback(ClientIp.of(request));
   }
 
   @Override
