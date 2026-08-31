@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -107,6 +108,7 @@ class RequestTraceRepositoryIT {
   @Test
   void filtersOnEachCriterionSeparately() {
     assertThat(search("corr-ok", null, null, null, null, false, null)).hasSize(1);
+    // Case-insensitive on the email: support types what the farmer wrote, not what we stored.
     assertThat(search(null, "OWNER@farm", null, null, null, false, null)).hasSize(2);
     assertThat(search(null, null, farmB, null, null, false, null)).hasSize(1);
     assertThat(search(null, null, null, "/orders", null, false, null)).hasSize(1);
@@ -140,9 +142,12 @@ class RequestTraceRepositoryIT {
       Integer status,
       boolean errorsOnly,
       LocalDateTime from) {
+    RequestTraceSearch criteria =
+        new RequestTraceSearch(requestId, email, farmId, path, status, errorsOnly, from, null);
     return repository
-        .search(
-            requestId, email, farmId, path, status, errorsOnly, from, null, PageRequest.of(0, 20))
+        .findAll(
+            criteria.toSpecification(),
+            PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "startedAt")))
         .getContent();
   }
 

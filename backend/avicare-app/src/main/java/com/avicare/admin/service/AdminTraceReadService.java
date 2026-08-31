@@ -6,13 +6,16 @@ import com.avicare.admin.dto.response.RequestTraceDetail;
 import com.avicare.admin.dto.response.RequestTraceRow;
 import com.avicare.admin.repository.AdminAuditLogRepository;
 import com.avicare.admin.repository.RequestTraceRepository;
+import com.avicare.admin.repository.RequestTraceSearch;
 import com.avicare.common.api.exception.NotFoundException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,17 +45,16 @@ public class AdminTraceReadService {
       LocalDateTime from,
       LocalDateTime to,
       Pageable pageable) {
+    RequestTraceSearch criteria =
+        new RequestTraceSearch(requestId, email, farmId, path, status, errorsOnly, from, to);
+    // Most recent first, always: the ordering belongs to what this list is for, not to the caller.
+    Pageable sorted =
+        PageRequest.of(
+            pageable.getPageNumber(),
+            pageable.getPageSize(),
+            Sort.by(Sort.Direction.DESC, "startedAt"));
     return traceRepository
-        .search(
-            blankToNull(requestId),
-            blankToNull(email),
-            farmId,
-            blankToNull(path),
-            status,
-            errorsOnly,
-            from,
-            to,
-            pageable)
+        .findAll(criteria.toSpecification(), sorted)
         .map(AdminTraceReadService::toRow);
   }
 
@@ -116,5 +118,11 @@ public class AdminTraceReadService {
 
   private static String blankToNull(String value) {
     return value == null || value.isBlank() ? null : value;
+  }
+
+  /** A contains-pattern for the repository, or null when the criterion is not used. */
+  private static String likePattern(String value) {
+    String trimmed = blankToNull(value);
+    return trimmed == null ? null : "%" + trimmed + "%";
   }
 }
