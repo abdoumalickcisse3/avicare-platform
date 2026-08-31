@@ -1,7 +1,8 @@
 # Le propriétaire de la plateforme est injoignable
 
 **Sévérité** : dépend de ce qui se passe en parallèle. Un silence sans incident n'est pas une urgence.
-**Destinataire** : le contact de secours, pas Malick.
+**Destinataire** : le contact de secours, pas Malick. Il ou elle est développeur — l'étape 4 en
+tient compte.
 **Vérifié** : 2026-08-31 — mécanisme d'alerte testé (8 cas). **L'exercice humain n'a pas été fait.**
 
 ## Comment tu arrives ici
@@ -51,16 +52,38 @@ Couper un module **arrête cette fonctionnalité pour toutes les fermes**. C'est
 c'est parfois le bon : mieux vaut une fonctionnalité indisponible qu'une donnée fausse qu'on devra
 démêler pendant des semaines.
 
-## Étape 4 — Ce que tu ne fais pas
+## Étape 4 — Revenir à la version d'avant (si tu es développeur)
 
-- **Pas de déploiement de code.** Même si tu sais faire. Accepter la panne, ne pas l'aggraver.
-- **Pas de recalcul de données** clients.
+Une seule opération technique t'est ouverte, et c'est la plus sûre qui existe ici : **revenir à un
+déploiement précédent**. Les images portent des tags immuables (le SHA du commit), donc redéployer
+un ancien SHA remet exactement le code qui tournait avant.
+
+```bash
+ssh <user>@<vps>
+cd /opt/avicare-platform/infra
+git log --oneline -10          # repérer le dernier SHA connu comme bon
+./deploy.sh <sha>
+curl -s https://app.<domaine>/actuator/health
+```
+
+⚠️ **Un rollback ne défait pas une migration de base.** Flyway ne redescend pas : si la version
+fautive a modifié le schéma, l'ancien code peut ne pas démarrer. Dans ce cas, arrête-toi et attends —
+c'est exactement la situation où improviser coûte plus cher que la panne.
+
+## Étape 5 — Ce que tu ne fais pas
+
+- **Pas de code nouveau.** Corriger le bug est tentant, surtout quand on sait faire. Mais un
+  correctif écrit sous pression dans un produit qu'on découvre est un second incident en préparation.
+  Revenir en arrière, oui. Avancer, non.
+- **Pas de recalcul de données** clients. Les règles métier (facturation, encours, effectifs) ont des
+  subtilités qui ne se devinent pas — c'est le sujet de tout un chantier documenté dans
+  `docs/decisions/012`.
 - **Pas de modification de schéma.**
 - **Pas de restauration de sauvegarde**, sauf si la base est manifestement détruite — et alors
   seulement en suivant [le runbook](../ops/restaurer-une-sauvegarde.md), après avoir pris une
   sauvegarde de l'état actuel.
 
-## Étape 5 — Tenir un journal
+## Étape 6 — Tenir un journal
 
 Note **tout** ce que tu fais, avec l'heure. Un simple fichier texte suffit. À son retour, Malick doit
 pouvoir reconstituer la séquence sans t'interroger.

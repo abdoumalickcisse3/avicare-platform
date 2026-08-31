@@ -5,6 +5,9 @@
 >
 > **Statut : incomplet.** Tant qu'il l'est, il n'y a pas de plan de continuité — il y a un document
 > qui en a l'air.
+>
+> Le contact de secours est identifié (un **confrère développeur**) et son numéro est configuré côté
+> plateforme. Restent : son nom ici, son compte staff, le coffre, la contrepartie et l'exercice.
 
 ## Quand ce document s'applique
 
@@ -18,7 +21,7 @@ Trois jours de silence sans incident ne demandent rien d'autre qu'un message ami
 |---|---|---|---|
 | Propriétaire | Abdou Malick Cisse | `<À REMPLIR>` | `<À REMPLIR>` |
 | Proche à joindre en premier | `<À REMPLIR>` | `<À REMPLIR>` | — |
-| **Contact de secours plateforme** | `<À REMPLIR>` | `<À REMPLIR>` | `<À REMPLIR>` |
+| **Contact de secours plateforme** | `<À REMPLIR : nom>` — confrère développeur | +221 70 420 81 30 | `<À REMPLIR>` |
 
 Le contact de secours doit avoir **lu ce document et s'être connecté une fois** avant d'en avoir
 besoin. Sinon ce tableau ne vaut rien.
@@ -50,7 +53,11 @@ agi, et un accès prêté ne se reprend pas proprement.
 
 Chacune de ces étapes est écrite dans le journal d'audit — y compris l'octroi des permissions.
 
-Permissions suggérées pour ce compte — assez pour tenir, pas assez pour aggraver :
+Permissions suggérées pour ce compte — assez pour tenir, pas assez pour aggraver. **Elles ne changent
+pas parce que la personne est développeuse** : les exclusions ci-dessous ne portent pas sur la
+compétence mais sur le fait d'agir sous pression dans un produit qu'on ne connaît pas de l'intérieur.
+Un bon développeur peut aggraver une situation aussi vite qu'un autre s'il réécrit une donnée client
+dont il ignore la règle métier.
 
 | Permission | Pourquoi |
 |---|---|
