@@ -131,7 +131,7 @@ class IntegrityFlowIT {
 
     // And the check agrees it is fixed — which is the only thing tying the two formulas together.
     checkService.runAllChecks();
-    assertThat(findings.findByCheckKeyAndResolvedAtIsNull("stock_current_quantity")).isEmpty();
+    assertThat(openFindingsFor(stockItemId)).isEmpty();
   }
 
   @Test
@@ -142,15 +142,18 @@ class IntegrityFlowIT {
     breakStockQuantity(stockItemId, 50);
 
     checkService.runAllChecks();
-    assertThat(findings.findByCheckKeyAndResolvedAtIsNull("stock_current_quantity")).hasSize(1);
+    // Scoped to this fixture's own item: the tests share one database, and a global count would
+    // make this assertion depend on what the other tests happened to leave behind.
+    assertThat(openFindingsFor(stockItemId)).hasSize(1);
 
     // Someone corrected it through the application instead.
     breakStockQuantity(stockItemId, 20);
     checkService.runAllChecks();
 
-    assertThat(findings.findByCheckKeyAndResolvedAtIsNull("stock_current_quantity")).isEmpty();
+    assertThat(openFindingsFor(stockItemId)).isEmpty();
     assertThat(findings.findAll())
-        .filteredOn(f -> "stock_current_quantity".equals(f.getCheckKey()))
+        .filteredOn(
+            f -> "stock_current_quantity".equals(f.getCheckKey()) && f.getEntityId() == stockItemId)
         .allSatisfy(f -> assertThat(f.getResolutionAction()).isEqualTo("auto_resolved"));
   }
 
@@ -192,6 +195,13 @@ class IntegrityFlowIT {
             post("/api/v1/admin/integrity/run")
                 .header("Authorization", "Bearer " + staffToken("integrity:read")))
         .andExpect(status().isForbidden());
+  }
+
+  private java.util.List<com.avicare.integrity.domain.IntegrityFinding> openFindingsFor(
+      long stockItemId) {
+    return findings.findByCheckKeyAndResolvedAtIsNull("stock_current_quantity").stream()
+        .filter(f -> f.getEntityId() == stockItemId)
+        .toList();
   }
 
   // --- fixture ---------------------------------------------------------------------------------
