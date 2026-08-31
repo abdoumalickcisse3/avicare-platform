@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   Box,
+  Button,
   Card,
   CardContent,
   Chip,
@@ -13,7 +15,9 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
+import { Plus } from "lucide-react";
 import { useGetAdminPartnersQuery } from "@/store/api/adminApi";
+import { CreatePartnerDialog } from "@/components/admin/CreatePartnerDialog";
 import { colors } from "@/theme/tokens";
 
 const TYPE_LABEL: Record<string, string> = {
@@ -21,16 +25,37 @@ const TYPE_LABEL: Record<string, string> = {
   VET: "Vétérinaire",
 };
 
-/** Partner directory. Until this screen existed, creating a partner meant calling the API by hand. */
+/** Partner directory, and the only place a partner organisation can be brought into existence. */
 export function PartnerTable() {
   const { data: partners = [], isLoading } = useGetAdminPartnersQuery();
+  const [createOpen, setCreateOpen] = useState(false);
 
   return (
     <Card>
       <CardContent>
-        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-          Partenaires {partners.length > 0 && `(${partners.length})`}
-        </Typography>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 2,
+            mb: 2,
+          }}
+        >
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            Partenaires {partners.length > 0 && `(${partners.length})`}
+          </Typography>
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<Plus size={16} />}
+            onClick={() => setCreateOpen(true)}
+          >
+            Nouveau partenaire
+          </Button>
+        </Box>
+
+        <CreatePartnerDialog open={createOpen} onClose={() => setCreateOpen(false)} />
 
         {!isLoading && partners.length === 0 ? (
           <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
