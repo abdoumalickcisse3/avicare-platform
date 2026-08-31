@@ -1540,6 +1540,8 @@ export interface PlatformRuntime {
   applicationVersion: string | null;
   serverTime: string;
   whatsappEnabled: boolean;
+  /** Whether urgent platform alerts (kill switch, integrity) have a number to reach. */
+  onCallConfigured: boolean;
 }
 
 /** WhatsApp spend over a window. Every send costs a credit, whichever path produced it. */

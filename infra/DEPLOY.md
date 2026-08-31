@@ -28,6 +28,12 @@ or OVH/Scaleway Paris for lowest Senegal latency). Ubuntu 22.04/24.04 LTS.
   **already signed up**. On every restart that account is promoted to platform staff and granted
   every permission; the app never creates it. Left empty, the console refuses everyone — the safe
   default. The promotion is itself written to `admin_audit_log`.
+- **On-call number** (`ADMIN_ONCALL_PHONE` in `infra/.env`): where urgent platform alerts are sent —
+  a module cut by the kill switch, a cut lifted or expired, a CRITICAL data-integrity finding.
+  Left empty, those alerts are still written to `admin_audit_log` but **reach nobody**; the backend
+  says so in a WARN line at startup, and the Pilotage screen shows "astreinte : absente". Requires
+  WhatsApp sending to be on (`NOTIF_WHATSAPP_ENABLED` + `KONEKT_API_SECRET`) — the alert takes the
+  same rail as everything else.
 
 ## 1. Provision the VPS
 

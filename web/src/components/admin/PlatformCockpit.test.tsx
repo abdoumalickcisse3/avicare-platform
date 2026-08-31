@@ -50,6 +50,7 @@ const DEFAULT_RUNTIME: PlatformRuntime = {
   applicationVersion: null,
   serverTime: '2026-08-29T18:00:00',
   whatsappEnabled: true,
+  onCallConfigured: true,
 };
 
 const FRESH_BACKUPS = {
@@ -62,7 +63,7 @@ const FRESH_BACKUPS = {
   offsiteConfigured: true,
 };
 
-function mockApi(runtime: PlatformRuntime | undefined = { schemaVersion: "45", appliedMigrations: 45, applicationVersion: null, serverTime: "2026-08-29T18:00:00", whatsappEnabled: true }, failures: unknown[] = [FAILURE], backups: unknown = FRESH_BACKUPS) {
+function mockApi(runtime: PlatformRuntime | undefined = { schemaVersion: "45", appliedMigrations: 45, applicationVersion: null, serverTime: "2026-08-29T18:00:00", whatsappEnabled: true, onCallConfigured: true }, failures: unknown[] = [FAILURE], backups: unknown = FRESH_BACKUPS) {
   const calls: Call[] = [];
   vi.stubGlobal(
     "fetch",
@@ -118,7 +119,7 @@ describe("PlatformCockpit", () => {
             ? []
             : url.includes("/metrics/whatsapp")
               ? USAGE
-              : { schemaVersion: "45", appliedMigrations: 45, applicationVersion: null, serverTime: "x", whatsappEnabled: true };
+              : { schemaVersion: "45", appliedMigrations: 45, applicationVersion: null, serverTime: "x", whatsappEnabled: true, onCallConfigured: true };
         return new Response(JSON.stringify({ data: payload }), {
           status: 200,
           headers: { "Content-Type": "application/json" },
@@ -133,13 +134,22 @@ describe("PlatformCockpit", () => {
   });
 
   it("warns when WhatsApp sending is off", async () => {
-    mockApi({ schemaVersion: "45", appliedMigrations: 45, applicationVersion: null, serverTime: "x", whatsappEnabled: false });
+    mockApi({ schemaVersion: "45", appliedMigrations: 45, applicationVersion: null, serverTime: "x", whatsappEnabled: false, onCallConfigured: true });
     renderWithProviders(<PlatformCockpit />);
 
     // Disabled sending is silent everywhere else: the reset screen still says "code sent".
     expect(
       await screen.findByText(/aucun message ne part, y compris les codes/i),
     ).toBeInTheDocument();
+  });
+
+  it("warns when nobody is on call", async () => {
+    mockApi({ schemaVersion: "45", appliedMigrations: 45, applicationVersion: null, serverTime: "x", whatsappEnabled: true, onCallConfigured: false });
+    renderWithProviders(<PlatformCockpit />);
+
+    // The kill switch and the integrity checks both alert an on-call number. With none set they
+    // write the audit trail and reach nobody — a gap that would otherwise be found by its silence.
+    expect(await screen.findByText(/personne n'est prévenu/i)).toBeInTheDocument();
   });
 
   it("shows failures with the number masked", async () => {
@@ -174,7 +184,7 @@ describe("PlatformCockpit", () => {
   });
 
   it("says the schema is unknown rather than showing nothing", async () => {
-    mockApi({ schemaVersion: null, appliedMigrations: 0, applicationVersion: null, serverTime: "x", whatsappEnabled: true }, []);
+    mockApi({ schemaVersion: null, appliedMigrations: 0, applicationVersion: null, serverTime: "x", whatsappEnabled: true, onCallConfigured: true }, []);
     renderWithProviders(<PlatformCockpit />);
 
     expect(await screen.findByText("inconnu")).toBeInTheDocument();

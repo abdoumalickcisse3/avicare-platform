@@ -72,6 +72,10 @@ services:
       # Promoted to platform staff at startup and granted "*". Never creates an account: the email
       # must already be signed up. Unset = nobody can enter the console, which is the safe default.
       ADMIN_FOUNDER_EMAIL: ${ADMIN_FOUNDER_EMAIL:-}
+      # Where urgent platform alerts go: a module cut by the kill switch, a cut lifted or expired,
+      # a CRITICAL integrity finding. Unset = those alerts are still audited but reach nobody, and
+      # the backend says so at startup. Takes the same WhatsApp rail as everything else.
+      ADMIN_ONCALL_PHONE: ${ADMIN_ONCALL_PHONE:-}
       # WhatsApp (Konekt). Required for the self-service password reset AND the partner alerts.
       # Disabled by default: with no key, the reset flow answers normally but no code goes out.
       NOTIF_WHATSAPP_ENABLED: ${NOTIF_WHATSAPP_ENABLED:-false}
@@ -82,6 +86,16 @@ services:
       # real LLM; left as-is (disabled) the assistant runs the offline keyword Mock.
       ANTHROPIC_ENABLED: ${ANTHROPIC_ENABLED:-false}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      # Interrupteurs des mécanismes plateforme eux-mêmes. Tous actifs par défaut ; ils sont ici
+      # pour qu'on puisse en couper un depuis .env en cas de problème, sans rebuild ni redéploiement
+      # — c'est précisément la situation que le kill switch existe pour éviter.
+      #   TRACING_ENABLED=false   → plus d'écriture dans request_traces (le X-Correlation-Id,
+      #                             les logs et le traceId des erreurs continuent de fonctionner)
+      #   FLAGS_ENABLED=false     → plus aucune coupure appliquée (le gating par ferme est intact)
+      #   INTEGRITY_ENABLED=false → plus de balayage nocturne des contrôles d'intégrité
+      TRACING_ENABLED: ${TRACING_ENABLED:-true}
+      FLAGS_ENABLED: ${FLAGS_ENABLED:-true}
+      INTEGRITY_ENABLED: ${INTEGRITY_ENABLED:-true}
     volumes:
       # Read-only, and read-only on purpose: the console reports how fresh the last dump is, and
       # a backup directory an application can write to is one an application can also destroy.

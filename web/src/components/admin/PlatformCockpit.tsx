@@ -165,6 +165,14 @@ export function PlatformCockpit() {
             </Alert>
           )}
 
+          {runtime && !runtime.onCallConfigured && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              Aucun numéro d&apos;astreinte configuré : les coupures d&apos;urgence et les
+              incohérences critiques sont journalisées, mais personne n&apos;est prévenu. Renseigner
+              <code> ADMIN_ONCALL_PHONE</code>.
+            </Alert>
+          )}
+
           <Stack direction="row" sx={{ gap: 3, flexWrap: "wrap", mb: 2 }}>
             <Box>
               <Typography variant="h5" sx={{ fontWeight: 700 }}>
@@ -410,6 +418,14 @@ export function PlatformCockpit() {
               </Typography>
               <Typography variant="caption" color="text.secondary">
                 envoi WhatsApp
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                {runtime?.onCallConfigured ? "configurée" : "absente"}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                astreinte
               </Typography>
             </Box>
           </Stack>
