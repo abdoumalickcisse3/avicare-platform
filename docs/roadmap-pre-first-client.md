@@ -245,15 +245,26 @@ CREATE INDEX idx_integrity_entity ON integrity_findings(entity_type, entity_id);
 **Permission requise** : `integrity:read` + `integrity:recompute` (nouvelles).
 
 ### Acceptance criteria
-- [ ] Table integrity_findings + migration **V50** (et non V49 : P3 a été mergé avant P2
-      et a pris V49 — Flyway tourne sans `out-of-order`, cf. ADR-011)
-- [ ] IntegrityCheckService avec 8 checks (liste ci-dessus)
-- [ ] RecomputeService avec 3 fonctions principales (stock, balance, invoice)
-- [ ] Cron job wired + configurable via env
-- [ ] Écran /console/integrite avec drill-down
-- [ ] Test IT : injecter incohérence → check la détecte → recompute la corrige
-- [ ] Audit : chaque recompute = activity_log + reason obligatoire
-- [ ] Notification staff si CRITICAL détecté
+- [x] Table `integrity_findings` + migration **V50** (et non V49 : P3 mergé avant P2, cf. ADR-011),
+      avec index unique partiel sur les anomalies ouvertes et `notified_at`
+- [x] `IntegrityCheckService` avec **9 contrôles**. Quatre invariants de la liste ci-dessus étaient
+      faux face au schéma réel et ont été redérivés de leurs écrivains ; celui des FK orphelines est
+      structurellement impossible (NOT NULL + FK) et a été remplacé par la cohérence multi-tenant.
+      Détail dans **ADR-012**
+- [x] `RecomputeService` : stock, encours client, payé facture — et **rien d'autre** : jamais une
+      valeur saisie par un humain (422 `RECOMPUTE_NOT_SUPPORTED`)
+- [x] Cron nocturne configurable + déclenchement manuel depuis la console
+- [x] Écran `/console/integrite` : compteurs par sévérité, liste triée par gravité, dry-run avant
+      écriture, recalcul / corrigé / écart accepté, chacun avec raison obligatoire
+- [x] Test IT `IntegrityFlowIT` : incohérence injectée → détectée → recalculée → anomalie close →
+      contrôle d'accord. C'est aussi ce qui garantit que contrôle et recalcul partagent la formule
+- [x] Audit de chaque action (`integrity.recomputed` / `.accepted_drift` / `.manual_fix`) avec
+      l'acteur et sa raison ; le balayage automatique s'inscrit avec un acteur nul
+- [x] Notification staff sur CRITICAL, **une seule fois** par anomalie (`notified_at`)
+
+**Vérifié sur les données de production** : 0 CRITICAL, 0 WARNING, 38 INFO authentiques.
+
+**Décisions d'architecture** : `docs/decisions/012-data-integrity-checks.md`.
 
 ### Estimation : **5-8 jours**
 

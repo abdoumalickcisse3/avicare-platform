@@ -122,6 +122,9 @@ class SecurityE2ETest {
   @MockitoBean private com.avicare.subscription.flags.FeatureFlagRepository featureFlagRepository;
 
   @MockitoBean
+  private com.avicare.integrity.repository.IntegrityFindingRepository integrityFindingRepository;
+
+  @MockitoBean
   private com.avicare.identity.repository.PasswordResetCodeRepository passwordResetCodeRepository;
 
   @MockitoBean private PartnerAlertRepository partnerAlertRepository;

@@ -1783,3 +1783,54 @@ export interface FlagHistoryEntry {
   actorUserId: number | null;
   at: string;
 }
+
+/** One integrity finding as the console shows it (chantier P2). */
+export interface FindingRow {
+  id: number;
+  checkKey: string;
+  label: string;
+  severity: "INFO" | "WARNING" | "CRITICAL";
+  entityType: string;
+  entityId: number;
+  farmId: number | null;
+  expectedValue: string | null;
+  actualValue: string | null;
+  details: Record<string, unknown>;
+  detectedAt: string;
+  lastSeenAt: string;
+  openForDays: number;
+  /** Whether a derived figure backs it — only then does the console offer to recompute. */
+  recomputable: boolean;
+}
+
+export interface IntegritySummary {
+  critical: number;
+  warning: number;
+  info: number;
+  findings: Paged<FindingRow>;
+}
+
+/** One invariant, as documentation for whoever reads the screen. */
+export interface IntegrityCheckRow {
+  key: string;
+  label: string;
+  severity: "INFO" | "WARNING" | "CRITICAL";
+}
+
+/** What a recompute would do, or did. */
+export interface RecomputeResult {
+  entityType: string;
+  entityId: number;
+  before: string;
+  after: string;
+  delta: string;
+  applied: boolean;
+}
+
+export interface SweepReport {
+  checksRun: number;
+  opened: number;
+  stillOpen: number;
+  resolved: number;
+  failed: number;
+}
