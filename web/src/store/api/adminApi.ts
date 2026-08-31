@@ -152,6 +152,61 @@ export const adminApi = createApi({
       transformResponse: (r: Envelope<AdminInviteCode[]>) => r.data,
       providesTags: ["AdminPartner"],
     }),
+    createPartner: build.mutation<
+      AdminPartnerRow,
+      {
+        name: string;
+        type: string;
+        contactName?: string;
+        contactPhone?: string;
+        contactEmail?: string;
+        logoUrl?: string;
+      }
+    >({
+      query: (body) => ({ url: "/api/v1/admin/partners", method: "POST", body }),
+      transformResponse: (r: Envelope<AdminPartnerRow>) => r.data,
+      invalidatesTags: ["AdminPartner"],
+    }),
+    setPartnerStatus: build.mutation<AdminPartnerRow, { partnerId: number; suspended: boolean }>({
+      query: ({ partnerId, suspended }) => ({
+        url: `/api/v1/admin/partners/${partnerId}/${suspended ? "suspend" : "activate"}`,
+        method: "POST",
+      }),
+      transformResponse: (r: Envelope<AdminPartnerRow>) => r.data,
+      invalidatesTags: ["AdminPartner"],
+    }),
+    attachPartnerFarm: build.mutation<void, { partnerId: number; farmId: number }>({
+      query: ({ partnerId, farmId }) => ({
+        url: `/api/v1/admin/partners/${partnerId}/farms`,
+        method: "POST",
+        body: { farmId },
+      }),
+      invalidatesTags: ["AdminPartner"],
+    }),
+    generateInviteCode: build.mutation<
+      AdminInviteCode,
+      { partnerId: number; maxUses?: number | null }
+    >({
+      query: ({ partnerId, maxUses }) => ({
+        url: `/api/v1/admin/partners/${partnerId}/invite-codes`,
+        method: "POST",
+        body: { maxUses: maxUses ?? null },
+      }),
+      transformResponse: (r: Envelope<AdminInviteCode>) => r.data,
+      invalidatesTags: ["AdminPartner"],
+    }),
+    createPartnerUser: build.mutation<
+      AdminPartnerUser,
+      { partnerId: number; email: string; fullName?: string }
+    >({
+      query: ({ partnerId, ...body }) => ({
+        url: `/api/v1/admin/partners/${partnerId}/users`,
+        method: "POST",
+        body,
+      }),
+      transformResponse: (r: Envelope<AdminPartnerUser>) => r.data,
+      invalidatesTags: ["AdminPartner"],
+    }),
     detachPartnerFarm: build.mutation<void, { partnerId: number; membershipId: number }>({
       query: ({ partnerId, membershipId }) => ({
         url: `/api/v1/admin/partners/${partnerId}/farms/${membershipId}`,
@@ -595,6 +650,11 @@ export const {
   useSetPartnerUserActiveMutation,
   useResetPartnerUserPasswordMutation,
   useRevokeInviteCodeMutation,
+  useCreatePartnerMutation,
+  useSetPartnerStatusMutation,
+  useAttachPartnerFarmMutation,
+  useGenerateInviteCodeMutation,
+  useCreatePartnerUserMutation,
   useLazySearchAdminUsersQuery,
   useResetAdminUserPasswordMutation,
   useSetAdminUserActiveMutation,
