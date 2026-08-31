@@ -700,7 +700,7 @@ Updated à chaque login admin par Malick.
 - [x] `ADMIN_EMERGENCY_PHONE` transmis au conteneur, documenté, et **absence signalée au démarrage**
 
 **À la main de Malick — le code ne peut pas le faire**
-- [ ] Identifier la personne de confiance
+- [x] Identifier la personne de confiance — un confrère développeur, numéro configuré (2026-08-31)
 - [ ] La briefer et compléter les `<À REMPLIR>` de `emergency-access.md`
 - [ ] Lui créer un compte staff dédié (jamais celui de Malick) et **vérifier qu'elle se connecte une
       fois**, tranquillement

@@ -12,7 +12,7 @@ quelqu'un d'autre de tenir la plateforme quelques jours sans casser ce qu'il ne 
 | Pièce | État | Qui la porte |
 |---|---|---|
 | **Alerte de silence** — prévient le contact de secours si Malick n'est pas vu depuis 72 h | ✅ livré (P6) | automatique |
-| **[Accès d'urgence](emergency-access.md)** — qui appeler, à quoi il ou elle a accès | ⚠️ **modèle à compléter** | Malick |
+| **[Accès d'urgence](emergency-access.md)** — qui appeler, à quoi il ou elle a accès | ⚠️ **contact identifié, compte et briefing à faire** | Malick |
 | **[Runbook : propriétaire indisponible](../runbooks/recovery/proprietaire-indisponible.md)** — quoi faire, dans l'ordre | ✅ livré | le contact de secours |
 
 ## Comment fonctionne l'alerte de silence
@@ -37,8 +37,8 @@ dispositif de secours silencieusement inactif est pire que pas de dispositif.
 
 ## Ce qui reste à faire, et que le code ne peut pas faire
 
-1. **Choisir la personne.** Quelqu'un qui sait lire une procédure et rester calme. Ni forcément
-   développeur, ni forcément proche — mais joignable.
+1. ~~**Choisir la personne.**~~ ✅ Fait : un confrère développeur, numéro configuré. Son nom reste à
+   inscrire dans [emergency-access.md](emergency-access.md).
 2. **Lui parler avant.** Une personne qui découvre son rôle le jour de l'incident n'est pas un plan
    de continuité, c'est une surprise.
 3. **Lui donner les accès** (voir [emergency-access.md](emergency-access.md)) et **vérifier qu'elle
