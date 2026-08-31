@@ -63,6 +63,7 @@ Ouvrez : http://localhost:3000
 - [Setup mono-repo](./docs/02-setup-monorepo.md)
 - [Architecture Spring Boot](./docs/03-architecture-spring-boot.md)
 - [Schéma DB initial](./docs/04-schema-db-initial.md)
+- [Runbooks opérationnels](./docs/runbooks/README.md) — que faire quand un client appelle
 - [Conventions de contribution](./CONTRIBUTING.md)
 - [Changelog](./CHANGELOG.md)
 

@@ -560,12 +560,24 @@ Fallback si option A ne marche pas
 Les autres = post-premier client, en itératif.
 
 ### Acceptance criteria
-- [ ] Dossier docs/runbooks/ créé avec structure ci-dessus
-- [ ] README.md avec index + convention utilisation
-- [ ] 5 runbooks CRITICAL rédigés selon template
-- [ ] Chaque runbook testé au moins 1 fois (exécuter les steps)
-- [ ] Lien depuis CLAUDE.md et README principal
-- [ ] Convention : runbooks mis à jour après CHAQUE incident réel
+- [x] Dossier `docs/runbooks/` créé — rangé **par symptôme rapporté**, pas par cause
+- [x] `README.md` avec index + convention (dont la ligne « Vérifié », qui interdit de faire passer
+      un essai local pour une validation en production)
+- [x] **5 runbooks CRITICAL** rédigés. Trois du plan tels quels, un recentré, un **substitué** :
+      `deploy-production` est déjà couvert par `infra/DEPLOY.md` (deux vérités divergent toujours),
+      et P4 a créé un mode de panne que le plan ne pouvait pas prévoir — **le blocage automatique
+      d'un éleveur derrière un NAT d'opérateur**, probablement l'appel au support le plus fréquent
+- [x] **Chaque runbook exécuté pour de vrai** le 2026-08-31, en local : incohérence injectée puis
+      recalculée, adresse bloquée puis débloquée, requête retrouvée par sa référence, dump produit
+      (96 Ko / 72 tables) et **restauré dans un conteneur jetable — 0 erreur, schéma v51**
+- [x] Lien depuis `CLAUDE.md` et le README principal
+- [x] Convention de mise à jour après chaque incident réel, inscrite dans les deux
+
+**Limite assumée** : rien n'a été rejoué en production (pas d'accès VPS depuis l'environnement de
+développement). Chaque runbook le dit explicitement plutôt que de laisser croire le contraire.
+
+Les 15 autres runbooks du plan restent **différés après le premier client** : un runbook écrit pour
+un incident jamais vu décrit surtout l'imagination de son auteur.
 
 ### Estimation : **2-3 jours** (rédaction + validation)
 

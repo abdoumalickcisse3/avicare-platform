@@ -107,6 +107,18 @@ Valider en local AVANT merge tant que ADR-003 est actif.
 
 ---
 
+## 🧯 Runbooks opérationnels
+
+`docs/runbooks/` documente **quoi faire quand un client appelle** : éleveur bloqué, erreur à
+retrouver, donnée incohérente, sauvegarde manquée, restauration. À lire avant de diagnostiquer un
+incident, et **à mettre à jour après chaque incident réel** — un runbook qui ne bouge jamais est un
+runbook que personne n'utilise.
+
+Chaque runbook porte une ligne « Vérifié » disant où ses étapes ont été rejouées. Ne jamais la
+gonfler : « rejoué en local » n'est pas « rejoué en production ».
+
+---
+
 ## 🗃️ Base de données & Flyway (Sprint A3+)
 
 ### Migrations
