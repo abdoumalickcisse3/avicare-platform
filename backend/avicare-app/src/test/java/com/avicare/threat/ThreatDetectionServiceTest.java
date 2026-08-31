@@ -142,6 +142,18 @@ class ThreatDetectionServiceTest {
   }
 
   @Test
+  void ignoresTheLoopbackInterface() {
+    // Behind Caddy a real caller is never loopback. Treating local traffic as suspect is how the
+    // platform ends up locking out its own tooling — and how the whole integration suite fell over.
+    service.recordFailedLogin("127.0.0.1", "cible@jawdi.app", null);
+    service.recordFailedLogin("::1", "cible@jawdi.app", null);
+    service.recordSignup("127.0.0.1", "nouvelle@ferme.sn");
+
+    verify(events, never()).save(any());
+    assertThat(service.isBlocked("127.0.0.1")).isFalse();
+  }
+
+  @Test
   void letsEveryoneThroughWhenTheBlockListCannotBeRead() {
     when(blockedIps.findByBlockedUntilAfterOrderByBlockedAtDesc(any()))
         .thenThrow(new RuntimeException("db down"));
