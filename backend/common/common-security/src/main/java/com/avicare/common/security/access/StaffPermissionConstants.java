@@ -75,5 +75,6 @@ public final class StaffPermissionConstants {
           Map.entry("assistant", List.of("review", "configure")),
           Map.entry("partners", List.of("read", "write", "users", "attach", "prospect")),
           Map.entry("flags", List.of("manage")),
-          Map.entry("integrity", List.of("read", "recompute")));
+          Map.entry("integrity", List.of("read", "recompute")),
+          Map.entry("security", List.of("read", "manage")));
 }

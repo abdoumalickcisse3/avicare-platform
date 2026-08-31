@@ -78,6 +78,15 @@ class AuthServiceTest {
     // No admin context in this slice: staff sign-ins have nowhere to be traced, which is the
     // no-op seam's whole purpose.
     com.avicare.identity.spi.StaffLoginAuditor staffLoginAuditor = (userId, email) -> {};
+    // Same idea for sign-in outcomes: this slice has no threat detector behind it.
+    com.avicare.identity.spi.LoginAttemptListener loginAttempts =
+        new com.avicare.identity.spi.LoginAttemptListener() {
+          @Override
+          public void loginFailed(String email) {}
+
+          @Override
+          public void accountCreated(String email) {}
+        };
     authService =
         new AuthService(
             userRepository,
@@ -87,7 +96,8 @@ class AuthServiceTest {
             ENCODER,
             staffLoginAuditor,
             mapper,
-            membershipProvider);
+            membershipProvider,
+            loginAttempts);
   }
 
   @Test

@@ -1836,3 +1836,38 @@ export interface SweepReport {
   resolved: number;
   failed: number;
 }
+
+/** One line of the security timeline (chantier P4). */
+export interface SecurityEventRow {
+  id: number;
+  eventType:
+    | "FAILED_LOGIN"
+    | "BRUTEFORCE_DETECTED"
+    | "RATE_LIMIT_EXCEEDED"
+    | "SIGNUP_ANOMALY"
+    | "IP_BLOCKED"
+    | "IP_UNBLOCKED";
+  severity: "INFO" | "WARNING" | "CRITICAL";
+  ipAddress: string;
+  email: string | null;
+  userAgent: string | null;
+  details: Record<string, unknown>;
+  actionTaken: string | null;
+  createdAt: string;
+}
+
+/** One address currently refused, with the time left on it. */
+export interface BlockedIpRow {
+  ipAddress: string;
+  blockedAt: string;
+  blockedUntil: string;
+  minutesRemaining: number;
+  reason: string;
+  blockedBy: string;
+}
+
+export interface SecurityOverview {
+  counters: Record<string, number>;
+  events: SecurityEventRow[];
+  blocked: BlockedIpRow[];
+}
