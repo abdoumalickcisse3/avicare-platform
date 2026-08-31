@@ -262,7 +262,9 @@ CREATE INDEX idx_integrity_entity ON integrity_findings(entity_type, entity_id);
       l'acteur et sa raison ; le balayage automatique s'inscrit avec un acteur nul
 - [x] Notification staff sur CRITICAL, **une seule fois** par anomalie (`notified_at`)
 
-**Vérifié sur les données de production** : 0 CRITICAL, 0 WARNING, 38 INFO authentiques.
+**Vérifié sur les données de production** : 0 CRITICAL, 0 WARNING, 22 INFO (lots ouverts sans
+saisie depuis un mois). Les 16 « doses nulles » initialement comptées étaient des **faux positifs**
+du contrôle, corrigés depuis — cf. l'encadré de l'ADR-012.
 
 **Décisions d'architecture** : `docs/decisions/012-data-integrity-checks.md`.
 

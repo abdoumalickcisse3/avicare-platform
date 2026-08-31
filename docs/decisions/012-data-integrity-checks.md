@@ -65,9 +65,17 @@ Cf. `docs/roadmap-pre-first-client.md` §P2.
 
 ## Conséquences
 
-- Sur les données de production actuelles : **0 CRITICAL, 0 WARNING**, 38 INFO authentiques
-  (22 lots sans saisie depuis un mois, 16 saisies sanitaires à dose nulle laissées passer par le
-  formulaire). Le premier client n'héritera pas d'un écran qui hurle.
+- Sur les données de production actuelles : **0 CRITICAL, 0 WARNING**, 22 INFO (des lots ouverts
+  sans saisie depuis un mois). Le premier client n'héritera pas d'un écran qui hurle.
+
+  > **Correction du 2026-08-31.** La première version annonçait « 38 INFO authentiques », dont 16
+  > saisies de vaccination à dose nulle. Vérification faite, ces 16 n'étaient **pas** des défauts :
+  > l'écran mobile ne demande **délibérément pas** de dose par sujet — un vaccin dilué dans l'eau de
+  > boisson de cinq mille sujets n'en a pas. Le contrôle appliquait `COALESCE(dose, 0) = 0` aux
+  > vaccinations comme aux traitements, alors que seuls les seconds ont une dose par animal (le
+  > mobile l'exige). Corrigé : une dose **explicitement à zéro** est un défaut, une dose **absente**
+  > n'en est pas un. La leçon est celle du chantier lui-même, appliquée à lui-même — un invariant se
+  > dérive du comportement réel du produit, pas de ce qu'on suppose qu'il devrait être.
 - `IntegrityFindingRepository` est un nouveau repo JPA : `@MockitoBean` obligatoire dans les six
   contextes DB-less.
 - Deux permissions distinctes : `integrity:read` (voir) et `integrity:recompute` (réécrire).
