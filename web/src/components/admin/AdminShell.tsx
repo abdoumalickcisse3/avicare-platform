@@ -21,6 +21,7 @@ import {
   HeartPulse,
   Library,
   Megaphone,
+  OctagonX,
   Radar,
   ScrollText,
   KeyRound,
@@ -45,6 +46,7 @@ interface NavEntry {
 const NAV: NavEntry[] = [
   { href: "/console/pilotage", label: "Pilotage", icon: Activity, permission: "metrics:read" },
   { href: "/console/traces", label: "Traces", icon: Radar, permission: "metrics:read" },
+  { href: "/console/urgence", label: "Urgence", icon: OctagonX, permission: "flags:manage" },
   { href: "/console/fermes", label: "Fermes", icon: Building2, permission: "tenants:read" },
   { href: "/console/utilisateurs", label: "Utilisateurs", icon: Users, permission: "users:read" },
   { href: "/console/sante", label: "Santé", icon: HeartPulse, permission: "tenants:read" },

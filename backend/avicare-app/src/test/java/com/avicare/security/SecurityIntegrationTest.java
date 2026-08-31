@@ -95,6 +95,7 @@ class SecurityIntegrationTest {
 
   @MockitoBean private com.avicare.admin.repository.AdminAuditLogRepository adminAuditLogRepository;
   @MockitoBean private com.avicare.admin.repository.RequestTraceRepository requestTraceRepository;
+  @MockitoBean private com.avicare.subscription.flags.FeatureFlagRepository featureFlagRepository;
 
   @MockitoBean
   private com.avicare.identity.repository.PasswordResetCodeRepository passwordResetCodeRepository;

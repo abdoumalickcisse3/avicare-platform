@@ -25,6 +25,8 @@ import type {
   AdminPartnerUser,
   AdminCatalogCategory,
   AdminCatalogItemRow,
+  FeatureFlagRow,
+  FlagHistoryEntry,
   Paged,
   RequestTraceDetail,
   RequestTraceRow,
@@ -89,7 +91,7 @@ const baseQueryWithReauth: BaseQueryFn<
 export const adminApi = createApi({
   reducerPath: "adminApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["AdminMe", "AdminFarm", "AdminUser", "AdminPartner", "AdminStaff", "AdminCatalog", "AdminCompliance", "AdminMetrics", "AdminAnnouncement", "AdminAssistant", "AdminTrace"],
+  tagTypes: ["AdminMe", "AdminFarm", "AdminUser", "AdminPartner", "AdminStaff", "AdminCatalog", "AdminCompliance", "AdminMetrics", "AdminAnnouncement", "AdminAssistant", "AdminTrace", "AdminFlag"],
   endpoints: (build) => ({
     /** Staff sign-in reuses the ordinary auth endpoint; the console then checks /admin/me. */
     adminLogin: build.mutation<AuthTokens, { email: string; password: string }>({
@@ -323,6 +325,50 @@ export const adminApi = createApi({
       transformResponse: (r: Envelope<RequestTraceDetail>) => r.data,
       providesTags: ["AdminTrace"],
     }),
+    getFlags: build.query<FeatureFlagRow[], void>({
+      query: () => "/api/v1/admin/flags",
+      transformResponse: (r: Envelope<FeatureFlagRow[]>) => r.data,
+      providesTags: ["AdminFlag"],
+    }),
+    getFlagHistory: build.query<FlagHistoryEntry[], void>({
+      query: () => "/api/v1/admin/flags/history",
+      transformResponse: (r: Envelope<FlagHistoryEntry[]>) => r.data,
+      providesTags: ["AdminFlag"],
+    }),
+    activateKillswitch: build.mutation<FeatureFlagRow, { flagKey: string; reason: string }>({
+      query: ({ flagKey, reason }) => ({
+        url: `/api/v1/admin/flags/${encodeURIComponent(flagKey)}/killswitch`,
+        method: "POST",
+        body: { reason },
+      }),
+      transformResponse: (r: Envelope<FeatureFlagRow>) => r.data,
+      invalidatesTags: ["AdminFlag"],
+    }),
+    extendKillswitch: build.mutation<FeatureFlagRow, { flagKey: string }>({
+      query: ({ flagKey }) => ({
+        url: `/api/v1/admin/flags/${encodeURIComponent(flagKey)}/killswitch/extend`,
+        method: "POST",
+      }),
+      transformResponse: (r: Envelope<FeatureFlagRow>) => r.data,
+      invalidatesTags: ["AdminFlag"],
+    }),
+    liftKillswitch: build.mutation<FeatureFlagRow, { flagKey: string }>({
+      query: ({ flagKey }) => ({
+        url: `/api/v1/admin/flags/${encodeURIComponent(flagKey)}/killswitch/lift`,
+        method: "POST",
+      }),
+      transformResponse: (r: Envelope<FeatureFlagRow>) => r.data,
+      invalidatesTags: ["AdminFlag"],
+    }),
+    setFlagEnabled: build.mutation<FeatureFlagRow, { flagKey: string; enabled: boolean }>({
+      query: ({ flagKey, enabled }) => ({
+        url: `/api/v1/admin/flags/${encodeURIComponent(flagKey)}/enabled`,
+        method: "PUT",
+        body: { enabled },
+      }),
+      transformResponse: (r: Envelope<FeatureFlagRow>) => r.data,
+      invalidatesTags: ["AdminFlag"],
+    }),
     getPlatformRuntime: build.query<PlatformRuntime, void>({
       query: () => "/api/v1/admin/metrics/runtime",
       transformResponse: (r: Envelope<PlatformRuntime>) => r.data,
@@ -488,4 +534,10 @@ export const {
   useImpersonateMutation,
   useSearchTracesQuery,
   useGetTraceQuery,
+  useGetFlagsQuery,
+  useGetFlagHistoryQuery,
+  useActivateKillswitchMutation,
+  useExtendKillswitchMutation,
+  useLiftKillswitchMutation,
+  useSetFlagEnabledMutation,
 } = adminApi;

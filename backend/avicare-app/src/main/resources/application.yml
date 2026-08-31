@@ -13,6 +13,15 @@ avicare:
   # Never creates an account: the email must already be signed up. Unset = no promotion at all.
   admin:
     founder-email: ${ADMIN_FOUNDER_EMAIL:}
+    # Numéro WhatsApp d'astreinte prévenu à chaque coupure d'urgence (et à sa levée).
+    # Vide = pas de notification ; l'audit, lui, est écrit dans tous les cas.
+    oncall-phone: ${ADMIN_ONCALL_PHONE:}
+  # Kill switch plateforme (chantier P3). `enabled: false` neutralise les coupures sans toucher au
+  # gating par ferme — soupape si le mécanisme lui-même posait problème.
+  # Une coupure expire seule au bout de 30 min ; le balayage la lève et prévient l'astreinte.
+  flags:
+    enabled: ${FLAGS_ENABLED:true}
+    sweep-cron: ${FLAGS_SWEEP_CRON:0 */5 * * * *}
   # Traçabilité des requêtes HTTP (chantier P1). Le X-Correlation-Id circule toujours (MDC + logs
   # + traceId des erreurs) même si la persistance est coupée : `enabled: false` n'éteint que la
   # table. capture=ERRORS_AND_MUTATIONS garde les erreurs, les écritures et les lectures lentes ;

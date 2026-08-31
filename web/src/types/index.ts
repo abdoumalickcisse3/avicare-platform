@@ -1761,3 +1761,25 @@ export interface Paged<T> {
   totalElements: number;
   totalPages: number;
 }
+
+/** One platform switch as the emergency screen shows it (chantier P3). */
+export interface FeatureFlagRow {
+  flagKey: string;
+  enabledGlobally: boolean;
+  killswitchActive: boolean;
+  killswitchReason: string | null;
+  killswitchBy: number | null;
+  killswitchAt: string | null;
+  killswitchExpiresAt: string | null;
+  /** Time left before the cut lifts itself, so the screen can count down. */
+  secondsRemaining: number | null;
+}
+
+/** One past flag change, read back from the append-only audit trail. */
+export interface FlagHistoryEntry {
+  action: string;
+  flagKey: string | null;
+  reason: string | null;
+  actorUserId: number | null;
+  at: string;
+}

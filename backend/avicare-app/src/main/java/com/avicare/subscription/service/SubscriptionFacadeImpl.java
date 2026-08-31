@@ -3,6 +3,7 @@ package com.avicare.subscription.service;
 import com.avicare.subscription.api.SubscriptionFacade;
 import com.avicare.subscription.api.dto.SubscriptionInfo;
 import com.avicare.subscription.domain.SubscriptionModule;
+import com.avicare.subscription.flags.FeatureFlagService;
 import com.avicare.subscription.repository.SubscriptionModuleRepository;
 import com.avicare.subscription.repository.SubscriptionRepository;
 import java.time.LocalDateTime;
@@ -19,11 +20,23 @@ import org.springframework.transaction.annotation.Transactional;
 public class SubscriptionFacadeImpl implements SubscriptionFacade {
 
   private final SubscriptionService subscriptionService;
+  private final FeatureFlagService featureFlags;
   private final SubscriptionRepository subscriptionRepository;
   private final SubscriptionModuleRepository subscriptionModuleRepository;
 
+  /**
+   * {@inheritDoc}
+   *
+   * <p>A platform kill switch wins over the farm's own subscription: the callers that read this
+   * directly — reporting, health alerts, the D18 stock cascade — never go through {@code
+   * FeatureChecker}, and a cut that only covered the annotated endpoints would leave exactly the
+   * cross-context writes we most want stopped still running.
+   */
   @Override
   public boolean isModuleEnabled(Long farmId, String moduleKey) {
+    if (featureFlags.isBlocked(moduleKey)) {
+      return false;
+    }
     return subscriptionService.isModuleEnabled(farmId, moduleKey);
   }
 
