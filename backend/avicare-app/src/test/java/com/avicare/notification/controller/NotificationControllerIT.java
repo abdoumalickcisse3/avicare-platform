@@ -120,6 +120,11 @@ class NotificationControllerIT {
   private com.avicare.integrity.repository.IntegrityFindingRepository integrityFindingRepository;
 
   @MockitoBean
+  private com.avicare.threat.repository.SecurityEventRepository securityEventRepository;
+
+  @MockitoBean private com.avicare.threat.repository.BlockedIpRepository blockedIpRepository;
+
+  @MockitoBean
   private com.avicare.identity.repository.PasswordResetCodeRepository passwordResetCodeRepository;
 
   @MockitoBean private PartnerAlertRepository partnerAlertRepository;

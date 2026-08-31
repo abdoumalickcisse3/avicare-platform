@@ -3,6 +3,7 @@ package com.avicare.admin.trace;
 import com.avicare.admin.trace.TracingProperties.Capture;
 import com.avicare.common.api.error.GlobalExceptionHandler;
 import com.avicare.common.api.filter.CorrelationIdFilter;
+import com.avicare.common.api.web.ClientIp;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -107,7 +108,7 @@ public class RequestTraceFilter extends OncePerRequestFilter {
                 RequestTraceInterceptor.farmId(request),
                 status,
                 durationMs,
-                clientIp(request),
+                ClientIp.of(request),
                 requestBody,
                 request.getContentType(),
                 status >= 400 ? responseBody : null,
@@ -133,14 +134,5 @@ public class RequestTraceFilter extends OncePerRequestFilter {
 
   private static String body(byte[] content) {
     return content.length == 0 ? null : new String(content, StandardCharsets.UTF_8);
-  }
-
-  /** Caddy sits in front in production; the client is the first hop. */
-  private static String clientIp(HttpServletRequest request) {
-    String forwarded = request.getHeader("X-Forwarded-For");
-    if (forwarded != null && !forwarded.isBlank()) {
-      return forwarded.split(",")[0].trim();
-    }
-    return request.getRemoteAddr();
   }
 }

@@ -45,7 +45,23 @@ avicare:
     max-response-body-chars: ${TRACING_MAX_RESPONSE_BODY:10000}
     retention-days: ${TRACING_RETENTION_DAYS:30}
     purge-cron: ${TRACING_PURGE_CRON:0 45 3 * * *}
+  # Détection de menaces et limitation de débit (chantier P4).
+  # Les compteurs de débit vivent en mémoire (une seule instance backend) ; les blocages d'IP, eux,
+  # sont en base : ils doivent survivre à un redémarrage, contrairement à une fenêtre glissante.
+  # Les deux interrupteurs sont là pour pouvoir désarmer sans redéployer si un réglage se révélait
+  # trop strict pour un vrai éleveur.
   security:
+    rate-limit:
+      enabled: ${RATE_LIMIT_ENABLED:true}
+      evict-cron: ${RATE_LIMIT_EVICT_CRON:0 0 * * * *}
+    ip-blocking:
+      enabled: ${IP_BLOCKING_ENABLED:true}
+    bruteforce:
+      max-failures: ${BRUTEFORCE_MAX_FAILURES:5}
+      window-minutes: ${BRUTEFORCE_WINDOW_MINUTES:15}
+      block-minutes: ${BRUTEFORCE_BLOCK_MINUTES:60}
+    signup:
+      max-per-hour: ${SIGNUP_MAX_PER_HOUR:3}
     jwt:
       issuer: ${JWT_ISSUER:avicare-platform}
       access-token-ttl: 15m

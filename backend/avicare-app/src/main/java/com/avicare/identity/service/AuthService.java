@@ -46,6 +46,7 @@ public class AuthService {
   private final StaffLoginAuditor staffLoginAuditor;
   private final IdentityMapper identityMapper;
   private final MembershipProvider membershipProvider;
+  private final com.avicare.identity.spi.LoginAttemptListener loginAttempts;
 
   /** Create + persist a USER account (shared by signup and provisioning). */
   @Transactional
@@ -67,6 +68,7 @@ public class AuthService {
     User saved =
         createUser(request.fullName(), request.email(), request.phone(), request.password());
     log.info("New user registered: id={}", saved.getId());
+    loginAttempts.accountCreated(saved.getEmail());
     return issueTokens(saved);
   }
 
@@ -76,10 +78,10 @@ public class AuthService {
     User user =
         userRepository
             .findByEmailIgnoreCase(request.email())
-            .orElseThrow(AuthService::badCredentials);
+            .orElseThrow(() -> failedLogin(request.email()));
 
     if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
-      throw badCredentials();
+      throw failedLogin(request.email());
     }
     if (!user.isActive()) {
       throw new UnauthorizedException("ACCOUNT_DISABLED", "Account is disabled");
@@ -184,5 +186,15 @@ public class AuthService {
 
   private static UnauthorizedException badCredentials() {
     return new UnauthorizedException("BAD_CREDENTIALS", "Invalid email or password");
+  }
+
+  /**
+   * Tells the threat detector before refusing, so both failure paths — no such account, and wrong
+   * password — count the same. They look identical from outside on purpose, and a detector that saw
+   * only one of them would be blind to exactly the half a script spends most of its time in.
+   */
+  private UnauthorizedException failedLogin(String email) {
+    loginAttempts.loginFailed(email);
+    return badCredentials();
   }
 }

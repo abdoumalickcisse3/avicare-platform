@@ -96,6 +96,13 @@ services:
       TRACING_ENABLED: ${TRACING_ENABLED:-true}
       FLAGS_ENABLED: ${FLAGS_ENABLED:-true}
       INTEGRITY_ENABLED: ${INTEGRITY_ENABLED:-true}
+      #   RATE_LIMIT_ENABLED=false → plus de plafond de requêtes par adresse
+      #   IP_BLOCKING_ENABLED=false → les adresses bloquées repassent (le journal continue)
+      # Les seuils de force brute se règlent sans redéploiement si un vrai éleveur se fait attraper.
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
+      IP_BLOCKING_ENABLED: ${IP_BLOCKING_ENABLED:-true}
+      BRUTEFORCE_MAX_FAILURES: ${BRUTEFORCE_MAX_FAILURES:-5}
+      BRUTEFORCE_BLOCK_MINUTES: ${BRUTEFORCE_BLOCK_MINUTES:-60}
     volumes:
       # Read-only, and read-only on purpose: the console reports how fresh the last dump is, and
       # a backup directory an application can write to is one an application can also destroy.

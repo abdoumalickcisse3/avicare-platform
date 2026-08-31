@@ -3,8 +3,8 @@ package com.avicare.admin.service;
 import com.avicare.admin.domain.AdminAuditLog;
 import com.avicare.admin.repository.AdminAuditLogRepository;
 import com.avicare.common.api.filter.CorrelationIdFilter;
+import com.avicare.common.api.web.ClientIp;
 import com.avicare.common.tenancy.context.TenancyContext;
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -85,13 +85,7 @@ public class AdminAuditService {
   private static String currentIp() {
     if (RequestContextHolder.getRequestAttributes()
         instanceof ServletRequestAttributes attributes) {
-      HttpServletRequest request = attributes.getRequest();
-      String forwarded = request.getHeader("X-Forwarded-For");
-      if (forwarded != null && !forwarded.isBlank()) {
-        // Caddy sits in front in production; the client is the first hop.
-        return forwarded.split(",")[0].trim();
-      }
-      return request.getRemoteAddr();
+      return ClientIp.of(attributes.getRequest());
     }
     return null;
   }

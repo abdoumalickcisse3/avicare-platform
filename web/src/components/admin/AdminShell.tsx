@@ -49,6 +49,7 @@ const NAV: NavEntry[] = [
   { href: "/console/traces", label: "Traces", icon: Radar, permission: "metrics:read" },
   { href: "/console/urgence", label: "Urgence", icon: OctagonX, permission: "flags:manage" },
   { href: "/console/integrite", label: "Intégrité", icon: ShieldAlert, permission: "integrity:read" },
+  { href: "/console/securite", label: "Sécurité", icon: ShieldCheck, permission: "security:read" },
   { href: "/console/fermes", label: "Fermes", icon: Building2, permission: "tenants:read" },
   { href: "/console/utilisateurs", label: "Utilisateurs", icon: Users, permission: "users:read" },
   { href: "/console/sante", label: "Santé", icon: HeartPulse, permission: "tenants:read" },

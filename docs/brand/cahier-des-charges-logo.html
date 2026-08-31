@@ -1,0 +1,1105 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Cahier des charges — Identité & Logo Jawdi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --p50:#F0F7F0;--p100:#DCEEDC;--p200:#B8DDB8;--p300:#8BC68B;--p400:#5EAA5E;
+  --p500:#3D8B3D;--p600:#2E6B2E;--p700:#245524;--p800:#1B3F1B;--p900:#122B12;
+  --a50:#FFF4E6;--a100:#FFE1B8;--a200:#FFCB85;--a300:#FFB04D;--a400:#F8961E;
+  --a500:#E67E0A;--a600:#C46505;--a700:#9C4F03;
+  --success:#16A34A;--success-l:#DCFCE7;--success-d:#14532D;
+  --warning:#D97706;--warning-l:#FEF3C7;--warning-d:#78350F;
+  --error:#DC2626;--error-l:#FEE2E2;--error-d:#7F1D1D;
+  --info:#2563EB;--info-l:#DBEAFE;--info-d:#1E3A8A;
+  --n0:#FFFFFF;--n50:#FAFAF9;--n100:#F5F5F4;--n200:#E7E5E4;--n300:#D6D3D1;
+  --n400:#A8A29E;--n500:#78716C;--n600:#57534E;--n700:#44403C;--n800:#292524;--n900:#1C1917;
+  --earth:#122B12;
+}
+@page{ size:A4; margin:16mm 15mm 15mm 15mm; }
+@page:first{ margin:0; }
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  font-size:10.2pt; line-height:1.5; color:var(--n800); background:var(--n0);
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
+}
+h1,h2,h3,h4{margin:0;}
+p{margin:0 0 8pt;}
+a{color:var(--p600);text-decoration:none;}
+strong{font-weight:600;color:var(--n900);}
+code,.mono{font-family:'JetBrains Mono',Consolas,monospace;font-size:8.6pt;}
+
+/* ---------- page mechanics ---------- */
+.page{ page-break-after:always; break-after:page; }
+.page:last-child{ page-break-after:auto; break-after:auto; }
+.nobreak{ page-break-inside:avoid; break-inside:avoid; }
+
+/* ---------- cover ---------- */
+.cover{
+  height:297mm; width:210mm; background:var(--p900); color:#fff;
+  padding:26mm 22mm; display:flex; flex-direction:column; justify-content:space-between;
+  position:relative; overflow:hidden;
+}
+.cover::after{
+  content:""; position:absolute; right:-70mm; bottom:-90mm;
+  width:200mm; height:200mm; border-radius:50%;
+  background:radial-gradient(circle at 35% 35%, rgba(248,150,30,.20), rgba(248,150,30,0) 62%);
+}
+.cover-top{position:relative;z-index:2;}
+.eyebrow{
+  font-size:8.4pt; letter-spacing:.16em; text-transform:uppercase; font-weight:500;
+  color:var(--a300);
+}
+.cover h1{
+  font-size:38pt; line-height:1.06; font-weight:700; margin:14mm 0 0; letter-spacing:-.02em;
+  max-width:150mm;
+}
+.cover .sub{ font-size:13pt; font-weight:300; color:var(--p200); margin-top:8mm; max-width:130mm; line-height:1.45;}
+.cover-mid{position:relative;z-index:2;}
+.cover-rule{height:2px;width:38mm;background:var(--a400);margin:0 0 7mm;}
+.cover-quote{font-size:11.5pt;line-height:1.55;color:#fff;font-weight:300;max-width:135mm;}
+.cover-quote b{color:var(--a300);font-weight:600;}
+.cover-bottom{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:flex-end;font-size:9pt;color:var(--p300);}
+.cover-bottom .meta-k{display:block;font-size:7.6pt;letter-spacing:.12em;text-transform:uppercase;color:var(--p400);margin-bottom:2mm;}
+.cover-bottom .meta-v{color:#fff;font-weight:500;font-size:9.6pt;}
+
+/* ---------- section chrome ---------- */
+.sec-head{ display:flex; align-items:baseline; gap:5mm; margin:0 0 6mm; padding-bottom:3mm; border-bottom:2px solid var(--p600); }
+.sec-num{ font-family:'JetBrains Mono',monospace; font-size:15pt; font-weight:500; color:var(--a500); line-height:1;}
+.sec-head h2{ font-size:17.5pt; font-weight:600; letter-spacing:-.01em; color:var(--p800); line-height:1.15;}
+h3{ font-size:11.6pt; font-weight:600; color:var(--n900); margin:7mm 0 2.5mm; }
+h4{ font-size:10pt; font-weight:600; color:var(--n800); margin:5mm 0 1.5mm; }
+.lede{ font-size:11pt; line-height:1.55; color:var(--n600); font-weight:300; margin-bottom:6mm; }
+
+/* ---------- blocks ---------- */
+.card{ border:1px solid var(--n200); border-radius:12px; padding:6mm; background:var(--n0); margin:0 0 4mm; }
+.card.tint{ background:var(--n50); }
+.card.green{ background:var(--p50); border-color:var(--p200); }
+.card.amber{ background:var(--a50); border-color:var(--a200); }
+.card.red{ background:var(--error-l); border-color:#F5B5B5; }
+.card h4{margin-top:0;}
+.callout{ border-left:3px solid var(--a400); background:var(--a50); padding:4.5mm 5mm; border-radius:0 8px 8px 0; margin:0 0 4mm; }
+.callout .tag{ display:block; font-size:7.6pt; letter-spacing:.13em; text-transform:uppercase; font-weight:600; color:var(--a700); margin-bottom:1.5mm; }
+.callout.stop{ border-left-color:var(--error); background:var(--error-l); }
+.callout.stop .tag{ color:var(--error-d); }
+.callout.key{ border-left-color:var(--p500); background:var(--p50); }
+.callout.key .tag{ color:var(--p700); }
+
+table{ width:100%; border-collapse:collapse; margin:0 0 4mm; font-size:9.4pt; }
+th{ text-align:left; font-size:7.8pt; letter-spacing:.07em; text-transform:uppercase; font-weight:600; color:var(--n500); background:var(--n50); padding:2.6mm 3mm; border-bottom:1px solid var(--n200); }
+td{ padding:2.8mm 3mm; border-bottom:1px solid var(--n200); vertical-align:top; line-height:1.42; }
+tr:last-child td{border-bottom:none;}
+td.mono{ font-family:'JetBrains Mono',monospace; font-size:8.4pt; color:var(--n700); }
+
+ul,ol{ margin:0 0 4mm; padding-left:5mm; }
+li{ margin-bottom:1.8mm; line-height:1.48; }
+ul.tight li{margin-bottom:1mm;}
+ul.check{ list-style:none; padding-left:0; }
+ul.check li{ position:relative; padding-left:7mm; }
+ul.check li::before{ content:"✓"; position:absolute; left:0; top:0; color:var(--success); font-weight:700; }
+ul.cross{ list-style:none; padding-left:0; }
+ul.cross li{ position:relative; padding-left:7mm; }
+ul.cross li::before{ content:"✕"; position:absolute; left:0; top:0; color:var(--error); font-weight:700; }
+
+.grid2{ display:grid; grid-template-columns:1fr 1fr; gap:4mm; }
+.grid3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:3.5mm; }
+
+.badge{ display:inline-block; font-size:7.6pt; font-weight:500; text-transform:uppercase; letter-spacing:.06em; padding:1.2mm 3mm; border-radius:999px; }
+.badge.ok{background:var(--success-l);color:var(--success-d);}
+.badge.no{background:var(--error-l);color:var(--error-d);}
+.badge.wait{background:var(--warning-l);color:var(--warning-d);}
+.badge.neutral{background:var(--n200);color:var(--n700);}
+
+/* ---------- swatches ---------- */
+.ramp{ display:flex; border-radius:8px; overflow:hidden; border:1px solid var(--n200); margin-bottom:2mm; }
+.ramp div{ flex:1; height:16mm; display:flex; align-items:flex-end; justify-content:center; padding-bottom:1.5mm;
+  font-family:'JetBrains Mono',monospace; font-size:6.4pt; }
+.sw{ border:1px solid var(--n200); border-radius:10px; overflow:hidden; }
+.sw .chip{ height:22mm; }
+.sw .lbl{ padding:2.5mm 3mm; font-size:8.2pt; line-height:1.35; }
+.sw .lbl b{display:block;font-size:9pt;}
+.sw .lbl span{font-family:'JetBrains Mono',monospace;font-size:7.6pt;color:var(--n500);}
+
+/* ---------- misc ---------- */
+.toc{ list-style:none; padding:0; margin:0; }
+.toc li{ display:flex; align-items:baseline; gap:3mm; padding:2.4mm 0; border-bottom:1px solid var(--n200); font-size:10pt; }
+.toc .n{ font-family:'JetBrains Mono',monospace; color:var(--a500); font-weight:500; width:9mm; flex:none; }
+.toc .t{ flex:1; font-weight:500; color:var(--n800); }
+.toc .d{ font-size:8.6pt; color:var(--n500); font-weight:400; }
+
+.sizebar{display:flex;align-items:flex-end;gap:5mm;padding:5mm;background:var(--n50);border-radius:10px;border:1px solid var(--n200);}
+.sizebar .box{background:var(--p600);border-radius:3px;flex:none;}
+.sizebar .cap{font-size:7.4pt;color:var(--n500);text-align:center;font-family:'JetBrains Mono',monospace;}
+
+.footnote{ font-size:8.4pt; color:var(--n500); line-height:1.45; }
+.dense{ font-size:9.6pt; }
+.dense .lede{ font-size:10.2pt; margin-bottom:4.5mm; }
+.dense .sec-head{ margin-bottom:5mm; }
+.dense h3{ margin:5mm 0 2mm; }
+.dense p{ margin-bottom:6pt; }
+.dense li{ margin-bottom:1.3mm; }
+.dense td, .dense th{ padding:2.1mm 2.6mm; }
+.dense td{ line-height:1.38; }
+.dense .card{ padding:4.5mm; margin-bottom:3mm; }
+.dense .callout{ padding:3.6mm 4.2mm; margin-bottom:3mm; }
+.dense table{ margin-bottom:3mm; font-size:9.1pt; }
+.dense ul, .dense ol{ margin-bottom:3mm; }
+.kicker{ font-size:7.8pt; letter-spacing:.13em; text-transform:uppercase; font-weight:600; color:var(--a600); margin-bottom:2mm; }
+</style>
+</head>
+<body>
+
+<!-- ============ COUVERTURE ============ -->
+<div class="page cover">
+  <div class="cover-top">
+    <div class="eyebrow">Cahier des charges · Identité visuelle</div>
+    <h1>Créer le logo de Jawdi</h1>
+    <div class="sub">Plateforme de gestion d'élevage pour l'Afrique de l'Ouest.<br>Document de commande à destination du designer graphique.</div>
+  </div>
+  <div class="cover-mid">
+    <div class="cover-rule"></div>
+    <div class="cover-quote">
+      <b>Jawdi</b> — mot pulaar (fulfulde) qui désigne <b>la richesse</b> : celle qui,
+      dans la culture peule, prend la forme du bétail. Le troupeau comme patrimoine,
+      comme statut, comme identité.
+    </div>
+  </div>
+  <div class="cover-bottom">
+    <div>
+      <span class="meta-k">Commanditaire</span>
+      <span class="meta-v">Jawdi Platform</span>
+    </div>
+    <div>
+      <span class="meta-k">Marché</span>
+      <span class="meta-v">Sénégal · Afrique de l'Ouest</span>
+    </div>
+    <div>
+      <span class="meta-k">Objet</span>
+      <span class="meta-v">Symbole + mot-symbole</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SOMMAIRE ============ -->
+<div class="page">
+  <div class="sec-head"><div class="sec-num">—</div><h2>Sommaire</h2></div>
+  <p class="lede">Ce document contient tout ce qui est nécessaire pour concevoir le logo sans avoir
+  à poser de question préalable. Les sections 5, 9 et 12 sont les contraintes dures : elles
+  déterminent l'acceptation ou le refus d'une proposition.</p>
+  <ul class="toc">
+    <li><span class="n">01</span><span class="t">Le projet en une page <span class="d">— ce que fait Jawdi, pour qui</span></span></li>
+    <li><span class="n">02</span><span class="t">Le nom <span class="d">— origine pulaar, sens, prononciation</span></span></li>
+    <li><span class="n">03</span><span class="t">À qui on parle <span class="d">— l'éleveur sénégalais, ses conditions réelles</span></span></li>
+    <li><span class="n">04</span><span class="t">Positionnement &amp; personnalité <span class="d">— trois adjectifs, des repères</span></span></li>
+    <li><span class="n">05</span><span class="t">La contrainte n°1 : aucune espèce animale <span class="d">— non négociable</span></span></li>
+    <li><span class="n">06</span><span class="t">La demande <span class="d">— ce qu'on commande exactement</span></span></li>
+    <li><span class="n">07</span><span class="t">Territoires de recherche <span class="d">— quatre pistes cadrées</span></span></li>
+    <li><span class="n">08</span><span class="t">Couleurs &amp; typographie <span class="d">— l'existant à respecter</span></span></li>
+    <li><span class="n">09</span><span class="t">Contraintes techniques <span class="d">— non négociable</span></span></li>
+    <li><span class="n">10</span><span class="t">Où le logo va vivre <span class="d">— les six emplacements réels</span></span></li>
+    <li><span class="n">11</span><span class="t">Anti-brief <span class="d">— ce qui sera refusé</span></span></li>
+    <li><span class="n">12</span><span class="t">Les cinq tests d'acceptation <span class="d">— non négociable</span></span></li>
+    <li><span class="n">13</span><span class="t">Livrables attendus <span class="d">— fichiers, formats, nommage</span></span></li>
+    <li><span class="n">14</span><span class="t">Mini-charte à fournir <span class="d">— règles d'usage</span></span></li>
+    <li><span class="n">15</span><span class="t">Déroulé du travail <span class="d">— étapes et allers-retours</span></span></li>
+    <li><span class="n">16</span><span class="t">Droits &amp; propriété <span class="d">— cession, sources, originalité</span></span></li>
+    <li><span class="n">A</span><span class="t">Annexe — l'existant et pourquoi on le remplace</span></li>
+    <li><span class="n">B</span><span class="t">Annexe — nuancier de référence</span></li>
+  </ul>
+</div>
+
+<!-- ============ 01 ============ -->
+<div class="page">
+  <div class="sec-head"><div class="sec-num">01</div><h2>Le projet en une page</h2></div>
+  <p class="lede">Jawdi est un logiciel de gestion d'élevage. Un éleveur y suit ses animaux au jour
+  le jour — les effectifs, la nourriture, la santé, les ventes — et voit, à la fin d'un cycle,
+  combien il a réellement gagné. C'est un outil de travail, pas une application grand public.</p>
+
+  <div class="grid2">
+    <div class="card tint nobreak">
+      <h4>Ce que l'éleveur y fait</h4>
+      <ul class="tight">
+        <li>Il enregistre une bande d'animaux et la suit chaque jour</li>
+        <li>Il note la mortalité, l'aliment distribué, les pesées</li>
+        <li>Il gère son calendrier de vaccins et de traitements</li>
+        <li>Il tient son stock d'aliment et ses achats</li>
+        <li>Il enregistre ses clients, ses ventes, ses factures, ses paiements</li>
+        <li>Il voit sa marge réelle en fin de cycle</li>
+      </ul>
+    </div>
+    <div class="card tint nobreak">
+      <h4>Comment il y accède</h4>
+      <ul class="tight">
+        <li>Une <strong>application mobile</strong> qui fonctionne sans réseau et se synchronise plus tard</li>
+        <li>Un <strong>site web</strong> pour la gestion depuis un ordinateur</li>
+        <li>Un <strong>site vitrine</strong> public</li>
+        <li>Des <strong>documents imprimés</strong> : factures et bons de livraison, souvent photocopiés</li>
+        <li>Un <strong>assistant vocal</strong> qui permet de saisir en parlant</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Le produit grandit par vagues</h3>
+  <p>Le logiciel ne couvre aujourd'hui qu'une famille d'animaux, mais il a été construit dès le
+  départ pour en accueillir d'autres. Cette trajectoire est actée et engage directement la
+  conception du logo.</p>
+
+  <table>
+    <thead><tr><th style="width:22%">Étape</th><th style="width:48%">Animaux couverts</th><th>Statut</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Aujourd'hui</strong></td><td>Volaille — poulets de chair et poules pondeuses</td><td><span class="badge ok">En production</span></td></tr>
+      <tr><td><strong>Ensuite</strong></td><td>Moutons et chèvres — dont l'engraissement pour la Tabaski</td><td><span class="badge wait">Planifié</span></td></tr>
+      <tr><td><strong>Puis</strong></td><td>Bovins — lait et viande</td><td><span class="badge wait">Planifié</span></td></tr>
+      <tr><td><strong>Plus tard</strong></td><td>Porcins et spécialités</td><td><span class="badge neutral">Envisagé</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout key">
+    <span class="tag">Ce qu'il faut retenir</span>
+    Jawdi n'est pas « une app pour les poulets ». C'est une plateforme d'élevage qui a commencé
+    par la volaille. Le logo sera encore là quand il y aura des moutons et des vaches dedans.
+  </div>
+</div>
+
+<!-- ============ 02 ============ -->
+<div class="page dense">
+  <div class="sec-head"><div class="sec-num">02</div><h2>Le nom</h2></div>
+
+  <div class="card green nobreak" style="padding:6mm;">
+    <div class="kicker" style="color:var(--p700)">Origine</div>
+    <div style="font-size:22pt;font-weight:700;color:var(--p800);line-height:1;margin-bottom:2.5mm;letter-spacing:-.01em;">Jawdi</div>
+    <p style="font-size:11pt;line-height:1.55;margin-bottom:0;">
+      Mot <strong>pulaar / fulfulde</strong>, la langue du peuple peul (Fulɓe), présent du Sénégal
+      au Tchad. Il signifie <strong>la richesse</strong> — les biens de valeur, le patrimoine.
+    </p>
+  </div>
+
+  <h3>Le sens profond : la richesse, c'est le troupeau</h3>
+  <p>Chez les Peuls, <em>jawdi</em> ne désigne pas une richesse abstraite. Le mot renvoie
+  traditionnellement au <strong>bétail</strong> — qui constitue le cœur de leur économie, la mesure
+  de leur statut social et un élément de leur identité culturelle. Posséder du bétail, c'est être
+  riche ; compter son troupeau, c'est compter sa fortune.</p>
+  <p>Dans certains contextes, le mot porte aussi une résonance liée à la générosité et à la
+  noblesse de caractère, mais en Afrique de l'Ouest il reste fermement ancré dans
+  <strong>l'héritage pastoral peul</strong>.</p>
+
+  <div class="callout">
+    <span class="tag">Pourquoi ce nom est le meilleur point de départ pour le logo</span>
+    Le nom dit exactement ce que fait le logiciel : <strong>il transforme un troupeau en un
+    patrimoine qu'on peut voir et compter</strong>. Et il ne nomme aucune espèce — il parle de
+    valeur, pas de poulet ni de vache. C'est la clé qui permet au logo de rester juste quand
+    le produit s'étendra (voir §5).
+  </div>
+
+  <h3>Écriture et prononciation</h3>
+  <table>
+    <tbody>
+      <tr><td style="width:34%"><strong>Orthographe</strong></td><td><span class="mono">Jawdi</span> — un seul mot, majuscule initiale, jamais « JAWDI » en capitales dans le logo, jamais « JawDi » ni « Jawdi Pro »</td></tr>
+      <tr><td><strong>Prononciation</strong></td><td>« djaw-di » — le <em>J</em> se prononce comme dans « <em>dj</em>embé »</td></tr>
+      <tr><td><strong>Longueur</strong></td><td>5 lettres. Court, sans accent, sans caractère spécial — un atout pour un mot-symbole compact</td></tr>
+      <tr><td><strong>Lettres à surveiller</strong></td><td>Le <strong>J</strong> et le <strong>w</strong> portent la personnalité du mot. Le <strong>j</strong> descend sous la ligne de base, le <strong>d</strong> monte au-dessus : le mot a un rythme vertical naturel, à exploiter plutôt qu'à aplatir</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Ce que le nom ne doit pas devenir</h3>
+  <ul class="cross">
+    <li>Une lecture anglophone (« jaw » = mâchoire en anglais). Une traduction automatique fait
+        parfois cette erreur : aucune allusion à une mâchoire, une dent ou une bouche.</li>
+    <li>Une graphie « ethnique » stéréotypée — police à faux empattements « africains »,
+        lettres en forme de totem, typographie imitant le bois gravé.</li>
+    <li>Un mot déformé pour faire moderne : pas de lettre remplacée par un pictogramme
+        (le « a » transformé en tête d'animal, le « o » en œuf — il n'y a pas de « o » de toute façon).</li>
+  </ul>
+</div>
+
+<!-- ============ 03 ============ -->
+<div class="page">
+  <div class="sec-head"><div class="sec-num">03</div><h2>À qui on parle</h2></div>
+  <p class="lede">Le logo ne sera pas jugé sur un écran Retina dans un café. Il sera vu par un
+  éleveur, dehors, en plein soleil, sur un téléphone bon marché, et sur une facture photocopiée.
+  Ces conditions ne sont pas des cas limites : ce sont les conditions normales.</p>
+
+  <h3>L'utilisateur principal</h3>
+  <table>
+    <tbody>
+      <tr><td style="width:30%"><strong>Qui</strong></td><td>Éleveur ou éleveuse, propriétaire d'une petite ou moyenne exploitation. Souvent aussi un ouvrier agricole qui fait les saisies sur le terrain.</td></tr>
+      <tr><td><strong>Où</strong></td><td>Sénégal en premier, puis Afrique de l'Ouest. Zones péri-urbaines et rurales.</td></tr>
+      <tr><td><strong>Langues</strong></td><td>Français à l'écrit. À l'oral : wolof, pulaar, parfois français. L'interface est en français aujourd'hui, le wolof et l'anglais viendront ensuite.</td></tr>
+      <tr><td><strong>Lecture</strong></td><td>Littératie variable, parfois faible. Beaucoup sont plus à l'aise à l'oral qu'à l'écrit — d'où l'assistant vocal du produit.</td></tr>
+      <tr><td><strong>Matériel</strong></td><td>Téléphone Android d'entrée de gamme, écran moyen, parfois rayé. Réseau intermittent.</td></tr>
+      <tr><td><strong>Habitudes</strong></td><td>WhatsApp est le canal central : c'est là que circulent les infos, les captures d'écran, les recommandations entre éleveurs.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Trois conséquences directes pour le dessin</h3>
+  <div class="grid3">
+    <div class="card nobreak">
+      <div class="kicker">Conséquence 1</div>
+      <h4 style="margin-top:0">Reconnaissable sans savoir lire</h4>
+      <p style="margin:0;font-size:9.4pt;">Le symbole doit pouvoir identifier l'app à lui seul, pour quelqu'un qui ne déchiffre pas le mot. La forme fait le travail avant le texte.</p>
+    </div>
+    <div class="card nobreak">
+      <div class="kicker">Conséquence 2</div>
+      <h4 style="margin-top:0">Solide en plein soleil</h4>
+      <p style="margin:0;font-size:9.4pt;">Contrastes francs, traits épais. Les dégradés subtils et les traits fins disparaissent sur un écran mat en extérieur.</p>
+    </div>
+    <div class="card nobreak">
+      <div class="kicker">Conséquence 3</div>
+      <h4 style="margin-top:0">Survit à la photocopie</h4>
+      <p style="margin:0;font-size:9.4pt;">Les factures sont imprimées puis photocopiées, souvent mal. Le logo doit rester lisible en noir et blanc pur, sans nuance de gris.</p>
+    </div>
+  </div>
+
+  <div class="callout key">
+    <span class="tag">Le contexte de découverte</span>
+    Un éleveur découvre rarement Jawdi sur un site web. Il le découvre parce qu'un autre éleveur
+    lui envoie <strong>une capture d'écran sur WhatsApp</strong>. Le logo doit être identifiable
+    dans une vignette compressée, à côté d'une trentaine d'autres conversations.
+  </div>
+</div>
+
+<!-- ============ 04 ============ -->
+<div class="page">
+  <div class="sec-head"><div class="sec-num">04</div><h2>Positionnement &amp; personnalité</h2></div>
+  <p class="lede">Jawdi est un <strong>outil sérieux d'éleveur professionnel africain</strong>,
+  pas un jouet tech. Un éleveur y confie ses chiffres, ses coûts, sa marge. Le logo doit inspirer
+  la même confiance qu'un carnet de comptes bien tenu.</p>
+
+  <h3>Les trois adjectifs pivots</h3>
+  <div class="grid3">
+    <div class="card green nobreak">
+      <h4 style="margin-top:0;color:var(--p800)">Chaleureux</h4>
+      <p style="margin:0;font-size:9.4pt;">Des couleurs qui ont de la terre et du soleil dedans. Jamais le bleu froid du logiciel de bureau.</p>
+    </div>
+    <div class="card green nobreak">
+      <h4 style="margin-top:0;color:var(--p800)">Sérieux</h4>
+      <p style="margin:0;font-size:9.4pt;">Une géométrie maîtrisée, des chiffres lisibles, aucune fantaisie décorative. C'est l'argent de quelqu'un.</p>
+    </div>
+    <div class="card green nobreak">
+      <h4 style="margin-top:0;color:var(--p800)">Local</h4>
+      <p style="margin:0;font-size:9.4pt;">Enraciné en Afrique de l'Ouest, mais par la structure et le rythme — jamais par le cliché touristique.</p>
+    </div>
+  </div>
+
+  <h3>Repères visuels</h3>
+  <table>
+    <thead><tr><th style="width:50%">Bon repère</th><th>Mauvais repère</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Linear</strong> — clarté, géométrie sobre</td><td><strong>Salesforce</strong> — lourd, daté, mascotte</td></tr>
+      <tr><td><strong>Stripe</strong> — professionnel mais chaleureux</td><td><strong>Material Design vanille</strong> — générique, sans auteur</td></tr>
+      <tr><td><strong>Vercel</strong> — typographie soignée, marque réduite à l'essentiel</td><td><strong>Bootstrap</strong> — impersonnel</td></tr>
+      <tr><td><strong>Notion</strong> — densité d'information maîtrisée</td><td>Les <strong>templates SaaS génériques</strong> — le dégradé violet et la forme abstraite interchangeable</td></tr>
+    </tbody>
+  </table>
+
+  <h3>La voix de la marque</h3>
+  <p>Les textes du produit sont <strong>directs et concrets</strong> : on écrit « Saisir la
+  mortalité », pas « Veuillez enregistrer un événement de mortalité ». On écrit « 12 lots actifs ·
+  3 460 poussins », pas « Vue d'ensemble globale ». Le logo doit avoir la même économie de moyens :
+  <strong>rien de superflu, rien de décoratif</strong>.</p>
+
+  <div class="callout">
+    <span class="tag">Le test de la personnalité</span>
+    Si le logo pouvait parler, il dirait un chiffre exact — pas une promesse. Il ressemble
+    davantage à un <strong>instrument de mesure</strong> qu'à une <strong>illustration</strong>.
+  </div>
+</div>
+
+<!-- ============ 05 ============ -->
+<div class="page">
+  <div class="sec-head"><div class="sec-num">05</div><h2>La contrainte n°1 : aucune espèce animale</h2></div>
+
+  <div class="callout stop">
+    <span class="tag">Non négociable</span>
+    <strong>Le symbole ne doit représenter aucun animal identifiable</strong> — ni poulet, ni poule,
+    ni coq, ni œuf, ni mouton, ni vache, ni silhouette, ni tête, ni patte, ni plume, ni corne.
+    Une proposition contenant un animal reconnaissable sera écartée sans discussion.
+  </div>
+
+  <h3>Pourquoi</h3>
+  <p><strong>Raison 1 — le produit change d'animaux.</strong> Jawdi couvre aujourd'hui la volaille,
+  et couvrira ensuite les moutons, les chèvres, puis les bovins. Un poulet dans le logo serait
+  périmé dès la deuxième étape, et il faudrait tout refaire — en perdant au passage la
+  reconnaissance déjà acquise.</p>
+
+  <p><strong>Raison 2 — le nom lui-même ne nomme pas d'espèce.</strong> <em>Jawdi</em> veut dire
+  « la richesse », pas « le troupeau de X ». Le mot est déjà, dans sa langue d'origine,
+  l'abstraction qui englobe toutes les bêtes. Le symbole doit faire la même chose que le mot.</p>
+
+  <p><strong>Raison 3 — c'est le cliché du secteur.</strong> Tous les logiciels agricoles africains
+  et européens ont un poulet, un épi ou une vache. Un symbole animal rendrait Jawdi
+  immédiatement interchangeable avec ses concurrents, au moment précis où l'on cherche
+  à être reconnaissable dans une liste WhatsApp.</p>
+
+  <h3>Ce qu'on peut évoquer à la place</h3>
+  <p>L'interdiction porte sur la <strong>représentation figurative d'un animal</strong>, pas sur
+  l'univers de l'élevage. Restent parfaitement ouverts :</p>
+  <div class="grid2">
+    <div class="card tint nobreak">
+      <ul class="tight" style="margin-bottom:0">
+        <li>Le <strong>comptage</strong>, l'accumulation, la mesure</li>
+        <li>La <strong>croissance</strong> dans le temps, la courbe, la progression</li>
+        <li>Le <strong>troupeau comme ensemble</strong> — la multitude, pas l'individu</li>
+        <li>L'<strong>enclos</strong>, l'abri, le périmètre, le lieu gardé</li>
+      </ul>
+    </div>
+    <div class="card tint nobreak">
+      <ul class="tight" style="margin-bottom:0">
+        <li>La <strong>marque de propriété</strong>, le sceau, le signe qui atteste</li>
+        <li>Le <strong>grain</strong>, la mesure de volume, la part</li>
+        <li>Le <strong>motif tissé</strong> ouest-africain, réduit à sa géométrie</li>
+        <li>La <strong>lettre J</strong> elle-même, travaillée comme une forme</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout key">
+    <span class="tag">Formulation courte</span>
+    Ne dessine pas ce que l'éleveur possède. Dessine <strong>ce que ça représente pour lui</strong>.
+  </div>
+</div>
+
+<!-- ============ 06 ============ -->
+<div class="page dense">
+  <div class="sec-head"><div class="sec-num">06</div><h2>La demande</h2></div>
+  <p class="lede">On commande un <strong>symbole</strong> et un <strong>mot-symbole</strong> qui
+  fonctionnent ensemble et séparément. Pas un logo unique et indivisible : un petit système à
+  deux pièces.</p>
+
+  <h3>Les deux pièces</h3>
+  <table>
+    <thead><tr><th style="width:26%">Pièce</th><th style="width:36%">Ce que c'est</th><th>Où elle sert seule</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Le symbole</strong><br><span class="footnote">« la marque »</span></td>
+        <td>Une forme abstraite, tenant dans un carré, lisible très petit et sans texte.</td>
+        <td>Icône de l'application mobile, favicon du navigateur, avatar WhatsApp / réseaux, sidebar réduite du logiciel, tampon sur un document.</td>
+      </tr>
+      <tr>
+        <td><strong>Le mot-symbole</strong><br><span class="footnote">« Jawdi » dessiné</span></td>
+        <td>Le mot « Jawdi » traité typographiquement — lettres retouchées ou dessinées, pas une police posée telle quelle.</td>
+        <td>En-tête du site vitrine, pied de facture, signature de document.</td>
+      </tr>
+      <tr>
+        <td><strong>Le verrouillage</strong><br><span class="footnote">les deux ensemble</span></td>
+        <td>La combinaison officielle des deux, dans un rapport de taille et un espacement fixés.</td>
+        <td>Usage par défaut : en-tête du logiciel, écran de connexion, écran de démarrage mobile.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Ce qu'on attend précisément</h3>
+  <ul class="check">
+    <li><strong>Trois pistes distinctes</strong> au premier tour — vraiment distinctes, pas trois
+        variations d'une même idée. Chacune adossée à un territoire différent du §7.</li>
+    <li>Chaque piste présentée <strong>en noir sur blanc d'abord</strong>, à taille réelle
+        d'utilisation, avant toute mise en couleur ou mise en scène.</li>
+    <li>Une <strong>phrase par piste</strong> expliquant l'idée. Si l'idée a besoin d'un paragraphe,
+        le logo ne la porte pas.</li>
+    <li>Pour chaque piste, un aperçu du symbole seul <strong>à 16 pixels</strong> et
+        <strong>à 32 pixels</strong>.</li>
+    <li>Une seule piste sera retenue, puis affinée.</li>
+  </ul>
+
+  <h3>Le descripteur « Platform »</h3>
+  <p>Le logo actuel porte la mention « Platform » sous le nom. Le nouveau logo est
+  <strong>« Jawdi » seul</strong>. Si un descripteur s'avère utile sur certains supports, il doit
+  être <strong>composé à part</strong>, en Outfit, et le verrouillage doit rester complet et correct
+  sans lui — jamais un bloc indissociable.</p>
+
+  <h3>Le verrouillage horizontal et vertical</h3>
+  <p>Deux dispositions sont nécessaires : <strong>horizontale</strong> (symbole à gauche, mot à
+  droite) pour les en-têtes, et <strong>verticale</strong> (symbole au-dessus, mot en dessous)
+  pour l'écran de démarrage mobile et les formats carrés. Les deux doivent être fournies.</p>
+
+  <div class="callout">
+    <span class="tag">Le symbole doit exister sans le mot</span>
+    Le premier écran d'un téléphone Android n'affiche que l'icône. Si le symbole a besoin des
+    lettres pour être compris, il ne remplit pas sa fonction principale.
+  </div>
+</div>
+
+<!-- ============ 07 ============ -->
+<div class="page dense">
+  <div class="sec-head"><div class="sec-num">07</div><h2>Territoires de recherche</h2></div>
+  <p class="lede">Quatre directions ouvertes, présentées comme des points de départ et non comme
+  des consignes. Le designer peut en proposer une cinquième si elle respecte les §5 et §11 — mais
+  les trois pistes du premier tour devraient couvrir des territoires différents.</p>
+
+  <div class="card nobreak">
+    <div class="kicker">Territoire A</div>
+    <h4 style="margin-top:0">Compter le patrimoine</h4>
+    <p style="margin-bottom:2mm;">L'idée centrale du nom : la richesse qu'on dénombre. Une forme
+    construite sur la <strong>répétition d'une unité</strong> — des éléments identiques groupés,
+    empilés, alignés, qui à distance forment une seule masse reconnaissable.</p>
+    <p style="margin-bottom:0;font-size:9.4pt;color:var(--n600);"><strong>Pourquoi c'est juste :</strong>
+    un troupeau est fait d'individus identiques qui, ensemble, font une fortune. C'est aussi
+    exactement ce que fait le logiciel : additionner des saisies quotidiennes jusqu'à un résultat.
+    <strong>Piège à éviter :</strong> tomber dans la grille de points générique des logos tech.</p>
+  </div>
+
+  <div class="card nobreak">
+    <div class="kicker">Territoire B</div>
+    <h4 style="margin-top:0">La marque de propriété</h4>
+    <p style="margin-bottom:2mm;">Le signe qu'on appose pour dire « ceci est à moi » — la marque au
+    fer, le sceau, l'estampille, le monogramme. Une forme <strong>graphique, franche, à trait
+    épais</strong>, qui aurait pu être frappée plutôt que dessinée.</p>
+    <p style="margin-bottom:0;font-size:9.4pt;color:var(--n600);"><strong>Pourquoi c'est juste :</strong>
+    c'est le geste pastoral universel, sans représenter aucun animal. Et le logiciel fait la même
+    chose : il enregistre officiellement ce qui appartient à l'éleveur.
+    <strong>Piège à éviter :</strong> la ressemblance involontaire avec un logo de ranch américain
+    ou de whisky.</p>
+  </div>
+
+  <div class="card nobreak">
+    <div class="kicker">Territoire C</div>
+    <h4 style="margin-top:0">La géométrie tissée</h4>
+    <p style="margin-bottom:2mm;">Les motifs textiles ouest-africains — pagne tissé, indigo,
+    trame — réduits à leur <strong>structure géométrique pure</strong>. Un module qui se répète,
+    un entrelacs, un rythme.</p>
+    <p style="margin-bottom:0;font-size:9.4pt;color:var(--n600);"><strong>Pourquoi c'est juste :</strong>
+    c'est l'ancrage local par la structure et non par l'anecdote. Ces motifs sont déjà abstraits :
+    ils n'ont pas besoin d'être stylisés, seulement simplifiés.
+    <strong>Piège à éviter :</strong> le kente décoratif multicolore et le « masque africain ».
+    On prend la grammaire, pas le folklore.</p>
+  </div>
+
+  <div class="card nobreak">
+    <div class="kicker">Territoire D</div>
+    <h4 style="margin-top:0">La lettre J construite</h4>
+    <p style="margin-bottom:2mm;">Le symbole naît de la lettre <strong>J</strong> elle-même —
+    sa descendante, son crochet — travaillée comme une forme géométrique autonome : contenant,
+    crochet, courbe fermée, enclos.</p>
+    <p style="margin-bottom:0;font-size:9.4pt;color:var(--n600);"><strong>Pourquoi c'est juste :</strong>
+    c'est la voie la plus économique vers une icône unique et mémorisable, et elle lie
+    naturellement le symbole au mot-symbole. Le J est une lettre rare, donc distinctive.
+    <strong>Piège à éviter :</strong> le monogramme dans un cercle, vu mille fois. Le J doit
+    devenir une forme, pas rester une lettre posée dans une pastille.</p>
+  </div>
+</div>
+
+<!-- ============ 08 ============ -->
+<div class="page">
+  <div class="sec-head"><div class="sec-num">08</div><h2>Couleurs &amp; typographie</h2></div>
+  <p class="lede">Le produit possède déjà une charte appliquée sur le site, le logiciel et
+  l'application mobile. Le logo s'y insère : il n'introduit pas de nouvelle couleur de marque.</p>
+
+  <h3>Les deux couleurs de marque</h3>
+  <div class="grid2">
+    <div class="sw nobreak">
+      <div class="chip" style="background:#3D8B3D"></div>
+      <div class="lbl"><b>Vert Jawdi</b><span>#3D8B3D · variante foncée #2E6B2E</span>
+        Couleur principale. Un vert profond, jamais un vert pomme. C'est la couleur du mot-symbole aujourd'hui.</div>
+    </div>
+    <div class="sw nobreak">
+      <div class="chip" style="background:#F8961E"></div>
+      <div class="lbl"><b>Orange Sénégal</b><span>#F8961E · variante foncée #E67E0A</span>
+        Couleur d'accent. Terre et drapeau. Réservée à ce qui appelle une action.</div>
+    </div>
+  </div>
+
+  <p style="margin-top:4mm">La gamme complète est en annexe B. Le noir de référence est
+  <span class="mono">#122B12</span> (« terre ») — un noir légèrement vert, jamais un noir pur —
+  et le fond clair est <span class="mono">#FAFAF9</span>, un blanc chaud.</p>
+
+  <div class="callout">
+    <span class="tag">Latitude laissée au designer</span>
+    Le logo doit fonctionner <strong>en une seule couleur</strong>. S'il gagne à utiliser les deux,
+    c'est possible — mais la version monochrome reste la référence, et c'est elle qui sera jugée
+    en premier. Toute proposition qui a besoin de trois couleurs ou plus sera écartée.
+  </div>
+
+  <h3>Typographie du produit</h3>
+  <table>
+    <tbody>
+      <tr><td style="width:26%"><strong>Interface</strong></td><td><span class="mono">Outfit</span> — une sans-serif géométrique, disponible gratuitement (Google Fonts). Utilisée partout dans le produit, du site aux écrans mobiles.</td></tr>
+      <tr><td><strong>Chiffres et données</strong></td><td><span class="mono">JetBrains Mono</span> — pour les tableaux et les identifiants.</td></tr>
+    </tbody>
+  </table>
+  <p>Le mot-symbole <strong>n'a pas l'obligation</strong> d'être en Outfit : c'est un dessin, pas
+  du texte courant. Mais il doit <strong>cohabiter</strong> avec Outfit sans dissonance, puisqu'il
+  apparaîtra toujours au-dessus d'une interface composée dans cette police. Une parenté
+  géométrique est donc souhaitable.</p>
+
+  <div class="callout stop">
+    <span class="tag">Interdit</span>
+    Livrer un mot-symbole qui n'est qu'une police posée sans retouche, quelle qu'elle soit. Le
+    dessin des lettres doit avoir été travaillé — chasse, liaisons, terminaisons, équilibre du
+    <strong>J</strong> et du <strong>w</strong>.
+  </div>
+</div>
+
+<!-- ============ 09 ============ -->
+<div class="page dense">
+  <div class="sec-head"><div class="sec-num">09</div><h2>Contraintes techniques</h2></div>
+  <div class="callout stop">
+    <span class="tag">Non négociable</span>
+    Ces contraintes viennent de problèmes réellement rencontrés avec le logo actuel (annexe A).
+    Chacune sera vérifiée à la réception.
+  </div>
+
+  <h3>Vectoriel natif, sans exception</h3>
+  <p>Le logo doit être <strong>dessiné en vectoriel</strong> — des tracés, pas une image.
+  Un fichier SVG contenant une image matricielle encapsulée sera refusé : c'est précisément
+  le défaut du logo actuel, dont le fichier « vectoriel » pèse 1,2 Mo pour une image floue dès
+  qu'on l'agrandit.</p>
+  <p>Le SVG livré doit contenir des éléments <span class="mono">&lt;path&gt;</span>, les textes
+  convertis en tracés, et <strong>peser moins de 20 Ko</strong>.</p>
+
+  <h3>Les échelles à tenir</h3>
+  <div class="sizebar nobreak" style="margin-bottom:4mm;">
+    <div><div class="box" style="width:16px;height:16px;"></div><div class="cap" style="margin-top:2mm">16 px</div></div>
+    <div><div class="box" style="width:32px;height:32px;"></div><div class="cap" style="margin-top:2mm">32 px</div></div>
+    <div><div class="box" style="width:48px;height:48px;"></div><div class="cap" style="margin-top:2mm">48 px</div></div>
+    <div><div class="box" style="width:96px;height:96px;"></div><div class="cap" style="margin-top:2mm">96 px</div></div>
+    <div style="flex:1;padding-left:4mm;font-size:9pt;color:var(--n600);line-height:1.45;">
+      Le symbole doit rester identifiable à <strong>16 px</strong> — la taille d'un favicon
+      dans un onglet. C'est la contrainte la plus sévère du document : elle limite le nombre de
+      détails à trois ou quatre au maximum.
+    </div>
+  </div>
+
+  <table>
+    <thead><tr><th style="width:34%">Contrainte</th><th>Détail</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Lisibilité minimale</strong></td><td>Symbole seul identifiable à 16 px. Verrouillage complet lisible à 24 px de hauteur.</td></tr>
+      <tr><td><strong>Icône d'application</strong></td><td>Doit tenir dans un carré, <strong>sans aucun texte</strong>, avec une marge de sécurité : les systèmes recadrent l'icône en cercle ou en carré arrondi selon le téléphone. Prévoir que 12 % du bord peut être rogné.</td></tr>
+      <tr><td><strong>Monochrome</strong></td><td>Une version en noir plein et une en blanc plein, sans nuance de gris, sans transparence partielle. C'est la version qui part à l'impression et à la photocopie.</td></tr>
+      <tr><td><strong>Fond clair et fond sombre</strong></td><td>Le produit aura un mode sombre. Le logo doit avoir une déclinaison qui tient sur fond <span class="mono">#122B12</span> — sans simple inversion automatique si celle-ci dégrade le résultat.</td></tr>
+      <tr><td><strong>Contraste</strong></td><td>Si le logo est posé sur l'orange <span class="mono">#F8961E</span>, le texte doit être en <span class="mono">#122B12</span> et non en blanc : blanc sur cet orange donne un contraste de 2,24:1, très en dessous du minimum accessible. Cette règle est déjà appliquée dans tout le produit.</td></tr>
+      <tr><td><strong>Trait minimal</strong></td><td>Aucun trait ne doit devenir invisible en dessous de 24 px. Éviter les épaisseurs inférieures à 1/16 de la largeur du symbole.</td></tr>
+      <tr><td><strong>Sans effet</strong></td><td>Ni ombre portée, ni dégradé multiple, ni transparence, ni lueur, ni biseau, ni contour d'effet. Ces effets ne survivent ni à la petite taille ni à l'impression.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============ 10 ============ -->
+<div class="page">
+  <div class="sec-head"><div class="sec-num">10</div><h2>Où le logo va vivre</h2></div>
+  <p class="lede">Six emplacements réels, mesurés dans le produit existant. Une proposition doit
+  être présentée dans au moins trois d'entre eux — dont l'icône mobile et la facture imprimée.</p>
+
+  <table>
+    <thead><tr><th style="width:28%">Emplacement</th><th style="width:22%">Format réel</th><th>Ce que ça impose</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>En-tête du logiciel</strong><br><span class="footnote">web, en haut à gauche</span></td>
+        <td class="mono">barre de 60 px de haut ; logo ≈ 28-32 px</td>
+        <td>Verrouillage horizontal. Doit cohabiter avec un sélecteur de ferme et un avatar sur la même ligne.</td>
+      </tr>
+      <tr>
+        <td><strong>Sidebar réduite</strong><br><span class="footnote">menu latéral replié</span></td>
+        <td class="mono">colonne de 64 px</td>
+        <td>Symbole seul, sans le mot.</td>
+      </tr>
+      <tr>
+        <td><strong>Icône de l'application</strong><br><span class="footnote">écran d'accueil Android</span></td>
+        <td class="mono">1024 × 1024 px, affiché ≈ 48 px</td>
+        <td>Symbole seul, centré, marge de sécurité, fond plein. La pièce la plus visible du système.</td>
+      </tr>
+      <tr>
+        <td><strong>Favicon</strong><br><span class="footnote">onglet de navigateur</span></td>
+        <td class="mono">16, 32, 180, 192, 512 px</td>
+        <td>Le test des 16 px. Aujourd'hui illisible : c'est un des motifs de la refonte.</td>
+      </tr>
+      <tr>
+        <td><strong>Facture imprimée</strong><br><span class="footnote">papier A5, souvent photocopié</span></td>
+        <td class="mono">≈ 30 mm de large, noir et blanc</td>
+        <td>Monochrome pur. Doit rester net après une photocopie de mauvaise qualité.</td>
+      </tr>
+      <tr>
+        <td><strong>Vignette WhatsApp</strong><br><span class="footnote">avatar rond, capture partagée</span></td>
+        <td class="mono">rond, ≈ 48 px, image compressée</td>
+        <td>Le symbole doit supporter un recadrage circulaire et une forte compression.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Écran de connexion</h3>
+  <p>Le logiciel a un écran de connexion avec un panneau de marque à fond vert profond
+  (<span class="mono">#122B12</span> à <span class="mono">#2E6B2E</span>), sur lequel le logo
+  apparaît en grand. C'est le seul endroit où le logo est affiché à grande taille : la version
+  sur fond sombre y sera jugée.</p>
+
+  <div class="callout key">
+    <span class="tag">Règle de présentation</span>
+    Chaque piste doit être montrée <strong>dans le produit</strong>, pas seulement sur une planche
+    blanche. Un symbole peut être magnifique isolé et illisible dans une barre de 60 px.
+  </div>
+</div>
+
+<!-- ============ 11 ============ -->
+<div class="page">
+  <div class="sec-head"><div class="sec-num">11</div><h2>Anti-brief</h2></div>
+  <p class="lede">Ce qui sera refusé, listé explicitement pour éviter de perdre un tour d'échange.
+  Cette liste n'est pas une provocation : chacun de ces éléments a été vu dans le secteur.</p>
+
+  <h3>Motifs et images</h3>
+  <ul class="cross">
+    <li><strong>Tout animal</strong> — poulet, coq, poule, poussin, œuf, mouton, chèvre, vache, ainsi que leurs parties (plume, patte, corne, tête).</li>
+    <li><strong>Le baobab</strong>, l'acacia, la savane, le soleil couchant, la silhouette du continent africain, la carte du Sénégal.</li>
+    <li><strong>Le masque</strong>, la statuette, le tam-tam, le motif « tribal » générique.</li>
+    <li><strong>La feuille verte</strong>, la pousse, la main qui tient une plante — le vocabulaire visuel « écolo » ne dit rien de l'élevage.</li>
+    <li><strong>L'épi de blé</strong>, le tracteur, la grange rouge, la ferme européenne.</li>
+    <li><strong>Le pictogramme technologique</strong> plaqué : le nuage, le circuit imprimé, le réseau de nœuds, le cerveau qui symbolise l'intelligence artificielle.</li>
+  </ul>
+
+  <h3>Traitements graphiques</h3>
+  <ul class="cross">
+    <li><strong>Le dégradé multicolore</strong> et le dégradé violet-bleu des templates SaaS.</li>
+    <li><strong>Le vert tilleul ou vert pomme</strong> — l'effet « écologique bon marché ».</li>
+    <li><strong>L'orange fluo saturé</strong> (type <span class="mono">#FF6B00</span>) : l'orange de la marque est terreux, pas électrique.</li>
+    <li><strong>Le bleu des réseaux sociaux</strong> (<span class="mono">#1877F2</span>) — trop identifié.</li>
+    <li><strong>Le gris cendre froid</strong> : les neutres de la marque sont chauds.</li>
+    <li><strong>L'effet 3D</strong>, le reflet, l'ombre portée, le badge brillant, le ruban.</li>
+    <li><strong>Le monogramme dans un cercle</strong> ou dans une pastille arrondie sans idée propre.</li>
+  </ul>
+
+  <h3>Méthode</h3>
+  <ul class="cross">
+    <li>Une <strong>icône achetée</strong> dans une banque d'images et recolorée.</li>
+    <li>Une proposition <strong>générée telle quelle</strong> et livrée sans être redessinée en vectoriel propre.</li>
+    <li>Un logo dont l'explication <strong>tient en un paragraphe</strong> plutôt qu'en une phrase.</li>
+    <li>Trois pistes qui sont en réalité <strong>trois variantes d'une même</strong> idée.</li>
+  </ul>
+</div>
+
+<!-- ============ 12 ============ -->
+<div class="page">
+  <div class="sec-head"><div class="sec-num">12</div><h2>Les cinq tests d'acceptation</h2></div>
+  <p class="lede">Une proposition est acceptée si elle passe les cinq. Ce sont des tests binaires,
+  faits ensemble, sans débat de goût. Ils remplacent le « j'aime / j'aime pas ».</p>
+
+  <div class="card nobreak">
+    <div class="kicker">Test 1</div>
+    <h4 style="margin-top:0">Le test des 16 pixels</h4>
+    <p style="margin-bottom:0">On affiche le symbole seul à 16 px dans un onglet de navigateur.
+    <strong>Reste-t-il une forme identifiable</strong>, ou devient-il une tache ? Si les détails
+    fusionnent, la proposition est refusée. C'est le test le plus éliminatoire.</p>
+  </div>
+
+  <div class="card nobreak">
+    <div class="kicker">Test 2</div>
+    <h4 style="margin-top:0">Le test de la photocopie</h4>
+    <p style="margin-bottom:0">On imprime la facture A5 en noir et blanc, puis on la photocopie
+    deux fois. <strong>Le logo tient-il encore</strong> ? Les traits fins ont-ils disparu, les
+    contre-formes se sont-elles bouchées ?</p>
+  </div>
+
+  <div class="card nobreak">
+    <div class="kicker">Test 3</div>
+    <h4 style="margin-top:0">Le test des trois secondes</h4>
+    <p style="margin-bottom:0">On montre le symbole trois secondes à quelqu'un qui ne connaît pas
+    le projet, on cache, puis on lui demande de le redessiner de mémoire. <strong>S'il ne peut
+    pas approcher la forme</strong>, elle est trop complexe pour être retenue par un utilisateur
+    qui ne la voit que dans une liste WhatsApp.</p>
+  </div>
+
+  <div class="card nobreak">
+    <div class="kicker">Test 4</div>
+    <h4 style="margin-top:0">Le test WhatsApp</h4>
+    <p style="margin-bottom:0">On envoie l'icône sur WhatsApp, elle est compressée et recadrée en
+    rond. <strong>Reste-t-elle distincte</strong> des autres vignettes de la liste ? Et
+    reconnaît-on que c'est la même marque que sur le site ?</p>
+  </div>
+
+  <div class="card nobreak">
+    <div class="kicker">Test 5</div>
+    <h4 style="margin-top:0">Le test du mouton</h4>
+    <p style="margin-bottom:0">On se projette dans la version du logiciel qui gère des moutons et
+    des bovins. <strong>Le logo est-il toujours juste</strong>, ou est-il devenu un mensonge ?
+    Si la réponse hésite, c'est qu'un animal ou une allusion à la volaille s'est glissée
+    dans le dessin.</p>
+  </div>
+</div>
+
+<!-- ============ 13 ============ -->
+<div class="page dense">
+  <div class="sec-head"><div class="sec-num">13</div><h2>Livrables attendus</h2></div>
+  <p class="lede">Les noms de fichiers ci-dessous sont ceux que le code du produit attend. Les
+  respecter exactement évite un travail de renommage et d'erreurs d'intégration.</p>
+
+  <h3>Fichiers vectoriels</h3>
+  <table>
+    <thead><tr><th style="width:38%">Fichier</th><th>Contenu</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">logo.svg</td><td>Verrouillage horizontal, couleurs de marque, pour fond clair</td></tr>
+      <tr><td class="mono">logo-dark.svg</td><td>Le même, décliné pour fond sombre</td></tr>
+      <tr><td class="mono">logo-vertical.svg</td><td>Verrouillage vertical (symbole au-dessus du mot)</td></tr>
+      <tr><td class="mono">mark.svg</td><td>Symbole seul, en couleur</td></tr>
+      <tr><td class="mono">mark-mono-black.svg</td><td>Symbole seul, noir plein</td></tr>
+      <tr><td class="mono">mark-mono-white.svg</td><td>Symbole seul, blanc plein</td></tr>
+      <tr><td class="mono">wordmark.svg</td><td>Mot-symbole seul</td></tr>
+      <tr><td class="mono">favicon.svg</td><td>Symbole optimisé pour très petite taille (détails simplifiés si nécessaire)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Fichiers matriciels</h3>
+  <table>
+    <thead><tr><th style="width:38%">Fichier</th><th>Usage</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">icon-1024.png</td><td>Icône de l'application, fond plein, sans transparence</td></tr>
+      <tr><td class="mono">icon-adaptive-foreground.png</td><td>Icône Android adaptative — symbole seul, transparent, dans la zone de sécurité</td></tr>
+      <tr><td class="mono">favicon-16.png · favicon-32.png</td><td>Onglets de navigateur</td></tr>
+      <tr><td class="mono">apple-touch-icon-180.png</td><td>Écran d'accueil iOS</td></tr>
+      <tr><td class="mono">icon-192.png · icon-512.png</td><td>Application web installable</td></tr>
+      <tr><td class="mono">favicon.ico</td><td>Format historique, contenant 16 et 32 px</td></tr>
+      <tr><td class="mono">logo@2x.png · logo-dark@2x.png</td><td>Repli matriciel pour les contextes sans SVG (courriel, réseaux)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Sources et document</h3>
+  <ul class="check">
+    <li>Le <strong>fichier source éditable</strong> — Figma, Illustrator ou Affinity — avec les
+        calques nommés et les tracés non aplatis.</li>
+    <li>Si des lettres ont été dessinées à partir d'une police, le <strong>nom de la police</strong>
+        et sa licence.</li>
+    <li>La <strong>mini-charte</strong> décrite au §14, en PDF.</li>
+  </ul>
+
+  <div class="callout">
+    <span class="tag">Organisation</span>
+    Tout est livré dans un seul dossier <span class="mono">jawdi-brand/</span> contenant
+    <span class="mono">svg/</span>, <span class="mono">png/</span>, <span class="mono">source/</span>
+    et <span class="mono">charte.pdf</span>.
+  </div>
+</div>
+
+<!-- ============ 14 ============ -->
+<div class="page">
+  <div class="sec-head"><div class="sec-num">14</div><h2>Mini-charte à fournir</h2></div>
+  <p class="lede">Deux à quatre pages suffisent. Son but est unique : permettre à quelqu'un qui
+  n'a pas participé au projet d'utiliser le logo correctement, sans poser de question.</p>
+
+  <table>
+    <thead><tr><th style="width:32%">Point à documenter</th><th>Ce qu'on attend</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Zone de protection</strong></td><td>L'espace vide minimal autour du logo, exprimé en fonction d'un élément du logo lui-même (par exemple : la hauteur du symbole) pour rester valable à toute taille.</td></tr>
+      <tr><td><strong>Tailles minimales</strong></td><td>En pixels pour l'écran, en millimètres pour l'impression, pour le verrouillage et pour le symbole seul.</td></tr>
+      <tr><td><strong>Le verrouillage</strong></td><td>Le rapport de taille exact entre symbole et mot, et l'espacement entre les deux. Ce rapport ne se réajuste pas à vue.</td></tr>
+      <tr><td><strong>Fonds autorisés</strong></td><td>Sur blanc, sur le vert profond, sur l'orange, sur une photo. Avec, pour chaque cas, la déclinaison à utiliser.</td></tr>
+      <tr><td><strong>Usages interdits</strong></td><td>La page classique des contre-exemples : logo étiré, recoloré, avec ombre, incliné, dans une pastille non prévue, sur un fond trop chargé.</td></tr>
+      <tr><td><strong>Couleurs</strong></td><td>Les valeurs hexadécimales utilisées, plus leur équivalent pour l'impression.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout key">
+    <span class="tag">Format</span>
+    La charte est un outil de travail, pas une brochure. Des pages claires, des exemples à taille
+    réelle, aucune mise en scène décorative.
+  </div>
+</div>
+
+<!-- ============ 15 ============ -->
+<div class="page">
+  <div class="sec-head"><div class="sec-num">15</div><h2>Déroulé du travail</h2></div>
+  <p class="lede">Quatre étapes, chacune validée avant de passer à la suivante. Le but est
+  d'éviter le scénario classique : trois pistes finalisées en couleur dont aucune ne passe le
+  test des 16 px.</p>
+
+  <table>
+    <thead><tr><th style="width:10%">Étape</th><th style="width:32%">Livrable</th><th>Validation</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>1</strong></td>
+        <td><strong>Trois pistes, en noir et blanc</strong><br><span class="footnote">une phrase d'intention par piste, aperçus à 16 et 32 px</span></td>
+        <td>On choisit ensemble une piste. Les cinq tests du §12 sont appliqués dès ce stade.</td>
+      </tr>
+      <tr>
+        <td><strong>2</strong></td>
+        <td><strong>Affinage de la piste retenue</strong><br><span class="footnote">ajustements de forme, mise en couleur, dessin du mot-symbole</span></td>
+        <td>Un ou deux allers-retours. Les modifications portent sur le dessin, pas sur le concept.</td>
+      </tr>
+      <tr>
+        <td><strong>3</strong></td>
+        <td><strong>Mises en situation</strong><br><span class="footnote">au minimum : icône mobile, en-tête du logiciel, facture imprimée</span></td>
+        <td>Vérification finale des cinq tests, en conditions réelles.</td>
+      </tr>
+      <tr>
+        <td><strong>4</strong></td>
+        <td><strong>Livraison complète</strong><br><span class="footnote">tous les fichiers du §13 et la charte du §14</span></td>
+        <td>Contrôle technique : poids des SVG, absence d'image encapsulée, textes vectorisés, rendu à 16 px.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Ce qu'on fournit au designer</h3>
+  <ul class="tight">
+    <li>Ce document.</li>
+    <li>Un accès aux écrans réels du produit (site, logiciel, application) pour les mises en situation.</li>
+    <li>Les fichiers du logo actuel, à titre d'inventaire de l'existant.</li>
+    <li>Une réponse rapide à toute question de cadrage — mieux vaut une question qu'une piste perdue.</li>
+  </ul>
+
+  <div class="callout">
+    <span class="tag">Une seule personne décide</span>
+    La validation est faite par une seule personne, sur la base des cinq tests du §12. Il n'y aura
+    pas de comité ni d'avis contradictoires en cours de route.
+  </div>
+</div>
+
+<!-- ============ 16 ============ -->
+<div class="page">
+  <div class="sec-head"><div class="sec-num">16</div><h2>Droits &amp; propriété</h2></div>
+
+  <h3>Cession</h3>
+  <p>La livraison emporte <strong>cession complète et définitive des droits patrimoniaux</strong>
+  sur le logo retenu, pour tous supports, tous territoires et sans limitation de durée. Cela
+  couvre notamment le droit de reproduire, adapter, décliner et déposer la marque, ainsi que son
+  usage commercial dans le produit, sur ses supports imprimés et dans sa communication.</p>
+
+  <h3>Sources</h3>
+  <p>Les <strong>fichiers sources éditables</strong> font partie de la livraison, pas d'une option.
+  Sans eux, la marque ne peut pas évoluer — c'est exactement la situation dont ce projet cherche
+  à sortir.</p>
+
+  <h3>Originalité</h3>
+  <p>Le designer garantit que le logo est une <strong>création originale</strong> : ni repris
+  d'une banque d'icônes, ni dérivé d'un logo existant, ni généré et livré sans être redessiné.
+  Si une police commerciale a servi de base au mot-symbole, sa licence doit être compatible avec
+  l'usage prévu et son nom communiqué.</p>
+
+  <h3>Dépôt de marque</h3>
+  <p>Le logo pourra être <strong>déposé</strong> comme marque. Le designer s'engage à ne pas le
+  réutiliser, ni en tout ni en partie, pour un autre client — y compris dans un portfolio présenté
+  comme une proposition disponible.</p>
+
+  <h3>Portfolio</h3>
+  <p>Le designer peut librement présenter le travail réalisé dans son portfolio et sur ses
+  réseaux, en le créditant comme une réalisation pour Jawdi, une fois le logo publié.</p>
+
+  <div class="callout key">
+    <span class="tag">Pistes non retenues</span>
+    Les deux pistes écartées à l'étape 1 restent la propriété du designer, qui peut en disposer
+    librement. Seule la piste retenue et développée fait l'objet de la cession.
+  </div>
+</div>
+
+<!-- ============ ANNEXE A ============ -->
+<div class="page dense">
+  <div class="sec-head"><div class="sec-num">A</div><h2>Annexe — l'existant et pourquoi on le remplace</h2></div>
+  <p class="lede">Un logo existe déjà et il est en ligne. Il n'est pas mauvais en soi : il est
+  techniquement inexploitable. Cette annexe documente précisément ce qui ne va pas, pour que les
+  mêmes problèmes ne se reproduisent pas.</p>
+
+  <div class="card nobreak" style="text-align:center;padding:6mm;background:var(--n50);">
+    <img src="data:image/png;base64,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" alt="Logo Jawdi actuel" style="max-width:82mm;height:auto;">
+    <div class="footnote" style="margin-top:4mm;">Le logo actuel, tel qu'il est utilisé aujourd'hui sur le site vitrine, dans le logiciel et dans l'application mobile.</div>
+  </div>
+
+  <h3>Les cinq problèmes constatés</h3>
+  <table>
+    <thead><tr><th style="width:30%">Problème</th><th>Constat</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Le « vectoriel » n'en est pas</strong></td>
+        <td>Le fichier <span class="mono">logo.svg</span> pèse <strong>1,24 Mo</strong> : il contient une image matricielle encodée à l'intérieur du SVG. Seul le mot « Jawdi » est réellement en tracés. Le symbole devient flou dès qu'on l'agrandit et ne peut pas être recoloré.</td>
+      </tr>
+      <tr>
+        <td><strong>Le favicon est illisible</strong></td>
+        <td><span class="mono">favicon.svg</span> est une image de 1004 × 1024 px encapsulée, réduite à 16 px dans l'onglet. Le résultat est une tache indistincte.</td>
+      </tr>
+      <tr>
+        <td><strong>Il manque des déclinaisons</strong></td>
+        <td>Il n'existe que deux fichiers, <span class="mono">logo.png</span> et <span class="mono">logo-dark.png</span>. Pas de symbole seul, pas de version monochrome pour l'impression, pas de version verticale, pas d'icône d'application correcte.</td>
+      </tr>
+      <tr>
+        <td><strong>Aucune règle d'usage</strong></td>
+        <td>Pas de zone de protection, pas de taille minimale, pas de rapport fixé entre les éléments. Chaque intégration réinvente sa mise en page.</td>
+      </tr>
+      <tr>
+        <td><strong>Le registre est à côté</strong></td>
+        <td>Le symbole est une <strong>scène illustrée</strong> — une grange rouge, des animaux, un soleil, le tout dans une pastille ronde. C'est le vocabulaire de la ferme européenne de livre d'images, et c'est précisément ce que le §11 écarte. La scène impose en outre une quantité de détails qui ne survit pas à 16 px.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Ce qu'on garde de l'existant</h3>
+  <ul class="check">
+    <li>Le <strong>nom</strong> : « Jawdi » ne change pas.</li>
+    <li>Le <strong>vert</strong> <span class="mono">#2E6B2E</span> / <span class="mono">#3D8B3D</span>, déjà installé dans tout le produit.</li>
+    <li>L'<strong>orange</strong> <span class="mono">#F8961E</span> comme couleur d'accent.</li>
+  </ul>
+  <p>Le reste est entièrement ouvert. Le nouveau logo n'a pas à ressembler à l'ancien, et il n'y
+  a pas de reconnaissance acquise à préserver : le produit est jeune, c'est le bon moment pour
+  poser une identité durable.</p>
+</div>
+
+<!-- ============ ANNEXE B ============ -->
+<div class="page">
+  <div class="sec-head"><div class="sec-num">B</div><h2>Annexe — nuancier de référence</h2></div>
+  <p class="lede">La palette complète du produit. Le logo puise dans les deux premières gammes ;
+  les autres sont fournies pour comprendre l'environnement dans lequel il vivra.</p>
+
+  <h4>Vert — couleur principale</h4>
+  <div class="ramp">
+    <div style="background:#F0F7F0;color:#245524">50</div>
+    <div style="background:#DCEEDC;color:#245524">100</div>
+    <div style="background:#B8DDB8;color:#245524">200</div>
+    <div style="background:#8BC68B;color:#122B12">300</div>
+    <div style="background:#5EAA5E;color:#fff">400</div>
+    <div style="background:#3D8B3D;color:#fff">500</div>
+    <div style="background:#2E6B2E;color:#fff">600</div>
+    <div style="background:#245524;color:#fff">700</div>
+    <div style="background:#1B3F1B;color:#fff">800</div>
+    <div style="background:#122B12;color:#fff">900</div>
+  </div>
+  <p class="footnote" style="margin-bottom:6mm;">Principal <span class="mono">#3D8B3D</span> ·
+  mot-symbole actuel <span class="mono">#2E6B2E</span> · noir de marque « terre » <span class="mono">#122B12</span></p>
+
+  <h4>Orange — couleur d'accent</h4>
+  <div class="ramp">
+    <div style="background:#FFF4E6;color:#9C4F03">50</div>
+    <div style="background:#FFE1B8;color:#9C4F03">100</div>
+    <div style="background:#FFCB85;color:#7A3D02">200</div>
+    <div style="background:#FFB04D;color:#122B12">300</div>
+    <div style="background:#F8961E;color:#122B12">400</div>
+    <div style="background:#E67E0A;color:#fff">500</div>
+    <div style="background:#C46505;color:#fff">600</div>
+    <div style="background:#9C4F03;color:#fff">700</div>
+    <div style="background:#7A3D02;color:#fff">800</div>
+    <div style="background:#5A2C01;color:#fff">900</div>
+  </div>
+  <p class="footnote" style="margin-bottom:6mm;">Accent principal <span class="mono">#F8961E</span>.
+  Sur ce fond, le texte est toujours en <span class="mono">#122B12</span> — jamais en blanc.</p>
+
+  <h4>Neutres — fonds, textes, bordures</h4>
+  <div class="ramp">
+    <div style="background:#FFFFFF;color:#57534E">0</div>
+    <div style="background:#FAFAF9;color:#57534E">50</div>
+    <div style="background:#F5F5F4;color:#57534E">100</div>
+    <div style="background:#E7E5E4;color:#44403C">200</div>
+    <div style="background:#D6D3D1;color:#44403C">300</div>
+    <div style="background:#A8A29E;color:#1C1917">400</div>
+    <div style="background:#78716C;color:#fff">500</div>
+    <div style="background:#57534E;color:#fff">600</div>
+    <div style="background:#44403C;color:#fff">700</div>
+    <div style="background:#292524;color:#fff">800</div>
+    <div style="background:#1C1917;color:#fff">900</div>
+  </div>
+  <p class="footnote" style="margin-bottom:6mm;">Des neutres <strong>chauds</strong> (famille
+  « stone »), jamais des gris froids bleutés — cohérent avec l'identité chaleureuse.</p>
+
+  <h4>Couleurs de statut</h4>
+  <div class="grid2" style="gap:3mm;">
+    <div class="sw nobreak"><div class="chip" style="height:12mm;background:#16A34A"></div><div class="lbl"><b>Succès</b><span>#16A34A</span></div></div>
+    <div class="sw nobreak"><div class="chip" style="height:12mm;background:#D97706"></div><div class="lbl"><b>Avertissement</b><span>#D97706</span></div></div>
+    <div class="sw nobreak"><div class="chip" style="height:12mm;background:#DC2626"></div><div class="lbl"><b>Erreur</b><span>#DC2626</span></div></div>
+    <div class="sw nobreak"><div class="chip" style="height:12mm;background:#2563EB"></div><div class="lbl"><b>Information</b><span>#2563EB</span></div></div>
+  </div>
+
+  <div class="callout key" style="margin-top:6mm;">
+    <span class="tag">Rappel</span>
+    Le logo doit fonctionner <strong>en une seule couleur</strong>. Cette palette décrit son
+    environnement — elle n'est pas une invitation à l'utiliser en entier.
+  </div>
+</div>
+
+</body>
+</html>

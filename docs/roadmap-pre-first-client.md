@@ -438,14 +438,22 @@ CREATE TABLE blocked_ips (
 **Permission requise** : `security:read` + `security:manage` (nouvelles).
 
 ### Acceptance criteria
-- [ ] Bucket4j configuré avec limits ci-dessus
-- [ ] Endpoints rate-limités retournent 429 Too Many Requests
-- [ ] Table security_events + blocked_ips + migration V51
-- [ ] ThreatDetectionService fonctionne (auto-block bruteforce)
-- [ ] IpBlockingFilter en premier dans chain (avant auth)
-- [ ] Écran /console/securite fonctionnel
-- [ ] Test IT : simuler 10 failed logins → IP bloquée + event CRITICAL
-- [ ] Notification staff sur CRITICAL
+- [x] Bucket4j configuré — **en mémoire**, pas sur Postgres : une seule instance backend, donc un
+      compteur distribué serait une écriture DB par requête pour se coordonner avec personne (ADR-013)
+- [x] Endpoints limités : **429** avec `Retry-After` et corps RFC 7807
+- [x] Tables `security_events` + `blocked_ips` + migration **V51**
+- [x] `ThreatDetectionService` : 5 échecs / 15 min → blocage automatique 1 h, **toujours borné**
+- [x] `IpBlockingFilter` avant l'authentification (et après le tracing, pour qu'un refus reste
+      retrouvable) ; `/actuator` exempté
+- [x] Écran `/console/securite` : compteurs, adresses refusées avec déblocage, journal
+- [x] Test IT `ThreatDetectionApiIT` — dont le cas qui compte : l'événement **survit au rollback**
+      de la connexion qui l'a produit (`REQUIRES_NEW`)
+- [x] Notification staff sur CRITICAL, sur le rail d'astreinte de P3
+
+**Limitation par adresse et non par utilisateur** : le filtre tourne avant l'authentification. La
+protection par compte est assurée un cran plus bas par le détecteur de force brute, qui voit l'email.
+
+**Décisions d'architecture** : `docs/decisions/013-threat-detection-rate-limiting.md`.
 
 ### Estimation : **3-4 jours**
 

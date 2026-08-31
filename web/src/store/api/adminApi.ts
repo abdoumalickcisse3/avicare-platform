@@ -30,7 +30,9 @@ import type {
   FlagHistoryEntry,
   IntegrityCheckRow,
   IntegritySummary,
+  BlockedIpRow,
   RecomputeResult,
+  SecurityOverview,
   SweepReport,
   Paged,
   RequestTraceDetail,
@@ -96,7 +98,7 @@ const baseQueryWithReauth: BaseQueryFn<
 export const adminApi = createApi({
   reducerPath: "adminApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["AdminMe", "AdminFarm", "AdminUser", "AdminPartner", "AdminStaff", "AdminCatalog", "AdminCompliance", "AdminMetrics", "AdminAnnouncement", "AdminAssistant", "AdminTrace", "AdminFlag", "AdminIntegrity"],
+  tagTypes: ["AdminMe", "AdminFarm", "AdminUser", "AdminPartner", "AdminStaff", "AdminCatalog", "AdminCompliance", "AdminMetrics", "AdminAnnouncement", "AdminAssistant", "AdminTrace", "AdminFlag", "AdminIntegrity", "AdminSecurity"],
   endpoints: (build) => ({
     /** Staff sign-in reuses the ordinary auth endpoint; the console then checks /admin/me. */
     adminLogin: build.mutation<AuthTokens, { email: string; password: string }>({
@@ -329,6 +331,20 @@ export const adminApi = createApi({
       query: ({ id }) => `/api/v1/admin/traces/${id}`,
       transformResponse: (r: Envelope<RequestTraceDetail>) => r.data,
       providesTags: ["AdminTrace"],
+    }),
+    getSecurityOverview: build.query<SecurityOverview, { days?: number } | void>({
+      query: (args) => `/api/v1/admin/security?days=${args?.days ?? 7}`,
+      transformResponse: (r: Envelope<SecurityOverview>) => r.data,
+      providesTags: ["AdminSecurity"],
+    }),
+    blockIp: build.mutation<BlockedIpRow, { ipAddress: string; reason: string; minutes: number }>({
+      query: (body) => ({ url: "/api/v1/admin/security/block", method: "POST", body }),
+      transformResponse: (r: Envelope<BlockedIpRow>) => r.data,
+      invalidatesTags: ["AdminSecurity"],
+    }),
+    unblockIp: build.mutation<void, { ipAddress: string; reason: string; minutes: number }>({
+      query: (body) => ({ url: "/api/v1/admin/security/unblock", method: "POST", body }),
+      invalidatesTags: ["AdminSecurity"],
     }),
     getIntegritySummary: build.query<IntegritySummary, { page?: number; size?: number } | void>({
       query: (args) =>
@@ -598,4 +614,7 @@ export const {
   useApplyRecomputeMutation,
   useAcceptDriftMutation,
   useMarkManuallyFixedMutation,
+  useGetSecurityOverviewQuery,
+  useBlockIpMutation,
+  useUnblockIpMutation,
 } = adminApi;
