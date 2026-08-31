@@ -37,6 +37,19 @@ besoin. Sinon ce tableau ne vaut rien.
 **Un compte staff dédié, jamais celui de Malick.** Deux raisons : le journal d'audit doit dire qui a
 agi, et un accès prêté ne se reprend pas proprement.
 
+### Comment le créer (5 minutes, tout se fait depuis la console)
+
+1. **La personne s'inscrit elle-même** sur `app.jawdi.app` avec son email. La plateforme ne crée
+   jamais de compte à la place de quelqu'un — c'est elle qui choisit son mot de passe.
+2. Malick ouvre **Console → Personnel**, cherche cet email dans « Email, nom ou téléphone ».
+3. **Accorder** le statut staff.
+4. Cocher **exactement** les permissions du tableau ci-dessous. **Ne pas** cocher
+   « Super-administrateur » : ce serait donner tous les droits, y compris ceux volontairement exclus.
+5. **La personne se connecte une fois** sur `admin.jawdi.app`, tranquillement, pendant que tout va
+   bien. Un accès jamais essayé est un accès dont on découvre qu'il ne marche pas le mauvais jour.
+
+Chacune de ces étapes est écrite dans le journal d'audit — y compris l'octroi des permissions.
+
 Permissions suggérées pour ce compte — assez pour tenir, pas assez pour aggraver :
 
 | Permission | Pourquoi |

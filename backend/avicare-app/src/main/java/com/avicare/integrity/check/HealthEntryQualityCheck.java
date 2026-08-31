@@ -50,7 +50,7 @@ public class HealthEntryQualityCheck extends SqlIntegrityCheck {
           FROM vaccinations v
           JOIN production_units pu ON pu.id = v.production_unit_id
          WHERE v.updated_at < :cutoff
-           AND (COALESCE(v.dose_per_subject, 0) = 0 OR COALESCE(v.subjects_count, 0) = 0)
+           AND (v.dose_per_subject = 0 OR COALESCE(v.subjects_count, 0) = 0)
         UNION ALL
         SELECT 'treatment', t.id, pu.farm_id,
                '> 0',
@@ -59,7 +59,7 @@ public class HealthEntryQualityCheck extends SqlIntegrityCheck {
           FROM treatments_executed t
           JOIN production_units pu ON pu.id = t.production_unit_id
          WHERE t.updated_at < :cutoff
-           AND (COALESCE(t.dose_amount, 0) = 0 OR COALESCE(t.subjects_count, 0) = 0)
+           AND (t.dose_amount = 0 OR COALESCE(t.subjects_count, 0) = 0)
         """;
   }
 }
