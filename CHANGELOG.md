@@ -7,8 +7,78 @@ et ce projet adhère au [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0
 
 ## [Unreleased]
 
-_Rien en attente. Prochain : Sprint B5 (commercial — clients, commandes, ventes,
-livraisons, factures, paiements)._
+### Roadmap pré-premier-client (2026-08-31 → 09-01)
+
+Six chantiers destinés à combler les manques opérationnels avant de signer un
+premier client payant : savoir ce qui s'est passé, pouvoir arrêter ce qui
+dérape, détecter les données fausses, résister aux attaques, savoir quoi faire
+quand le téléphone sonne, et ne pas être le point unique de défaillance.
+Cf. `docs/roadmap-pre-first-client.md`.
+
+#### Added
+
+- **Traçabilité des requêtes** (`V48`) — table `request_traces` (rétention 30 j,
+  écriture hors du chemin de requête), écran `/console/traces` : un éleveur lit
+  la référence courte de son message d'erreur, le support retrouve la requête,
+  son payload (secrets masqués) et sa stack trace. `X-Request-Id` accepté en
+  alias d'entrée. Colonne `admin_audit_log.request_id` pour joindre trace et
+  action. Cf. ADR-010.
+- **Kill switch plateforme** (`V49`) — table `feature_flags`, écran
+  `/console/urgence`, permission `flags:manage`. Coupe un module pour **toutes**
+  les fermes, y compris pour le personnel ; raison obligatoire, expiration
+  automatique à 30 min, réponse **503** distincte du 403 d'abonnement.
+  Cf. ADR-011.
+- **Contrôles d'intégrité et moteur de recalcul** (`V50`) — contexte racine
+  `com.avicare.integrity` lisant en SQL natif, 9 invariants, balayage nocturne,
+  écran `/console/integrite`. Le recalcul ne touche que des **agrégats dérivés**
+  (stock, encours client, payé facture), jamais une valeur saisie par un humain ;
+  simulation avant écriture, raison obligatoire, audit. Cf. ADR-012.
+- **Détection de menaces et limitation de débit** (`V51`) — tables
+  `security_events` et `blocked_ips`, écran `/console/securite`, permissions
+  `security:read` / `security:manage`. Cinq échecs de connexion en 15 min
+  bloquent une adresse une heure ; plafonds par route (429 + `Retry-After`).
+  Compteurs en mémoire (une seule instance), blocages en base. Cf. ADR-013.
+- **Plan de continuité** — alerte le contact de secours si le propriétaire n'a
+  pas été vu depuis 72 h. **Sans nouvelle table** : le battement de cœur est
+  dérivé de `admin_audit_log`. `docs/continuity/` + runbook écrit pour le
+  remplaçant.
+- **Runbooks opérationnels** — `docs/runbooks/`, rangés par symptôme rapporté.
+  Cinq scénarios critiques, **chacun exécuté** avant d'être écrit.
+- **Console partenaires** — création d'une organisation, rattachement d'une
+  ferme, génération d'un code d'invitation, création du premier compte,
+  suspension. Le backend savait tout faire depuis le chantier B2B2C ; la console
+  ne savait que défaire.
+- ADR-010 à ADR-014.
+
+#### Fixed
+
+- Le contrôle d'intégrité sanitaire signalait comme défaut une **dose de
+  vaccination absente**, alors que l'écran mobile ne la demande pas
+  délibérément — un vaccin dilué dans l'eau de boisson n'a pas de dose par
+  sujet. 16 fausses anomalies sur les données réelles, ramenées à 0.
+- `ADMIN_ONCALL_PHONE` n'était **pas transmis au conteneur** : les alertes des
+  trois mécanismes ci-dessus étaient journalisées et n'atteignaient personne.
+  Variable transmise, absence signalée au démarrage et sur l'écran Pilotage.
+- Le dialogue de révélation de la console annonçait « affiché une seule fois »
+  sur tout, y compris un code d'invitation qui reste listé en dessous.
+
+#### Changed
+
+- `VaccinationCreateRequest.subjectsCount` passe de `@PositiveOrZero` à
+  `@Positive` : vacciner zéro sujet ne veut rien dire, et le contrôle
+  d'intégrité le signalait déjà.
+- `admin_audit_log.actor_user_id` devient **nullable** — un acteur nul désigne
+  la plateforme elle-même (balayages automatiques), dont les entrées d'audit
+  échouaient silencieusement auparavant.
+- Rattacher une ferme depuis la console demande désormais de déclarer que
+  l'éleveur l'a demandé : le geste confirme le rattachement immédiatement et
+  ouvre trois partages par défaut.
+
+> Note : le changelog n'a pas été tenu entre 0.9.0 (2026-06-15) et cette entrée.
+> Les sprints B5 → C1, le mobile, l'assistant, le portail partenaire, la landing
+> et la mise en production sont tracés par les PRs, les ADRs et les migrations
+> Flyway. Reconstituer ce journal après coup produirait un récit approximatif ;
+> les sources primaires, elles, sont exactes.
 
 > Note : le changelog n'a pas été tenu entre 0.1.0 et 0.7.0 ; l'historique
 > intermédiaire (A2 → B1) est tracé par les tags Git et les PRs. Reprise du
