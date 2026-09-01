@@ -6,8 +6,11 @@
 > **Statut : incomplet.** Tant qu'il l'est, il n'y a pas de plan de continuité — il y a un document
 > qui en a l'air.
 >
-> Le contact de secours est identifié (un **confrère développeur**) et son numéro est configuré côté
-> plateforme. Restent : son nom ici, son compte staff, le coffre, la contrepartie et l'exercice.
+> Le contact de secours est identifié (un **confrère développeur**) et **il a accepté** (2026-09-01).
+> Restent : son nom ici, son compte staff, le coffre, la contrepartie, et l'exercice.
+>
+> Il a dit oui — il n'a pas encore vu ce qu'il recevra. Avant tout le reste : lui montrer le message
+> type de l'alerte de silence, pour qu'il ne le découvre pas un soir sans contexte.
 
 ## Quand ce document s'applique
 
@@ -21,7 +24,7 @@ Trois jours de silence sans incident ne demandent rien d'autre qu'un message ami
 |---|---|---|---|
 | Propriétaire | Abdou Malick Cisse | `<À REMPLIR>` | `<À REMPLIR>` |
 | Proche à joindre en premier | `<À REMPLIR>` | `<À REMPLIR>` | — |
-| **Contact de secours plateforme** | `<À REMPLIR : nom>` — confrère développeur | +221 70 420 81 30 | `<À REMPLIR>` |
+| **Contact de secours plateforme** | `<À REMPLIR : nom>` — confrère développeur | +221 77 184 27 87 | `<À REMPLIR>` |
 
 Le contact de secours doit avoir **lu ce document et s'être connecté une fois** avant d'en avoir
 besoin. Sinon ce tableau ne vaut rien.

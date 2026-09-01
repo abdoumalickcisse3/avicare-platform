@@ -37,10 +37,11 @@ dispositif de secours silencieusement inactif est pire que pas de dispositif.
 
 ## Ce qui reste à faire, et que le code ne peut pas faire
 
-1. ~~**Choisir la personne.**~~ ✅ Fait : un confrère développeur, numéro configuré. Son nom reste à
-   inscrire dans [emergency-access.md](emergency-access.md).
-2. **Lui parler avant.** Une personne qui découvre son rôle le jour de l'incident n'est pas un plan
-   de continuité, c'est une surprise.
+1. ~~**Choisir la personne.**~~ ✅ Fait : un confrère développeur, qui a **accepté** le 2026-09-01.
+   Son nom reste à inscrire dans [emergency-access.md](emergency-access.md).
+2. **Lui montrer ce qu'il recevra.** Il a accepté le principe ; il n'a pas encore lu le message que
+   la plateforme lui enverra. Une alerte de silence découverte un soir, sans contexte, inquiète pour
+   rien — ou pire, se fait ignorer.
 3. **Lui donner les accès** (voir [emergency-access.md](emergency-access.md)) et **vérifier qu'elle
    se connecte une fois**, tranquillement, avant d'en avoir besoin.
 4. **Convenir d'une contrepartie**, même informelle. Un service qu'on n'a pas nommé est un service

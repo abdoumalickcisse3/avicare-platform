@@ -701,7 +701,8 @@ Updated à chaque login admin par Malick.
 
 **À la main de Malick — le code ne peut pas le faire**
 - [x] Identifier la personne de confiance — un confrère développeur, numéro configuré (2026-08-31)
-- [ ] La briefer et compléter les `<À REMPLIR>` de `emergency-access.md`
+- [~] La briefer — **elle a accepté le 2026-09-01**, mais n'a pas encore vu le message que la
+      plateforme lui enverra. Les `<À REMPLIR>` de `emergency-access.md` restent à compléter (nom)
 - [ ] Lui créer un compte staff dédié (jamais celui de Malick) et **vérifier qu'elle se connecte une
       fois**, tranquillement
 - [ ] Créer le coffre de mots de passe et l'y donner accès
