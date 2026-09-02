@@ -107,7 +107,7 @@ class NotificationControllerIT {
   @MockitoBean private UserRepository userRepository;
   @MockitoBean private RefreshTokenRepository refreshTokenRepository;
   @MockitoBean private FarmRepository farmRepository;
-  private com.avicare.livestock.closure.UnitClosureRepository unitClosureRepository;
+  @MockitoBean private com.avicare.livestock.closure.UnitClosureRepository unitClosureRepository;
   @MockitoBean private PartnerRepository partnerRepository;
 
   @MockitoBean
