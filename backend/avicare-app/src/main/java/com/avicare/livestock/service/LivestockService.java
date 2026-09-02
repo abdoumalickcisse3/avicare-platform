@@ -296,4 +296,19 @@ public class LivestockService {
     unit.setEndDate(LocalDate.now());
     return unit;
   }
+
+  /**
+   * Reopen a closed unit: back to ACTIVE, end date cleared. A mis-click on a live farm would
+   * otherwise freeze a wrong result for good, and events cannot be recorded on a closed unit.
+   */
+  @Transactional
+  public ProductionUnit reopenUnit(Long unitId) {
+    ProductionUnit unit = getUnit(unitId);
+    if (unit.getStatus() != UnitStatus.CLOSED) {
+      return unit;
+    }
+    unit.setStatus(UnitStatus.ACTIVE);
+    unit.setEndDate(null);
+    return unit;
+  }
 }
