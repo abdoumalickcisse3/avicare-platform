@@ -1871,3 +1871,38 @@ export interface SecurityOverview {
   events: SecurityEventRow[];
   blocked: BlockedIpRow[];
 }
+
+/** A frozen end-of-cycle report (mirrors backend UnitClosureResponse). */
+export interface UnitClosure {
+  productionUnitId: number;
+  closedAt: string;
+  startDate: string;
+  endDate: string;
+  durationDays: number;
+  initialCount: number;
+  remainingCount: number;
+  deaths: number;
+  mortalityPercent: number | null;
+  exitWeightG: number | null;
+  avgDailyGainG: number | null;
+  totalFeedKg: number | null;
+  feedConversionRatio: number | null;
+  revenueXof: number;
+  feedCostXof: number;
+  chickCostXof: number;
+  otherExpenseXof: number;
+  totalCostXof: number;
+  marginXof: number;
+  costPerKgXof: number | null;
+  consumedArticles: number;
+  valuedArticles: number;
+  /** Some consumed article carried no price: the cost is understated. */
+  valuationIncomplete: boolean;
+  notes: string | null;
+}
+
+/** Body of a closing request. The chick cost is optional. */
+export interface CloseUnitInput {
+  chickCostXof?: number;
+  notes?: string;
+}
