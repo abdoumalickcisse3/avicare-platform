@@ -93,6 +93,7 @@ export const baseApi = createApi({
     'HealthSchedule',
     'StockMovement',
     'Advance',
+    'UnitClosure',
   ],
   endpoints: () => ({}),
 });

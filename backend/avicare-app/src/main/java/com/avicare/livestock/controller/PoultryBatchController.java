@@ -8,8 +8,11 @@ import com.avicare.livestock.dto.request.CreatePoultryBatchRequest;
 import com.avicare.livestock.dto.response.PoultryBatchResponse;
 import com.avicare.livestock.poultry.PoultryBatchCreate;
 import com.avicare.livestock.poultry.PoultryBatchService;
+import com.avicare.livestock.repository.LifecycleEventRepository;
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -39,14 +42,17 @@ public class PoultryBatchController {
   static final String WRITE = "@farmAccess.hasPermission(#farmId, 'poultry:write') and " + FEATURE;
 
   private final PoultryBatchService poultryBatchService;
+  private final LifecycleEventRepository lifecycleEventRepository;
 
   @GetMapping
   @PreAuthorize(READ)
   public ApiResponse<List<PoultryBatchResponse>> list(
       @PathVariable Long farmId, @RequestParam(required = false) UnitStatus status) {
+    List<PoultryBatch> batches = poultryBatchService.list(farmId, status);
+    Map<Long, Long> deathsByUnit = deathsFor(batches.stream().map(PoultryBatch::getId).toList());
     return ApiResponse.of(
-        poultryBatchService.list(farmId, status).stream()
-            .map(PoultryBatchController::toResponse)
+        batches.stream()
+            .map(b -> toResponse(b, deathsByUnit.getOrDefault(b.getId(), 0L)))
             .toList());
   }
 
@@ -66,17 +72,32 @@ public class PoultryBatchController {
                 request.targetAgeDays(),
                 request.initialCount()),
             TenancyContext.currentUserId());
-    return ApiResponse.of(toResponse(batch));
+    return ApiResponse.of(toResponse(batch, 0L)); // a batch is born with no losses
   }
 
   @GetMapping("/{batchId}")
   @PreAuthorize(READ)
   public ApiResponse<PoultryBatchResponse> get(
       @PathVariable Long farmId, @PathVariable Long batchId) {
-    return ApiResponse.of(toResponse(poultryBatchService.get(batchId)));
+    PoultryBatch batch = poultryBatchService.get(batchId);
+    return ApiResponse.of(toResponse(batch, -lifecycleEventRepository.sumMortalityDelta(batchId)));
   }
 
-  static PoultryBatchResponse toResponse(PoultryBatch b) {
+  /**
+   * Real losses, from the MORTALITY ledger — never {@code initialCount - currentCount}, which a
+   * sale decrements just as a death does.
+   */
+  private Map<Long, Long> deathsFor(List<Long> unitIds) {
+    if (unitIds.isEmpty()) {
+      return Map.of();
+    }
+    return lifecycleEventRepository.sumMortalityDeltaByUnits(unitIds).stream()
+        .collect(
+            Collectors.toMap(
+                row -> ((Number) row[0]).longValue(), row -> -((Number) row[1]).longValue()));
+  }
+
+  static PoultryBatchResponse toResponse(PoultryBatch b, long deaths) {
     return new PoultryBatchResponse(
         b.getId(),
         b.getFarmId(),
@@ -86,6 +107,7 @@ public class PoultryBatchController {
         b.getStatus(),
         b.getCurrentCount(),
         b.getInitialCount(),
+        (int) deaths,
         b.getTargetWeightG(),
         b.getTargetAgeDays());
   }

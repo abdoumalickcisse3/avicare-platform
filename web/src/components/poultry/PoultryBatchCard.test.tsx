@@ -13,6 +13,7 @@ const batch: PoultryBatch = {
   status: "ACTIVE",
   currentCount: 4870,
   initialCount: 5000,
+  deaths: 130,
   targetWeightG: 2100,
   targetAgeDays: 42,
 };

@@ -28,6 +28,17 @@ public interface LifecycleEventRepository extends JpaRepository<LifecycleEvent, 
   long sumMortalityDelta(@Param("unitId") Long unitId);
 
   /**
+   * Same sum for many units at once — the batch list would otherwise fire one query per row. Each
+   * row is {@code [productionUnitId, deltaSum]}; a unit with no MORTALITY event is absent from the
+   * result rather than present with a zero.
+   */
+  @Query(
+      "SELECT e.productionUnitId, COALESCE(SUM(e.quantityDelta), 0) FROM LifecycleEvent e "
+          + "WHERE e.productionUnitId IN :unitIds AND e.eventType = 'MORTALITY' "
+          + "GROUP BY e.productionUnitId")
+  List<Object[]> sumMortalityDeltaByUnits(@Param("unitIds") Collection<Long> unitIds);
+
+  /**
    * Mobile replay lookup (doc 08 §9): find the event already recorded for this client-generated
    * key.
    */
