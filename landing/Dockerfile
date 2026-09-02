@@ -30,5 +30,8 @@ FROM nginx:1.27-alpine AS runtime
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
+# 127.0.0.1 rather than localhost: busybox wget resolves "localhost" to ::1 first, and nginx binds
+# IPv4 only (`listen 80;` in nginx.conf). The probe therefore knocked on an address nobody answers,
+# and the container reported unhealthy for its entire life while serving every request correctly.
 HEALTHCHECK --interval=15s --timeout=5s --start-period=5s --retries=5 \
-  CMD wget -q --spider http://localhost/ || exit 1
+  CMD wget -q --spider http://127.0.0.1/ || exit 1
