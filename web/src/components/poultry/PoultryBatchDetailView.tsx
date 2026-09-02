@@ -25,25 +25,35 @@ import { ageInDays, isFeatureForbidden } from "@/lib/poultry";
 import { formatNumber } from "@/lib/format";
 import { colors } from "@/theme/tokens";
 import { BatchStatusChip } from "./BatchStatusChip";
+import { useFarmRole, canManageCatalog } from "@/hooks/useFarmRole";
+import { BatchClosureTab } from "./BatchClosureTab";
 import { BatchOverviewTab } from "./BatchOverviewTab";
+import { CloseBatchDialog } from "./CloseBatchDialog";
 import { DailyRecordsTab } from "./DailyRecordsTab";
 import { WeighingsTab } from "./WeighingsTab";
 import { HealthTab } from "@/components/health/HealthTab";
 import { DailyRecordDialog } from "./DailyRecordDialog";
 
-type TabKey = "overview" | "records" | "weighings" | "health";
+type TabKey = "overview" | "closure" | "records" | "weighings" | "health";
 
-const TABS: { key: TabKey; label: string }[] = [
-  { key: "overview", label: "Vue d'ensemble" },
+const BASE_TABS: { key: TabKey; label: string }[] = [
   { key: "records", label: "Saisies" },
   { key: "weighings", label: "Pesées" },
   { key: "health", label: "Sanitaire" },
 ];
 
+/** A closed batch shows its frozen report where the live overview used to be. */
+const tabsFor = (closed: boolean): { key: TabKey; label: string }[] =>
+  closed
+    ? [{ key: "closure", label: "Bilan" }, ...BASE_TABS]
+    : [{ key: "overview", label: "Vue d'ensemble" }, ...BASE_TABS];
+
 export function PoultryBatchDetailView({ batchId }: { batchId: number }) {
   const { farmId, isLoading: farmLoading, hasFarm } = useSelectedFarm();
   const [tab, setTab] = useState<TabKey>("overview");
   const [recordOpen, setRecordOpen] = useState(false);
+  const [closeOpen, setCloseOpen] = useState(false);
+  const canClose = canManageCatalog(useFarmRole(farmId));
 
   const {
     data: batch,
@@ -113,6 +123,11 @@ export function PoultryBatchDetailView({ batchId }: { batchId: number }) {
 
   const title = batch.name || `${breedName ?? "Lot"} #${batch.id}`;
 
+  // The tab set changes with the status, so the selected key can go stale — fall back to the
+  // first available tab rather than rendering nothing.
+  const tabs = tabsFor(batch.status === "CLOSED");
+  const activeTab = tabs.some((t) => t.key === tab) ? tab : tabs[0].key;
+
   return (
     <Box sx={{ pb: { xs: 9, sm: 0 } }}>
       <Breadcrumbs separator={<ChevronRight size={14} />} sx={{ mb: 1.5 }}>
@@ -151,35 +166,52 @@ export function PoultryBatchDetailView({ batchId }: { batchId: number }) {
           </Typography>
         </Box>
         {batch.status === "ACTIVE" && (
-          <Button
-            variant="contained"
-            color="primary"
-            size="large"
-            startIcon={<Plus size={20} />}
-            onClick={() => setRecordOpen(true)}
-            sx={{ fontWeight: 700, boxShadow: 3, display: { xs: "none", sm: "inline-flex" } }}
-          >
-            Nouvelle saisie
-          </Button>
+          <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+            {canClose && (
+              <Button
+                variant="outlined"
+                color="inherit"
+                size="large"
+                startIcon={<Lock size={18} />}
+                onClick={() => setCloseOpen(true)}
+                sx={{ fontWeight: 600, display: { xs: "none", sm: "inline-flex" } }}
+              >
+                Clôturer la bande
+              </Button>
+            )}
+            <Button
+              variant="contained"
+              color="primary"
+              size="large"
+              startIcon={<Plus size={20} />}
+              onClick={() => setRecordOpen(true)}
+              sx={{ fontWeight: 700, boxShadow: 3, display: { xs: "none", sm: "inline-flex" } }}
+            >
+              Nouvelle saisie
+            </Button>
+          </Stack>
         )}
       </Stack>
 
       <Tabs
-        value={tab}
+        value={activeTab}
         onChange={(_e, v: TabKey) => setTab(v)}
         variant="scrollable"
         scrollButtons="auto"
         sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}
       >
-        {TABS.map((t) => (
+        {tabs.map((t) => (
           <Tab key={t.key} value={t.key} label={t.label} />
         ))}
       </Tabs>
 
-      {tab === "overview" && <BatchOverviewTab farmId={farmId as number} batch={batch} />}
-      {tab === "records" && <DailyRecordsTab farmId={farmId as number} batch={batch} />}
-      {tab === "weighings" && <WeighingsTab farmId={farmId as number} batch={batch} />}
-      {tab === "health" && (
+      {activeTab === "overview" && <BatchOverviewTab farmId={farmId as number} batch={batch} />}
+      {activeTab === "closure" && (
+        <BatchClosureTab farmId={farmId as number} unitId={batch.id} batchName={title} />
+      )}
+      {activeTab === "records" && <DailyRecordsTab farmId={farmId as number} batch={batch} />}
+      {activeTab === "weighings" && <WeighingsTab farmId={farmId as number} batch={batch} />}
+      {activeTab === "health" && (
         <HealthTab
           farmId={farmId as number}
           unitId={batch.id}
@@ -198,6 +230,15 @@ export function PoultryBatchDetailView({ batchId }: { batchId: number }) {
         batchId={batch.id}
         currentCount={batch.currentCount}
         existingDates={(records ?? []).map((r) => r.recordDate)}
+      />
+
+      <CloseBatchDialog
+        open={closeOpen}
+        onClose={() => setCloseOpen(false)}
+        farmId={farmId as number}
+        unitId={batch.id}
+        batchName={title}
+        remainingCount={batch.currentCount}
       />
     </Box>
   );

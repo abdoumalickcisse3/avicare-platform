@@ -117,6 +117,7 @@ export const baseApi = createApi({
     "Dashboard",
     "Notification",
     "Partner",
+    "UnitClosure",
   ],
   endpoints: () => ({}),
 });
