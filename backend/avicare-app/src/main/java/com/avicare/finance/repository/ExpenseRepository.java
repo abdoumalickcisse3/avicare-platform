@@ -52,6 +52,18 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
    * @param to optional end date (inclusive)
    * @return list of [categoryKey, sum] pairs
    */
+  /**
+   * Σ of the expenses attributed to a production unit, source {@code STOCK_ENTRY} excluded: that
+   * one is already counted when the stock came in (V25 double-count guard), so counting it again
+   * against the batch would double the feed. Soft-deleted rows are filtered by the entity's
+   * {@code @SQLRestriction}.
+   */
+  @Query(
+      "SELECT COALESCE(SUM(e.amountXof), 0) FROM Expense e "
+          + "WHERE e.farmId = :farmId AND e.productionUnitId = :unitId "
+          + "AND e.source <> com.avicare.finance.domain.ExpenseSource.STOCK_ENTRY")
+  long sumDirectForUnit(@Param("farmId") Long farmId, @Param("unitId") Long unitId);
+
   @Query(
       "SELECT e.categoryKey, SUM(e.amountXof) FROM Expense e "
           + "WHERE e.farmId = :farmId "
