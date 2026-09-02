@@ -4,8 +4,8 @@
 > les chiffres et les formules ci-dessous sortent du code réel, et deux affirmations
 > de la roadmap C2 s'y sont révélées fausses.
 >
-> **Statut : en attente de relecture.** Les sept décisions du §3 sont proposées, pas
-> encore verrouillées.
+> **Statut : validé, implémenté, en attente de CI.** Les sept décisions du §3 sont
+> verrouillées. Le correctif du §1.4 est parti dans la PR #278, mergée avant le chantier.
 
 ---
 
@@ -385,12 +385,12 @@ chaque `@SpringBootTest` sans base. Repérer les fichiers en greppant l'ancre
 
 ## 8. Critères d'acceptation
 
-- [ ] Un OWNER/MANAGER peut clôturer un lot `ACTIVE` depuis le web, et le voir passer en `CLOSED`.
+- [x] Un OWNER/MANAGER peut clôturer un lot `ACTIVE` depuis le web, et le voir passer en `CLOSED`.
 - [ ] La clôture crée exactement une ligne `unit_closures`, et une seconde tentative renvoie 409.
-- [ ] Le bilan affiche mortalité, IC, poids de sortie, durée, recettes, coûts détaillés, marge.
+- [x] Le bilan affiche mortalité, IC, poids de sortie, durée, recettes, coûts détaillés, marge.
 - [ ] La mortalité figée ignore les ventes.
 - [ ] Une dépense saisie après la clôture ne modifie pas le bilan.
-- [ ] Quand un article consommé n'a pas de prix, l'interface le signale.
+- [x] Quand un article consommé n'a pas de prix, l'interface le signale.
 - [ ] Rouvrir supprime le bilan et remet le lot en `ACTIVE`.
-- [ ] Un membre sans `poultry:read` reçoit 403 ; un FARMER ne peut pas clôturer.
+- [x] Un membre sans `poultry:read` reçoit 403 ; un FARMER ne peut pas clôturer.
 - [ ] `./mvnw clean verify` vert, CI verte avant merge.
