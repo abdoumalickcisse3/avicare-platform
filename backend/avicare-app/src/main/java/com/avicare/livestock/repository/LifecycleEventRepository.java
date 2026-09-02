@@ -18,6 +18,16 @@ public interface LifecycleEventRepository extends JpaRepository<LifecycleEvent, 
   List<LifecycleEvent> findByProductionUnitIdAndEventType(Long productionUnitId, String eventType);
 
   /**
+   * Sum of the {@code MORTALITY} deltas of a unit — negative, or 0 when nothing died. Sales ({@code
+   * EVENT_SALE}) decrement {@code current_count} exactly like deaths do, so counting "initial −
+   * current" would report every sold bird as a dead one.
+   */
+  @Query(
+      "SELECT COALESCE(SUM(e.quantityDelta), 0) FROM LifecycleEvent e "
+          + "WHERE e.productionUnitId = :unitId AND e.eventType = 'MORTALITY'")
+  long sumMortalityDelta(@Param("unitId") Long unitId);
+
+  /**
    * Mobile replay lookup (doc 08 §9): find the event already recorded for this client-generated
    * key.
    */

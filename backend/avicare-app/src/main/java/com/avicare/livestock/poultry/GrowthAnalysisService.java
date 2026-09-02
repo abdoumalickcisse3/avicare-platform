@@ -7,6 +7,7 @@ import com.avicare.livestock.domain.PoultryBatch;
 import com.avicare.livestock.domain.WeighingSample;
 import com.avicare.livestock.repository.DailyRecordRepository;
 import com.avicare.livestock.repository.GrowthPerformanceRepository;
+import com.avicare.livestock.repository.LifecycleEventRepository;
 import com.avicare.livestock.repository.PoultryBatchRepository;
 import com.avicare.livestock.repository.WeighingSampleRepository;
 import java.math.BigDecimal;
@@ -48,6 +49,7 @@ public class GrowthAnalysisService {
   private final GrowthPerformanceRepository growthPerformanceRepository;
   private final PoultryBatchRepository poultryBatchRepository;
   private final DailyRecordRepository dailyRecordRepository;
+  private final LifecycleEventRepository lifecycleEventRepository;
 
   // Self-reference resolved lazily through the Spring proxy so that self.getObject().insertX(...)
   // actually goes through AOP (REQUIRES_NEW). ObjectProvider defers the lookup, so it does not
@@ -185,7 +187,10 @@ public class GrowthAnalysisService {
     perf.setCumulativeWaterL(cumulativeWaterL);
     perf.setCumulativeMortalityPercent(mortalityPercent(batch));
     perf.setGmqGPerDay(gmq(currentWeightG, ageDays));
-    perf.setFeedConversionRatio(fcr(cumulativeFeedKg, currentWeightG, batch.getCurrentCount()));
+    // Birds produced alive, not what is left in the pen: current_count shrinks with every sale,
+    // which would shrink the live weight the feed actually built and inflate the ratio.
+    long liveBirds = batch.getInitialCount() + lifecycleEventRepository.sumMortalityDelta(batchId);
+    perf.setFeedConversionRatio(fcr(cumulativeFeedKg, currentWeightG, (int) liveBirds));
     perf.setForecastedTargetDate(forecast(batch, currentWeightG, date));
     perf.setPerformanceScore(score(batch, currentWeightG, ageDays));
     perf.setComputedAt(java.time.LocalDateTime.now());
@@ -216,13 +221,17 @@ public class GrowthAnalysisService {
     return (int) Math.max(0, ChronoUnit.DAYS.between(batch.getStartDate(), date));
   }
 
-  private static BigDecimal mortalityPercent(PoultryBatch batch) {
+  /**
+   * Real deaths over the initial headcount. Reads the MORTALITY ledger: a bird that was sold left
+   * the batch just as a dead one did, but it is not a loss.
+   */
+  private BigDecimal mortalityPercent(PoultryBatch batch) {
     int initial = batch.getInitialCount();
     if (initial <= 0) {
       return null;
     }
-    double dead = initial - batch.getCurrentCount();
-    return scaled(dead * 100.0 / initial, 2);
+    long deaths = -lifecycleEventRepository.sumMortalityDelta(batch.getId());
+    return scaled(deaths * 100.0 / initial, 2);
   }
 
   private static BigDecimal gmq(BigDecimal currentWeightG, int ageDays) {
