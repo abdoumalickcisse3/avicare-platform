@@ -7,6 +7,38 @@ et ce projet adhère au [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0
 
 ## [Unreleased]
 
+### Clôture de bande et bilan de fin de cycle (2026-09-02)
+
+Un gérant pouvait suivre une bande jour après jour, mais jamais la conclure :
+`closeUnit()` existait sans contrôleur ni bouton, et le filtre « Clôturés » de
+`/elevage/lots` ne pouvait rien contenir. Cf.
+`docs/superpowers/specs/2026-09-02-cloture-bande-bilan-design.md`.
+
+#### Added
+
+- **Clôture d'une unité de production** (`V52`) — table `unit_closures`, trois
+  endpoints (`POST .../close`, `GET`/`DELETE .../closure`), bouton et onglet
+  « Bilan » sur la fiche lot. Le bilan est **figé** : une dépense saisie après
+  coup ne le modifie plus. Réservé à OWNER/MANAGER ; rouvrir supprime le bilan.
+- **Coût par bande** — les dépenses et les recettes portaient déjà
+  `production_unit_id`, mais l'aliment sort du stock en kilos et jamais en
+  francs. La consommation est donc **valorisée à la clôture** (valeur du
+  mouvement si elle existe, sinon prix de l'article), et le coût des poussins
+  est saisi à ce moment-là. `FinanceFacade.directExpensesForUnit` exclut la
+  source `STOCK_ENTRY`, déjà comptée à l'entrée en stock.
+- **Couverture de valorisation** — le bilan enregistre combien d'articles
+  consommés ont pu être valorisés et avertit quand il en manque. Sans cela il
+  sous-estimerait le coût en silence, et toujours dans le même sens.
+
+#### Fixed
+
+- **La mortalité et l'indice de consommation comptaient les ventes comme des
+  pertes** — `EVENT_SALE` décrémente `current_count` au même titre qu'une mort,
+  et les deux chiffres se calculaient sur l'écart avec l'effectif initial. Une
+  bande ayant écoulé 80 % de son effectif s'affichait à 80 % de mortalité. Les
+  deux lisent désormais le registre des événements `MORTALITY`.
+
+
 ### Roadmap pré-premier-client (2026-08-31 → 09-01)
 
 Six chantiers destinés à combler les manques opérationnels avant de signer un
