@@ -121,6 +121,12 @@ public class FinanceFacadeImpl implements FinanceFacade {
 
   @Override
   @Transactional(readOnly = true)
+  public long directExpensesForUnit(Long farmId, Long productionUnitId) {
+    return expenseRepository.sumDirectForUnit(farmId, productionUnitId);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
   public FarmPnl farmPnl(Long farmId) {
     FarmAnalyticsResponse a = financeAnalyticsService.farmAnalytics(farmId);
     return new FarmPnl(a.totalRevenueXof(), a.totalExpenseXof(), a.marginXof());

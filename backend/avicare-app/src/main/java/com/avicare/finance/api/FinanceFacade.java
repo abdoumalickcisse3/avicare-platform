@@ -53,6 +53,13 @@ public interface FinanceFacade {
   void reverseVetVisitExpense(Long farmId, Long vetVisitId);
 
   /**
+   * Σ des dépenses directement rattachées à une unité de production, hors source {@code
+   * STOCK_ENTRY} — celle-ci est déjà comptée à l'entrée en stock, la recompter au titre du lot
+   * doublerait l'aliment. Sert le bilan de fin de bande.
+   */
+  long directExpensesForUnit(Long farmId, Long productionUnitId);
+
+  /**
    * Read-only farm P&amp;L (revenue, expenses, margin) — the same figures as the finance dashboard.
    * Serves the assistant's consultation loop.
    */
