@@ -17,6 +17,16 @@ public interface StockMovementRepository extends JpaRepository<StockMovement, Lo
 
   List<StockMovement> findByProductionUnitIdOrderByMovementDateDesc(Long productionUnitId);
 
+  /**
+   * Stock outflows charged to a production unit, article loaded — the raw material of a batch's
+   * cost. {@code JOIN FETCH} because the caller reads {@code stockItem} on every row.
+   */
+  @Query(
+      "SELECT m FROM StockMovement m JOIN FETCH m.stockItem "
+          + "WHERE m.productionUnitId = :unitId "
+          + "AND m.movementType = com.avicare.livestock.domain.MovementType.OUT")
+  List<StockMovement> findOutMovementsForUnit(@Param("unitId") Long unitId);
+
   /** All movements of a farm, most recent first (the service caps the overview to N rows). */
   List<StockMovement> findByStockItem_FarmIdOrderByMovementDateDescIdDesc(Long farmId);
 
