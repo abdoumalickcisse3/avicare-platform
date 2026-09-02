@@ -11,8 +11,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
-import { ArrowLeft, ClipboardList, Plus, Scale } from 'lucide-react-native';
+import { ArrowLeft, ClipboardList, Lock, Plus, Scale } from 'lucide-react-native';
 import { tokens } from '@/theme';
+import { BatchClosureCard } from '@/components/poultry/BatchClosureCard';
 import { GrowthChart, type GrowthPoint } from '@/components/charts/GrowthChart';
 import { MortalityChart } from '@/components/charts/MortalityChart';
 import { FeedConsumptionChart } from '@/components/charts/FeedConsumptionChart';
@@ -48,13 +49,17 @@ function formatDateLong(iso: string): string {
   return `${d.getDate()} ${MONTHS_FR[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-type Tab = 'overview' | 'saisies' | 'pesees' | 'sanitaire';
-const TABS: Array<{ key: Tab; label: string }> = [
-  { key: 'overview', label: "Vue d'ensemble" },
+type Tab = 'overview' | 'bilan' | 'saisies' | 'pesees' | 'sanitaire';
+const BASE_TABS: Array<{ key: Tab; label: string }> = [
   { key: 'saisies', label: 'Saisies' },
   { key: 'pesees', label: 'Pesées' },
   { key: 'sanitaire', label: 'Sanitaire' },
 ];
+/** A closed batch shows its frozen report where the live overview used to be. */
+const tabsFor = (closed: boolean): Array<{ key: Tab; label: string }> =>
+  closed
+    ? [{ key: 'bilan' as Tab, label: 'Bilan' }, ...BASE_TABS]
+    : [{ key: 'overview' as Tab, label: "Vue d'ensemble" }, ...BASE_TABS];
 
 export default function LotDetailScreen() {
   const router = useRouter();
@@ -62,8 +67,10 @@ export default function LotDetailScreen() {
   const raw = Array.isArray(params.unitId) ? params.unitId[0] : params.unitId;
   const batchId = raw ? Number(raw) : NaN;
   const selectedFarmId = useSelector(selectSelectedFarmId);
-  const { can } = useFarmAccess();
+  const { can, farmRole } = useFarmAccess();
   const canWrite = can('poultry:write');
+  // Closing is structuring, like creating a unit — OWNER/MANAGER only, same as the backend.
+  const canClose = farmRole === 'OWNER' || farmRole === 'MANAGER';
   const [tab, setTab] = useState<Tab>('overview');
 
   const skip = selectedFarmId === null || Number.isNaN(batchId);
@@ -77,7 +84,7 @@ export default function LotDetailScreen() {
 
   const breedName = breeds?.find((b) => b.id === batch?.breedId)?.name;
   const age = ageInDays(batch?.startDate);
-  const deaths = batch ? Math.max(0, batch.initialCount - batch.currentCount) : 0;
+  const deaths = batch?.deaths ?? 0;
   const mortalityPct = perf?.cumulativeMortalityPercent ?? (batch && batch.initialCount > 0 ? (deaths / batch.initialCount) * 100 : 0);
   const avgKg = perf?.currentWeightG != null ? perf.currentWeightG / 1000 : weighings && weighings.length ? weighings[weighings.length - 1]!.avgWeightG / 1000 : null;
 
@@ -86,6 +93,11 @@ export default function LotDetailScreen() {
     [weighings],
   );
   const target = batch?.targetAgeDays && batch?.targetWeightG ? { age: batch.targetAgeDays, weightG: batch.targetWeightG } : null;
+
+  const closed = batch?.status === 'CLOSED';
+  const tabs = tabsFor(closed);
+  // The tab set changes with the status, so the selected key can go stale.
+  const activeTab = tabs.some((t) => t.key === tab) ? tab : tabs[0]!.key;
 
   if (selectedFarmId === null) return <Redirect href="/(field)" />;
 
@@ -113,8 +125,8 @@ export default function LotDetailScreen() {
 
         {/* Tabs */}
         <View style={styles.tabs}>
-          {TABS.map((t) => {
-            const on = tab === t.key;
+          {tabs.map((t) => {
+            const on = activeTab === t.key;
             return (
               <Pressable key={t.key} style={styles.tab} onPress={() => setTab(t.key)} accessibilityRole="button">
                 <Text style={[styles.tabText, on && styles.tabTextOn]} numberOfLines={1}>{t.label}</Text>
@@ -124,7 +136,7 @@ export default function LotDetailScreen() {
           })}
         </View>
 
-        {tab === 'overview' && (
+        {activeTab === 'overview' && (
           <>
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Croissance du lot</Text>
@@ -181,10 +193,26 @@ export default function LotDetailScreen() {
               <Text style={styles.cardTitle}>Consommation cumulée</Text>
               <FeedConsumptionChart records={records ?? []} />
             </View>
+
+            {/* End of cycle. Last in the overview, not a floating action: closing is a
+                deliberate act, not something to reach for with one thumb in a hurry. */}
+            {canClose && batch?.status === 'ACTIVE' && (
+              <ActionButton
+                icon={Lock}
+                label="Clôturer la bande"
+                onPress={() => router.push(`/(field)/lots/${batchId}/cloture`)}
+              />
+            )}
           </>
         )}
 
-        {tab === 'saisies' && (
+        {activeTab === 'bilan' && (
+          <View style={styles.tabBlock}>
+            <BatchClosureCard farmId={selectedFarmId as number} unitId={batchId} canReopen={canClose} />
+          </View>
+        )}
+
+        {activeTab === 'saisies' && (
           <View style={styles.tabBlock}>
             {canWrite && <ActionButton icon={ClipboardList} label="Nouvelle saisie journalière" onPress={() => router.push(`/(field)/lots/${batchId}/journalier`)} />}
             <View style={styles.card}>
@@ -206,7 +234,7 @@ export default function LotDetailScreen() {
           </View>
         )}
 
-        {tab === 'pesees' && (
+        {activeTab === 'pesees' && (
           <View style={styles.tabBlock}>
             {canWrite && <ActionButton icon={Scale} label="Nouvelle pesée" onPress={() => router.push(`/(field)/lots/${batchId}/pesee`)} />}
             <View style={styles.card}>
@@ -232,7 +260,7 @@ export default function LotDetailScreen() {
           </View>
         )}
 
-        {tab === 'sanitaire' && (
+        {activeTab === 'sanitaire' && (
           <View style={styles.tabBlock}>
             <HealthSection farmId={selectedFarmId} unitId={batchId} />
           </View>

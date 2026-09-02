@@ -186,6 +186,12 @@ export interface PoultryBatch {
   status: BatchStatus;
   currentCount: number;
   initialCount: number;
+  /**
+   * Real losses, from the backend's MORTALITY ledger. Never derive it from
+   * `initialCount - currentCount`: a sale decrements the count just as a death does, so
+   * that formula reports every sold bird as dead. Both mobile screens once did.
+   */
+  deaths: number;
   targetWeightG: number | null;
   targetAgeDays: number | null;
 }

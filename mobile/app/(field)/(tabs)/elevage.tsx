@@ -110,7 +110,7 @@ export default function ElevageScreen() {
               const age = ageInDays(b.startDate);
               const target = b.targetAgeDays ?? null;
               const progress = target ? Math.max(0, Math.min(1, age / target)) : 0;
-              const deaths = Math.max(0, b.initialCount - b.currentCount);
+              const deaths = b.deaths;
               return (
                 <Pressable
                   key={b.id}
