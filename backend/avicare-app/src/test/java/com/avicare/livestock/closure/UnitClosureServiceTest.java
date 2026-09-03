@@ -193,4 +193,36 @@ class UnitClosureServiceTest {
     verify(unitClosureRepository).deleteByProductionUnitId(42L);
     verify(livestockService).reopenUnit(42L);
   }
+
+  @Test
+  void listForFarm_pairsEachClosureWithItsUnitName_mostRecentFirst() {
+    PoultryBatch a = new PoultryBatch();
+    a.setId(42L);
+    a.setFarmId(7L);
+    a.setName("Bande A");
+    PoultryBatch b = new PoultryBatch();
+    b.setId(43L);
+    b.setFarmId(7L);
+    b.setName(null); // unnamed batches still have to be readable in the table
+    when(livestockService.listByFarm(7L)).thenReturn(java.util.List.of(a, b));
+
+    UnitClosure ca = new UnitClosure();
+    ca.setProductionUnitId(42L);
+    ca.setConsumedArticles(2);
+    ca.setValuedArticles(1);
+    UnitClosure cb = new UnitClosure();
+    cb.setProductionUnitId(43L);
+    cb.setConsumedArticles(1);
+    cb.setValuedArticles(1);
+    when(unitClosureRepository.findByFarmIdOrderByEndDateDescIdDesc(7L))
+        .thenReturn(java.util.List.of(ca, cb));
+
+    var rows = service.listForFarm(7L);
+
+    assertThat(rows).hasSize(2);
+    assertThat(rows.get(0).unitName()).isEqualTo("Bande A");
+    assertThat(rows.get(0).valuationIncomplete()).isTrue();
+    assertThat(rows.get(1).unitName()).isEqualTo("Lot #43");
+    assertThat(rows.get(1).valuationIncomplete()).isFalse();
+  }
 }

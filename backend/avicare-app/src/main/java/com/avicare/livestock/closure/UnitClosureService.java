@@ -3,6 +3,7 @@ package com.avicare.livestock.closure;
 import com.avicare.common.api.exception.ConflictException;
 import com.avicare.common.api.exception.NotFoundException;
 import com.avicare.finance.api.FinanceFacade;
+import com.avicare.livestock.closure.dto.ClosureSummaryResponse;
 import com.avicare.livestock.commercial.CommercialFacade;
 import com.avicare.livestock.domain.GrowthPerformance;
 import com.avicare.livestock.domain.PoultryBatch;
@@ -15,6 +16,9 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -108,6 +112,26 @@ public class UnitClosureService {
 
     livestockService.closeUnit(unitId);
     return unitClosureRepository.save(closure);
+  }
+
+  /**
+   * Every closed cycle of the farm, most recent first, paired with its unit name. The names are
+   * resolved in one listing rather than one lookup per row.
+   */
+  @Transactional(readOnly = true)
+  public List<ClosureSummaryResponse> listForFarm(Long farmId) {
+    Map<Long, String> namesById =
+        livestockService.listByFarm(farmId).stream()
+            .collect(
+                Collectors.toMap(
+                    ProductionUnit::getId,
+                    u -> u.getName() != null ? u.getName() : "Lot #" + u.getId()));
+    return unitClosureRepository.findByFarmIdOrderByEndDateDescIdDesc(farmId).stream()
+        .map(
+            c ->
+                ClosureSummaryResponse.from(
+                    c, namesById.getOrDefault(c.getProductionUnitId(), "Lot supprimé")))
+        .toList();
   }
 
   @Transactional(readOnly = true)

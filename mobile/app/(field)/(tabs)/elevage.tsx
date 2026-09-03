@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
-import { Bird, ChevronRight, Search } from 'lucide-react-native';
+import { Bird, ChevronRight, ClipboardCheck, Search } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { AppHeader } from '@/components/AppHeader';
 import { useGetBatchesQuery } from '@/store/api/poultryBatchesApi';
@@ -96,6 +96,20 @@ export default function ElevageScreen() {
           })}
         </ScrollView>
 
+        {/* Comparing finished cycles is a different question from browsing live ones, so it
+            gets its own screen — offered where the reader is already looking at closed lots. */}
+        {filter === 'CLOSED' && (
+          <Pressable
+            onPress={() => router.push('/(field)/bilans')}
+            accessibilityRole="button"
+            accessibilityLabel="Comparer les bilans de bande"
+            style={({ pressed }) => [styles.compareBtn, pressed && { opacity: 0.85 }]}
+          >
+            <ClipboardCheck size={18} color={tokens.colors.primary[700]} />
+            <Text style={styles.compareText}>Comparer les bilans</Text>
+          </Pressable>
+        )}
+
         {isLoading ? (
           <Text style={styles.muted}>Chargement…</Text>
         ) : rows.length === 0 ? (
@@ -167,6 +181,19 @@ export default function ElevageScreen() {
 }
 
 const styles = StyleSheet.create({
+  compareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: tokens.spacing[2],
+    minHeight: tokens.touch.cta,
+    borderRadius: tokens.radii.lg,
+    borderWidth: 1,
+    borderColor: tokens.colors.primary[200],
+    backgroundColor: tokens.colors.primary[50],
+    marginBottom: tokens.spacing[3],
+  },
+  compareText: { ...tokens.typography.button, color: tokens.colors.primary[700] },
   container: { flex: 1, backgroundColor: tokens.colors.neutral[50] },
   content: { paddingHorizontal: tokens.layout.screenPadding, paddingTop: tokens.spacing[2], paddingBottom: tokens.spacing[16] },
   title: { ...tokens.typography.displayMd, color: tokens.colors.field.text },
