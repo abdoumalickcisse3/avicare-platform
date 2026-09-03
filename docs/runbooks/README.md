@@ -20,15 +20,20 @@
 | « Mon stock ne correspond pas », anomalie CRITICAL | [Stock ou solde incohérent](incidents/donnee-incoherente.md) | HIGH |
 | Pas de sauvegarde récente | [Sauvegarde manquée](ops/sauvegarde-manquee.md) | HIGH |
 | Base corrompue, données perdues | [Restaurer une sauvegarde](ops/restaurer-une-sauvegarde.md) | CRITICAL |
+| « Le site ne marche pas », plus rien ne répond | [La plateforme ne répond plus](ops/plateforme-injoignable.md) | CRITICAL |
 | Malick est injoignable depuis des jours | [Propriétaire indisponible](recovery/proprietaire-indisponible.md) | variable |
 
 Le dernier ne s'adresse pas à toi mais au **contact de secours** : c'est le seul runbook écrit pour
 quelqu'un d'autre, et il suppose que cette personne existe et a été briefée
 (voir `docs/continuity/`).
 
-Les autres scénarios du plan (WhatsApp, assistant IA, DDoS, fuite de données, panne totale) sont
+Les autres scénarios du plan (WhatsApp, assistant IA, DDoS, fuite de données) restent
 volontairement **différés après le premier client** : un runbook écrit pour un incident qu'on n'a
 jamais vu décrit surtout l'imagination de son auteur.
+
+La panne totale était de ceux-là — jusqu'au **2026-09-03**, où elle est arrivée. Son runbook a été
+écrit le jour même, à partir de ce qui s'est réellement passé et non de ce qu'on imaginait qu'il
+se passerait. C'est la règle qui s'applique : on écrit quand on a vu.
 
 ## Ce que les runbooks ne remplacent pas
 
