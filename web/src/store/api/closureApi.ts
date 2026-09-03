@@ -35,6 +35,7 @@ export const closureApi = baseApi.injectEndpoints({
         { type: "ProductionUnit", id: unitId },
         { type: "PoultryBatch", id: unitId },
         { type: "PoultryBatch", id: "LIST" },
+        { type: "UnitClosure", id: "LIST" },
       ],
     }),
     reopenUnit: build.mutation<void, { farmId: number; unitId: number }>({
@@ -47,6 +48,7 @@ export const closureApi = baseApi.injectEndpoints({
         { type: "ProductionUnit", id: unitId },
         { type: "PoultryBatch", id: unitId },
         { type: "PoultryBatch", id: "LIST" },
+        { type: "UnitClosure", id: "LIST" },
       ],
     }),
   }),

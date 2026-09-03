@@ -193,6 +193,7 @@ export function getDrawerItems(
 /** A detail screen keeps its parent tab highlighted (UVDistribution SCREEN_TO_TAB). */
 export const SCREEN_TO_TAB: Record<string, string> = {
   lots: 'elevage',
+  bilans: 'elevage',
   mortalite: 'elevage',
   oeufs: 'elevage',
   pesee: 'elevage',

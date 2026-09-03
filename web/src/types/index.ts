@@ -1912,3 +1912,28 @@ export interface CloseUnitInput {
   chickCostXof?: number;
   notes?: string;
 }
+
+/**
+ * One row of the closed-cycle comparison table (mirrors the backend `ClosureSummaryResponse`).
+ *
+ * Deliberately not a score: turning these into a medal would mean inventing thresholds, and a
+ * threshold that contradicts what a farmer knows of his trade discredits every other figure.
+ */
+export interface ClosureSummary {
+  productionUnitId: number;
+  unitName: string;
+  startDate: string;
+  endDate: string;
+  durationDays: number;
+  initialCount: number;
+  deaths: number;
+  mortalityPercent: number | null;
+  exitWeightG: number | null;
+  feedConversionRatio: number | null;
+  revenueXof: number;
+  totalCostXof: number;
+  marginXof: number;
+  costPerKgXof: number | null;
+  /** The batch's feed could not be fully priced: its cost is understated. */
+  valuationIncomplete: boolean;
+}

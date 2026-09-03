@@ -30,6 +30,7 @@ const PAGE_TITLES: { prefix: string; label: string; parent?: string }[] = [
   { prefix: "/dashboard", label: "Tableau de bord" },
   { prefix: "/fermes", label: "Fermes" },
   { prefix: "/elevage/lots", label: "Poulets de chair", parent: "Élevage" },
+  { prefix: "/elevage/bilans", label: "Bilans de bande", parent: "Élevage" },
   { prefix: "/elevage/oeufs", label: "Œufs", parent: "Élevage" },
   { prefix: "/elevage/sanitaire", label: "Sanitaire", parent: "Élevage" },
   { prefix: "/stocks/articles", label: "Bibliothèque", parent: "Stocks" },

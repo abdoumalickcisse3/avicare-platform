@@ -59,6 +59,7 @@ const closureTags = (farmId: number, unitId: number) =>
     { type: 'ProductionUnit', id: unitId },
     { type: 'ProductionUnit', id: `LIST-${farmId}` },
     { type: 'PoultryBatch', id: 'LIST' },
+    { type: 'UnitClosure', id: 'LIST' },
     { type: 'Dashboard', id: 'current' },
   ] as const;
 
