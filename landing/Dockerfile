@@ -18,11 +18,15 @@ ARG PUBLIC_APP_SIGNUP_URL=/contact
 ARG PUBLIC_APP_LOGIN_URL=https://app.jawdi.app/login
 ARG PUBLIC_PARTNER_EMAIL=malick.cisse@nlogicsolutions.com
 ARG PUBLIC_CONTACT_PHONE=+221 70 475 69 96
+# Mesure d'audience : sans valeur, aucun script n'est émis. Pas de défaut ici — un build de
+# préversion ne doit pas alimenter les statistiques de production.
+ARG PUBLIC_GA_ID=
 ENV PUBLIC_SITE_URL=$PUBLIC_SITE_URL \
     PUBLIC_APP_SIGNUP_URL=$PUBLIC_APP_SIGNUP_URL \
     PUBLIC_APP_LOGIN_URL=$PUBLIC_APP_LOGIN_URL \
     PUBLIC_PARTNER_EMAIL=$PUBLIC_PARTNER_EMAIL \
-    PUBLIC_CONTACT_PHONE=$PUBLIC_CONTACT_PHONE
+    PUBLIC_CONTACT_PHONE=$PUBLIC_CONTACT_PHONE \
+    PUBLIC_GA_ID=$PUBLIC_GA_ID
 RUN npm run build
 
 # ---- Runtime: static files behind nginx ----

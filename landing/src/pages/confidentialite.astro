@@ -7,11 +7,12 @@
 // explicites, jamais de valeur inventée. Voir la liste complète dans
 // task-5-report.md.
 //
-// État réel documenté honnêtement (règle "claims discipline") : pas
-// d'outil d'analyse d'audience actif à ce jour (le doc de design classe
-// ça "hors périmètre V1" — structure Partytown prête, clé plus tard),
-// le formulaire de contact est inerte (mailto, aucune donnée reçue par
-// un serveur depuis ce site).
+// État réel documenté honnêtement (règle "claims discipline") : Google
+// Analytics est actif sur le site vitrine depuis 2026-09-03, configuré
+// SANS COOKIE (client_storage: 'none', IP anonymisée, signaux
+// publicitaires désactivés) — voir components/Analytics.astro. Aucune
+// mesure sur l'application ni la console. Le formulaire de contact reste
+// inerte (mailto, aucune donnée reçue par un serveur depuis ce site).
 import Base from "../layouts/Base.astro";
 
 const title = "Politique de confidentialité | Jawdi";
@@ -48,8 +49,9 @@ const partnerEmail = import.meta.env.PUBLIC_PARTNER_EMAIL || "hello@jawdi.app";
 
       <h2>2. Ce que nous collectons</h2>
       <p>
-        Sur ce site vitrine&nbsp;: aucune création de compte, aucun cookie de mesure d'audience
-        déposé à ce jour. Si vous nous écrivez via la page Contact, le formulaire ouvre votre
+        Sur ce site vitrine&nbsp;: aucune création de compte, et aucun cookie déposé sur votre
+        appareil — la mesure d'audience est configurée sans cookie (voir §&nbsp;6).
+        Si vous nous écrivez via la page Contact, le formulaire ouvre votre
         propre client mail (aucune donnée n'est reçue par un serveur depuis cette page)&nbsp;;
         les informations que vous choisissez d'envoyer par email (nom, téléphone, message) ne
         sont alors traitées que dans le cadre de cet échange.
@@ -91,9 +93,29 @@ const partnerEmail = import.meta.env.PUBLIC_PARTNER_EMAIL || "hello@jawdi.app";
 
       <h2>6. Cookies et mesure d'audience</h2>
       <p>
-        Ce site ne dépose, à ce jour, aucun cookie de mesure d'audience ni traceur publicitaire.
-        Si un outil d'analyse est activé à l'avenir, cette politique sera mise à jour avant sa
-        mise en service, avec le choix de le refuser lorsque la réglementation l'exige.
+        Ce site utilise <strong>Google Analytics</strong> pour mesurer sa fréquentation, configuré
+        de manière à <strong>ne déposer aucun cookie</strong> et à n'enregistrer aucun identifiant
+        persistant sur votre appareil. Concrètement&nbsp;: nous voyons combien de personnes
+        consultent le site, depuis quel pays et quelle page les a amenées ici&nbsp;; nous ne
+        pouvons pas vous reconnaître d'une visite à l'autre.
+      </p>
+      <p>
+        Votre adresse IP est anonymisée avant tout traitement. Les fonctions publicitaires de
+        Google (signaux inter-appareils, personnalisation des annonces) sont
+        <strong>désactivées</strong>&nbsp;: ce site ne fait pas de publicité et ne construit aucun
+        profil.
+      </p>
+      <p>
+        Aucun traceur n'étant déposé sur votre appareil, il n'y a pas de consentement à recueillir
+        ni de bannière à accepter. Si nous activions un jour une mesure avec cookie, cette
+        politique serait mise à jour <strong>avant</strong> sa mise en service et le refus vous
+        serait proposé.
+      </p>
+      <p>
+        Cette mesure ne concerne que le <strong>site vitrine</strong>. L'application
+        (<code>app.jawdi.app</code>) et la console d'administration ne comportent aucun outil de
+        mesure d'audience&nbsp;: les données d'élevage de nos clients ne sont transmises à aucun
+        tiers.
       </p>
 
       <h2>7. Vos droits</h2>
