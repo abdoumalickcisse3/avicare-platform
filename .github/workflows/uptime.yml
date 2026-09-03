@@ -1,0 +1,65 @@
+name: Uptime
+
+# Watches the production hosts from OUTSIDE the machine that serves them.
+#
+# Why here rather than on the VPS: on 2026-09-03 the platform was offline for hours and nobody
+# knew — it was found by deploying. A probe hosted on the machine it watches goes down with it,
+# so the check has to live somewhere else. GitHub's runners are somewhere else, and a failing
+# scheduled workflow emails the repository owner.
+#
+# What this is NOT: a paging service. GitHub's scheduler is best-effort — a run can be delayed
+# by ten or fifteen minutes under load, and it will email rather than phone. Treat it as the
+# floor, not the ceiling. See docs/runbooks/ops/plateforme-injoignable.md.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+# Least privilege: this workflow reads nothing and writes nothing.
+permissions:
+  contents: read
+
+concurrency:
+  group: uptime
+  cancel-in-progress: true
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe the production hosts
+        run: |
+          set -u
+
+          # Three attempts twenty seconds apart before calling it down: one failed request is a
+          # blip on the path, not an outage, and an alert that cries wolf gets muted.
+          probe() {
+            local url="$1" expected="$2"
+            for attempt in 1 2 3; do
+              code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$url" || echo 000)
+              if [ "$code" = "$expected" ]; then
+                echo "OK   $url -> $code (essai $attempt)"
+                return 0
+              fi
+              echo "..   $url -> $code (essai $attempt)"
+              [ "$attempt" != "3" ] && sleep 20
+            done
+            echo "DOWN $url -> $code après 3 essais"
+            return 1
+          }
+
+          failed=0
+          probe "https://jawdi.app" 200 || failed=1
+          probe "https://app.jawdi.app" 200 || failed=1
+          probe "https://app.jawdi.app/actuator/health" 200 || failed=1
+
+          if [ "$failed" != "0" ]; then
+            echo ""
+            echo "::error::Jawdi est injoignable. Suivre docs/runbooks/ops/plateforme-injoignable.md"
+            echo "Premier réflexe : est-ce le réseau, ou la machine ? Puis la facturation avant le matériel."
+            exit 1
+          fi
+
+          echo ""
+          echo "Les trois hôtes répondent."
