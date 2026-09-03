@@ -7,6 +7,50 @@ et ce projet adhère au [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0
 
 ## [Unreleased]
 
+### Audit C2 — les quatre trous comblés (2026-09-02 → 09-03)
+
+L'audit de C2 a montré que l'essentiel du sprint était déjà livré (contexte
+`reporting`, tableau de bord adaptatif aux modules, exports CSV et PDF côté
+client) et que quatre manques restaient. Les quatre sont traités, **web et
+mobile**.
+
+#### Added
+
+- **Clôture de bande et bilan de fin de cycle** (`V52`, PR #279/#280) — voir
+  l'entrée dédiée ci-dessous.
+- **Bloc Stock du tableau de bord** (PR #281) — `InventorySection` n'était
+  qu'un enregistrement vide sérialisé en `{}`. Il porte la valeur du stock, les
+  articles sous leur seuil, et ce qui a été consommé sur la période. La
+  consommation sortant du stock en quantités et jamais en francs, sa valeur est
+  dérivée par `StockValuation` — règle **extraite** du bilan de bande pour
+  qu'il n'en existe qu'une.
+- **Période sur le compte de résultat** (PR #282) — la page Analytique
+  répondait « depuis l'ouverture de la ferme ». Les quatre agrégats honorent
+  désormais une fenêtre. Les encaissements sont datés par le **paiement**, pas
+  par la facture : « encaissé en septembre » veut dire l'argent arrivé en
+  septembre. Sans `from`/`to`, l'endpoint rend toujours les totaux cumulés.
+- **Comparaison des bandes clôturées** (PR #283) — `GET /farms/{id}/closures`,
+  page *Élevage / Bilans* sur le web, écran trié par critère sur le mobile.
+  Délibérément **pas** une note Or/Argent/Bronze : inventer des seuils qui
+  contredisent le métier discréditerait tous les autres chiffres.
+
+#### Fixed
+
+- **Le mobile affichait les ventes comme des morts** (PR #280) — jumeau client
+  du défaut serveur corrigé en #278. Les deux écrans calculaient
+  `initialCount - currentCount` ; une bande ayant vendu 800 sujets affichait
+  « 800 morts ». `PoultryBatchResponse` sert désormais `deaths` depuis le
+  registre `MORTALITY`, en une requête groupée.
+
+#### Règle de conduite
+
+Toute valeur dérivée d'un prix d'article porte sa **couverture de
+valorisation** : `typical_unit_price_xof` étant nullable, un article sans prix
+pèse zéro. Bilan de bande, bloc Stock et tableau de comparaison le disent tous
+les trois. Une sous-estimation silencieuse se trompe toujours dans le même
+sens — celui qui flatte.
+
+
 ### Clôture de bande et bilan de fin de cycle (2026-09-02)
 
 Un gérant pouvait suivre une bande jour après jour, mais jamais la conclure :

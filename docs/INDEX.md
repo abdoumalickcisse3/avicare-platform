@@ -97,7 +97,11 @@ Pour toute décision d'architecture non documentée, ME DEMANDER avant d'agir.
 - [x] Sprint B6 — finance
 - [x] Sprint B7 — mobile MVP
 - [x] Sprint C1 — notifications
-- [ ] Sprint C2 — reporting
+- [x] Sprint C2 — reporting (audité 2026-09-02 : l'essentiel était déjà livré ;
+      les quatre manques réels comblés — clôture de bande, bloc Stock, période
+      sur le compte de résultat, comparaison des bandes. Le rendu PDF/Excel
+      **serveur** et `kpi_configs` restent hors périmètre, faute d'usage réel :
+      cf. la spec de clôture §2.2)
 - [ ] Sprint C3 — QR + buyer
 - [ ] Sprint C4 — polish + bêta
 - [ ] Sprint C5 — production go-live
