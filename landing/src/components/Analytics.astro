@@ -1,0 +1,45 @@
+---
+// Mesure d'audience — Google Analytics 4, en mode SANS COOKIE.
+//
+// Pourquoi sans cookie : la politique de confidentialité de ce site affirme qu'aucun cookie de
+// mesure d'audience n'est déposé, et promet de proposer un refus si un outil est activé « lorsque
+// la réglementation l'exige ». Configuré ainsi, GA ne stocke rien sur l'appareil du visiteur :
+// la promesse tient sans bannière, et il n'y a rien à refuser.
+//
+// Ce qu'on garde : pages vues, sources de trafic, pays, parcours, appareils — ce qu'un site
+// vitrine a besoin de savoir. Ce qu'on perd : la distinction nouveau / récurrent, et
+// l'attribution fine d'éventuelles campagnes payées. Réversible : retirer `client_storage` et
+// ajouter une bannière de consentement le jour où la publicité payée le justifie.
+//
+// Sans PUBLIC_GA_ID, rien n'est émis du tout — les builds de développement et de préversion ne
+// polluent pas les statistiques de production.
+const gaId = import.meta.env.PUBLIC_GA_ID;
+---
+
+{
+  gaId && (
+    <>
+      <script
+        is:inline
+        async
+        src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+      />
+      <script is:inline define:vars={{ gaId }}>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() {
+          dataLayer.push(arguments);
+        }
+        gtag("js", new Date());
+        gtag("config", gaId, {
+          // Aucun cookie, aucun identifiant persistant sur l'appareil.
+          client_storage: "none",
+          anonymize_ip: true,
+          // Pas de signaux publicitaires ni de suivi inter-appareils : le site ne fait pas de
+          // publicité, et les activer déposerait des identifiants que la politique exclut.
+          allow_google_signals: false,
+          allow_ad_personalization_signals: false,
+        });
+      </script>
+    </>
+  )
+}

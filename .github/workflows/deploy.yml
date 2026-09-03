@@ -80,6 +80,7 @@ jobs:
             PUBLIC_APP_LOGIN_URL=${{ vars.PUBLIC_APP_LOGIN_URL || 'https://app.jawdi.app/login' }}
             PUBLIC_PARTNER_EMAIL=${{ vars.PUBLIC_PARTNER_EMAIL || 'malick.cisse@nlogicsolutions.com' }}
             PUBLIC_CONTACT_PHONE=${{ vars.PUBLIC_CONTACT_PHONE || '+221 70 475 69 96' }}
+            PUBLIC_GA_ID=${{ vars.PUBLIC_GA_ID }}
           tags: |
             ${{ env.LANDING_IMAGE }}:latest
             ${{ env.LANDING_IMAGE }}:${{ github.sha }}
