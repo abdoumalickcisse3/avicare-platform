@@ -46,7 +46,14 @@ describe("pickHeroTiles", () => {
       period: makePeriod(),
       commercial: makeCommercial(),
       livestock: makeLivestock(),
-      inventory: {},
+      inventory: {
+        lowStockCount: 2,
+        stockValueXof: 450_000,
+        pricedArticles: 3,
+        totalArticles: 4,
+        consumedValueXof: 80_000,
+        valuationIncomplete: true,
+      },
     };
     const tiles = pickHeroTiles(data);
     expect(tiles).toHaveLength(4);

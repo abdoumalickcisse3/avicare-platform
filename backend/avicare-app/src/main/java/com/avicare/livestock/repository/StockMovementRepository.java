@@ -27,6 +27,18 @@ public interface StockMovementRepository extends JpaRepository<StockMovement, Lo
           + "AND m.movementType = com.avicare.livestock.domain.MovementType.OUT")
   List<StockMovement> findOutMovementsForUnit(@Param("unitId") Long unitId);
 
+  /**
+   * Stock outflows of a whole farm over a window, article loaded — what the dashboard values as
+   * "consumed over the period". {@code JOIN FETCH} because every row is priced through its article.
+   */
+  @Query(
+      "SELECT m FROM StockMovement m JOIN FETCH m.stockItem "
+          + "WHERE m.stockItem.farmId = :farmId "
+          + "AND m.movementType = com.avicare.livestock.domain.MovementType.OUT "
+          + "AND m.movementDate BETWEEN :from AND :to")
+  List<StockMovement> findOutMovementsForFarmBetween(
+      @Param("farmId") Long farmId, @Param("from") LocalDate from, @Param("to") LocalDate to);
+
   /** All movements of a farm, most recent first (the service caps the overview to N rows). */
   List<StockMovement> findByStockItem_FarmIdOrderByMovementDateDescIdDesc(Long farmId);
 

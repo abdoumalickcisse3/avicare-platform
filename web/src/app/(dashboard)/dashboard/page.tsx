@@ -25,6 +25,7 @@ import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
 import MyNetworkCard from "@/components/partner/MyNetworkCard";
 import { FarmsTable } from "@/components/dashboard/FarmsTable";
 import { CommercialPanel } from "@/components/dashboard/CommercialPanel";
+import { InventoryPanel } from "@/components/dashboard/InventoryPanel";
 import { LivestockPanel } from "@/components/dashboard/LivestockPanel";
 import { MiniStat } from "@/components/dashboard/MiniStat";
 import { AreaTrend, type Point } from "@/components/dashboard/charts/RechartsWidgets";
@@ -106,7 +107,9 @@ export default function DashboardPage() {
   const secondChart = charts[1] ?? null;
   const commercial = dashboardData?.commercial;
   const livestock = dashboardData?.livestock;
-  const bothPanels = !!commercial && !!livestock;
+  const inventory = dashboardData?.inventory;
+  // Two panels sit side by side; a third wraps under them rather than squeezing all three.
+  const panelCount = [commercial, livestock, inventory].filter(Boolean).length;
 
   return (
     <Stack spacing={2.5}>
@@ -221,10 +224,17 @@ export default function DashboardPage() {
           </Box>
 
           {/* Detail panels — all the other statistics */}
-          {(commercial || livestock) && (
-            <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", lg: bothPanels ? "1fr 1fr" : "1fr" } }}>
+          {panelCount > 0 && (
+            <Box
+              sx={{
+                display: "grid",
+                gap: 2,
+                gridTemplateColumns: { xs: "1fr", lg: panelCount > 1 ? "1fr 1fr" : "1fr" },
+              }}
+            >
               {commercial && <CommercialPanel data={commercial} />}
               {livestock && <LivestockPanel data={livestock} />}
+              {inventory && <InventoryPanel data={inventory} />}
             </Box>
           )}
 

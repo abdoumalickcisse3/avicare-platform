@@ -66,9 +66,24 @@ export interface LivestockSection {
   treatmentsCount: number;
 }
 
-// ── Inventory section (Phase 3 — still opaque) ──────────────────────────────
+// ── Inventory section ───────────────────────────────────────────────────────
 
-export type InventorySection = Record<string, unknown>;
+/**
+ * Mirrors the backend `InventorySection`. Snapshot KPIs (`lowStockCount`, `stockValueXof`,
+ * `pricedArticles`, `totalArticles`) reflect the current state; `consumedValueXof` honours the
+ * dashboard period.
+ *
+ * `valuationIncomplete` is the one flag the UI must act on: an article without a price
+ * contributes nothing to the value, so the figure shown is a floor, never the truth.
+ */
+export interface InventorySection {
+  lowStockCount: number;
+  stockValueXof: number;
+  pricedArticles: number;
+  totalArticles: number;
+  consumedValueXof: number;
+  valuationIncomplete: boolean;
+}
 
 export interface DashboardResponse {
   period: { kind: string; value: string; from: string; to: string };

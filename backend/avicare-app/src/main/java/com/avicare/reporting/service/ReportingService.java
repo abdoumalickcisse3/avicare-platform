@@ -1,7 +1,9 @@
 package com.avicare.reporting.service;
 
 import com.avicare.common.security.access.FarmAccessChecker;
+import com.avicare.livestock.api.InventoryFacade;
 import com.avicare.livestock.api.LivestockFacade;
+import com.avicare.livestock.api.dto.InventoryStats;
 import com.avicare.livestock.api.dto.LivestockStats;
 import com.avicare.livestock.commercial.CommercialFacade;
 import com.avicare.livestock.commercial.dto.CommercialStats;
@@ -25,6 +27,7 @@ public class ReportingService {
   private final SubscriptionFacade subscriptionFacade;
   private final CommercialFacade commercialFacade;
   private final LivestockFacade livestockFacade;
+  private final InventoryFacade inventoryFacade;
   private final FarmAccessChecker farmAccess;
 
   public DashboardResponse buildDashboard(Long farmId, DashboardPeriod period) {
@@ -63,11 +66,19 @@ public class ReportingService {
               ls.treatmentsCount(),
               ls.dailyFeedKg());
     }
-    InventorySection inventory =
-        subscriptionFacade.isModuleEnabled(farmId, "module.inventory")
-                && farmAccess.hasPermission(farmId, "inventory:read")
-            ? new InventorySection()
-            : null;
+    InventorySection inventory = null;
+    if (subscriptionFacade.isModuleEnabled(farmId, "module.inventory")
+        && farmAccess.hasPermission(farmId, "inventory:read")) {
+      InventoryStats is = inventoryFacade.inventoryStats(farmId, period.from(), period.to());
+      inventory =
+          new InventorySection(
+              is.lowStockCount(),
+              is.stockValueXof(),
+              is.pricedArticles(),
+              is.totalArticles(),
+              is.consumedValueXof(),
+              is.pricedArticles() < is.totalArticles());
+    }
     return new DashboardResponse(
         new PeriodInfo(
             period.kind(), period.value(), period.from().toString(), period.to().toString()),

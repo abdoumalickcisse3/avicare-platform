@@ -2,6 +2,7 @@ package com.avicare.livestock.inventory;
 
 import com.avicare.livestock.api.InventoryFacade;
 import com.avicare.livestock.api.dto.InventoryAlertInfo;
+import com.avicare.livestock.api.dto.InventoryStats;
 import com.avicare.livestock.api.dto.InventoryStockInfo;
 import com.avicare.livestock.api.dto.LowStockInfo;
 import com.avicare.livestock.api.dto.SupplierInfo;
@@ -11,6 +12,7 @@ import com.avicare.livestock.domain.StockItem;
 import com.avicare.livestock.domain.Supplier;
 import com.avicare.livestock.inventory.StockAlertsResponse.LowStockItem;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -56,6 +58,30 @@ public class InventoryFacadeImpl implements InventoryFacade {
     return inventoryAlertService.computeStockAlertsForFarm(farmId).lowStockItems().stream()
         .map(InventoryFacadeImpl::toInfo)
         .toList();
+  }
+
+  @Override
+  public InventoryStats inventoryStats(Long farmId, LocalDate from, LocalDate to) {
+    StockValuationResponse valuation = stockMovementService.getStockValuation(farmId);
+    int totalArticles = stockItems.listForFarm(farmId).size();
+    long lowStockCount =
+        inventoryAlertService.computeStockAlertsForFarm(farmId).lowStockItems().size();
+
+    // Consumption is recorded in quantities, never in XOF, so it is valued here through the
+    // shared rule — the same one the end-of-cycle report uses, so the two never disagree.
+    long consumedValueXof =
+        stockMovementService.outMovementsForFarmBetween(farmId, from, to).stream()
+            .map(StockValuation::valueOf)
+            .filter(java.util.Objects::nonNull)
+            .mapToLong(Long::longValue)
+            .sum();
+
+    return new InventoryStats(
+        lowStockCount,
+        valuation.totalValueXof(),
+        valuation.items().size(),
+        totalArticles,
+        consumedValueXof);
   }
 
   @Override

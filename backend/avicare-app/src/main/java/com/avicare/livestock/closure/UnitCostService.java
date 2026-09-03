@@ -1,9 +1,8 @@
 package com.avicare.livestock.closure;
 
 import com.avicare.livestock.domain.StockMovement;
+import com.avicare.livestock.inventory.StockValuation;
 import com.avicare.livestock.repository.StockMovementRepository;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -47,31 +46,12 @@ public class UnitCostService {
       Long itemId = m.getStockItem().getId();
       consumed.add(itemId);
 
-      Long value = valueOf(m);
+      Long value = StockValuation.valueOf(m);
       if (value != null) {
         total += value;
         valued.add(itemId);
       }
     }
     return new FeedCost(total, consumed.size(), valued.size());
-  }
-
-  /**
-   * Value of one outflow: the one the movement carries when it has one — null on every consumption
-   * today, but filled the day outflows get priced, which makes this calculation exact without a
-   * rewrite — otherwise quantity times the article's price. Null when no price is known at all.
-   */
-  private static Long valueOf(StockMovement m) {
-    if (m.getTotalValueXof() != null) {
-      return m.getTotalValueXof();
-    }
-    Integer unitPrice = m.getStockItem().getTypicalUnitPriceXof();
-    if (unitPrice == null) {
-      return null;
-    }
-    return m.getQuantity()
-        .multiply(BigDecimal.valueOf(unitPrice))
-        .setScale(0, RoundingMode.HALF_UP)
-        .longValue();
   }
 }
