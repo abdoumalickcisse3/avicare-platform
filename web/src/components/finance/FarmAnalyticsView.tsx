@@ -14,7 +14,11 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
+import { useState } from "react";
 import { useGetFarmAnalyticsQuery } from "@/store/api/financeApi";
+import { PeriodSelector } from "@/components/dashboard/PeriodSelector";
+import { periodToRange } from "@/lib/dashboard";
+import type { DashboardPeriodState } from "@/types/dashboard";
 import { apiErrorMessage } from "@/lib/apiError";
 import { formatCurrency } from "@/lib/format";
 import { colors } from "@/theme/tokens";
@@ -22,22 +26,47 @@ import { colors } from "@/theme/tokens";
 /**
  * Compte de résultat ferme : trois KPIs (total revenus, total dépenses, marge colorée), le détail
  * du revenu (ventes directes + commandes payées), la ventilation des dépenses par catégorie et le
- * revenu par lot. Totaux cumulés.
+ * revenu par lot, sur la période choisie.
  */
 export function FarmAnalyticsView({ farmId }: { farmId: number }) {
-  const { data, isLoading, error } = useGetFarmAnalyticsQuery({ farmId });
+  // Defaults to 30 days rather than lifetime: a manager comparing months is the reason this
+  // selector exists, and a cumulative total since the farm opened answers a different question.
+  const [period, setPeriod] = useState<DashboardPeriodState>({ kind: "preset", preset: "30d" });
+  const range = periodToRange(period);
+  const { data, isLoading, error } = useGetFarmAnalyticsQuery({ farmId, ...range });
+
+  // The selector stays mounted through every state: it would otherwise vanish on each change,
+  // which is exactly when the reader wants it.
+  const header = (
+    <Box sx={{ mb: 2.5 }}>
+      <PeriodSelector value={period} onChange={setPeriod} />
+    </Box>
+  );
 
   if (isLoading) {
-    return <Skeleton variant="rectangular" height={280} sx={{ borderRadius: 2 }} />;
+    return (
+      <Box>
+        {header}
+        <Skeleton variant="rectangular" height={280} sx={{ borderRadius: 2 }} />
+      </Box>
+    );
   }
   if (error) {
-    return <Alert severity="error">{apiErrorMessage(error)}</Alert>;
+    return (
+      <Box>
+        {header}
+        <Alert severity="error">{apiErrorMessage(error)}</Alert>
+      </Box>
+    );
   }
   if (!data) {
     return (
-      <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: "center" }}>
-        Aucune donnée financière pour le moment.
-      </Typography>
+      <Box>
+        {header}
+        <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: "center" }}>
+          Aucune donnée financière pour cette période.
+        </Typography>
+      </Box>
     );
   }
 
@@ -45,6 +74,7 @@ export function FarmAnalyticsView({ farmId }: { farmId: number }) {
 
   return (
     <Box>
+      {header}
       <Box
         sx={{
           display: "grid",

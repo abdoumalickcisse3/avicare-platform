@@ -111,4 +111,19 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
           + "AND i.sourceType = com.avicare.livestock.domain.InvoiceSourceType.DELIVERY "
           + "AND i.status <> com.avicare.livestock.domain.InvoiceStatus.CANCELLED")
   long sumPaidFromDeliveries(@Param("farmId") Long farmId);
+
+  /**
+   * Cash actually received over a window, on delivery invoices. Dated by the <b>payment</b>, not by
+   * the invoice: "encaissé en septembre" means money that arrived in September, whatever month the
+   * invoice was issued. Cancelled payments and cancelled invoices are both excluded.
+   */
+  @Query(
+      "SELECT COALESCE(SUM(p.amountXof), 0) FROM Payment p, Invoice i "
+          + "WHERE p.invoiceId = i.id AND p.farmId = :farmId "
+          + "AND p.status = com.avicare.livestock.domain.PaymentStatus.COMPLETED "
+          + "AND i.sourceType = com.avicare.livestock.domain.InvoiceSourceType.DELIVERY "
+          + "AND i.status <> com.avicare.livestock.domain.InvoiceStatus.CANCELLED "
+          + "AND p.paymentDate BETWEEN :from AND :to")
+  long sumPaidFromDeliveriesBetween(
+      @Param("farmId") Long farmId, @Param("from") LocalDate from, @Param("to") LocalDate to);
 }

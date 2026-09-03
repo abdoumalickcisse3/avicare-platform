@@ -206,6 +206,22 @@ public class CommercialFacadeImpl implements CommercialFacade {
   }
 
   @Override
+  public long salesRevenueBetween(Long farmId, LocalDate from, LocalDate to) {
+    return saleRepository.sumRevenueBetween(farmId, from, to);
+  }
+
+  @Override
+  public long paidFromDeliveryInvoicesBetween(Long farmId, LocalDate from, LocalDate to) {
+    return invoiceRepository.sumPaidFromDeliveriesBetween(farmId, from, to);
+  }
+
+  @Override
+  public long revenueByProductionUnitBetween(
+      Long farmId, Long productionUnitId, LocalDate from, LocalDate to) {
+    return saleItemRepository.sumRevenueForUnitBetween(farmId, productionUnitId, from, to);
+  }
+
+  @Override
   public List<ActivityItem> recentActivity(Long farmId, int limit) {
     Pageable page = PageRequest.of(0, limit);
     Stream<ActivityItem> sales =
