@@ -1,9 +1,11 @@
 package com.avicare.livestock.api;
 
 import com.avicare.livestock.api.dto.InventoryAlertInfo;
+import com.avicare.livestock.api.dto.InventoryStats;
 import com.avicare.livestock.api.dto.InventoryStockInfo;
 import com.avicare.livestock.api.dto.LowStockInfo;
 import com.avicare.livestock.api.dto.SupplierInfo;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,6 +34,12 @@ public interface InventoryFacade {
    * notification context (Sprint C1).
    */
   List<InventoryAlertInfo> inventoryAlerts(Long farmId);
+
+  /**
+   * Farm-level inventory KPIs for the dashboard's stock block: how many articles are low, what the
+   * stock is worth, and what left it over {@code [from, to]}.
+   */
+  InventoryStats inventoryStats(Long farmId, LocalDate from, LocalDate to);
 
   /**
    * Record a manual stock movement of {@code delta} on a stock item (positive = reception, negative

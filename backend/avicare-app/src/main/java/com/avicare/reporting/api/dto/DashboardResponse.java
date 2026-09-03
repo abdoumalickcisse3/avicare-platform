@@ -55,6 +55,21 @@ public record DashboardResponse(
       long treatmentsCount,
       Double dailyFeedKg) {}
 
-  // Phase 3 enrichira ce record (stock bas, valeur, consommation).
-  public record InventorySection() {}
+  /**
+   * Inventory KPIs aggregated by {@link com.avicare.livestock.api.InventoryFacade#inventoryStats}.
+   * Snapshot KPIs ({@code lowStockCount}, {@code stockValueXof}, {@code pricedArticles}, {@code
+   * totalArticles}) reflect the current state; {@code consumedValueXof} honours the dashboard
+   * period window. Amounts in XOF (integer).
+   *
+   * <p>{@code valuationIncomplete} is derived, not stored: an article without a {@code
+   * typical_unit_price_xof} contributes nothing to the value, so the interface has to say the real
+   * figure is higher rather than show a flattering total in silence.
+   */
+  public record InventorySection(
+      long lowStockCount,
+      long stockValueXof,
+      int pricedArticles,
+      int totalArticles,
+      long consumedValueXof,
+      boolean valuationIncomplete) {}
 }

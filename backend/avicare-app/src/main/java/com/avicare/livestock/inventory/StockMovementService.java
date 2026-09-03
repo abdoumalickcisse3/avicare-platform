@@ -170,6 +170,14 @@ public class StockMovementService {
     return stockMovementRepository.findByProductionUnitIdOrderByMovementDateDesc(productionUnitId);
   }
 
+  /**
+   * Stock outflows of the farm over a window — valued by the caller through {@link StockValuation}.
+   */
+  @Transactional(readOnly = true)
+  public List<StockMovement> outMovementsForFarmBetween(Long farmId, LocalDate from, LocalDate to) {
+    return stockMovementRepository.findOutMovementsForFarmBetween(farmId, from, to);
+  }
+
   @Transactional(readOnly = true)
   public StockValuationResponse getStockValuation(Long farmId) {
     List<StockValuationResponse.Item> items = new ArrayList<>();

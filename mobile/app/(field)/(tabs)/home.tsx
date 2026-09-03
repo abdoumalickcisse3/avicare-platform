@@ -48,6 +48,7 @@ import { MicButton } from '@/components/assistant/MicButton';
 import { MyNetworkCard } from '@/components/field/MyNetworkCard';
 import { AnnouncementBanner } from '@/components/field/AnnouncementBanner';
 import { BenchmarkCard } from '@/components/field/BenchmarkCard';
+import { StockSummaryCard } from '@/components/field/StockSummaryCard';
 import { useFarmAccess } from '@/auth/useSession';
 import { useListFarmsQuery } from '@/store/api/farmsApi';
 import { useGetDashboardQuery } from '@/store/api/dashboardApi';
@@ -408,6 +409,10 @@ export default function HomeScreen() {
                 )}
               </View>
             </View>
+
+            {/* Stocks: what is on hand and what it is worth. Gated server-side on the
+                inventory module + inventory:read, so its mere presence is the permission. */}
+            {data?.inventory && <StockSummaryCard data={data.inventory} />}
 
             {/* Co-branding: the networks this farm belongs to. Renders nothing when there is none. */}
             {farmId !== undefined && <MyNetworkCard farmId={farmId} />}
