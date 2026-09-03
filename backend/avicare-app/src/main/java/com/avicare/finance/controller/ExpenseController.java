@@ -88,9 +88,16 @@ public class ExpenseController {
     return ApiResponse.of(new ExpenseSummaryResponse(categories, summary.totalXof()));
   }
 
+  /**
+   * Compte de résultat de la ferme. Sans {@code from}/{@code to}, les totaux cumulés — ce que la
+   * page servait avant d'avoir un sélecteur de période.
+   */
   @GetMapping("/analytics")
   @PreAuthorize(FinanceAccess.READ)
-  public ApiResponse<FarmAnalyticsResponse> farmAnalytics(@PathVariable Long farmId) {
-    return ApiResponse.of(financeAnalyticsService.farmAnalytics(farmId));
+  public ApiResponse<FarmAnalyticsResponse> farmAnalytics(
+      @PathVariable Long farmId,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+    return ApiResponse.of(financeAnalyticsService.farmAnalytics(farmId, from, to));
   }
 }

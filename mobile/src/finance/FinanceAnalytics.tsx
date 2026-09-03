@@ -11,7 +11,11 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
 import { ArrowDownRight, ArrowUpRight, PackageOpen, TrendingUp } from 'lucide-react-native';
 import { tokens } from '@/theme';
+import { useSelector } from 'react-redux';
 import { useGetFarmAnalyticsQuery } from '@/store/api/financeApi';
+import { PeriodSelector } from '@/components/PeriodSelector';
+import { periodToRange } from '@/lib/period';
+import { selectPeriod } from '@/store/slices/selectionSlice';
 import { formatCurrency } from '@/lib/format';
 import type { FarmAnalytics } from '@/types';
 
@@ -155,17 +159,30 @@ function BarRow({ label, amount, ratio, color }: { label: string; amount: number
 }
 
 export function FinanceAnalytics({ farmId }: { farmId: number }) {
-  const { data, isLoading } = useGetFarmAnalyticsQuery({ farmId });
+  // Reads the period the whole app already shares rather than adding a second control:
+  // two period selectors on one app end up disagreeing about what "30 jours" means.
+  const period = useSelector(selectPeriod);
+  const { data, isLoading } = useGetFarmAnalyticsQuery({ farmId, ...periodToRange(period) });
 
+  // Stays mounted through every state: the selector would otherwise vanish on each change,
+  // which is exactly when the reader wants it.
   if (isLoading) {
     return (
-      <View style={styles.loading}>
-        <ActivityIndicator color={tokens.colors.primary[600]} />
+      <View>
+        <PeriodSelector />
+        <View style={styles.loading}>
+          <ActivityIndicator color={tokens.colors.primary[600]} />
+        </View>
       </View>
     );
   }
   if (!data) {
-    return <Text style={styles.muted}>Aucune donnée financière pour le moment.</Text>;
+    return (
+      <View>
+        <PeriodSelector />
+        <Text style={styles.muted}>Aucune donnée financière pour cette période.</Text>
+      </View>
+    );
   }
 
   const a: FarmAnalytics = data;
@@ -177,6 +194,8 @@ export function FinanceAnalytics({ farmId }: { farmId: number }) {
 
   return (
     <View style={{ gap: tokens.spacing[4] }}>
+      <PeriodSelector />
+
       {/* Margin hero */}
       <Animated.View entering={FadeInDown.springify().damping(18)} style={[styles.marginCard, { borderColor: withAlpha(marginColor, 0.35) }]}>
         <View style={styles.marginTop}>

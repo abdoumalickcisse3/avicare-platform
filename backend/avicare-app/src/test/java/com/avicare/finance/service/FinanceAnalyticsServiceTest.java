@@ -13,6 +13,7 @@ import com.avicare.livestock.domain.UnitKind;
 import com.avicare.livestock.domain.UnitStatus;
 import com.avicare.parameters.api.ParametersFacade;
 import com.avicare.parameters.api.dto.CatalogEntryInfo;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -112,5 +113,41 @@ class FinanceAnalyticsServiceTest {
     assertThat(r.marginXof()).isZero();
     assertThat(r.expensesByCategory()).isEmpty();
     assertThat(r.revenueByUnit()).isEmpty();
+  }
+
+  @Test
+  void windowedAnalytics_readsThePeriodSources_notTheLifetimeOnes() {
+    LocalDate from = LocalDate.of(2026, 9, 1);
+    LocalDate to = LocalDate.of(2026, 9, 30);
+
+    when(commercialFacade.salesRevenueBetween(7L, from, to)).thenReturn(300_000L);
+    when(commercialFacade.paidFromDeliveryInvoicesBetween(7L, from, to)).thenReturn(120_000L);
+    when(expenseRepository.sumByCategory(7L, from, to))
+        .thenReturn(List.<Object[]>of(new Object[] {"feed", 200_000L}));
+    when(livestockFacade.listFarmUnits(7L)).thenReturn(List.of());
+    when(parametersFacade.listForFarm(7L, "expense_categories")).thenReturn(List.of());
+
+    FarmAnalyticsResponse res = service.farmAnalytics(7L, from, to);
+
+    assertThat(res.totalRevenueXof()).isEqualTo(420_000L);
+    assertThat(res.totalExpenseXof()).isEqualTo(200_000L);
+    assertThat(res.marginXof()).isEqualTo(220_000L);
+    // The lifetime reads must not be consulted at all when a window is given.
+    Mockito.verify(commercialFacade, Mockito.never()).totalSalesRevenue(Mockito.anyLong());
+    Mockito.verify(commercialFacade, Mockito.never())
+        .totalPaidFromDeliveryInvoices(Mockito.anyLong());
+  }
+
+  @Test
+  void withoutAWindow_keepsServingTheLifetimeFigures() {
+    when(commercialFacade.totalSalesRevenue(7L)).thenReturn(1_000_000L);
+    when(commercialFacade.totalPaidFromDeliveryInvoices(7L)).thenReturn(0L);
+    when(expenseRepository.sumByCategory(7L, null, null)).thenReturn(List.of());
+    when(livestockFacade.listFarmUnits(7L)).thenReturn(List.of());
+    when(parametersFacade.listForFarm(7L, "expense_categories")).thenReturn(List.of());
+
+    FarmAnalyticsResponse res = service.farmAnalytics(7L);
+
+    assertThat(res.totalRevenueXof()).isEqualTo(1_000_000L);
   }
 }

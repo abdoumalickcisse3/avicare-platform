@@ -84,6 +84,15 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
           + "AND s.status = com.avicare.livestock.domain.SaleStatus.COMPLETED")
   long sumAllRevenue(@Param("farmId") Long farmId);
 
+  /** Same sum restricted to a window, by sale date — the period view of the P&L. */
+  @Query(
+      "SELECT COALESCE(SUM(s.totalXof), 0) FROM Sale s "
+          + "WHERE s.farmId = :farmId "
+          + "AND s.status = com.avicare.livestock.domain.SaleStatus.COMPLETED "
+          + "AND s.saleDate BETWEEN :from AND :to")
+  long sumRevenueBetween(
+      @Param("farmId") Long farmId, @Param("from") LocalDate from, @Param("to") LocalDate to);
+
   /** Sales recorded platform-wide since a date — cockpit volume, not a tenant-scoped read. */
   @Query("SELECT COUNT(s) FROM Sale s WHERE s.saleDate >= :since")
   long countSince(@Param("since") LocalDate since);

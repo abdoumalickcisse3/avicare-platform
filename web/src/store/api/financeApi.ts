@@ -67,8 +67,15 @@ export const financeApi = baseApi.injectEndpoints({
       transformResponse: (r: ApiEnvelope<ExpenseSummary>) => r.data,
       providesTags: (_r, _e, { farmId }) => [{ type: "Expense", id: `LIST-${farmId}` }],
     }),
-    getFarmAnalytics: build.query<FarmAnalytics, { farmId: number }>({
-      query: ({ farmId }) => `/api/v1/farms/${farmId}/finance/analytics`,
+    getFarmAnalytics: build.query<
+      FarmAnalytics,
+      { farmId: number; from?: string; to?: string }
+    >({
+      query: ({ farmId, from, to }) => ({
+        url: `/api/v1/farms/${farmId}/finance/analytics`,
+        // No dates = lifetime totals, the contract the page had before it had a period.
+        params: from && to ? { from, to } : undefined,
+      }),
       transformResponse: (r: ApiEnvelope<FarmAnalytics>) => r.data,
       providesTags: (_r, _e, { farmId }) => [{ type: "Expense", id: `LIST-${farmId}` }],
     }),

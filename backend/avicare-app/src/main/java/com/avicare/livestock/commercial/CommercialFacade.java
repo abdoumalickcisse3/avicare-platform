@@ -56,6 +56,20 @@ public interface CommercialFacade {
   /** Σ des ventes directes COMPLETED de la ferme (lifetime), pour le P&L finance. */
   long totalSalesRevenue(Long farmId);
 
+  /** Idem, restreint à une fenêtre par date de vente. */
+  long salesRevenueBetween(Long farmId, LocalDate from, LocalDate to);
+
+  /**
+   * Σ encaissée sur les factures de livraison pendant la fenêtre, datée par le <b>paiement</b> : «
+   * encaissé en septembre » veut dire l'argent arrivé en septembre, quel que soit le mois
+   * d'émission de la facture.
+   */
+  long paidFromDeliveryInvoicesBetween(Long farmId, LocalDate from, LocalDate to);
+
+  /** Idem {@link #revenueByProductionUnit}, restreint à une fenêtre par date de vente. */
+  long revenueByProductionUnitBetween(
+      Long farmId, Long productionUnitId, LocalDate from, LocalDate to);
+
   /** Σ des montants encaissés sur les factures de LIVRAISON non annulées (lifetime). */
   long totalPaidFromDeliveryInvoices(Long farmId);
 
