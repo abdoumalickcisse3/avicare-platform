@@ -14,7 +14,9 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   // Generous per-test budget: the Next dev server compiles routes on first hit.
-  timeout: 90_000,
+  // A full onboarding journey is seven wizard steps plus two navigations; 90s covered a
+  // single-page test and left nothing for this one.
+  timeout: 150_000,
   expect: { timeout: 15_000 },
   reporter: "list",
   use: {
