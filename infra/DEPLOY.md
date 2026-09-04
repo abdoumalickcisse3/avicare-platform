@@ -156,6 +156,9 @@ Restore: `./scripts/restore-db.sh ~/avicare-backups/avicare_avicare_<stamp>.sql.
   `JAEGER_UI_PASSWORD_HASH` in `.env` — the hash is **required**, the deploy fails without it
   rather than publishing an unprotected UI:
   `docker run --rm caddy:2-alpine caddy hash-password --plaintext '<password>'`
+  **Wrap the hash in single quotes in `.env`.** It starts with `$2a$`, and `deploy.sh` sources
+  the file under `set -u`: unquoted, bash reads `$2` as a positional parameter and the deploy
+  stops on `$2: unbound variable`.
 - **DNS**: needs a public A record `jaeger.{DOMAIN}` -> this VPS, like the other names.
 - **Turn it off** without rebuilding: empty `TRACING_JAVA_OPTS` in `.env`, or set
   `OTEL_SDK_DISABLED=true`, then `./deploy.sh`. The backend runs either way — the OTLP exporter
