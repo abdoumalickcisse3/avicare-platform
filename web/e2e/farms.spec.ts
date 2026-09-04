@@ -71,6 +71,11 @@ test("login, list farms, create one, and view its detail", async ({ page }) => {
     if (path.endsWith("/api/v1/farms/1/users") && method === "GET") {
       return json(200, []);
     }
+    // A GET the screens make that this test does not model gets an empty collection, never null.
+    // The pages added since this test was written call endpoints it never listed, and `null`
+    // reached a `.filter()` — the whole route died behind the error boundary, on a screen the
+    // test was not even about. An empty list is the shape a fresh farm actually has.
+    if (method === "GET") return json(200, []);
     return json(200, null);
   });
 
