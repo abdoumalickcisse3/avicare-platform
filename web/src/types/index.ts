@@ -1746,6 +1746,11 @@ export interface RequestTraceDetail extends RequestTraceRow {
   errorMessage: string | null;
   stackTrace: string | null;
   endedAt: string;
+  /**
+   * Identifiant de trace OpenTelemetry. Absent quand l'agent ne tournait pas — ne jamais
+   * construire un lien Jaeger sans lui : un lien mort est pire que pas de lien.
+   */
+  otelTraceId?: string | null;
   auditActions: string[];
 }
 

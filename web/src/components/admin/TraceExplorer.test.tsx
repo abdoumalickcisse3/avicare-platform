@@ -33,10 +33,14 @@ const DETAIL = {
   errorMessage: "IllegalStateException: boom",
   stackTrace: "java.lang.IllegalStateException: boom\n\tat com.avicare...",
   endedAt: "2026-08-30T10:37:01",
+  otelTraceId: "4bf92f3577b34da6a3ce929d0e0e4736",
   auditActions: ["staff.post /api/v1/farms/{farmId}/sales"],
 };
 
-function mockApi(items: unknown[] = [ROW]) {
+/** Same trace, recorded while the OpenTelemetry agent was off. */
+const DETAIL_NO_OTEL = { ...DETAIL, otelTraceId: null };
+
+function mockApi(items: unknown[] = [ROW], detail: unknown = DETAIL) {
   const urls: string[] = [];
   vi.stubGlobal(
     "fetch",
@@ -44,7 +48,7 @@ function mockApi(items: unknown[] = [ROW]) {
       const url = input instanceof Request ? input.url : String(input);
       urls.push(url);
       const body = url.includes("/traces/")
-        ? { data: DETAIL }
+        ? { data: detail }
         : { items, page: 0, size: 50, totalElements: items.length, totalPages: 1 };
       return new Response(JSON.stringify(body), {
         status: 200,
@@ -105,6 +109,33 @@ describe("TraceExplorer", () => {
     // Twice on purpose: the one-line message in the alert, and the stack trace below it.
     expect(screen.getAllByText(/IllegalStateException: boom/)).toHaveLength(2);
     expect(screen.getByText("staff.post /api/v1/farms/{farmId}/sales")).toBeInTheDocument();
+  });
+
+  it("offers the span breakdown when the trace carries an OpenTelemetry id", async () => {
+    mockApi();
+    renderWithProviders(<TraceExplorer />);
+
+    await userEvent.click(await screen.findByText("3F2A91CC"));
+
+    const link = await screen.findByRole("link", { name: /décomposition/i });
+    expect(link).toHaveAttribute(
+      "href",
+      expect.stringContaining("4bf92f3577b34da6a3ce929d0e0e4736"),
+    );
+  });
+
+  it("shows no dead link when the agent was not running", async () => {
+    mockApi([ROW], DETAIL_NO_OTEL);
+    renderWithProviders(<TraceExplorer />);
+
+    await userEvent.click(await screen.findByText("3F2A91CC"));
+
+    // The dialog has to be open before absence means anything.
+    expect(await screen.findByText(/Trace #12/)).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByText(/"password":"\*\*\*"/)).toBeInTheDocument(),
+    );
+    expect(screen.queryByRole("link", { name: /décomposition/i })).not.toBeInTheDocument();
   });
 
   it("says so plainly when nothing matches", async () => {

@@ -98,6 +98,7 @@ public class AdminTraceReadService {
         trace.getStackTrace(),
         trace.getStartedAt(),
         trace.getEndedAt(),
+        trace.getOtelTraceId(),
         auditActions);
   }
 
