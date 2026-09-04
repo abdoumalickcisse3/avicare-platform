@@ -51,6 +51,25 @@ export const authApi = baseApi.injectEndpoints({
       invalidatesTags: [{ type: 'Member', id: 'me' }],
     }),
     /**
+     * Step 1 of a forgotten password: ask for a code over WhatsApp. The answer is the same for a
+     * known and an unknown number — the screen must not become a way to test whether an account
+     * exists — so the caller moves on regardless of the outcome.
+     */
+    requestPasswordReset: build.mutation<{ message: string }, { phone: string }>({
+      query: (body) => ({ url: '/api/v1/auth/password-reset/request', method: 'POST', body }),
+      transformResponse: (r: ApiEnvelope<{ message: string }>) => r.data,
+    }),
+
+    /** Step 2: the code received on WhatsApp plus the new password. */
+    confirmPasswordReset: build.mutation<
+      { message: string },
+      { phone: string; code: string; newPassword: string }
+    >({
+      query: (body) => ({ url: '/api/v1/auth/password-reset/confirm', method: 'POST', body }),
+      transformResponse: (r: ApiEnvelope<{ message: string }>) => r.data,
+    }),
+
+    /**
      * Change your own password. Every session is revoked server-side, this one included, so the
      * caller must sign in again — the screen logs out rather than leaving a dead token in place.
      */
@@ -64,6 +83,8 @@ export const {
   useLoginMutation,
   useRefreshMutation,
   useSignupMutation,
+  useRequestPasswordResetMutation,
+  useConfirmPasswordResetMutation,
   useGetProfileQuery,
   useUpdateProfileMutation,
   useChangePasswordMutation,
