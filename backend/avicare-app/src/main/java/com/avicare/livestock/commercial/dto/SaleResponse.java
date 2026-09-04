@@ -4,6 +4,7 @@ import com.avicare.livestock.domain.ArticleSource;
 import com.avicare.livestock.domain.Sale;
 import com.avicare.livestock.domain.SaleItem;
 import com.avicare.livestock.domain.SaleStatus;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -22,6 +23,7 @@ public record SaleResponse(
     String notes,
     List<Line> items) {
 
+  @Schema(name = "SaleLine")
   public record Line(
       Long id,
       String articleKey,

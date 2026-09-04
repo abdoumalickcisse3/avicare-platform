@@ -4,6 +4,7 @@ import com.avicare.livestock.domain.ArticleSource;
 import com.avicare.livestock.domain.Delivery;
 import com.avicare.livestock.domain.DeliveryItem;
 import com.avicare.livestock.domain.DeliveryStatus;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -22,6 +23,7 @@ public record DeliveryResponse(
     String notes,
     List<Line> items) {
 
+  @Schema(name = "DeliveryLine")
   public record Line(
       Long id,
       String articleKey,

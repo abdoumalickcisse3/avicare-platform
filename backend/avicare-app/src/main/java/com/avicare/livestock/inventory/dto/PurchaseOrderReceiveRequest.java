@@ -1,6 +1,7 @@
 package com.avicare.livestock.inventory.dto;
 
 import com.avicare.livestock.inventory.PurchaseOrderReceiveCommand;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -13,6 +14,7 @@ import java.util.List;
 public record PurchaseOrderReceiveRequest(
     LocalDate actualDeliveryDate, @NotEmpty @Valid List<LineReceipt> lines) {
 
+  @Schema(name = "PurchaseOrderLineReceipt")
   public record LineReceipt(
       @NotNull Long itemId, @NotNull @PositiveOrZero BigDecimal receivedQuantity) {
 

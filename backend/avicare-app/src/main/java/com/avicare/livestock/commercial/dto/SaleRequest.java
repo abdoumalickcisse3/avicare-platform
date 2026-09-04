@@ -3,6 +3,7 @@ package com.avicare.livestock.commercial.dto;
 import com.avicare.livestock.api.ProductType;
 import com.avicare.livestock.commercial.SaleCommand;
 import com.avicare.livestock.domain.ArticleSource;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -23,6 +24,7 @@ public record SaleRequest(
     @Size(max = 2000) String notes,
     @NotEmpty @Valid List<LineRequest> lines) {
 
+  @Schema(name = "SaleLineRequest")
   public record LineRequest(
       @NotBlank @Size(max = 80) String articleKey,
       @NotNull ArticleSource articleSource,

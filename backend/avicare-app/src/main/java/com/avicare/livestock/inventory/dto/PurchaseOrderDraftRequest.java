@@ -2,6 +2,7 @@ package com.avicare.livestock.inventory.dto;
 
 import com.avicare.livestock.domain.ArticleSource;
 import com.avicare.livestock.inventory.PurchaseOrderDraftCommand;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -23,6 +24,7 @@ public record PurchaseOrderDraftRequest(
     @Size(max = 2000) String notes,
     @NotEmpty @Valid List<LineRequest> lines) {
 
+  @Schema(name = "PurchaseOrderLineRequest")
   public record LineRequest(
       @NotBlank @Size(max = 80) String articleKey,
       @NotNull ArticleSource articleSource,
