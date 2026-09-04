@@ -148,7 +148,10 @@ services:
   # Traçage distribué. Son interface n'a AUCUNE authentification native : elle n'est jamais
   # publiée directement, seulement à travers Caddy, qui exige un mot de passe.
   jaeger:
-    image: jaegertracing/all-in-one:1.62
+    # Tag complet (1.62.0) : « 1.62 » n'existe pas sur Docker Hub, seuls 1.60 et 1 sont des
+    # raccourcis. Version épinglée — une image qui change toute seule est une image qu'on ne
+    # peut pas déboguer.
+    image: jaegertracing/all-in-one:1.62.0
     restart: unless-stopped
     environment:
       # Sur disque plutôt qu'en mémoire : la mémoire perd tout au redémarrage et grossit sans
