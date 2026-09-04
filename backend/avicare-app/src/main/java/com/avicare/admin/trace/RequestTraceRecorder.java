@@ -98,6 +98,7 @@ public class RequestTraceRecorder {
         .stackTrace(stackTrace(draft.error()))
         .startedAt(draft.startedAt())
         .endedAt(draft.endedAt())
+        .otelTraceId(draft.otelTraceId())
         .build();
   }
 

@@ -11,6 +11,9 @@ import java.time.LocalDateTime;
  *
  * @param error the exception that ended the request, when one was seen — either escaping the filter
  *     chain, or handed over by the global exception handler through a request attribute
+ * @param otelTraceId the OpenTelemetry trace id, read from the MDC <b>on the request thread</b>:
+ *     {@link RequestTraceRecorder} is {@code @Async} and the MDC does not propagate there, so
+ *     reading it any later would return null on every request
  */
 public record RequestTraceDraft(
     String requestId,
@@ -28,4 +31,5 @@ public record RequestTraceDraft(
     String responseBody,
     Throwable error,
     LocalDateTime startedAt,
-    LocalDateTime endedAt) {}
+    LocalDateTime endedAt,
+    String otelTraceId) {}
