@@ -43,6 +43,14 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
 public class RequestTraceFilter extends OncePerRequestFilter {
 
   private static final Set<String> MUTATING_METHODS = Set.of("POST", "PUT", "PATCH", "DELETE");
+
+  /**
+   * The key the OpenTelemetry agent publishes into the MDC through its Logback instrumentation. A
+   * plain string rather than an import: adding {@code opentelemetry-api} to the pom to read one
+   * value would create a compile dependency on a tool the deployment promises it can drop.
+   */
+  static final String OTEL_TRACE_ID_MDC_KEY = "trace_id";
+
   private static final Set<String> EXCLUDED_PREFIXES =
       Set.of("/actuator", "/swagger-ui", "/v3/api-docs", "/favicon.ico");
 
@@ -114,7 +122,11 @@ public class RequestTraceFilter extends OncePerRequestFilter {
                 status >= 400 ? responseBody : null,
                 error,
                 startedAt,
-                LocalDateTime.now()));
+                LocalDateTime.now(),
+                // Read here, on the request thread: the recorder is @Async and the MDC does not
+                // propagate to that pool. The OTel agent publishes this key through its Logback
+                // instrumentation; with no agent, it is simply absent.
+                MDC.get(OTEL_TRACE_ID_MDC_KEY)));
       }
     }
   }

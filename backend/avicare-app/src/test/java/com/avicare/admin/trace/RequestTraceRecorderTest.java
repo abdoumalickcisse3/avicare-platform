@@ -116,7 +116,26 @@ class RequestTraceRecorderTest {
     verify(repository).save(any());
   }
 
+  @Test
+  void keepsTheOtelTraceId_soTheConsoleCanLinkToJaeger() {
+    RequestTrace trace = recorder.toEntity(draft(null));
+
+    assertThat(trace.getOtelTraceId()).isEqualTo("4bf92f3577b34da6a3ce929d0e0e4736");
+  }
+
+  /** The agent can be switched off without a rebuild, so an absent id is a normal state. */
+  @Test
+  void toleratesAMissingOtelTraceId_whenTheAgentIsOff() {
+    RequestTrace trace = recorder.toEntity(draft(null, null));
+
+    assertThat(trace.getOtelTraceId()).isNull();
+  }
+
   private static RequestTraceDraft draft(Throwable error) {
+    return draft(error, "4bf92f3577b34da6a3ce929d0e0e4736");
+  }
+
+  private static RequestTraceDraft draft(Throwable error, String otelTraceId) {
     return new RequestTraceDraft(
         "corr-1",
         "POST",
@@ -133,6 +152,7 @@ class RequestTraceRecorderTest {
         "{\"title\":\"Internal Server Error\"}",
         error,
         LocalDateTime.now().minusSeconds(1),
-        LocalDateTime.now());
+        LocalDateTime.now(),
+        otelTraceId);
   }
 }

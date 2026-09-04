@@ -36,6 +36,14 @@ public class RequestTrace {
   @Column(name = "request_id", nullable = false)
   private String requestId;
 
+  /**
+   * Identifiant de trace OpenTelemetry, quand l'agent tourne. Permet à la console d'ouvrir la
+   * décomposition en spans correspondante dans Jaeger. Nul quand le traçage est désactivé — un état
+   * normal, pas une anomalie.
+   */
+  @Column(name = "otel_trace_id")
+  private String otelTraceId;
+
   @Column(nullable = false)
   private String method;
 
@@ -101,8 +109,10 @@ public class RequestTrace {
       String errorMessage,
       String stackTrace,
       LocalDateTime startedAt,
-      LocalDateTime endedAt) {
+      LocalDateTime endedAt,
+      String otelTraceId) {
     this.requestId = requestId;
+    this.otelTraceId = otelTraceId;
     this.method = method;
     this.path = path;
     this.routePattern = routePattern;
