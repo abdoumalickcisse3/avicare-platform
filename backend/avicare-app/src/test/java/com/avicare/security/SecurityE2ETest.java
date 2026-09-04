@@ -8,6 +8,7 @@ import com.avicare.common.security.jwt.JwtService;
 import com.avicare.common.security.principal.AvicarePrincipal;
 import com.avicare.common.security.principal.FarmRole;
 import com.avicare.common.security.principal.Membership;
+import com.avicare.common.security.principal.PartnerPrincipal;
 import com.avicare.common.security.principal.UserRole;
 import com.avicare.common.tenancy.context.TenancyContext;
 import com.avicare.finance.repository.ExpenseRepository;
@@ -252,6 +253,53 @@ class SecurityE2ETest {
         .perform(get("/api/v1/test/farms/42/secure"))
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.code").value("AUTHENTICATION_FAILED"));
+  }
+
+  @Test
+  void partnerToken_isRefusedOnTheFarmerRealm() throws Exception {
+    String token =
+        jwtService.generatePartnerAccessToken(
+            new PartnerPrincipal(1L, "agent@provendier.test", 7L));
+
+    // Farm-scoped routes were already refused by the per-farm check. These are the ones that are
+    // NOT scoped to a farm: before the realm rule they answered 200 (reference data) or blew up
+    // with 500 "No tenancy context bound" — which is how a portal token reached the farmer realm.
+    for (String path :
+        List.of(
+            "/api/v1/farms",
+            "/api/v1/account/profile",
+            "/api/v1/account/settings",
+            "/api/v1/my/advances",
+            "/api/v1/breeds?species=POULTRY",
+            "/api/v1/announcements",
+            "/api/v1/permissions/catalog")) {
+      mockMvc
+          .perform(get(path).header("Authorization", "Bearer " + token))
+          .andExpect(status().isForbidden());
+    }
+  }
+
+  @Test
+  void farmerToken_isRefusedOnThePartnerPortal() throws Exception {
+    String token = tokenFor(11L, new Membership(42L, FarmRole.OWNER, List.of("poultry:write")));
+
+    for (String path :
+        List.of("/api/v1/partner/me", "/api/v1/partner/network", "/api/v1/partner/network/farms")) {
+      mockMvc
+          .perform(get(path).header("Authorization", "Bearer " + token))
+          .andExpect(status().isForbidden());
+    }
+  }
+
+  @Test
+  void adminToken_isAlsoRefusedOnThePartnerPortal() throws Exception {
+    String token =
+        jwtService.generateAccessToken(
+            new AvicarePrincipal(12L, "staff@jawdi.app", UserRole.ADMIN, List.of()));
+
+    mockMvc
+        .perform(get("/api/v1/partner/me").header("Authorization", "Bearer " + token))
+        .andExpect(status().isForbidden());
   }
 
   private String tokenFor(Long userId, Membership membership) {

@@ -80,8 +80,16 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers("/swagger-ui/**", "/v3/api-docs/**")
                     .permitAll()
+                    // The portal is its own realm. Saying "authenticated" here would let a
+                    // partner token through anywhere the per-farm check does not apply — and
+                    // where it does not apply, the request either answered 200 (breeds,
+                    // announcements, the permission catalog) or blew up on the missing tenancy
+                    // context (500 on /farms, /account/**, /my/**). Each side is now pinned to
+                    // its own realm, so a token from the wrong one is refused at the door.
+                    .requestMatchers("/api/v1/partner/**")
+                    .hasRole("PARTNER")
                     .anyRequest()
-                    .authenticated())
+                    .hasAnyRole("ADMIN", "USER"))
         .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
         .exceptionHandling(
             ex ->
