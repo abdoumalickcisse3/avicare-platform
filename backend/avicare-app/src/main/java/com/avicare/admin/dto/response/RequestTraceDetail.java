@@ -27,4 +27,9 @@ public record RequestTraceDetail(
     String stackTrace,
     LocalDateTime startedAt,
     LocalDateTime endedAt,
+    /**
+     * Identifiant de trace OpenTelemetry, nul quand l'agent ne tournait pas. La console n'affiche
+     * le lien vers Jaeger que s'il est présent : un lien mort est pire que pas de lien.
+     */
+    String otelTraceId,
     List<String> auditActions) {}

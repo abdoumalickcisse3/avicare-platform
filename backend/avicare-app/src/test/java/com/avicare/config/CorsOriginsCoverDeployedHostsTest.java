@@ -33,6 +33,19 @@ class CorsOriginsCoverDeployedHostsTest {
    */
   private static final String DOMAIN_PLACEHOLDER = "{$DOMAIN}";
 
+  /**
+   * Hosts Caddy serves that must <b>not</b> be CORS origins.
+   *
+   * <p>The rule above assumes every vhost is a Jawdi front that calls the backend. Jaeger is the
+   * first that is not: its UI is served by Jaeger itself and never touches our API. Listing it
+   * would let anything running on that host call the API with the user's credentials — widening the
+   * attack surface to buy nothing.
+   *
+   * <p>Adding a name here is a decision, not a formality: it says "this host has no business
+   * talking to our backend". If a new front needs the API, it belongs in the origins, not here.
+   */
+  private static final List<String> HOSTS_THAT_NEVER_CALL_THE_API = List.of("jaeger");
+
   private String read(String relative) throws IOException {
     Path path = REPO_ROOT.resolve(relative);
     assertThat(path).as("%s — move this file and this test must follow", relative).isRegularFile();
@@ -49,6 +62,8 @@ class CorsOriginsCoverDeployedHostsTest {
         .flatMap(line -> Arrays.stream(line.split(",")))
         .map(host -> host.strip().replace(DOMAIN_PLACEHOLDER, DOMAIN))
         .filter(host -> !host.isBlank())
+        .filter(
+            host -> HOSTS_THAT_NEVER_CALL_THE_API.stream().noneMatch(h -> host.startsWith(h + ".")))
         .toList();
   }
 

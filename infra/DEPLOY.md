@@ -146,5 +146,24 @@ Restore: `./scripts/restore-db.sh ~/avicare-backups/avicare_avicare_<stamp>.sql.
 - Single box, no HA. Fine for beta; add managed DB + a second node when paying
   customers arrive.
 - `mem_limit` on backend (`BACKEND_MEM`, default 3g) keeps the JVM from starving PG/Redis.
-- Observability (Prometheus/OTel from doc 00) is intentionally left out to save RAM;
-  add it later as separate compose services.
+- Metrics (Prometheus/Grafana) are still left out to save RAM. **Tracing is not**: Jaeger runs
+  on `jaeger.{DOMAIN}` behind Caddy basic auth since 2026-09-03. See "Tracing" below and
+  `docs/superpowers/specs/2026-09-03-jaeger-tracing-design.md`.
+
+### Tracing (Jaeger)
+
+- **UI**: `https://jaeger.{DOMAIN}`, basic auth. Set `JAEGER_UI_USER` and
+  `JAEGER_UI_PASSWORD_HASH` in `.env` — the hash is **required**, the deploy fails without it
+  rather than publishing an unprotected UI:
+  `docker run --rm caddy:2-alpine caddy hash-password --plaintext '<password>'`
+- **DNS**: needs a public A record `jaeger.{DOMAIN}` -> this VPS, like the other names.
+- **Turn it off** without rebuilding: empty `TRACING_JAVA_OPTS` in `.env`, or set
+  `OTEL_SDK_DISABLED=true`, then `./deploy.sh`. The backend runs either way — the OTLP exporter
+  fails silently when nothing listens.
+- **Never merge the agent into `JAVA_OPTS`.** That variable carries `-XX:MaxRAMPercentage=75`
+  and `-XX:+UseContainerSupport`; overwriting it makes the JVM stop respecting `mem_limit`.
+- **Sampling**: `OTEL_SAMPLE_RATIO` (default 0.05). Raise it briefly to chase a specific problem,
+  then put it back — the mobile app polls, and 100 % fills the store with 40 ms GETs.
+- **Retention**: 7 days, on disk (`jaeger_data`). `request_traces` keeps 30 days and stays the
+  place to search for a support call; the console links from one to the other.
+- **Memory**: `JAEGER_MEM` (default 512m). Check `free -h` before raising it.

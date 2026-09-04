@@ -23,11 +23,25 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { Search, X } from "lucide-react";
+import { Activity, Search, X } from "lucide-react";
 import { useGetTraceQuery, useSearchTracesQuery } from "@/store/api/adminApi";
 import { apiErrorMessage } from "@/lib/apiError";
 import { colors } from "@/theme/tokens";
 import type { RequestTraceRow } from "@/types";
+
+/**
+ * Où vit l'interface Jaeger, déduite de l'hôte courant : la console est servie depuis
+ * `admin.<domaine>`, Jaeger depuis `jaeger.<domaine>`. Déduire plutôt que d'ajouter une variable
+ * d'environnement évite qu'un déploiement ait la console à jour et le lien pointant ailleurs.
+ */
+function jaegerTraceUrl(otelTraceId: string): string {
+  const host =
+    typeof window === "undefined"
+      ? "jaeger.jawdi.app"
+      : window.location.hostname.replace(/^[^.]+\./, "jaeger.");
+  return `https://${host}/trace/${otelTraceId}`;
+}
+
 
 /** Green under 400, orange for a refusal, red for a failure — the eye sorts before the filter. */
 function statusColor(status: number | null): string {
@@ -96,6 +110,22 @@ function TraceDetail({ id, onClose }: { id: number; onClose: () => void }) {
         {data && (
           <Stack sx={{ gap: 0.75 }}>
             <Field label="Identifiant" value={data.requestId} />
+            {/* Absent, pas désactivé, quand l'agent ne tournait pas : un lien mort vers Jaeger
+                est pire que pas de lien. */}
+            {data.otelTraceId && (
+              <Box>
+                <Button
+                  component="a"
+                  href={jaegerTraceUrl(data.otelTraceId)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="small"
+                  startIcon={<Activity size={15} />}
+                >
+                  Voir la décomposition
+                </Button>
+              </Box>
+            )}
             <Field label="Requête" value={`${data.method} ${data.path}`} />
             <Field label="Route" value={data.routePattern} />
             <Field label="Statut" value={data.statusCode} />
