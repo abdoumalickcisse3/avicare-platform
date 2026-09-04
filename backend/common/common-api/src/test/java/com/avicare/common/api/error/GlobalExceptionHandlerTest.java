@@ -11,6 +11,7 @@ import com.avicare.common.api.exception.NotFoundException;
 import com.avicare.common.api.exception.QuotaExceededException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -21,6 +22,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 class GlobalExceptionHandlerTest {
@@ -114,6 +116,70 @@ class GlobalExceptionHandlerTest {
         .andExpect(jsonPath("$.detail").value("An unexpected error occurred"));
   }
 
+  @Test
+  void missingQueryParameter_returns400NamingTheParameter() throws Exception {
+    mockMvc
+        .perform(get("/__test/needs-param"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("MALFORMED_REQUEST"))
+        .andExpect(jsonPath("$.detail").value("Required query parameter 'species' is missing"));
+  }
+
+  @Test
+  void queryParameterOfWrongType_returns400NamingTheParameter() throws Exception {
+    mockMvc
+        .perform(get("/__test/needs-param").param("species", "POULTRY").param("count", "beaucoup"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("MALFORMED_REQUEST"))
+        .andExpect(jsonPath("$.detail").value("Parameter 'count' expects a value of type Integer"));
+  }
+
+  @Test
+  void unknownEnumValueInBody_returns400ListingTheAcceptedValues() throws Exception {
+    mockMvc
+        .perform(
+            post("/__test/enum")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"role\":\"WORKER\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("MALFORMED_REQUEST"))
+        .andExpect(jsonPath("$.detail").value("Field 'role' accepts only: OWNER, MANAGER"));
+  }
+
+  @Test
+  void unreadableBody_returns400WithoutEchoingIt() throws Exception {
+    mockMvc
+        .perform(post("/__test/enum").contentType(MediaType.APPLICATION_JSON).content("{not json"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("MALFORMED_REQUEST"))
+        .andExpect(jsonPath("$.detail").value("Request body is missing or is not valid JSON"));
+  }
+
+  @Test
+  void unknownAddress_returns404NotServerError() throws Exception {
+    mockMvc
+        .perform(get("/__test/no-such-endpoint"))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"))
+        .andExpect(jsonPath("$.detail").value("No endpoint matches this address"));
+  }
+
+  @Test
+  void wrongMethod_returns405() throws Exception {
+    mockMvc
+        .perform(post("/__test/needs-param"))
+        .andExpect(status().isMethodNotAllowed())
+        .andExpect(jsonPath("$.code").value("METHOD_NOT_ALLOWED"));
+  }
+
+  @Test
+  void wrongContentType_returns415() throws Exception {
+    mockMvc
+        .perform(post("/__test/enum").contentType(MediaType.TEXT_PLAIN).content("role=OWNER"))
+        .andExpect(status().isUnsupportedMediaType())
+        .andExpect(jsonPath("$.code").value("UNSUPPORTED_MEDIA_TYPE"));
+  }
+
   @RestController
   static class TestController {
 
@@ -152,6 +218,17 @@ class GlobalExceptionHandlerTest {
       throw new BadCredentialsException("invalid creds");
     }
 
+    @GetMapping("/__test/needs-param")
+    public String needsParam(
+        @RequestParam String species, @RequestParam(required = false) Integer count) {
+      return species + count;
+    }
+
+    @PostMapping("/__test/enum")
+    public String withEnum(@RequestBody EnumRequest req) {
+      return req.role().name();
+    }
+
     @GetMapping("/__test/boom")
     public String boom() {
       throw new RuntimeException("kaboom");
@@ -159,4 +236,11 @@ class GlobalExceptionHandlerTest {
   }
 
   record TestRequest(@NotBlank String name) {}
+
+  enum TestRole {
+    OWNER,
+    MANAGER
+  }
+
+  record EnumRequest(@NotNull TestRole role) {}
 }
