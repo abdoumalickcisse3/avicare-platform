@@ -145,6 +145,16 @@ services:
     restart: unless-stopped
     networks: [internal]
 
+  # Prépare le volume de Jaeger avant qu'il démarre. L'image tourne en uid 10001 et ne peut pas
+  # créer /badger/data et /badger/key : la racine d'un volume Docker neuf appartient à root.
+  # Un conteneur éphémère le fait, plutôt que de faire tourner Jaeger en root pour contourner.
+  jaeger-init:
+    image: busybox:1.37
+    command: sh -c "mkdir -p /badger/data /badger/key && chown -R 10001:10001 /badger"
+    volumes:
+      - jaeger_data:/badger
+    networks: [internal]
+
   # Traçage distribué. Son interface n'a AUCUNE authentification native : elle n'est jamais
   # publiée directement, seulement à travers Caddy, qui exige un mot de passe.
   jaeger:
@@ -153,6 +163,9 @@ services:
     # peut pas déboguer.
     image: jaegertracing/all-in-one:1.62.0
     restart: unless-stopped
+    depends_on:
+      jaeger-init:
+        condition: service_completed_successfully
     environment:
       # Sur disque plutôt qu'en mémoire : la mémoire perd tout au redémarrage et grossit sans
       # plafond, ce qui sur cette machine ne se discute pas.
