@@ -5,6 +5,7 @@ import com.avicare.livestock.domain.Invoice;
 import com.avicare.livestock.domain.InvoiceItem;
 import com.avicare.livestock.domain.InvoiceSourceType;
 import com.avicare.livestock.domain.InvoiceStatus;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -27,6 +28,7 @@ public record InvoiceResponse(
     String notes,
     List<Line> items) {
 
+  @Schema(name = "InvoiceLine")
   public record Line(
       Long id,
       String articleKey,

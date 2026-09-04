@@ -4,6 +4,7 @@ import com.avicare.livestock.domain.ArticleSource;
 import com.avicare.livestock.domain.Order;
 import com.avicare.livestock.domain.OrderItem;
 import com.avicare.livestock.domain.OrderStatus;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -27,6 +28,7 @@ public record OrderResponse(
     String notes,
     List<Line> items) {
 
+  @Schema(name = "OrderLine")
   public record Line(
       Long id,
       String articleKey,

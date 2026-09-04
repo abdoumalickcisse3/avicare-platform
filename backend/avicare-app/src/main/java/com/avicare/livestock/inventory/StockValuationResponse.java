@@ -1,6 +1,7 @@
 package com.avicare.livestock.inventory;
 
 import com.avicare.livestock.domain.ArticleSource;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -11,6 +12,7 @@ import java.util.List;
  */
 public record StockValuationResponse(List<Item> items, long totalValueXof) {
 
+  @Schema(name = "StockValuationItem")
   public record Item(
       Long stockItemId,
       String articleKey,
