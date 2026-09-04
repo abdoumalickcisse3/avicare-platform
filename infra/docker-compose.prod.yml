@@ -108,6 +108,23 @@ services:
       IP_BLOCKING_ENABLED: ${IP_BLOCKING_ENABLED:-true}
       BRUTEFORCE_MAX_FAILURES: ${BRUTEFORCE_MAX_FAILURES:-5}
       BRUTEFORCE_BLOCK_MINUTES: ${BRUTEFORCE_BLOCK_MINUTES:-60}
+      # --- Traçage distribué ---
+      # Variable À PART, jamais fusionnée dans JAVA_OPTS : redéfinir JAVA_OPTS écraserait
+      # MaxRAMPercentage et UseContainerSupport, et la JVM cesserait de respecter mem_limit.
+      # La vider suffit à revenir au comportement d'avant, sans reconstruire l'image.
+      TRACING_JAVA_OPTS: ${TRACING_JAVA_OPTS:--javaagent:/opt/otel/opentelemetry-javaagent.jar}
+      OTEL_SERVICE_NAME: jawdi-backend
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      # Traces seules : les métriques et les logs OTLP doubleraient le coût mémoire pour
+      # répondre à une autre question que celle qu'on se pose.
+      OTEL_METRICS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: none
+      # 5 % du trafic normal : le mobile interroge l'API en boucle, tracer 100 % remplirait
+      # Jaeger de GET à 40 ms. Les erreurs restent capturées par request_traces.
+      OTEL_TRACES_SAMPLER: parentbased_traceidratio
+      OTEL_TRACES_SAMPLER_ARG: ${OTEL_SAMPLE_RATIO:-0.05}
+      OTEL_SDK_DISABLED: ${OTEL_SDK_DISABLED:-false}
     volumes:
       # Read-only, and read-only on purpose: the console reports how fresh the last dump is, and
       # a backup directory an application can write to is one an application can also destroy.
@@ -128,6 +145,33 @@ services:
     restart: unless-stopped
     networks: [internal]
 
+  # Traçage distribué. Son interface n'a AUCUNE authentification native : elle n'est jamais
+  # publiée directement, seulement à travers Caddy, qui exige un mot de passe.
+  jaeger:
+    image: jaegertracing/all-in-one:1.62
+    restart: unless-stopped
+    environment:
+      # Sur disque plutôt qu'en mémoire : la mémoire perd tout au redémarrage et grossit sans
+      # plafond, ce qui sur cette machine ne se discute pas.
+      SPAN_STORAGE_TYPE: badger
+      BADGER_EPHEMERAL: "false"
+      BADGER_DIRECTORY_VALUE: /badger/data
+      BADGER_DIRECTORY_KEY: /badger/key
+      # Sept jours : une trace de performance sert à diagnostiquer un problème présent.
+      # request_traces garde 30 jours et reste la table à chercher pour un appel de support.
+      BADGER_SPAN_STORE_TTL: 168h
+      COLLECTOR_OTLP_ENABLED: "true"
+    volumes:
+      - jaeger_data:/badger
+    # Aucun `ports:` — ni le collecteur ni l'interface ne sortent du réseau interne. Un
+    # collecteur ouvert sur Internet accepte les traces de n'importe qui.
+    expose:
+      - "4317"
+      - "16686"
+    # Sans limite, un conteneur qui dérape affame Postgres.
+    mem_limit: ${JAEGER_MEM:-512m}
+    networks: [internal]
+
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
@@ -135,11 +179,15 @@ services:
       - web
       - landing
       - backend
+      - jaeger
     ports:
       - "80:80"
       - "443:443"
     environment:
       DOMAIN: ${DOMAIN:?set DOMAIN in .env}
+      # Interface Jaeger : identifiant et mot de passe HACHÉ (bcrypt), jamais en clair.
+      JAEGER_UI_USER: ${JAEGER_UI_USER:-admin}
+      JAEGER_UI_PASSWORD_HASH: ${JAEGER_UI_PASSWORD_HASH:?set JAEGER_UI_PASSWORD_HASH in .env}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
@@ -151,6 +199,7 @@ volumes:
   redis_data:
   caddy_data:
   caddy_config:
+  jaeger_data:
 
 networks:
   internal:

@@ -4,8 +4,9 @@
 #   app.{$DOMAIN}            -> web (Next.js dashboard) + backend (/api, actuator…)
 #   partner.{$DOMAIN}        -> same web container, partner portal (/portal) + backend
 #   admin.{$DOMAIN}          -> same web container, platform back-office (/console) + backend
+#   jaeger.{$DOMAIN}         -> Jaeger UI (distributed tracing), behind a password
 #
-# Requires public DNS A/AAAA for all five names -> this VPS, ports 80/443 open.
+# Requires public DNS A/AAAA for all six names -> this VPS, ports 80/443 open.
 # If Cloudflare is in front, use DNS-only (grey cloud) for the first certs,
 # then optionally enable the orange-cloud proxy (Full/strict). See DEPLOY.md.
 
@@ -63,4 +64,21 @@ admin.{$DOMAIN} {
 	handle {
 		reverse_proxy web:3000
 	}
+}
+
+# --- Tracing (Jaeger), on its own subdomain ---
+# Jaeger's UI has NO authentication of its own. Served bare, it would hand anyone who guesses
+# the name the API surface, the farm ids and the shape of the database. A subdomain is an
+# address, not a lock.
+#
+# The password is a bcrypt hash injected from the environment, never in this file:
+#   docker run --rm caddy:2-alpine caddy hash-password --plaintext '<password>'
+jaeger.{$DOMAIN} {
+	encode zstd gzip
+
+	basic_auth {
+		{$JAEGER_UI_USER} {$JAEGER_UI_PASSWORD_HASH}
+	}
+
+	reverse_proxy jaeger:16686
 }
