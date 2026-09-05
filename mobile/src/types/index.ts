@@ -575,6 +575,55 @@ export interface InventoryCatalogItem {
 
 /* --- Commercial / clients (mirrors the web commercial slice) ------------- */
 
+/** One article whose count fell to or below its alert threshold (mirrors backend). */
+export interface LowStockAlertItem {
+  stockItemId: number;
+  articleKey: string;
+  label: string | null;
+  currentQuantity: number;
+  alertThreshold: number | null;
+  unit: string | null;
+  percentBelowThreshold: number | null;
+}
+
+/** An article whose count went below zero — a bookkeeping error, not a shortage. */
+export interface NegativeStockAlertItem {
+  stockItemId: number;
+  articleKey: string;
+  label: string | null;
+  currentQuantity: number;
+  unit: string | null;
+}
+
+/** A purchase order past its expected delivery date. */
+export interface PendingPurchaseOrderAlertItem {
+  purchaseOrderId: number;
+  orderNumber: string;
+  supplierId: number;
+  supplierName: string;
+  expectedDeliveryDate: string;
+  daysOverdue: number;
+  totalXof: number | null;
+}
+
+export interface RecentMovementAlertItem {
+  movementId: number;
+  stockItemId: number;
+  articleKey: string;
+  movementType: MovementType;
+  quantity: number;
+  quantityAfter: number;
+  movementDate: string;
+}
+
+/** The farm's stock alerts in one read (mirrors backend InventoryAlertsResponse). */
+export interface InventoryAlerts {
+  lowStockItems: LowStockAlertItem[];
+  negativeStockItems: NegativeStockAlertItem[];
+  pendingPurchaseOrders: PendingPurchaseOrderAlertItem[];
+  recentMovements: RecentMovementAlertItem[];
+}
+
 export type ClientType = 'INDIVIDUAL' | 'BUSINESS' | 'WHOLESALER';
 
 /** A commercial client in a farm's directory (mirrors backend ClientResponse). */

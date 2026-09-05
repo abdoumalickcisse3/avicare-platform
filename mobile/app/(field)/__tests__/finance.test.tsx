@@ -19,6 +19,7 @@ jest.mock('@/store/api/membersApi', () => ({
   })),
 }));
 jest.mock('@/store/api/financeApi', () => ({
+  useGetExpenseSummaryQuery: jest.fn(() => ({ data: { categories: [], totalXof: 125000 } })),
   useGetExpensesQuery: jest.fn(() => ({ data: [{ id: 1, categoryKey: 'feed', amountXof: 50000, expenseDate: '2026-08-01', label: 'Sac aliment', notes: null, productionUnitId: null, source: 'MANUAL' }], isLoading: false })),
   useCreateExpenseMutation: jest.fn(() => [jest.fn(() => ({ unwrap: () => Promise.resolve({}) })), { isLoading: false }]),
   useGetSalariesQuery: jest.fn(() => ({ data: [], isLoading: false })),

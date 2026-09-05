@@ -160,16 +160,6 @@ const KNOWN_DIVERGENCES: { url: string; side: "web" | "mobile"; why: string }[] 
     why: "Dictée vocale : fonction du terrain, elle n'a pas de sens sur un poste de bureau.",
   },
   {
-    url: "/api/v1/farms/:x/finance/summary",
-    side: "web",
-    why: "MANQUE SUR MOBILE : le compte de résultat de la ferme n'est pas rendu sur le téléphone, qui ne lit que /finance/analytics.",
-  },
-  {
-    url: "/api/v1/farms/:x/inventory/alerts",
-    side: "web",
-    why: "MANQUE SUR MOBILE : le fil d'alertes agrégées est web-only ; le téléphone n'affiche que /stock-items/low-stock.",
-  },
-  {
     url: "/api/v1/farms/:x/health/vet-visits/:x",
     side: "mobile",
     why: "MANQUE SUR WEB : le mobile sait supprimer une visite vétérinaire, le web non.",

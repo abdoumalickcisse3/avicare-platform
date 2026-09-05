@@ -11,6 +11,7 @@ import type {
   AdvanceStatus,
   Expense,
   ExpenseInput,
+  ExpenseSummary,
   FarmAnalytics,
   Salary,
   SalarySetting,
@@ -95,6 +96,23 @@ export const financeApi = baseApi.injectEndpoints({
         { type: 'Expense', id: 'LIST' },
         { type: 'Expense', id: 'ANALYTICS' },
       ],
+    }),
+
+    /**
+     * Spend over the period, per category and in total, computed server-side.
+     *
+     * <p>The screen used to add up the expense rows it happened to have. That is the same figure
+     * only as long as the list is complete and unfiltered — the moment either stops being true,
+     * the hero number quietly becomes something else, and the web (which asks the server) and the
+     * phone disagree about what the farm spent.
+     */
+    getExpenseSummary: build.query<ExpenseSummary, { farmId: number; from?: string; to?: string }>({
+      query: ({ farmId, from, to }) => {
+        const qs = [from ? `from=${from}` : '', to ? `to=${to}` : ''].filter(Boolean).join('&');
+        return `${base(farmId)}/summary${qs ? `?${qs}` : ''}`;
+      },
+      transformResponse: (r: ApiEnvelope<ExpenseSummary>) => r.data,
+      providesTags: [{ type: 'Expense', id: 'SUMMARY' }],
     }),
 
     getSalarySettings: build.query<SalarySetting[], { farmId: number }>({
@@ -198,6 +216,7 @@ export const {
   useGetMyAdvancesQuery,
   useRequestAdvanceMutation,
   useGetExpensesQuery,
+  useGetExpenseSummaryQuery,
   useCreateExpenseMutation,
   useGetFarmAnalyticsQuery,
   useGetSalariesQuery,
