@@ -3,7 +3,7 @@ package com.avicare.reporting.domain;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.avicare.common.api.exception.BusinessRuleException;
+import com.avicare.common.api.exception.ValidationException;
 import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 
@@ -54,18 +54,19 @@ class DashboardPeriodTest {
             () ->
                 DashboardPeriod.resolve(
                     null, LocalDate.of(2026, 6, 10), LocalDate.of(2026, 6, 1), TODAY))
-        .isInstanceOf(BusinessRuleException.class);
+        // 400: a different pair of dates would be accepted, so this is a bad request, not a rule.
+        .isInstanceOf(ValidationException.class);
   }
 
   @Test
   void rejectsUnknownPreset() {
     assertThatThrownBy(() -> DashboardPeriod.resolve("yearly", null, null, TODAY))
-        .isInstanceOf(BusinessRuleException.class);
+        .isInstanceOf(ValidationException.class);
   }
 
   @Test
   void rejectsPresetAndCustomTogether() {
     assertThatThrownBy(() -> DashboardPeriod.resolve("7d", LocalDate.of(2026, 6, 1), null, TODAY))
-        .isInstanceOf(BusinessRuleException.class);
+        .isInstanceOf(ValidationException.class);
   }
 }

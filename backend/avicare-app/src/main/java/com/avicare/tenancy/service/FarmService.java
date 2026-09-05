@@ -1,7 +1,7 @@
 package com.avicare.tenancy.service;
 
-import com.avicare.common.api.exception.BusinessRuleException;
 import com.avicare.common.api.exception.NotFoundException;
+import com.avicare.common.api.exception.ValidationException;
 import com.avicare.common.security.principal.FarmRole;
 import com.avicare.parameters.api.ParametersFacade;
 import com.avicare.subscription.api.SubscriptionFacade;
@@ -162,7 +162,7 @@ public class FarmService {
   private void writeFocus(Long farmId, List<String> focus) {
     for (String token : focus) {
       if (!ALLOWED_FOCUS.contains(token)) {
-        throw new BusinessRuleException(
+        throw new ValidationException(
             "INVALID_PRODUCTION_FOCUS", "Unknown production focus '" + token + "'");
       }
     }

@@ -1,7 +1,7 @@
 package com.avicare.livestock.poultry;
 
-import com.avicare.common.api.exception.BusinessRuleException;
 import com.avicare.common.api.exception.NotFoundException;
+import com.avicare.common.api.exception.ValidationException;
 import com.avicare.livestock.domain.GrowthPerformance;
 import com.avicare.livestock.domain.PoultryBatch;
 import com.avicare.livestock.domain.WeighingSample;
@@ -110,7 +110,7 @@ public class GrowthAnalysisService {
     PoultryBatch batch = loadBatch(batchId);
     List<Integer> weights = cmd.individualWeights();
     if (weights == null || weights.isEmpty()) {
-      throw new BusinessRuleException("EMPTY_WEIGHING", "A weighing needs at least one weight");
+      throw new ValidationException("EMPTY_WEIGHING", "A weighing needs at least one weight");
     }
 
     int n = weights.size();

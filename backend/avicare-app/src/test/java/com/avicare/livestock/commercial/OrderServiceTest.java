@@ -154,10 +154,11 @@ class OrderServiceTest {
   }
 
   @Test
-  void createDraft_nonProductArticleThrowsValidation() {
+  void createDraft_nonProductArticleIsRefusedByTheDomain() {
     OrderDraftCommand cmd = draft(line("layer_feed", "10", 300));
 
-    assertThatExceptionOfType(ValidationException.class)
+    // 422, like overselling on the same endpoint: the payload is fine, the domain refuses it.
+    assertThatExceptionOfType(BusinessRuleException.class)
         .isThrownBy(() -> service.createDraft(7L, cmd, 42L));
   }
 
