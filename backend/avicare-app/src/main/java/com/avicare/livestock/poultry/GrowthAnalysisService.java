@@ -30,9 +30,12 @@ import org.springframework.transaction.annotation.Transactional;
  * mortality/feed/water, a linear maturity forecast and a target score.
  *
  * <p>V1 simplifications (validated): GMQ is cumulative ({@code weight / age}); FCR is {@code total
- * feed / total live weight}; the target curve is a linear interpolation between a day-old chick
- * ({@value #DAY_OLD_CHICK_WEIGHT_G} g) and the batch's {@code target_weight_g} at {@code
- * target_age_days}; uniformity is the share of birds within ±10% of the mean.
+ * feed / total live weight}; uniformity is the share of birds within ±10% of the mean.
+ *
+ * <p>The target curve is {@link BroilerGrowthCurve} — the published broiler growth shape, scaled
+ * between a day-old chick ({@value #DAY_OLD_CHICK_WEIGHT_G} g) and the batch's {@code
+ * target_weight_g} at {@code target_age_days}. It was a straight line until 2026-09-05, which
+ * over-demanded early and scored healthy batches BEHIND for their first fortnight.
  */
 @Service
 @RequiredArgsConstructor
@@ -256,18 +259,14 @@ public class GrowthAnalysisService {
     return feedKg.divide(liveWeightKg, 3, RoundingMode.HALF_UP);
   }
 
-  /** Linear target weight (g) at a given age, between a day-old chick and the batch target. */
+  /** Expected weight (g) at a given age, on the broiler growth shape scaled to the batch target. */
   private static Double targetWeightAt(PoultryBatch batch, int ageDays) {
     Integer targetWeight = batch.getTargetWeightG();
     Integer targetAge = batch.getTargetAgeDays();
-    if (targetWeight == null || targetAge == null || targetAge <= 0) {
+    if (targetWeight == null || targetAge == null) {
       return null;
     }
-    if (ageDays >= targetAge) {
-      return (double) targetWeight;
-    }
-    return DAY_OLD_CHICK_WEIGHT_G
-        + (targetWeight - DAY_OLD_CHICK_WEIGHT_G) * ((double) ageDays / targetAge);
+    return BroilerGrowthCurve.weightAt(targetWeight, targetAge, ageDays, DAY_OLD_CHICK_WEIGHT_G);
   }
 
   private static String score(PoultryBatch batch, BigDecimal currentWeightG, int ageDays) {
