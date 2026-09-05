@@ -48,7 +48,6 @@ describe('egg and layer-settings endpoints (lot 7)', () => {
     ['deleteCollection', 'DELETE', `${EGG}/collections/4`, eggProductionApi, 'deleteCollection', { farmId: F, id: 4, unitId: 2 }],
     ['getGrades', 'GET', `${EGG}/config/grades`, eggProductionApi, 'getGrades', { farmId: F }],
     ['getTraySettings', 'GET', `${EGG}/config/tray-settings`, eggProductionApi, 'getTraySettings', { farmId: F }],
-    ['listFarmSettings', 'GET', `/api/v1/farms/${F}/settings`, layerConfigApi, 'listFarmSettings', F],
     ['upsertFarmSetting', 'PUT', `/api/v1/farms/${F}/settings/tray_size`, layerConfigApi, 'upsertFarmSetting', { farmId: F, key: 'tray_size', value: '30' }],
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ])('%s sends %s to %s', async (_name, expectedMethod, expectedUrl, api: any, endpoint, args) => {

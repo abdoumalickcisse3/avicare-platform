@@ -159,21 +159,6 @@ const KNOWN_DIVERGENCES: { url: string; side: "web" | "mobile"; why: string }[] 
     side: "mobile",
     why: "Dictée vocale : fonction du terrain, elle n'a pas de sens sur un poste de bureau.",
   },
-  {
-    url: "/api/v1/farms/:x/health/vet-visits/:x",
-    side: "mobile",
-    why: "MANQUE SUR WEB : le mobile sait supprimer une visite vétérinaire, le web non.",
-  },
-  {
-    url: "/api/v1/farms/:x/settings",
-    side: "mobile",
-    why: "MANQUE SUR WEB : le mobile édite les réglages de ferme (taille et prix du plateau) ; le web les lit via /egg-production/config/tray-settings sans pouvoir les modifier.",
-  },
-  {
-    url: "/api/v1/farms/:x/settings/:x",
-    side: "mobile",
-    why: "Idem — l'écriture d'un réglage de ferme.",
-  },
 ];
 
 const exempt = (url: string) => DESKTOP_ONLY.some((s) => url.startsWith(s.prefix));

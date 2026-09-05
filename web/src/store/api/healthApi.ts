@@ -371,10 +371,29 @@ export const healthApi = baseApi.injectEndpoints({
         body,
       }),
       transformResponse: (r: ApiEnvelope<VetVisit>) => r.data,
-      invalidatesTags: (_r, _e, { body }) => [
+      invalidatesTags: (_r, _e, { farmId, body }) => [
         { type: "VetVisit", id: body.unitId },
         { type: "VetVisit", id: "follow-ups" },
         { type: "HealthAlert", id: "farm" },
+        // A cost above zero books a farm expense server-side, so the finance
+        // screens are stale the moment a visit is recorded.
+        { type: "Expense", id: `LIST-${farmId}` },
+      ],
+    }),
+    deleteVetVisit: build.mutation<
+      void,
+      { farmId: number; id: number; unitId: number }
+    >({
+      query: ({ farmId, id }) => ({
+        url: `${base(farmId)}/vet-visits/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (_r, _e, { farmId, unitId }) => [
+        { type: "VetVisit", id: unitId },
+        { type: "VetVisit", id: "follow-ups" },
+        { type: "HealthAlert", id: "farm" },
+        // Deleting a visit reverses the expense it booked.
+        { type: "Expense", id: `LIST-${farmId}` },
       ],
     }),
 
@@ -419,5 +438,6 @@ export const {
   useGetVetVisitsQuery,
   useGetUpcomingFollowUpsQuery,
   useRecordVetVisitMutation,
+  useDeleteVetVisitMutation,
   useGetHealthAlertsQuery,
 } = healthApi;
