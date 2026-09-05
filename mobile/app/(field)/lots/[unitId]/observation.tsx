@@ -1,11 +1,14 @@
 /**
  * Record a health observation — the mobile equivalent of the web
  * `ObservationDialog` (basic health module): severity, title and free
- * description, date = today. Submitted online via `recordObservation`
- * (invalidates the unit's observations + farm alerts).
+ * description, date = today.
+ *
+ * Submitted through the offline queue, like every other field entry — see
+ * `vaccination.tsx` for why the two health screens were the exception, and
+ * why the clientRef stays out of the body.
  */
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
@@ -13,9 +16,9 @@ import { skipToken } from '@reduxjs/toolkit/query/react';
 import { ArrowLeft } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { FormField, TodayDateField } from '@/components/field/FormField';
-import { useRecordObservationMutation } from '@/store/api/healthApi';
 import { useListProductionUnitsQuery } from '@/store/api/productionUnitsApi';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
+import { enqueueFieldMutation } from '@/field/enqueueMutation';
 
 function todayIsoDate(): string {
   const now = new Date();
@@ -38,7 +41,6 @@ export default function ObservationEntryScreen() {
   const skip = selectedFarmId === null || Number.isNaN(unitId);
   const farmId = selectedFarmId as number;
   const { data: units } = useListProductionUnitsQuery(skip ? skipToken : farmId);
-  const [record, { isLoading }] = useRecordObservationMutation();
   const unit = units?.find((u) => u.id === unitId);
 
   const [severity, setSeverity] = useState<'NORMAL' | 'WARNING' | 'CRITICAL'>('NORMAL');
@@ -47,26 +49,25 @@ export default function ObservationEntryScreen() {
 
   if (selectedFarmId === null) return <Redirect href="/(field)" />;
 
-  const canSubmit = !Number.isNaN(unitId) && title.trim().length > 0 && !isLoading;
+  const canSubmit = !Number.isNaN(unitId) && title.trim().length > 0;
 
-  async function handleSubmit(): Promise<void> {
+  function handleSubmit(): void {
     if (!canSubmit) return;
-    try {
-      await record({
-        farmId,
-        body: {
-          unitId,
-          observationDate: todayIsoDate(),
-          severity,
-          title: title.trim(),
-          description: description.trim() || undefined,
-        },
-      }).unwrap();
-      router.back();
-    } catch (err) {
-      const status = (err as { status?: number })?.status;
-      Alert.alert('Enregistrement impossible', status === 403 ? 'Action non autorisée pour votre rôle.' : "L'enregistrement a échoué. Réessayez.");
-    }
+
+    enqueueFieldMutation({
+      farmId,
+      kind: 'HEALTH_OBSERVATION',
+      endpoint: `/api/v1/farms/${farmId}/health/observations`,
+      payload: {
+        unitId,
+        observationDate: todayIsoDate(),
+        severity,
+        title: title.trim(),
+        description: description.trim() || undefined,
+      },
+    });
+
+    router.back();
   }
 
   return (
@@ -113,7 +114,7 @@ export default function ObservationEntryScreen() {
           <Text style={styles.cancelLabel}>Annuler</Text>
         </Pressable>
         <Pressable style={[styles.submitBtn, !canSubmit && styles.disabled]} onPress={handleSubmit} disabled={!canSubmit} accessibilityRole="button" accessibilityLabel="Enregistrer l'observation">
-          <Text style={styles.submitLabel}>{isLoading ? 'Enregistrement…' : 'Enregistrer'}</Text>
+          <Text style={styles.submitLabel}>Enregistrer</Text>
         </Pressable>
       </View>
     </SafeAreaView>
