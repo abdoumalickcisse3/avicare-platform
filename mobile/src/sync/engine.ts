@@ -1,11 +1,21 @@
 import type { createQueue } from './queue';
-import type { QueuedMutation } from './types';
+import type { MutationKind, QueuedMutation } from './types';
 
 export type TransportResponse = { status: number; body?: unknown };
 
 export type Transport = (mutation: QueuedMutation) => Promise<TransportResponse>;
 
-export type DrainResult = { sent: number; failed: number; retryable: number };
+/**
+ * `sentKinds` lists the kinds that actually reached the server this pass, in order and with
+ * repeats — the caller turns it into the read caches to refresh (`invalidation.ts`). Without it a
+ * synchronised entry sat on the server and stayed absent from the screen until the cache expired.
+ */
+export type DrainResult = {
+  sent: number;
+  failed: number;
+  retryable: number;
+  sentKinds: MutationKind[];
+};
 
 export type EngineDeps = {
   queue: ReturnType<typeof createQueue>;
@@ -47,9 +57,9 @@ export function createEngine(deps: EngineDeps) {
   async function drain(): Promise<DrainResult> {
     // Guards against overlapping passes: a network-return listener and an
     // app-foreground listener can both fire in the same instant.
-    if (running) return { sent: 0, failed: 0, retryable: 0 };
+    if (running) return { sent: 0, failed: 0, retryable: 0, sentKinds: [] };
     running = true;
-    const result: DrainResult = { sent: 0, failed: 0, retryable: 0 };
+    const result: DrainResult = { sent: 0, failed: 0, retryable: 0, sentKinds: [] };
 
     // Shared by both the 5xx path and the transport-rejection path: bump
     // attempts and stay PENDING while under the ceiling, otherwise park it
@@ -102,6 +112,7 @@ export function createEngine(deps: EngineDeps) {
         if (response.status >= 200 && response.status < 300) {
           queue.markDone(next.id);
           result.sent += 1;
+          result.sentKinds.push(next.kind);
           continue;
         }
 

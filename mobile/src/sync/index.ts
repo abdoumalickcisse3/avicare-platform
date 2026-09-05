@@ -21,7 +21,7 @@ import { createSqliteDriver } from './driver';
 import { createQueue } from './queue';
 import { createEngine, type TransportResponse } from './engine';
 import { QUEUE_SCHEMA } from './schema';
-import type { QueuedMutation } from './types';
+import type { MutationKind, QueuedMutation } from './types';
 
 const API_URL = resolveApiUrl();
 
@@ -68,6 +68,24 @@ export function subscribeAuthInvalidated(listener: () => void): () => void {
  */
 export function notifyAuthInvalidated(): void {
   for (const listener of authInvalidatedListeners) listener();
+}
+
+// --- synchronised-writes signal ------------------------------------------
+// Kept apart from the two Sets above for the reason stated there: one Set per
+// concern. This one fires only when a drain actually landed writes on the
+// server, and carries the kinds so the subscriber refreshes the read caches
+// those writes made stale — and only those. Before it, a queued entry reached
+// the server and stayed off the screen until the RTK Query cache expired: the
+// ribbon read "0 en attente" while the list still showed nothing.
+const syncedListeners = new Set<(kinds: MutationKind[]) => void>();
+
+export function subscribeSynced(listener: (kinds: MutationKind[]) => void): () => void {
+  syncedListeners.add(listener);
+  return () => syncedListeners.delete(listener);
+}
+
+function notifySynced(kinds: MutationKind[]): void {
+  for (const listener of syncedListeners) listener(kinds);
 }
 
 let syncing = false;
@@ -182,7 +200,9 @@ export const syncEngine = {
     syncing = true;
     notify();
     try {
-      return await engine.drain();
+      const result = await engine.drain();
+      if (result.sentKinds.length > 0) notifySynced(result.sentKinds);
+      return result;
     } finally {
       syncing = false;
       notify();

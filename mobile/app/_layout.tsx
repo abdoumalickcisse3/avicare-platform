@@ -15,7 +15,8 @@ import { persistor, store } from '@/store';
 import { baseApi } from '@/store/api/baseApi';
 import { setSelectedFarmId } from '@/store/slices/selectionSlice';
 import { purgePersistedCache } from '@/store/persist';
-import { subscribeAuthInvalidated } from '@/sync';
+import { subscribeAuthInvalidated, subscribeSynced } from '@/sync';
+import { tagsForKinds } from '@/sync/invalidation';
 import { tokens } from '@/theme';
 
 /**
@@ -31,6 +32,26 @@ function AuthInvalidationPurge() {
       store.dispatch(setSelectedFarmId(null));
       store.dispatch(baseApi.util.resetApiState());
       void purgePersistedCache(persistor);
+    });
+  }, []);
+
+  return null;
+}
+
+/**
+ * Refresh what the queue just changed: a field write goes to the server through the sync queue,
+ * not through an RTK Query mutation, so nothing invalidated the read caches when it finally
+ * landed. The entry was safely on the server and absent from the screen until the cache expired —
+ * the ribbon said "0 en attente" while the list still showed nothing.
+ *
+ * Mounted here rather than in `(field)/_layout` because a drain also fires on reconnect and on
+ * foreground, when no field screen need be mounted at all.
+ */
+function SyncedCacheRefresh() {
+  useEffect(() => {
+    return subscribeSynced((kinds) => {
+      const tags = tagsForKinds(kinds);
+      if (tags.length > 0) store.dispatch(baseApi.util.invalidateTags(tags));
     });
   }, []);
 
@@ -67,6 +88,7 @@ export default function RootLayout() {
         persistor={persistor}
       >
         <AuthInvalidationPurge />
+        <SyncedCacheRefresh />
         <SafeAreaProvider>
           <Stack screenOptions={{ headerShown: false }} />
         </SafeAreaProvider>

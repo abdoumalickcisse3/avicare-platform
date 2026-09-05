@@ -27,6 +27,28 @@ describe('sync engine', () => {
     expect(q.countPending()).toBe(0);
   });
 
+  it('reports the kinds it sent, so the caller can refresh what they changed', async () => {
+    const q = setupQueue();
+    q.enqueue({ ...mutation, clientRef: 'a' });
+    q.enqueue({ ...mutation, clientRef: 'b', kind: 'WEIGHING' });
+    const engine = createEngine({ queue: q, transport: async () => ({ status: 201 }) });
+
+    const result = await engine.drain();
+
+    expect(result.sentKinds).toEqual(['MORTALITY', 'WEIGHING']);
+  });
+
+  it('reports no kind when nothing reached the server', async () => {
+    const q = setupQueue();
+    q.enqueue({ ...mutation, clientRef: 'a' });
+    const engine = createEngine({ queue: q, transport: async () => ({ status: 422 }) });
+
+    const result = await engine.drain();
+
+    expect(result.sent).toBe(0);
+    expect(result.sentKinds).toEqual([]);
+  });
+
   it('parks a 422 as terminal and keeps draining', async () => {
     const q = setupQueue();
     q.enqueue({ ...mutation, clientRef: 'a' });
