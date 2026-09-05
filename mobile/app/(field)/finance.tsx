@@ -27,6 +27,7 @@ import {
   useGenerateSalariesMutation,
   useGetAdvancesQuery,
   useGetExpensesQuery,
+  useGetExpenseSummaryQuery,
   useGetSalariesQuery,
   useGetSalarySettingsQuery,
   usePaySalaryMutation,
@@ -98,10 +99,11 @@ export default function FinanceScreen() {
   const memberName = (userId: number) =>
     members.find((m) => m.userId === userId)?.fullName ?? `Salarié #${userId}`;
 
-  const totalExpenses = useMemo(
-    () => (expenses ?? []).reduce((sum, e) => sum + e.amountXof, 0),
-    [expenses],
-  );
+  // Asked of the server rather than added up here: summing the rows on screen is the same figure
+  // only while the list is complete and unfiltered, and the web has always asked the server. Two
+  // ways of counting the same money is how the two apps end up disagreeing about it.
+  const { data: expenseSummary } = useGetExpenseSummaryQuery(tab === 'expenses' ? arg : skipToken);
+  const totalExpenses = expenseSummary?.totalXof ?? 0;
   const totalSalariesDue = useMemo(
     () => (salaries ?? []).filter((s) => s.status === 'DUE').reduce((sum, s) => sum + s.netXof, 0),
     [salaries],

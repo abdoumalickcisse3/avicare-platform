@@ -7,7 +7,13 @@
  * Gated behind `module.inventory` on the backend (403 when inactive).
  */
 import { baseApi } from './baseApi';
-import type { StockItem, StockMovement, StockMovementInput, StockValuation } from '@/types';
+import type {
+  InventoryAlerts,
+  StockItem,
+  StockMovement,
+  StockMovementInput,
+  StockValuation,
+} from '@/types';
 
 interface ApiEnvelope<T> {
   data: T;
@@ -31,6 +37,21 @@ export const inventoryStockApi = baseApi.injectEndpoints({
       query: ({ farmId }) => `${base(farmId)}/stock-items/valuation`,
       transformResponse: (r: ApiEnvelope<StockValuation>) => r.data,
       providesTags: [{ type: 'StockItem', id: 'valuation' }],
+    }),
+
+    /**
+     * The farm's stock alerts in one read: low stock, negative stock, purchase orders still
+     * waiting, recent movements.
+     *
+     * <p>The screen already showed low stock. Negative stock is the one that matters most and had
+     * nowhere to appear: a count below zero is not a shortage, it is a bookkeeping error — an exit
+     * recorded twice, an entry never recorded — and every figure computed from that article is
+     * wrong until someone corrects it.
+     */
+    getInventoryAlerts: build.query<InventoryAlerts, { farmId: number }>({
+      query: ({ farmId }) => `${base(farmId)}/alerts`,
+      transformResponse: (r: ApiEnvelope<InventoryAlerts>) => r.data,
+      providesTags: [{ type: 'StockItem', id: 'alerts' }],
     }),
     recordMovement: build.mutation<unknown, { farmId: number; body: StockMovementInput }>({
       // `/inventory/movements`, not `/inventory/stock-items/movements`: the second route does not
@@ -119,6 +140,7 @@ export const {
   useGetStockItemsQuery,
   useGetLowStockItemsQuery,
   useGetStockValuationQuery,
+  useGetInventoryAlertsQuery,
   useGetStockItemQuery,
   useGetMovementsByItemQuery,
   useGetMovementsByLotQuery,

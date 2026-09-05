@@ -11,10 +11,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
-import { AlertTriangle, PackageOpen, Search, Wallet } from 'lucide-react-native';
+import { AlertTriangle, PackageOpen, Search, Truck, Wallet } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { AppHeader } from '@/components/AppHeader';
 import {
+  useGetInventoryAlertsQuery,
   useGetLowStockItemsQuery,
   useGetStockItemsQuery,
   useGetStockValuationQuery,
@@ -52,6 +53,10 @@ export default function StocksScreen() {
   const { data: items, isLoading } = useGetStockItemsQuery(arg);
   const { data: lowStock } = useGetLowStockItemsQuery(arg);
   const { data: valuation } = useGetStockValuationQuery(arg);
+  // Low stock was already shown. The other two the endpoint aggregates were not: an order that
+  // never arrived, and — the one that matters most — a count gone below zero, which is not a
+  // shortage but a bookkeeping error, and makes every figure derived from that article wrong.
+  const { data: alerts } = useGetInventoryAlertsQuery(arg);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -62,6 +67,8 @@ export default function StocksScreen() {
   if (selectedFarmId === null) return <Redirect href="/(field)" />;
 
   const lowCount = lowStock?.length ?? 0;
+  const negative = alerts?.negativeStockItems ?? [];
+  const overdueOrders = alerts?.pendingPurchaseOrders ?? [];
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -88,6 +95,48 @@ export default function StocksScreen() {
             <Text style={styles.kpiLabel}>Valeur</Text>
           </View>
         </View>
+
+        {negative.length > 0 && (
+          <View style={styles.negativeCard}>
+            <View style={styles.lowHead}>
+              <AlertTriangle size={16} color={tokens.colors.error} />
+              <Text style={styles.negativeTitle}>Stock négatif — {formatNumber(negative.length)}</Text>
+            </View>
+            <Text style={styles.negativeHint}>
+              Un compte sous zéro n&apos;est pas une rupture : c&apos;est une sortie enregistrée
+              deux fois, ou une entrée jamais saisie. À corriger par un mouvement d&apos;inventaire.
+            </Text>
+            {negative.map((i) => (
+              <View key={i.stockItemId} style={styles.lowRow}>
+                <Text style={styles.lowName}>{i.label ?? i.articleKey}</Text>
+                <Text style={styles.negativeQty}>
+                  {formatNumber(i.currentQuantity)} {i.unit ?? ''}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {overdueOrders.length > 0 && (
+          <View style={styles.lowCard}>
+            <View style={styles.lowHead}>
+              <Truck size={16} color={tokens.colors.warning} />
+              <Text style={styles.lowTitle}>
+                Commandes en retard — {formatNumber(overdueOrders.length)}
+              </Text>
+            </View>
+            {overdueOrders.map((o) => (
+              <View key={o.purchaseOrderId} style={styles.lowRow}>
+                <Text style={styles.lowName}>
+                  {o.orderNumber} · {o.supplierName}
+                </Text>
+                <Text style={styles.lowQty}>
+                  {o.daysOverdue} j de retard
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* Low-stock highlight */}
         {lowStock && lowStock.length > 0 && (
@@ -194,6 +243,22 @@ const styles = StyleSheet.create({
   kpiVal: { ...tokens.typography.numericSm, fontSize: 15, color: tokens.colors.field.text },
   kpiLabel: { ...tokens.typography.bodySm, fontSize: 11, color: tokens.colors.field.textMuted },
 
+  negativeCard: {
+    marginTop: tokens.spacing[4],
+    padding: tokens.spacing[4],
+    borderRadius: tokens.radii.lg,
+    backgroundColor: tokens.colors.neutral[0],
+    borderWidth: 1,
+    borderColor: tokens.colors.error,
+  },
+  negativeTitle: { ...tokens.typography.label, fontSize: 13, color: tokens.colors.error },
+  negativeHint: {
+    ...tokens.typography.bodySm,
+    color: tokens.colors.field.textMuted,
+    marginTop: tokens.spacing[1],
+    marginBottom: tokens.spacing[2],
+  },
+  negativeQty: { ...tokens.typography.bodySm, fontWeight: '700', color: tokens.colors.error },
   lowCard: { backgroundColor: tokens.colors.errorLight, borderRadius: tokens.radii.xl, padding: tokens.spacing[4], marginBottom: tokens.spacing[4], gap: tokens.spacing[2] },
   lowHead: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[2] },
   lowTitle: { ...tokens.typography.headingMd, fontSize: 15, color: tokens.colors.errorDark },
