@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "@/test/render";
 import { partnerTokenStorage } from "@/lib/partnerStorage";
 import NetworkDashboard from "./NetworkDashboard";
@@ -33,8 +34,13 @@ function mockNetworkFetch(farms: unknown = FARMS, alerts: unknown = []) {
     "fetch",
     vi.fn(async (input: RequestInfo | URL) => {
       const url = input instanceof Request ? input.url : String(input);
-      const body = url.includes("/network/farms")
-        ? { data: farms }
+      const detail = url.match(/\/network\/farms\/(\d+)/);
+      const body = detail
+        ? // The dialog asks for one farm; without this branch the list would answer and the
+          // dialog would receive an array.
+          { data: (farms as { farmId: number }[]).find((f) => f.farmId === Number(detail[1])) }
+        : url.includes("/network/farms")
+          ? { data: farms }
         : url.includes("/network/alerts")
           ? { data: alerts }
           : url.includes("/network")
@@ -110,5 +116,33 @@ describe("NetworkDashboard", () => {
     renderWithProviders(<NetworkDashboard />);
 
     expect(await screen.findByText("Aucune ferme dans votre réseau.")).toBeInTheDocument();
+  });
+
+  it("opens a farm and asks for its current figures, not the row's", async () => {
+    mockNetworkFetch();
+    renderWithProviders(<NetworkDashboard />);
+
+    await userEvent.click(await screen.findByText("Ferme A"));
+
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("Ferme A")).toBeInTheDocument();
+    expect(within(dialog).getByText("1 500 kg")).toBeInTheDocument();
+  });
+
+  it("says a missing figure is a farmer's choice, not an empty one", async () => {
+    mockNetworkFetch();
+    renderWithProviders(<NetworkDashboard />);
+
+    // Ferme B shares nothing but its flock health. A dash in the table reads as "nothing
+    // happened"; a partner acting on that calls the wrong farmer.
+    await userEvent.click(await screen.findByText("Ferme B"));
+
+    const dialog = await screen.findByRole("dialog");
+    expect(
+      within(dialog).getByText(/ne partage pas sa consommation d'aliment/i),
+    ).toBeInTheDocument();
+    // Twice: the follow-up level and the active flag both ride on the activity scope.
+    expect(within(dialog).getAllByText(/ne partage pas son activité/i)).toHaveLength(2);
+    expect(within(dialog).getByText("2.5 %")).toBeInTheDocument();
   });
 });
