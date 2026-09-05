@@ -22,7 +22,7 @@ import {
   useGetAvailableFormulasQuery,
   useRecomputeFormulaCostMutation,
 } from '@/store/api/feedFormulasApi';
-import { useGetPlatformFormulasQuery } from '@/store/api/inventoryCatalogApi';
+import { useGetPlatformFormulaQuery, useGetPlatformFormulasQuery } from '@/store/api/inventoryCatalogApi';
 import { useCloneFeedFormulaMutation } from '@/store/api/feedFormulasApi';
 import { formatCurrency } from '@/lib/format';
 import { FEED_PHASE_LABELS } from '@/lib/inventory';
@@ -43,6 +43,11 @@ export default function FormulesScreen() {
 
   const [cloneOpen, setCloneOpen] = useState(false);
   const [sourceKey, setSourceKey] = useState('');
+  // What the farmer is about to adopt. The list gives the phase and the cost; the composition —
+  // what the birds will actually eat — only comes with the template itself.
+  const { data: preview } = useGetPlatformFormulaQuery(
+    selectedFarmId !== null && sourceKey !== '' ? { farmId: selectedFarmId, key: sourceKey } : skipToken,
+  );
   const [newName, setNewName] = useState('');
 
   const farmFormulas = useMemo(() => data?.farmFormulas ?? [], [data]);
@@ -226,6 +231,24 @@ export default function FormulesScreen() {
             </ScrollView>
           )}
 
+          {sourceKey !== '' && (
+            <View style={styles.composition}>
+              <Text style={styles.compositionTitle}>Composition</Text>
+              {preview == null ? (
+                <Text style={styles.muted}>Lecture…</Text>
+              ) : preview.ingredients.length === 0 ? (
+                <Text style={styles.muted}>Ce modèle ne liste aucun ingrédient.</Text>
+              ) : (
+                preview.ingredients.map((i) => (
+                  <View key={`${i.articleSource}:${i.articleKey}`} style={styles.compositionRow}>
+                    <Text style={styles.compositionName}>{i.articleKey}</Text>
+                    <Text style={styles.compositionPct}>{i.percentage} %</Text>
+                  </View>
+                ))
+              )}
+            </View>
+          )}
+
           <Text style={styles.fieldLabel}>Nom (optionnel)</Text>
           <TextInput value={newName} onChangeText={setNewName} placeholder="Nom de la nouvelle formule" placeholderTextColor={tokens.colors.field.disabled} accessibilityLabel="Nom" style={styles.input} maxLength={80} />
 
@@ -339,6 +362,18 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: tokens.colors.neutral[100],
   },
+  composition: {
+    marginTop: tokens.spacing[3],
+    padding: tokens.spacing[3],
+    borderRadius: tokens.radii.md,
+    backgroundColor: tokens.colors.neutral[50],
+    borderWidth: 1,
+    borderColor: tokens.colors.neutral[200],
+  },
+  compositionTitle: { ...tokens.typography.label, fontSize: 12, color: tokens.colors.field.text, marginBottom: tokens.spacing[2] },
+  compositionRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 2 },
+  compositionName: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted },
+  compositionPct: { ...tokens.typography.bodySm, fontWeight: '700', color: tokens.colors.field.text },
   templateName: { ...tokens.typography.bodyMd, color: tokens.colors.field.text },
   templateNameOn: { color: tokens.colors.primary[700], fontWeight: '700' },
   templateMeta: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginTop: 1 },
