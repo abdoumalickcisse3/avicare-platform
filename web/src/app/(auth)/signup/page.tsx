@@ -17,10 +17,6 @@ import {
 } from "@mui/material";
 import { useSignupMutation } from "@/store/api/authApi";
 import { useCreateFarmMutation } from "@/store/api/farmsApi";
-import {
-  ONBOARDING_SETTING_KEY,
-  useUpsertSettingMutation,
-} from "@/store/api/accountSettingsApi";
 import { useAppDispatch } from "@/store/hooks";
 import { setTokens } from "@/store/slices/authSlice";
 import { hasAccessToken } from "@/lib/auth";
@@ -51,7 +47,6 @@ export default function SignupPage() {
 
   const [signup] = useSignupMutation();
   const [createFarm] = useCreateFarmMutation();
-  const [upsertSetting] = useUpsertSettingMutation();
 
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -112,12 +107,6 @@ export default function SignupPage() {
         orch.current.farmId = farm.id;
         await refreshSession();
       }
-      // c. Mark onboarding (account + farm) done.
-      await upsertSetting({
-        key: ONBOARDING_SETTING_KEY,
-        value: { completed: true },
-      }).unwrap();
-
       router.replace("/onboarding");
     } catch (err) {
       setServerError(apiErrorMessage(err));

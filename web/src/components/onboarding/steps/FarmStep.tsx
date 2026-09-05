@@ -8,10 +8,18 @@ import {
   useGetMyFarmsQuery,
   useUpdateFarmMutation,
 } from "@/store/api/farmsApi";
+import { ALL_FOCUS_TOKENS, PRODUCTION_FOCUS } from "@/constants/productionFocus";
 import { useWizard } from "../wizardContext";
 import { StepHeader } from "./StepHeader";
 
 type Focus = "broiler" | "layer" | "mixed";
+
+/**
+ * The wizard asks for one answer, not a set: "Mixte" is the two tokens together. The tokens and
+ * their wording come from the shared list so a new species reaches this screen and the create-farm
+ * dialog at the same time.
+ */
+const FOCUS_ICONS = { broiler: Bird, layer: Egg } as const;
 
 const FOCUS_OPTIONS: {
   id: Focus;
@@ -20,9 +28,20 @@ const FOCUS_OPTIONS: {
   icon: typeof Bird;
   tokens: string[];
 }[] = [
-  { id: "broiler", label: "Chair", hint: "Poulets de chair", icon: Bird, tokens: ["broiler"] },
-  { id: "layer", label: "Ponte", hint: "Poules pondeuses", icon: Egg, tokens: ["layer"] },
-  { id: "mixed", label: "Mixte", hint: "Chair et ponte", icon: Layers, tokens: ["broiler", "layer"] },
+  ...PRODUCTION_FOCUS.map((o) => ({
+    id: o.token as Focus,
+    label: o.short,
+    hint: o.hint,
+    icon: FOCUS_ICONS[o.token],
+    tokens: [o.token] as string[],
+  })),
+  {
+    id: "mixed" as Focus,
+    label: "Mixte",
+    hint: PRODUCTION_FOCUS.map((o) => o.short).join(" et ").toLowerCase(),
+    icon: Layers,
+    tokens: [...ALL_FOCUS_TOKENS],
+  },
 ];
 
 /** Farm identity: name, location, capacity, production focus. Persists to the
