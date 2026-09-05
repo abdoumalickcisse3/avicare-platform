@@ -27,6 +27,16 @@ export const inventoryCatalogApi = baseApi.injectEndpoints({
       transformResponse: (r: ApiEnvelope<PlatformFeedFormula[]>) => r.data,
       providesTags: [{ type: 'InventoryCatalog', id: 'platform-formulas' }],
     }),
+    /**
+     * One platform template, with its composition and a cost recomputed from today's catalog
+     * prices. Mirrors the web: choosing a ration by its name alone is choosing what the birds eat
+     * without seeing what is in it.
+     */
+    getPlatformFormula: build.query<PlatformFeedFormula, { farmId: number; key: string }>({
+      query: ({ farmId, key }) => `${base(farmId)}/feed-formulas/${encodeURIComponent(key)}`,
+      transformResponse: (r: ApiEnvelope<PlatformFeedFormula>) => r.data,
+      providesTags: [{ type: 'InventoryCatalog', id: 'platform-formulas' }],
+    }),
     createArticle: build.mutation<
       void,
       { farmId: number; key: string; value: Record<string, unknown> }
@@ -62,6 +72,7 @@ export const {
   useGetAllArticlesQuery,
   useGetInventoryArticlesQuery,
   useGetPlatformFormulasQuery,
+  useGetPlatformFormulaQuery,
   useCreateArticleMutation,
   useDeleteArticleMutation,
 } = inventoryCatalogApi;

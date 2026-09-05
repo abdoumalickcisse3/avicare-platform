@@ -280,6 +280,19 @@ export function InvoiceDetailView({ invoiceId }: { invoiceId: number }) {
                       <Typography variant="caption" color="text.secondary">
                         {p.paymentNumber} · {PAYMENT_METHOD_LABELS[p.method]} · {formatDate(p.paymentDate)}
                       </Typography>
+                      {/* The transaction number of a mobile-money transfer is what settles a
+                          dispute with a client who says they have paid. It was recorded and never
+                          shown back. */}
+                      {p.reference ? (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+                          Réf. {p.reference}
+                        </Typography>
+                      ) : null}
+                      {p.notes ? (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+                          {p.notes}
+                        </Typography>
+                      ) : null}
                     </Box>
                     {!cancelled ? (
                       <Button size="small" color="inherit" onClick={() => onVoid(p.id)}>

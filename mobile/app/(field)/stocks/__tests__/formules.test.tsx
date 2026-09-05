@@ -24,6 +24,22 @@ jest.mock('@/store/api/feedFormulasApi', () => ({
 }));
 jest.mock('@/store/api/inventoryCatalogApi', () => ({
   useGetPlatformFormulasQuery: jest.fn(() => ({ data: [{ key: 'starter_std', label: 'Démarrage standard', targetBreedKeys: [], targetPhase: 'STARTER', targetAgeDaysMin: 0, targetAgeDaysMax: 21, ingredients: [], estimatedCostPer100kgXof: 20000 }] })),
+  // The clone sheet reads the chosen template's composition; without this the screen throws.
+  useGetPlatformFormulaQuery: jest.fn(() => ({
+    data: {
+      key: 'starter_std',
+      label: 'Démarrage standard',
+      targetBreedKeys: [],
+      targetPhase: 'STARTER',
+      targetAgeDaysMin: 0,
+      targetAgeDaysMax: 21,
+      ingredients: [
+        { articleKey: 'corn_crushed', articleSource: 'INVENTORY', percentage: 60 },
+        { articleKey: 'soybean_meal', articleSource: 'INVENTORY', percentage: 40 },
+      ],
+      estimatedCostPer100kgXof: 20000,
+    },
+  })),
 }));
 
 import FormulesScreen from '../formules';
@@ -38,5 +54,17 @@ describe('Formules', () => {
     await press(screen.getByLabelText('Cloner un modèle'));
     expect(screen.getByText('Démarrage standard')).toBeTruthy();
     expect(screen.getByLabelText('Nom')).toBeTruthy();
+  });
+
+  it('shows what the chosen template is made of before cloning it', async () => {
+    // The list gives the phase and the cost; the composition — what the birds will actually eat —
+    // only comes with the template itself, and picking a ration blind is picking their feed blind.
+    await render(<FormulesScreen />);
+    await press(screen.getByLabelText('Cloner un modèle'));
+    await press(screen.getByLabelText('Démarrage standard'));
+
+    expect(screen.getByText('Composition')).toBeTruthy();
+    expect(screen.getByText('corn_crushed')).toBeTruthy();
+    expect(screen.getByText('60 %')).toBeTruthy();
   });
 });

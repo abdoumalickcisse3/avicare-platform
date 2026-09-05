@@ -29,6 +29,19 @@ export const inventoryCatalogApi = baseApi.injectEndpoints({
       transformResponse: (r: ApiEnvelope<PlatformFormula[]>) => r.data,
       providesTags: [{ type: "InventoryCatalog", id: "platform-formulas" }],
     }),
+
+    /**
+     * One platform template, with its composition and a cost recomputed from today's catalog
+     * prices. The list carries the same shape, but the clone dialog only ever needs the one being
+     * considered — and asking for it is what lets the farmer see what they are about to adopt
+     * instead of choosing a formula by its name alone.
+     */
+    getPlatformFormula: build.query<PlatformFormula, { farmId: number; key: string }>({
+      query: ({ farmId, key }) =>
+        `/api/v1/farms/${farmId}/inventory/catalog/feed-formulas/${encodeURIComponent(key)}`,
+      transformResponse: (r: ApiEnvelope<PlatformFormula>) => r.data,
+      providesTags: [{ type: "InventoryCatalog", id: "platform-formulas" }],
+    }),
     createArticle: build.mutation<
       void,
       { farmId: number; key: string; value: Record<string, unknown> }
@@ -77,6 +90,7 @@ export const {
   useGetInventoryArticlesQuery,
   useGetAllArticlesQuery,
   useGetPlatformFormulasQuery,
+  useGetPlatformFormulaQuery,
   useCreateArticleMutation,
   useUpdateArticleMutation,
   useDeleteArticleMutation,
