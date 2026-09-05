@@ -14,8 +14,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { tokens } from '@/theme';
 import { FormField } from '@/components/field/FormField';
-import { getRefreshToken, saveTokens } from '@/auth/tokens';
-import { useSignupMutation, useRefreshMutation } from '@/store/api/authApi';
+import { saveTokens } from '@/auth/tokens';
+import { useRefreshSession } from '@/auth/useRefreshSession';
+import { useSignupMutation } from '@/store/api/authApi';
 import { useCreateFarmMutation } from '@/store/api/farmsApi';
 
 const schema = z
@@ -37,7 +38,7 @@ export default function SignupScreen() {
   const router = useRouter();
   const [signup] = useSignupMutation();
   const [createFarm] = useCreateFarmMutation();
-  const [refresh] = useRefreshMutation();
+  const refreshSession = useRefreshSession();
 
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -66,11 +67,7 @@ export default function SignupScreen() {
         const defaultName = v.firstName.trim() ? `Ferme de ${v.firstName.trim()}` : 'Ma ferme';
         const farm = await createFarm({ name: defaultName }).unwrap();
         orch.current.farmId = farm.id;
-        const rt = await getRefreshToken();
-        if (rt) {
-          const refreshed = await refresh({ refreshToken: rt }).unwrap();
-          await saveTokens(refreshed);
-        }
+        await refreshSession();
       }
       router.replace('/(onboarding)');
     } catch (err) {

@@ -5,15 +5,28 @@ const press = (el: Parameters<typeof fireEvent.press>[0]): Promise<void> =>
     fireEvent.press(el);
   });
 
+const type = (el: Parameters<typeof fireEvent.changeText>[0], text: string): Promise<void> =>
+  act(async () => {
+    fireEvent.changeText(el, text);
+  });
+
 jest.mock('expo-router', () => ({ useRouter: jest.fn(() => ({ back: jest.fn() })), Redirect: () => null }));
-jest.mock('react-redux', () => ({ useSelector: jest.fn(() => 7), useDispatch: jest.fn(() => jest.fn()), useStore: jest.fn(() => ({})) }));
+jest.mock('react-redux', () => ({ useSelector: jest.fn(() => 7), useDispatch: () => mockDispatch, useStore: jest.fn(() => ({})) }));
 jest.mock('@/components/AppHeader', () => ({ AppHeader: () => null }));
 jest.mock('@/auth/useSession', () => ({ useFarmAccess: jest.fn(() => ({ isAdmin: true, can: () => true, farmRole: 'OWNER', session: null })) }));
+const mockCreateFarm = jest.fn(() => ({ unwrap: () => Promise.resolve({ id: 42, name: 'Ferme 2' }) }));
+const mockRefreshSession = jest.fn(() => Promise.resolve());
+const mockDispatch = jest.fn();
+const calls: string[] = [];
+
+jest.mock('@/auth/useRefreshSession', () => ({
+  useRefreshSession: () => mockRefreshSession,
+}));
 jest.mock('@/store/api/farmsApi', () => ({
   useListFarmsQuery: jest.fn(() => ({ data: [{ id: 7, name: 'Ferme Test', location: 'Thiès', active: true }] })),
   useGetFarmQuery: jest.fn(() => ({ data: { id: 7, name: 'Ferme Test', location: 'Thiès', capacity: 5000, currency: 'XOF', gpsLatitude: 14.79, gpsLongitude: -16.93, description: 'Ferme pilote' } })),
   useUpdateFarmMutation: () => [jest.fn(), { isLoading: false }],
-  useCreateFarmMutation: () => [jest.fn(), { isLoading: false }],
+  useCreateFarmMutation: () => [mockCreateFarm, { isLoading: false }],
   useDeleteFarmMutation: () => [jest.fn(), { isLoading: false }],
 }));
 jest.mock('@/store/api/permissionsApi', () => ({
@@ -127,5 +140,35 @@ describe('Fermes', () => {
 
     expect(screen.getByLabelText('Créer une ferme')).toBeTruthy();
     expect(screen.getByText(/s'ajoute au sélecteur/)).toBeTruthy();
+  });
+
+  it('refreshes the session before switching to a farm it just created', async () => {
+    // The token in hand was minted before this farm existed, so it carries no membership for it.
+    // Switching first and refreshing later (or never) leaves every farm-scoped call answering 403.
+    calls.length = 0;
+    mockRefreshSession.mockImplementationOnce(() => {
+      calls.push('refresh');
+      return Promise.resolve();
+    });
+    mockDispatch.mockImplementation((action) => {
+      calls.push(`dispatch:${(action as { type?: string })?.type ?? '?'}`);
+      return action;
+    });
+
+    await render(<FermesScreen />);
+    await press(screen.getByLabelText('Onglet Paramètres'));
+    await press(screen.getByLabelText('Créer une ferme'));
+
+    await type(screen.getByLabelText('Nom de la ferme'), 'Ferme 2');
+    await press(screen.getByLabelText('Créer la ferme'));
+
+    expect(mockCreateFarm).toHaveBeenCalled();
+    expect(mockRefreshSession).toHaveBeenCalledTimes(1);
+    expect(calls.indexOf('refresh')).toBeGreaterThanOrEqual(0);
+    expect(calls.filter((c) => c.startsWith('dispatch:')).length).toBeGreaterThan(0);
+    // Order is the point: the token must be good before the app points at the new farm.
+    expect(calls.indexOf('refresh')).toBeLessThan(
+      calls.findIndex((c) => c.startsWith('dispatch:')),
+    );
   });
 });
