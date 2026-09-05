@@ -46,7 +46,36 @@ la ferme de ce qui n'a pas été livré.
 `receive()` exige par ailleurs le statut `SENT` (`requireStatus`), donc un bon d'achat ne peut être
 reçu qu'une fois.
 
-### 1.4 La garde anti-double-comptage V25 est le précédent à respecter
+### 1.4 Un fournisseur n'a jamais de compte — et c'est une autre table que le partenaire
+
+`suppliers` (V15) est une **fiche appartenant à la ferme** : nom commercial, contact, téléphone,
+e-mail. Aucun `partner_id`, aucun `user_id`, aucun moyen de se connecter. Le compte-courant
+fonctionne donc pour lui par construction ; il n'y a rien à prévoir de ce côté.
+
+Mais la plateforme porte une **seconde** notion du provendier : `partners` (V36) avec ses
+`partner_users` et son portail. **Rien ne joint les deux tables.** Le même provendier peut exister
+deux fois — en fiche fournisseur chez une ferme, et en partenaire avec son portail — sans que le
+système sache que c'est la même entreprise. Constat noté, non traité ici (§8).
+
+Conséquence pratique : le seul canal vers un fournisseur est **son téléphone**.
+
+### 1.5 Le rail WhatsApp existe déjà, et pour ce cas exactement
+
+`WhatsAppOutboxFacade.enqueue(rawPhone, message)` (`notification/api`) met en file un message vers
+n'importe quel numéro sans importer les internes du contexte notification. Sa javadoc dit pourquoi
+il a été créé : « une alerte partenaire est adressée à un partenaire, elle n'a donc pas de
+notification éleveur derrière elle ». C'est mot pour mot notre situation.
+
+Deux propriétés qui comptent : le message est **mis en file, pas envoyé** — un ordonnanceur draine
+l'outbox ; et l'appel **ne lève jamais** — un échec d'avis ne peut pas annuler l'enregistrement d'un
+paiement.
+
+À noter : **aucun client n'est prévenu par WhatsApp aujourd'hui**. Le rail sert l'éleveur, les
+partenaires (qui ont signé) et les admins. Écrire à un fournisseur serait la première fois que la
+plateforme s'adresse à un tiers commercial de l'éleveur — quelqu'un qui n'a rien accepté de Jawdi.
+D'où l'interrupteur du §6.
+
+### 1.6 La garde anti-double-comptage V25 est le précédent à respecter
 
 `ExpenseRepository.sumDirectForUnit` exclut explicitement `STOCK_ENTRY` des sommes par lot, avec le
 commentaire qui dit pourquoi : la charge est déjà comptée à l'entrée du stock. Le même piège guette
@@ -59,7 +88,8 @@ de revient au kilo** du rapport de clôture deviendrait faux.
 
 **Dedans** : un registre par fournisseur (dettes et paiements), le débit automatique à la réception
 d'un bon d'achat, le solde et le relevé, les endpoints, la fiche fournisseur web en compte-courant,
-et sur mobile le solde plus l'enregistrement d'un paiement.
+et sur mobile le solde plus l'enregistrement d'un paiement. Plus **l'avis WhatsApp au fournisseur**
+(§6), sous interrupteur par fournisseur.
 
 **Dehors, volontairement** :
 
@@ -72,6 +102,11 @@ et sur mobile le solde plus l'enregistrement d'un paiement.
   c'est ainsi que la relation fonctionne.
 - **Le tableau de bord.** Le total dû ira sur l'écran Finance, pas sur l'accueil, tant que ce n'est
   pas demandé.
+- **Le rattachement `suppliers` ↔ `partners`.** Nommé au §1.4, laissé au §8 : il ouvre une question
+  de confidentialité (quels curseurs de partage laissent un provendier voir ce qu'une ferme lui
+  doit ?) qui mérite sa propre décision. Et il n'urge pas — une seule ferme a un partenaire rattaché
+  aujourd'hui.
+- **Un avis au fournisseur à la réception.** Il sait qu'il a livré ; le lui écrire est du bruit.
 
 ---
 
@@ -87,6 +122,9 @@ et sur mobile le solde plus l'enregistrement d'un paiement.
 | 6 | Ligne manuelle | **Conservée** : c'est elle qui sert le cas du carnet. Le risque de double saisie est assumé et rendu visible (§4.5). |
 | 7 | Suppression | Seule une ligne `MANUAL` s'efface (soft delete). Une ligne dérivée d'un bon d'achat répond **422**. |
 | 8 | Montants | `BIGINT amount_xof`, comme `payments` et `expenses` — le franc CFA n'a pas de décimales. Déviation assumée du doc 04 (« financier : NUMERIC(12,2) »), avec précédent : le code tranche quand les deux divergent. |
+| 9 | Avis au fournisseur | **Interrupteur par fournisseur, défaut `FALSE`.** Rien ne part vers un tiers tant que l'éleveur ne l'a pas décidé pour ce fournisseur-là. Une fois activé, l'envoi est automatique, avec une case cochée d'avance dans la boîte de dialogue — un dernier regard. |
+| 10 | Événements notifiés | **Bon d'achat envoyé** (la commande) et **paiement enregistré** (le reçu). Pas la réception : le fournisseur sait qu'il a livré. |
+| 11 | Rattachement partenaire | **Non traité.** `suppliers` et `partners` restent deux tables sans jointure ; le constat est consigné au §8. |
 
 ---
 
@@ -94,8 +132,8 @@ et sur mobile le solde plus l'enregistrement d'un paiement.
 
 ### 4.1 Le modèle de données
 
-Migration `V54__supplier_ledger.sql` — **le numéro suit l'ordre de merge** ; à renuméroter si une
-autre migration fusionne d'abord.
+Migration `V54__supplier_ledger.sql`, plus `V55__supplier_whatsapp_optin.sql` au §6.2 — **les
+numéros suivent l'ordre de merge** ; à renuméroter si une autre migration fusionne d'abord.
 
 ```sql
 CREATE TABLE supplier_ledger_entries (
@@ -223,9 +261,66 @@ autre ferme → **404**, et non 403 : c'est le patron déjà en place (`VetVisit
 
 ---
 
-## 6. Surfaces
+## 6. Prévenir le fournisseur
 
-### 6.1 Web
+### 6.1 Pourquoi WhatsApp, et pourquoi c'est bon marché à construire
+
+Un fournisseur n'a pas de compte (§1.4) : son téléphone est le seul canal. Et le port existe déjà
+(§1.5), avec les deux propriétés qu'il faut — mise en file plutôt qu'envoi synchrone, et aucune
+exception qui remonte. L'enregistrement d'un paiement ne peut donc pas échouer parce que Konekt
+est indisponible.
+
+### 6.2 L'interrupteur
+
+Migration `V55__supplier_whatsapp_optin.sql` — séparée de `V54` parce qu'elle modifie `suppliers`,
+une table existante, et que le doc 04 demande une migration par sujet :
+
+```sql
+ALTER TABLE suppliers ADD COLUMN notify_whatsapp BOOLEAN NOT NULL DEFAULT FALSE;
+```
+
+Défaut `FALSE`, délibérément. Trois raisons : le message part chez quelqu'un qui n'a rien accepté de
+Jawdi ; chaque envoi dépense un crédit Konekt ; et un avis parti chez celui à qui l'on doit de
+l'argent ne se rattrape pas.
+
+Le formulaire fournisseur gagne un interrupteur « Prévenir par WhatsApp », **désactivé et expliqué**
+quand la fiche n'a pas de téléphone — un interrupteur qu'on peut activer sans effet est un
+mensonge d'interface.
+
+### 6.3 Les deux messages
+
+**Bon d'achat envoyé** — déclenché dans `PurchaseOrderService.send()`, au passage `DRAFT → SENT`.
+C'est l'acte de commander ; l'envoyer *est* le geste.
+
+**Paiement enregistré** — déclenché à la création d'une ligne `CREDIT`, quelle que soit son origine
+(web ou mobile).
+
+Le contenu doit se lire par quelqu'un qui ne connaît pas Jawdi. Donc, dans cet ordre : **le nom de
+la ferme** (sans lui, un numéro inconnu écrit des chiffres), ce qui s'est passé, le montant, la
+date, et le solde restant **présenté comme la position de la ferme** — « selon mes comptes » — et
+non comme une vérité opposable. Un compte-courant se réconcilie ; l'annoncer comme un fait
+transformerait un outil de confiance en source de litige.
+
+Pas de promesse de désabonnement dans le message. L'instance Konekt est un téléphone connecté dont
+personne ne lit les réponses : écrire « répondez STOP » serait promettre ce qu'on n'honore pas. Le
+message nomme la ferme, et c'est à elle que le fournisseur s'adresse — ce qui est aussi la vérité de
+la relation.
+
+### 6.4 Ce que l'envoi n'est pas
+
+`enqueue` et non `enqueueBroadcast` : un avis fournisseur est **transactionnel**, déclenché par un
+geste de l'éleveur, pas une campagne. La contrepartie est que le crédit dépensé n'est pas attribué à
+une ferme dans le registre Konekt — acceptable au volume attendu, à revoir si les avis fournisseurs
+deviennent un poste de dépense visible.
+
+Un échec d'envoi **ne remonte pas** à l'utilisateur : le paiement est enregistré, c'est ce qui
+compte. L'outbox porte déjà son propre statut et ses reprises.
+
+---
+
+## 7. Surfaces
+
+### 7.1 Web
 
 La fiche fournisseur devient un compte-courant, miroir de la fiche client livrée aux PR #97-101 :
 solde en tête, relevé chronologique avec solde progressif, deux actions — « Enregistrer un
@@ -234,14 +329,23 @@ paiement » et « Ajouter une dette ».
 La liste des fournisseurs gagne une colonne solde. L'écran Finance gagne **un seul nombre** : le
 total dû aux fournisseurs.
 
-### 6.2 Mobile
+Le formulaire fournisseur gagne l'interrupteur « Prévenir par WhatsApp » (§6.2). La boîte de
+dialogue du paiement porte une case « Prévenir <nom> par WhatsApp », **cochée d'avance quand
+l'interrupteur est actif** et absente sinon — le dernier regard avant qu'un message parte chez un
+tiers.
+
+### 7.2 Mobile
 
 La règle permanente s'applique ([[web_feature_implies_mobile]]) : le solde est visible sur la liste
 des fournisseurs et sur la fiche, et un paiement peut être enregistré.
 
 **En ligne uniquement**, conformément à la décision déjà inscrite dans `mobile/src/sync/types.ts` :
 les écritures d'argent ne passent pas par la file hors ligne, faute de déduplication côté serveur —
-un paiement rejoué en créerait un second.
+un paiement rejoué en créerait un second. Un avis WhatsApp rejoué serait pire encore : le
+fournisseur recevrait deux reçus pour un versement.
+
+L'écran `(field)/stocks/fournisseurs.tsx` et `suppliersApi` existent déjà des deux côtés, donc
+l'interrupteur et la case de confirmation s'y posent sans créer de divergence de parité.
 
 Le test `web/src/store/api/parity.test.ts` exigera que les URL appelées existent des deux côtés :
 tout endpoint du registre appelé par le web sans équivalent mobile devra être branché ou inscrit
@@ -249,7 +353,7 @@ dans `KNOWN_DIVERGENCES` avec sa raison.
 
 ---
 
-## 7. Tests
+## 8. Tests
 
 Le premier est celui qui compte :
 
@@ -265,6 +369,17 @@ Le premier est celui qui compte :
 7. **Isolation multi-tenant** : le registre d'une ferme est invisible depuis une autre — le
    fournisseur est déjà `farm_id`-scopé, la garde doit être prouvée et non supposée.
 
+Puis, sur l'avis au fournisseur :
+
+8. **Rien ne part quand l'interrupteur est à `FALSE`** — c'est le défaut, donc c'est le cas le plus
+   fréquent et celui qu'une régression casserait en silence.
+9. **Rien ne part quand la fiche n'a pas de téléphone**, interrupteur actif ou non.
+10. **Un envoi qui échoue n'annule pas le paiement.** La ligne `CREDIT` existe, la transaction est
+    commise. C'est la propriété que promet `WhatsAppOutboxFacade` ; on la vérifie plutôt que de la
+    supposer.
+11. **Le message nomme la ferme et le montant**, et présente le solde comme la position de la ferme
+    (§6.3) — un test sur le texte, parce que ce texte est lu par quelqu'un qui ne connaît pas Jawdi.
+
 Deux pièges connus du dépôt à traiter dans le même passage :
 
 - Tout nouveau repository JPA doit être `@MockitoBean` dans **les six contextes DB-less**
@@ -275,7 +390,13 @@ Deux pièges connus du dépôt à traiter dans le même passage :
 
 ---
 
-## 8. Ce qui reste ouvert après ce chantier
+## 9. Ce qui reste ouvert après ce chantier
+
+**`suppliers` et `partners` ne sont pas joints** (§1.4). Le même provendier peut exister deux fois
+dans la plateforme sans que le système le sache. Rattacher les deux permettrait à un provendier de
+voir dans son portail ce que chaque ferme lui doit — mais cela ouvre une question de confidentialité
+que cette spec ne tranche pas : quel curseur de partage autorise un fournisseur à lire la dette
+d'une ferme ? À décider avant, pas pendant. Rien n'urge : une seule ferme a un partenaire rattaché.
 
 La dette fournisseur est le premier des cinq arbitrages issus de la confrontation du 2026-09-05.
 Restent : la **performance ponte** (un lot de pondeuses n'a aucun jugement de performance), le
