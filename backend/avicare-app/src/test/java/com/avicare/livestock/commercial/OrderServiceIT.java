@@ -7,7 +7,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.avicare.common.api.exception.BusinessRuleException;
 import com.avicare.common.api.exception.NotFoundException;
-import com.avicare.common.api.exception.ValidationException;
 import com.avicare.livestock.domain.ArticleSource;
 import com.avicare.livestock.domain.Client;
 import com.avicare.livestock.domain.ClientType;
@@ -188,7 +187,8 @@ class OrderServiceIT {
                         null,
                         List.of(line("feed_layer", "10", 300))),
                     1L))
-        .isInstanceOf(ValidationException.class);
+        // 422 : l'article existe, c'est le domaine qui refuse de le vendre.
+        .isInstanceOf(BusinessRuleException.class);
   }
 
   private static OrderDraftCommand.Line line(String key, String qty, int price) {

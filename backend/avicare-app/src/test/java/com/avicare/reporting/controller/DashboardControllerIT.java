@@ -250,14 +250,15 @@ class DashboardControllerIT {
   }
 
   @Test
-  void unknownPreset_returns422() throws Exception {
+  void unknownPreset_returns400() throws Exception {
     String token = memberToken(FARM_ID);
     mockMvc
         .perform(
             get("/api/v1/farms/" + FARM_ID + "/dashboard")
                 .header("Authorization", "Bearer " + token)
                 .param("period", "yearly"))
-        .andExpect(status().isUnprocessableEntity());
+        // 400 : un autre preset serait accepté, donc c'est la requête qui est fausse.
+        .andExpect(status().isBadRequest());
   }
 
   private String memberToken(Long farmId) {

@@ -97,7 +97,8 @@ class FarmProductionFocusIT {
                 .header("Authorization", "Bearer " + owner)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"Ferme B\",\"productionFocus\":[\"pig\"]}"))
-        .andExpect(status().isUnprocessableEntity());
+        // 400 : un autre token serait accepté, donc c'est la requête qui est fausse.
+        .andExpect(status().isBadRequest());
   }
 
   @Test
