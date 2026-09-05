@@ -6,6 +6,7 @@
  * is the one selected in the header switcher. OWNER / platform ADMIN only;
  * member provisioning stays on the web.
  */
+import { useRefreshSession } from '@/auth/useRefreshSession';
 import { useMemo, useState } from 'react';
 import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -82,6 +83,7 @@ export default function FermesScreen() {
   const [removeMember] = useRemoveMemberMutation();
   const [updateFarm, { isLoading: savingFarm }] = useUpdateFarmMutation();
   const [createFarm, { isLoading: creatingFarm }] = useCreateFarmMutation();
+  const refreshSession = useRefreshSession();
   const [deleteFarm] = useDeleteFarmMutation();
 
   const [memberSheet, setMemberSheet] = useState<{ open: boolean; member: Member | null }>({
@@ -195,6 +197,10 @@ export default function FermesScreen() {
         // Switch to what was just created: an owner adding a second site means to work on it,
         // and leaving the header pointing at the old farm reads as "nothing happened".
         const created = await createFarm(body).unwrap();
+        // The token in hand was minted before this farm existed, so it carries no membership for
+        // it: without a refresh, switching to it answers 403 on every call and the owner is left
+        // with an empty app and nothing but a sign-out to escape it.
+        await refreshSession();
         dispatch(setSelectedFarmId(created.id));
       } else {
         if (selectedFarmId === null) return;

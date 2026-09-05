@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { getAccessToken } from '@/auth/tokens';
 import { decodeSession, type Session } from '@/auth/session';
+import { subscribeSessionChanged } from '@/auth/sessionEvents';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 
 export type FarmAccess = {
@@ -31,18 +32,26 @@ export function useFarmAccess(): FarmAccess {
 
   useEffect(() => {
     let cancelled = false;
-    getAccessToken()
-      .then((token) => {
-        if (cancelled || !token) return;
-        try {
-          setSession(decodeSession(token));
-        } catch {
-          // Malformed token — the route guard handles the redirect; leave session null.
-        }
-      })
-      .catch(() => undefined);
+    const read = () =>
+      getAccessToken()
+        .then((token) => {
+          if (cancelled || !token) return;
+          try {
+            setSession(decodeSession(token));
+          } catch {
+            // Malformed token — the route guard handles the redirect; leave session null.
+          }
+        })
+        .catch(() => undefined);
+
+    read();
+    // A refreshed token carries memberships the first read could not know about — creating a farm
+    // makes the caller its OWNER — so re-read rather than hold a session that is a farm behind.
+    const unsubscribe = subscribeSessionChanged(read);
+
     return () => {
       cancelled = true;
+      unsubscribe();
     };
   }, []);
 
