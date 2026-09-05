@@ -1,12 +1,21 @@
 /**
  * Record a vaccination — the mobile equivalent of the web `VaccinationDialog`
  * (basic health module). Vaccine picked from the farm catalog, subjects
- * defaulting to the unit's current count, date = today. Submitted online via
- * the `recordVaccination` mutation (invalidates the unit's vaccinations + farm
- * alerts, so the Sanitaire lists refresh immediately).
+ * defaulting to the unit's current count, date = today.
+ *
+ * Submitted through the offline queue, like every other field entry. It used
+ * to post straight to the network, alone among the field screens: a farmer
+ * vaccinating in a barn without coverage lost the entry — on the task the
+ * field survey names as the costliest in time. The voice assistant already
+ * enqueued VACCINATION (`assistant/intentRegistry.ts`), so the same write had
+ * two paths and only one of them survived a dead spot.
+ *
+ * As the assistant's comment notes, the health endpoints do not dedupe
+ * server-side: the clientRef is stamped for local queue uniqueness only, and
+ * is deliberately not put in the body.
  */
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
@@ -14,9 +23,10 @@ import { skipToken } from '@reduxjs/toolkit/query/react';
 import { ArrowLeft } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { FormField, TodayDateField } from '@/components/field/FormField';
-import { useGetVaccinesQuery, useRecordVaccinationMutation } from '@/store/api/healthApi';
+import { useGetVaccinesQuery } from '@/store/api/healthApi';
 import { useListProductionUnitsQuery } from '@/store/api/productionUnitsApi';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
+import { enqueueFieldMutation } from '@/field/enqueueMutation';
 import { humanizeKey } from '@/lib/health';
 
 function todayIsoDate(): string {
@@ -35,7 +45,6 @@ export default function VaccinationEntryScreen() {
   const farmId = selectedFarmId as number;
   const { data: units } = useListProductionUnitsQuery(skip ? skipToken : farmId);
   const { data: vaccines } = useGetVaccinesQuery(skip ? skipToken : { farmId });
-  const [record, { isLoading }] = useRecordVaccinationMutation();
 
   const unit = units?.find((u) => u.id === unitId);
 
@@ -52,27 +61,26 @@ export default function VaccinationEntryScreen() {
   if (selectedFarmId === null) return <Redirect href="/(field)" />;
 
   const subjectsValid = /^\d+$/.test(subjects.trim()) && Number(subjects.trim()) > 0;
-  const canSubmit = !Number.isNaN(unitId) && !!vaccineKey && subjectsValid && !isLoading;
+  const canSubmit = !Number.isNaN(unitId) && !!vaccineKey && subjectsValid;
 
-  async function handleSubmit(): Promise<void> {
+  function handleSubmit(): void {
     if (!canSubmit || !vaccineKey) return;
-    try {
-      await record({
-        farmId,
-        body: {
-          unitId,
-          vaccineKey,
-          administeredDate: todayIsoDate(),
-          route: route.trim() || undefined,
-          subjectsCount: Number(subjects.trim()),
-          notes: notes.trim() || undefined,
-        },
-      }).unwrap();
-      router.back();
-    } catch (err) {
-      const status = (err as { status?: number })?.status;
-      Alert.alert('Enregistrement impossible', status === 403 ? 'Action non autorisée pour votre rôle.' : "L'enregistrement a échoué. Réessayez.");
-    }
+
+    enqueueFieldMutation({
+      farmId,
+      kind: 'VACCINATION',
+      endpoint: `/api/v1/farms/${farmId}/health/vaccinations`,
+      payload: {
+        unitId,
+        vaccineKey,
+        administeredDate: todayIsoDate(),
+        route: route.trim() || undefined,
+        subjectsCount: Number(subjects.trim()),
+        notes: notes.trim() || undefined,
+      },
+    });
+
+    router.back();
   }
 
   return (
@@ -118,7 +126,7 @@ export default function VaccinationEntryScreen() {
           <Text style={styles.cancelLabel}>Annuler</Text>
         </Pressable>
         <Pressable style={[styles.submitBtn, !canSubmit && styles.disabled]} onPress={handleSubmit} disabled={!canSubmit} accessibilityRole="button" accessibilityLabel="Enregistrer la vaccination">
-          <Text style={styles.submitLabel}>{isLoading ? 'Enregistrement…' : 'Enregistrer'}</Text>
+          <Text style={styles.submitLabel}>Enregistrer</Text>
         </Pressable>
       </View>
     </SafeAreaView>
