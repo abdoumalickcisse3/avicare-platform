@@ -30,6 +30,7 @@ import {
   useResetAdminUserPasswordMutation,
   useSetAdminUserActiveMutation,
 } from "@/store/api/adminApi";
+import { apiErrorMessage } from "@/lib/apiError";
 import { impersonation } from "@/lib/impersonation";
 import { tokenStorage } from "@/lib/storage";
 import type { AdminUserRow } from "@/types";
@@ -59,10 +60,33 @@ export function UserSearch() {
     me?.permissions.includes("compliance:*") ||
     false;
 
+  // Erasure is irreversible, so the dialog asks for the address to be typed back rather than for
+  // a second click, and a failure is shown instead of swallowed: an administrator who is told
+  // nothing assumes the request was honoured.
+  const [anonymizeError, setAnonymizeError] = useState<string | null>(null);
+  const [confirmEmail, setConfirmEmail] = useState("");
+  const [anonymizing, setAnonymizing] = useState(false);
+
+  const closeAnonymize = () => {
+    setToAnonymize(null);
+    setConfirmEmail("");
+    setAnonymizeError(null);
+  };
+
   const onAnonymize = async () => {
     if (!toAnonymize) return;
-    await anonymize({ userId: toAnonymize.userId }).unwrap().catch(() => {});
-    setToAnonymize(null);
+    setAnonymizing(true);
+    setAnonymizeError(null);
+    try {
+      await anonymize({ userId: toAnonymize.userId }).unwrap();
+      closeAnonymize();
+      // The row still shows the old identity until the search is replayed.
+      if (query.trim().length > 0) search({ q: query.trim() });
+    } catch (err) {
+      setAnonymizeError(apiErrorMessage(err));
+    } finally {
+      setAnonymizing(false);
+    }
   };
   const [issued, setIssued] = useState<{ email: string; password: string } | null>(null);
 
@@ -186,7 +210,11 @@ export function UserSearch() {
                             size="small"
                             color="error"
                             disabled={u.role === "ADMIN"}
-                            onClick={() => setToAnonymize(u)}
+                            onClick={() => {
+                              setConfirmEmail("");
+                              setAnonymizeError(null);
+                              setToAnonymize(u);
+                            }}
                           >
                             Anonymiser
                           </Button>
@@ -224,6 +252,44 @@ export function UserSearch() {
           </Button>
           <Button variant="contained" onClick={() => setIssued(null)}>
             Fermer
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* The action this whole screen exists to make possible, and the one that cannot be undone:
+          the address is typed back rather than clicked twice. */}
+      <Dialog open={toAnonymize !== null} onClose={closeAnonymize} fullWidth maxWidth="xs">
+        <DialogTitle>Anonymiser ce compte</DialogTitle>
+        <DialogContent>
+          <Alert severity="error" sx={{ mb: 2 }}>
+            Irréversible. Le nom, l&apos;adresse et le téléphone de {toAnonymize?.email} sont
+            effacés définitivement. Les données de ferme qu&apos;il a saisies restent en place.
+          </Alert>
+          {anonymizeError && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              {anonymizeError}
+            </Alert>
+          )}
+          <Typography variant="body2" sx={{ mb: 1 }}>
+            Saisissez <strong>{toAnonymize?.email}</strong> pour confirmer.
+          </Typography>
+          <TextField
+            value={confirmEmail}
+            onChange={(e) => setConfirmEmail(e.target.value)}
+            placeholder={toAnonymize?.email ?? ""}
+            slotProps={{ htmlInput: { "aria-label": "Confirmer l'adresse" } }}
+            fullWidth
+            size="small"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeAnonymize}>Annuler</Button>
+          <Button
+            variant="contained"
+            color="error"
+            disabled={anonymizing || confirmEmail.trim() !== toAnonymize?.email}
+            onClick={onAnonymize}
+          >
+            Anonymiser
           </Button>
         </DialogActions>
       </Dialog>

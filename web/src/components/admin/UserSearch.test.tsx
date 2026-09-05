@@ -93,4 +93,38 @@ describe("UserSearch", () => {
 
     expect(await screen.findByText("Aucun compte ne correspond.")).toBeInTheDocument();
   });
+
+  it("does not anonymise on the first click: the address has to be typed back", async () => {
+    const calls = mockApi([USER]);
+    renderWithProviders(<UserSearch />);
+
+    await userEvent.type(screen.getByPlaceholderText(/E-mail, nom ou téléphone/), "modou");
+    await userEvent.click(screen.getByRole("button", { name: /rechercher/i }));
+    await userEvent.click(await screen.findByRole("button", { name: /^anonymiser$/i }));
+
+    // The button used to set state and open nothing at all — the erasure never left the browser.
+    expect(await screen.findByText(/Irréversible/)).toBeInTheDocument();
+
+    const confirm = screen.getAllByRole("button", { name: /^anonymiser$/i }).at(-1)!;
+    expect(confirm).toBeDisabled();
+    expect(calls.some((u) => u.includes("anonymize"))).toBe(false);
+  });
+
+  it("sends the erasure once the address matches", async () => {
+    const calls = mockApi([USER]);
+    renderWithProviders(<UserSearch />);
+
+    await userEvent.type(screen.getByPlaceholderText(/E-mail, nom ou téléphone/), "modou");
+    await userEvent.click(screen.getByRole("button", { name: /rechercher/i }));
+    await userEvent.click(await screen.findByRole("button", { name: /^anonymiser$/i }));
+
+    await userEvent.type(await screen.findByLabelText("Confirmer l'adresse"), USER.email);
+    await userEvent.click(screen.getAllByRole("button", { name: /^anonymiser$/i }).at(-1)!);
+
+    await vi.waitFor(() =>
+      expect(calls.some((u) => u.includes(`/admin/compliance/users/${USER.userId}/anonymize`))).toBe(
+        true,
+      ),
+    );
+  });
 });
