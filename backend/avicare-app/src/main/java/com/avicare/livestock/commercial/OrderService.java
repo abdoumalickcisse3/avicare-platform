@@ -197,7 +197,7 @@ public class OrderService {
           throw new NotFoundException("ARTICLE_NOT_FOUND", "Unknown article " + line.articleKey());
         }
         if (!PRODUCT_SUBCATEGORY.equals(article.subcategory())) {
-          throw new ValidationException(
+          throw new BusinessRuleException(
               "ARTICLE_NOT_SELLABLE",
               "Article " + line.articleKey() + " is not a product and cannot be sold");
         }

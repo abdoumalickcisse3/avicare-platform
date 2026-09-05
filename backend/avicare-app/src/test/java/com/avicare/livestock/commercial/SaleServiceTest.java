@@ -214,11 +214,12 @@ class SaleServiceTest {
   }
 
   @Test
-  void create_nonProductArticleThrowsValidation() {
+  void create_nonProductArticleIsRefusedByTheDomain() {
     SaleCommand cmd =
         new SaleCommand(null, null, null, null, null, List.of(line("layer_feed", "10", 300)));
 
-    assertThatExceptionOfType(ValidationException.class)
+    // 422, like overselling on the same endpoint: the payload is fine, the domain refuses it.
+    assertThatExceptionOfType(BusinessRuleException.class)
         .isThrownBy(() -> service.create(7L, cmd, 42L));
   }
 
