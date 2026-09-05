@@ -25,6 +25,14 @@ export const authApi = baseApi.injectEndpoints({
       query: (body) => ({ url: "/api/v1/auth/signup", method: "POST", body }),
       transformResponse: (r: ApiEnvelope<AuthTokens>) => r.data,
     }),
+    /**
+     * Revoke the refresh token server-side. Signing out must reach the server: clearing the
+     * browser alone leaves the token valid for its full lifetime, so a copy of it — on a shared
+     * machine, in a backup — still buys a session long after the farmer thinks they left.
+     */
+    logout: build.mutation<void, { refreshToken: string }>({
+      query: (body) => ({ url: "/api/v1/auth/logout", method: "POST", body }),
+    }),
     refresh: build.mutation<AuthTokens, { refreshToken: string }>({
       query: (body) => ({ url: "/api/v1/auth/refresh", method: "POST", body }),
       transformResponse: (r: ApiEnvelope<AuthTokens>) => r.data,
@@ -65,6 +73,7 @@ export const authApi = baseApi.injectEndpoints({
 
 export const {
   useLoginMutation,
+  useLogoutMutation,
   useSignupMutation,
   useRefreshMutation,
   useGetProfileQuery,
