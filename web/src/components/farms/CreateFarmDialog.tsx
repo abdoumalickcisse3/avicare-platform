@@ -1,5 +1,6 @@
 "use client";
 
+import { PRODUCTION_FOCUS } from "@/constants/productionFocus";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,10 +32,6 @@ import { apiErrorMessage } from "@/lib/apiError";
 import type { Farm, FarmInput } from "@/types";
 
 /** Métier focus options, each gated by the matching subscription module. */
-const FOCUS_OPTIONS = [
-  { token: "broiler", label: "Volaille chair", module: "module.poultry.broiler" },
-  { token: "layer", label: "Volaille ponte", module: "module.poultry.layer" },
-] as const;
 
 const farmSchema = z.object({
   name: z.string().min(1, "Nom requis").max(200, "200 caractères maximum"),
@@ -75,7 +72,7 @@ export function CreateFarmDialog({ open, onClose, farm }: CreateFarmDialogProps)
   const isLoading = creating || updating;
 
   // Focus options the account can actually pick (gated by its active modules).
-  const availableFocus = FOCUS_OPTIONS.filter((o) => isModuleActive(o.module));
+  const availableFocus = PRODUCTION_FOCUS.filter((o) => isModuleActive(o.module));
 
   const { control, handleSubmit, reset } = useForm<FarmForm>({
     resolver: zodResolver(farmSchema),

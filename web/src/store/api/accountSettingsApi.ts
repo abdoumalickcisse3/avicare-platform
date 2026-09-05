@@ -6,9 +6,6 @@ interface ApiEnvelope<T> {
   data: T;
 }
 
-/** Key of the user setting that records onboarding completion. */
-export const ONBOARDING_SETTING_KEY = "onboarding_completed";
-
 export const accountSettingsApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     getAccountSettings: build.query<AccountSetting[], void>({
@@ -36,9 +33,3 @@ export const {
   useLazyGetAccountSettingsQuery,
   useUpsertSettingMutation,
 } = accountSettingsApi;
-
-/** Whether the onboarding-completed flag is set in a settings list. */
-export function isOnboardingCompleted(settings: AccountSetting[]): boolean {
-  const setting = settings.find((s) => s.key === ONBOARDING_SETTING_KEY);
-  return setting?.value?.completed === true;
-}

@@ -12,7 +12,6 @@ const m = vi.hoisted(() => ({
     unwrap: () => Promise.resolve({ accessToken: "a2", refreshToken: "r2", expiresIn: 900 }),
   })),
   createFarm: vi.fn(() => ({ unwrap: () => Promise.resolve({ id: 1 }) })),
-  upsert: vi.fn(() => ({ unwrap: () => Promise.resolve({}) })),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -24,10 +23,6 @@ vi.mock("@/store/api/authApi", () => ({
 }));
 vi.mock("@/store/api/farmsApi", () => ({
   useCreateFarmMutation: () => [m.createFarm, {}],
-}));
-vi.mock("@/store/api/accountSettingsApi", () => ({
-  ONBOARDING_SETTING_KEY: "onboarding_completed",
-  useUpsertSettingMutation: () => [m.upsert, {}],
 }));
 
 import SignupPage from "./page";
@@ -77,10 +72,6 @@ describe("SignupPage (single-step)", () => {
     // the owner names/details it in the onboarding wizard.
     expect(m.createFarm).toHaveBeenCalledWith({ name: "Ferme de Awa" });
     expect(m.refresh).toHaveBeenCalled();
-    expect(m.upsert).toHaveBeenCalledWith({
-      key: "onboarding_completed",
-      value: { completed: true },
-    });
   });
 
   it("shows an error and does not redirect when signup fails", async () => {
