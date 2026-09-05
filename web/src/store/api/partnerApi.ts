@@ -90,6 +90,16 @@ export const partnerApi = createApi({
       transformResponse: (r: Envelope<NetworkFarmRow[]>) => r.data,
       providesTags: ["Network"],
     }),
+    /**
+     * One farm's current figures. Same shape as a table row, and that is the point: the table is a
+     * snapshot from page load, and a partner deciding whether to call a farmer should see where it
+     * stands now, not where it stood when the page opened.
+     */
+    getNetworkFarm: build.query<NetworkFarmRow, number>({
+      query: (farmId) => `/api/v1/partner/network/farms/${farmId}`,
+      transformResponse: (r: Envelope<NetworkFarmRow>) => r.data,
+      providesTags: ["Network"],
+    }),
     getRestockForecast: build.query<RestockForecast, { horizonDays?: number } | void>({
       query: (args) => `/api/v1/partner/network/restock?horizonDays=${args?.horizonDays ?? 30}`,
       transformResponse: (r: Envelope<RestockForecast>) => r.data,
@@ -109,6 +119,7 @@ export const {
   useGetPartnerProfileQuery,
   useGetNetworkDashboardQuery,
   useGetNetworkFarmsQuery,
+  useGetNetworkFarmQuery,
   useGetNetworkAlertsQuery,
   useGetRestockForecastQuery,
 } = partnerApi;

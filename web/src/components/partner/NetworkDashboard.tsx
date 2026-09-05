@@ -28,8 +28,9 @@ import {
 } from '@/store/api/partnerApi';
 import { partnerTokenStorage } from '@/lib/partnerStorage';
 import NetworkAlerts from './NetworkAlerts';
+import { NetworkFarmDialog } from './NetworkFarmDialog';
 import RestockForecast from './RestockForecast';
-import type { PartnerProfile, RiskLevel } from '@/types';
+import type { NetworkFarmRow, PartnerProfile, RiskLevel } from '@/types';
 import { colors } from '@/theme/tokens';
 
 const TYPE_LABEL: Record<PartnerProfile['type'], string> = {
@@ -58,6 +59,7 @@ export default function NetworkDashboard() {
   const { data: farms = [] } = useGetNetworkFarmsQuery();
   const [logout] = usePartnerLogoutMutation();
   const [tab, setTab] = useState(0);
+  const [opened, setOpened] = useState<NetworkFarmRow | null>(null);
 
   const onLogout = async () => {
     const refreshToken = partnerTokenStorage.getRefresh();
@@ -172,7 +174,12 @@ export default function NetworkDashboard() {
                     </TableHead>
                     <TableBody>
                       {farms.map((f) => (
-                        <TableRow key={f.farmId}>
+                        <TableRow
+                          key={f.farmId}
+                          hover
+                          onClick={() => setOpened(f)}
+                          sx={{ cursor: 'pointer' }}
+                        >
                           <TableCell sx={{ fontWeight: 600 }}>{f.farmName}</TableCell>
                           <TableCell>
                             {f.active == null ? (
@@ -209,6 +216,8 @@ export default function NetworkDashboard() {
           </Card>
         </>
       )}
+
+      <NetworkFarmDialog farm={opened} onClose={() => setOpened(null)} />
     </Box>
   );
 }
