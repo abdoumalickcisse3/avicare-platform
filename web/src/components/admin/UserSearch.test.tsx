@@ -127,4 +127,42 @@ describe("UserSearch", () => {
       ),
     );
   });
+
+  it("cuts the sessions when deactivating, so the deactivation actually bites", async () => {
+    const calls = mockApi([USER]);
+    renderWithProviders(<UserSearch />);
+
+    await userEvent.type(screen.getByPlaceholderText(/E-mail, nom ou téléphone/), "modou");
+    await userEvent.click(screen.getByRole("button", { name: /rechercher/i }));
+    await userEvent.click(await screen.findByRole("button", { name: /^désactiver$/i }));
+
+    // Deactivating alone leaves the access token already in the browser working until it expires:
+    // a dismissed account stays usable in the meantime.
+    await vi.waitFor(() => {
+      expect(calls.some((u) => u.includes(`/admin/users/${USER.userId}/deactivate`))).toBe(true);
+      expect(calls.some((u) => u.includes(`/admin/users/${USER.userId}/revoke-sessions`))).toBe(
+        true,
+      );
+    });
+  });
+
+  it("can cut the sessions of an account that stays active", async () => {
+    const calls = mockApi([USER]);
+    renderWithProviders(<UserSearch />);
+
+    await userEvent.type(screen.getByPlaceholderText(/E-mail, nom ou téléphone/), "modou");
+    await userEvent.click(screen.getByRole("button", { name: /rechercher/i }));
+    await userEvent.click(await screen.findByRole("button", { name: /couper les sessions/i }));
+
+    // The answer to a suspected compromise: end the sessions without dismissing the account.
+    await vi.waitFor(() =>
+      expect(calls.some((u) => u.includes(`/admin/users/${USER.userId}/revoke-sessions`))).toBe(
+        true,
+      ),
+    );
+    expect(calls.some((u) => u.includes("/deactivate"))).toBe(false);
+    expect(
+      await screen.findByText(/sessions de modou@test.io ont été coupées/i),
+    ).toBeInTheDocument();
+  });
 });

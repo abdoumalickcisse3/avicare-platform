@@ -26,6 +26,7 @@ import { Check, Download, TriangleAlert, X } from "lucide-react";
 import {
   useExportFarmDataMutation,
   useGetDeletedFarmsQuery,
+  useLazyGetPurgePreviewQuery,
   usePurgeFarmMutation,
 } from "@/store/api/adminApi";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -70,6 +71,10 @@ export function CompliancePanel() {
   const { data: farms = [], isLoading } = useGetDeletedFarmsQuery();
   const [exportFarm, { isLoading: exporting }] = useExportFarmDataMutation();
   const [purgeFarm, { isLoading: purging }] = usePurgeFarmMutation();
+  // The row is a snapshot from page load. What the dialog shows must be what the purge will
+  // destroy, so the preview is asked again — the backend recomputes the counts by running the
+  // exporters, the same source the erasure itself uses.
+  const [fetchPreview, { isFetching: previewing }] = useLazyGetPurgePreviewQuery();
 
   const [target, setTarget] = useState<FarmPurgePreview | null>(null);
   const [typedName, setTypedName] = useState("");
@@ -99,10 +104,17 @@ export function CompliancePanel() {
     }
   };
 
-  const openPurge = (farm: FarmPurgePreview) => {
+  const openPurge = async (farm: FarmPurgePreview) => {
     setError(null);
     setTypedName("");
     setTarget(farm);
+    try {
+      setTarget(await fetchPreview(farm.farmId).unwrap());
+    } catch (e) {
+      // Keep the row's figures rather than an empty dialog, but say they may be stale: refusing to
+      // open would leave an administrator unable to act at all.
+      setError(`Aperçu non rafraîchi (${apiErrorMessage(e)}) — les chiffres ci-dessous datent du chargement de la page.`);
+    }
   };
 
   return (
@@ -181,7 +193,7 @@ export function CompliancePanel() {
                           size="small"
                           color="error"
                           startIcon={<TriangleAlert size={15} />}
-                          onClick={() => openPurge(farm)}
+                          onClick={() => void openPurge(farm)}
                         >
                           Purger
                         </Button>
@@ -203,15 +215,20 @@ export function CompliancePanel() {
               <Alert severity="error">
                 Cette action est irréversible et n&apos;a pas de sauvegarde de secours immédiate.
               </Alert>
+              {previewing && (
+                <Typography variant="caption" color="text.secondary">
+                  Recomptage en cours…
+                </Typography>
+              )}
               <Box>
                 <Typography variant="subtitle2">Seront effacés définitivement</Typography>
                 <Stack sx={{ pl: 1, pt: 0.5 }}>
-                  {Object.entries(target.counts).length === 0 ? (
+                  {Object.entries(target.counts ?? {}).length === 0 ? (
                     <Typography variant="body2" color="text.secondary">
                       Aucune donnée rattachée.
                     </Typography>
                   ) : (
-                    Object.entries(target.counts).map(([key, n]) => (
+                    Object.entries(target.counts ?? {}).map(([key, n]) => (
                       <Typography key={key} variant="body2">
                         {n} {key}
                       </Typography>
@@ -242,7 +259,9 @@ export function CompliancePanel() {
             color="error"
             variant="contained"
             onClick={onPurge}
-            disabled={purging || !target?.purgeable || typedName !== target?.farmName}
+            disabled={
+              purging || previewing || !target?.purgeable || typedName !== target?.farmName
+            }
           >
             Purger définitivement
           </Button>

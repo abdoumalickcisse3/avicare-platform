@@ -263,6 +263,19 @@ export const adminApi = createApi({
       query: (body) => ({ url: "/api/v1/admin/impersonate", method: "POST", body }),
       transformResponse: (r: Envelope<{ accessToken: string }>) => r.data,
     }),
+    /**
+     * Cut every live session of an account. Deactivating alone does not: the access token already
+     * in the browser keeps working until it expires, so a compromised or dismissed account stays
+     * usable in the meantime.
+     */
+    revokeUserSessions: build.mutation<void, { userId: number }>({
+      query: ({ userId }) => ({
+        url: `/api/v1/admin/users/${userId}/revoke-sessions`,
+        method: "POST",
+      }),
+      invalidatesTags: ["AdminUser"],
+    }),
+
     setAdminUserActive: build.mutation<void, { userId: number; active: boolean }>({
       query: ({ userId, active }) => ({
         url: `/api/v1/admin/users/${userId}/${active ? "activate" : "deactivate"}`,
@@ -530,6 +543,18 @@ export const adminApi = createApi({
       transformResponse: (r: Envelope<Record<string, unknown>>) => r.data,
       invalidatesTags: ["AdminCompliance"],
     }),
+    /**
+     * What a purge would destroy, recomputed now. The deleted-farms list carries the same shape,
+     * but it is a snapshot from page load: the counts come from running the exporters, so asking
+     * again at the moment of the decision is what keeps "what is shown" and "what is erased" from
+     * drifting apart.
+     */
+    getPurgePreview: build.query<FarmPurgePreview, number>({
+      query: (farmId) => `/api/v1/admin/compliance/farms/${farmId}/purge-preview`,
+      transformResponse: (r: Envelope<FarmPurgePreview>) => r.data,
+      providesTags: ["AdminCompliance"],
+    }),
+
     purgeFarm: build.mutation<void, { farmId: number; confirmationName: string }>({
       query: ({ farmId, confirmationName }) => ({
         url: `/api/v1/admin/compliance/farms/${farmId}`,
@@ -624,6 +649,8 @@ export const {
   useRetryWhatsAppMutation,
   useGetDeletedFarmsQuery,
   useExportFarmDataMutation,
+  useGetPurgePreviewQuery,
+  useLazyGetPurgePreviewQuery,
   usePurgeFarmMutation,
   useAnonymizeUserMutation,
   useGetCatalogCategoriesQuery,
@@ -657,6 +684,7 @@ export const {
   useCreatePartnerUserMutation,
   useLazySearchAdminUsersQuery,
   useResetAdminUserPasswordMutation,
+  useRevokeUserSessionsMutation,
   useSetAdminUserActiveMutation,
   useImpersonateMutation,
   useSearchTracesQuery,
