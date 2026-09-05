@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import {
   Alert,
   Box,
@@ -11,6 +12,7 @@ import {
   Chip,
   Skeleton,
   Stack,
+  TextField,
   Typography,
 } from "@mui/material";
 import { ChevronRight, Clock, Egg, Layers, Lock } from "lucide-react";
@@ -19,7 +21,10 @@ import {
   useGetTimeslotsQuery,
   useGetTraySettingsQuery,
 } from "@/store/api/eggProductionApi";
+import { useUpsertFarmSettingMutation } from "@/store/api/farmSettingsApi";
 import { useSelectedFarm } from "@/hooks/useSelectedFarm";
+import { canManageCatalog, useFarmRole } from "@/hooks/useFarmRole";
+import { useToast } from "@/components/feedback/ToastProvider";
 import { apiErrorMessage } from "@/lib/apiError";
 import { isFeatureForbidden } from "@/lib/poultry";
 import { sortGradeKeys, timeslotLabel } from "@/lib/layer";
@@ -30,6 +35,8 @@ function valueString(value: Record<string, unknown>): string | null {
   const v = value?.value;
   return typeof v === "string" ? v : null;
 }
+
+const digits = (s: string) => s.replace(/[^\d]/g, "");
 
 export default function LayerSettingsPage() {
   const { farmId, isLoading: farmLoading, hasFarm } = useSelectedFarm();
@@ -46,6 +53,36 @@ export default function LayerSettingsPage() {
     { farmId: farmId as number },
     { skip: !hasFarm },
   );
+
+  // The backend restricts a farm setting to OWNER/MANAGER by role, not by permission.
+  const role = useFarmRole(farmId);
+  const canEditTrays = canManageCatalog(role);
+  const [upsertSetting, { isLoading: saving }] = useUpsertFarmSettingMutation();
+  const { showToast } = useToast();
+
+  // null means "not being edited": the fields show the server value until someone types.
+  const [size, setSize] = useState<string | null>(null);
+  const [price, setPrice] = useState<string | null>(null);
+  const sizeValue = size ?? (traySettings ? String(traySettings.traySize) : "");
+  const priceValue = price ?? (traySettings ? String(traySettings.trayPriceXof) : "");
+  const dirty =
+    traySettings != null &&
+    (sizeValue !== String(traySettings.traySize) ||
+      priceValue !== String(traySettings.trayPriceXof));
+
+  const saveTraySettings = async () => {
+    if (!dirty || !farmId) return;
+    try {
+      // Two settings, two calls: the endpoint takes one key at a time.
+      await upsertSetting({ farmId, key: "tray_size", value: sizeValue }).unwrap();
+      await upsertSetting({ farmId, key: "tray_price_xof", value: priceValue }).unwrap();
+      setSize(null);
+      setPrice(null);
+      showToast("Réglages plateaux enregistrés.", "success");
+    } catch (e) {
+      showToast(apiErrorMessage(e), "error");
+    }
+  };
 
   const featureLocked = isFeatureForbidden(tError);
   const sortedGrades = sortGradeKeys((grades ?? []).map((g) => g.key));
@@ -74,7 +111,10 @@ export default function LayerSettingsPage() {
       </Box>
 
       <Alert severity="info" sx={{ mb: 3 }}>
-        Configuration en lecture seule — l&apos;édition arrivera dans une prochaine version.
+        Créneaux et calibres sont fixés par la plateforme et s&apos;affichent ici en lecture seule.
+        {canEditTrays
+          ? " Les plateaux appartiennent à la ferme et se modifient ci-dessous."
+          : " Seuls le propriétaire et le gérant peuvent modifier les plateaux."}
       </Alert>
 
       {!hasFarm && !farmLoading && (
@@ -206,46 +246,80 @@ export default function LayerSettingsPage() {
                   Plateaux
                 </Typography>
               </Stack>
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-                <Box
-                  sx={{
-                    flex: 1,
-                    bgcolor: colors.neutral[50],
-                    border: `1px solid ${colors.neutral[200]}`,
-                    borderRadius: 2,
-                    px: 2,
-                    py: 1.5,
-                  }}
-                >
-                  <Typography variant="caption" color="text.secondary">
-                    Taille d&apos;un plateau
-                  </Typography>
-                  <Typography
-                    sx={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "1.25rem" }}
+              {canEditTrays ? (
+                <>
+                  <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                    <TextField
+                      label="Taille d'un plateau"
+                      value={sizeValue}
+                      onChange={(e) => setSize(digits(e.target.value))}
+                      disabled={!traySettings}
+                      inputMode="numeric"
+                      helperText="Nombre d'œufs par plateau"
+                      sx={{ flex: 1 }}
+                    />
+                    <TextField
+                      label="Prix indicatif d'un plateau"
+                      value={priceValue}
+                      onChange={(e) => setPrice(digits(e.target.value))}
+                      disabled={!traySettings}
+                      inputMode="numeric"
+                      helperText="En XOF — sert de prix par défaut à la vente"
+                      sx={{ flex: 1 }}
+                    />
+                  </Stack>
+                  <Stack direction="row" sx={{ justifyContent: "flex-end", mt: 2 }}>
+                    <Button
+                      variant="contained"
+                      onClick={saveTraySettings}
+                      disabled={!dirty || saving}
+                    >
+                      Enregistrer
+                    </Button>
+                  </Stack>
+                </>
+              ) : (
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                  <Box
+                    sx={{
+                      flex: 1,
+                      bgcolor: colors.neutral[50],
+                      border: `1px solid ${colors.neutral[200]}`,
+                      borderRadius: 2,
+                      px: 2,
+                      py: 1.5,
+                    }}
                   >
-                    {traySettings ? `${traySettings.traySize} œufs` : "—"}
-                  </Typography>
-                </Box>
-                <Box
-                  sx={{
-                    flex: 1,
-                    bgcolor: colors.neutral[50],
-                    border: `1px solid ${colors.neutral[200]}`,
-                    borderRadius: 2,
-                    px: 2,
-                    py: 1.5,
-                  }}
-                >
-                  <Typography variant="caption" color="text.secondary">
-                    Prix indicatif d&apos;un plateau
-                  </Typography>
-                  <Typography
-                    sx={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "1.25rem" }}
+                    <Typography variant="caption" color="text.secondary">
+                      Taille d&apos;un plateau
+                    </Typography>
+                    <Typography
+                      sx={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "1.25rem" }}
+                    >
+                      {traySettings ? `${traySettings.traySize} œufs` : "—"}
+                    </Typography>
+                  </Box>
+                  <Box
+                    sx={{
+                      flex: 1,
+                      bgcolor: colors.neutral[50],
+                      border: `1px solid ${colors.neutral[200]}`,
+                      borderRadius: 2,
+                      px: 2,
+                      py: 1.5,
+                    }}
                   >
-                    {traySettings ? `${formatNumber(traySettings.trayPriceXof)} XOF` : "—"}
-                  </Typography>
-                </Box>
-              </Stack>
+                    <Typography variant="caption" color="text.secondary">
+                      Prix indicatif d&apos;un plateau
+                    </Typography>
+                    <Typography
+                      sx={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "1.25rem" }}
+                    >
+                      {traySettings ? `${formatNumber(traySettings.trayPriceXof)} XOF` : "—"}
+                    </Typography>
+                  </Box>
+                </Stack>
+              )}
             </CardContent>
           </Card>
         </Stack>

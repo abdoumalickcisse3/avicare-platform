@@ -351,6 +351,12 @@ export interface LayerConfigEntry {
   value: Record<string, unknown>;
 }
 
+/** A farm-level key/value setting (mirrors backend SettingResponse). */
+export interface FarmSetting {
+  key: string;
+  value: string;
+}
+
 /** Tray settings (mirrors backend TraySettingsResponse). */
 export interface TraySettings {
   traySize: number;

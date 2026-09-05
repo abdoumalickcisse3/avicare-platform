@@ -6,20 +6,27 @@ import {
   Button,
   Card,
   Chip,
+  IconButton,
   Skeleton,
   Stack,
   Typography,
 } from "@mui/material";
-import { CalendarClock, Plus, Stethoscope } from "lucide-react";
+import { CalendarClock, Plus, Stethoscope, Trash2 } from "lucide-react";
 import {
+  useDeleteVetVisitMutation,
   useGetVetVisitsQuery,
   useGetVeterinariansQuery,
 } from "@/store/api/healthApi";
+import { useFarmPermissions } from "@/hooks/useFarmPermissions";
+import { canManageCatalog, useFarmRole } from "@/hooks/useFarmRole";
+import { useToast } from "@/components/feedback/ToastProvider";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { apiErrorMessage } from "@/lib/apiError";
 import { isFeatureForbidden } from "@/lib/poultry";
-import { formatDate } from "@/lib/format";
+import { formatCurrency, formatDate } from "@/lib/format";
 import { colors } from "@/theme/tokens";
 import { VetVisitDialog } from "./VetVisitDialog";
+import type { VetVisit } from "@/types";
 
 export function VetVisitsTimeline({
   farmId,
@@ -33,6 +40,28 @@ export function VetVisitsTimeline({
   const { data: visits, isLoading, error } = useGetVetVisitsQuery({ farmId, unitId });
   const { data: vets = [] } = useGetVeterinariansQuery({ farmId });
   const [open, setOpen] = useState(false);
+  const [toRemove, setToRemove] = useState<VetVisit | null>(null);
+
+  // The backend gates the delete on OWNER/MANAGER, not on `health:write`: a member who may record
+  // a visit is not necessarily allowed to cancel the expense it booked. Mirror both here so the
+  // button is absent rather than answering 403.
+  const { can } = useFarmPermissions(farmId);
+  const role = useFarmRole(farmId);
+  const canDelete = can("health:write") && canManageCatalog(role);
+
+  const [deleteVisit, { isLoading: deleting }] = useDeleteVetVisitMutation();
+  const { showToast } = useToast();
+
+  const confirmRemove = async () => {
+    if (!toRemove) return;
+    try {
+      await deleteVisit({ farmId, id: toRemove.id, unitId }).unwrap();
+      setToRemove(null);
+      showToast("Visite supprimée.", "success");
+    } catch (e) {
+      showToast(apiErrorMessage(e), "error");
+    }
+  };
 
   const vetName = useMemo(() => {
     const map = new Map(vets.map((v) => [v.id, v.fullName]));
@@ -112,6 +141,16 @@ export function VetVisitsTimeline({
                   {v.costXof != null ? ` · ${v.costXof.toLocaleString("fr-FR")} XOF` : ""}
                 </Typography>
               </Box>
+              {canDelete && (
+                <IconButton
+                  size="small"
+                  aria-label={`Supprimer la visite du ${formatDate(v.visitDate)}`}
+                  onClick={() => setToRemove(v)}
+                  sx={{ alignSelf: "flex-start", color: colors.neutral[500] }}
+                >
+                  <Trash2 size={16} />
+                </IconButton>
+              )}
             </Box>
           ))}
         </Stack>
@@ -123,6 +162,21 @@ export function VetVisitsTimeline({
         farmId={farmId}
         unitId={unitId}
         unitName={unitName}
+      />
+
+      <ConfirmDialog
+        open={Boolean(toRemove)}
+        title="Supprimer cette visite ?"
+        message={
+          toRemove?.costXof
+            ? `La dépense de ${formatCurrency(toRemove.costXof)} enregistrée pour cette visite sera annulée dans votre comptabilité.`
+            : "La visite disparaîtra de l'historique du lot."
+        }
+        confirmLabel="Supprimer"
+        danger
+        loading={deleting}
+        onConfirm={confirmRemove}
+        onClose={() => setToRemove(null)}
       />
     </Card>
   );

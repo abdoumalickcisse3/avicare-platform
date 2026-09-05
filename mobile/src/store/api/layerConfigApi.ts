@@ -35,12 +35,6 @@ export const layerConfigApi = baseApi.injectEndpoints({
             ]
           : [{ type: 'LayerConfig' as const, id: `LIST-${farmId}` }],
     }),
-    listFarmSettings: build.query<FarmSetting[], number>({
-      query: (farmId) => `/api/v1/farms/${farmId}/settings`,
-      transformResponse: (r: ApiEnvelope<FarmSetting[]>) => r.data,
-      providesTags: [{ type: 'Setting', id: 'LIST' }],
-    }),
-
     /**
      * Farm settings are key/value strings, not typed columns — `tray_size` and `tray_price_xof`
      * live here rather than in the catalog, which is why editing tray settings goes through this
@@ -61,8 +55,4 @@ export const layerConfigApi = baseApi.injectEndpoints({
   }),
 });
 
-export const {
-  useListTimeslotsQuery,
-  useListFarmSettingsQuery,
-  useUpsertFarmSettingMutation,
-} = layerConfigApi;
+export const { useListTimeslotsQuery, useUpsertFarmSettingMutation } = layerConfigApi;
