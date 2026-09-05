@@ -11,7 +11,6 @@ import type {
   AdvanceStatus,
   Expense,
   ExpenseInput,
-  ExpenseSummary,
   FarmAnalytics,
   Salary,
   SalarySetting,
@@ -96,15 +95,6 @@ export const financeApi = baseApi.injectEndpoints({
         { type: 'Expense', id: 'LIST' },
         { type: 'Expense', id: 'ANALYTICS' },
       ],
-    }),
-
-    getExpenseSummary: build.query<ExpenseSummary, { farmId: number; from?: string; to?: string }>({
-      query: ({ farmId, from, to }) => {
-        const qs = [from ? `from=${from}` : '', to ? `to=${to}` : ''].filter(Boolean).join('&');
-        return `/api/v1/farms/${farmId}/finance/expenses/summary${qs ? `?${qs}` : ''}`;
-      },
-      transformResponse: (r: ApiEnvelope<ExpenseSummary>) => r.data,
-      providesTags: [{ type: 'Expense', id: 'SUMMARY' }],
     }),
 
     getSalarySettings: build.query<SalarySetting[], { farmId: number }>({
@@ -199,7 +189,6 @@ export const financeApi = baseApi.injectEndpoints({
 export const {
   useUpdateExpenseMutation,
   useDeleteExpenseMutation,
-  useGetExpenseSummaryQuery,
   useGetSalarySettingsQuery,
   useUpsertSalarySettingMutation,
   useGenerateSalariesMutation,
