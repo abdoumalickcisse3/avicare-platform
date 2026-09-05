@@ -42,7 +42,14 @@ function mockApi(farms: unknown[] = [READY]) {
         method: request ? request.method : (init?.method ?? "GET"),
         body: request ? await request.clone().text() : (init?.body as string | undefined),
       });
-      const payload = url.includes("/farms/deleted") ? farms : { farmId: 8, sections: ["livestock"] };
+      const preview = url.match(/\/farms\/(\d+)\/purge-preview/);
+      const payload = url.includes("/farms/deleted")
+        ? farms
+        : preview
+          ? // The dialog asks again at the moment of the decision, so the mock answers with the
+            // matching farm rather than the export bundle.
+            (farms as (typeof READY)[]).find((f) => f.farmId === Number(preview[1]))
+          : { farmId: 8, sections: ["livestock"] };
       return new Response(JSON.stringify({ data: payload }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
@@ -119,5 +126,20 @@ describe("CompliancePanel", () => {
     renderWithProviders(<CompliancePanel />);
 
     expect(await screen.findByText(/59 colonnes du schéma le référencent/)).toBeInTheDocument();
+  });
+
+  it("recomputes what a purge would destroy at the moment the dialog opens", async () => {
+    // The row is a snapshot from page load. The counts come from running the exporters, so asking
+    // again is what keeps what is shown and what is erased from drifting apart.
+    const calls = mockApi([READY]);
+    renderWithProviders(<CompliancePanel />);
+
+    await userEvent.click(await screen.findByRole("button", { name: /purger/i }));
+
+    await waitFor(() =>
+      expect(
+        calls.some((c) => c.url.includes(`/admin/compliance/farms/${READY.farmId}/purge-preview`)),
+      ).toBe(true),
+    );
   });
 });

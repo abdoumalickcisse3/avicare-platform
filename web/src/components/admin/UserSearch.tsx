@@ -21,13 +21,14 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { KeyRound, LifeBuoy, Search } from "lucide-react";
+import { KeyRound, LifeBuoy, LogOut, Search } from "lucide-react";
 import {
   useAnonymizeUserMutation,
   useGetAdminMeQuery,
   useImpersonateMutation,
   useLazySearchAdminUsersQuery,
   useResetAdminUserPasswordMutation,
+  useRevokeUserSessionsMutation,
   useSetAdminUserActiveMutation,
 } from "@/store/api/adminApi";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -47,6 +48,9 @@ export function UserSearch() {
     useLazySearchAdminUsersQuery();
   const [resetPassword] = useResetAdminUserPasswordMutation();
   const [setActive] = useSetAdminUserActiveMutation();
+  const [revokeSessions] = useRevokeUserSessionsMutation();
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [openSupport] = useImpersonateMutation();
   const [anonymize] = useAnonymizeUserMutation();
   const { data: me } = useGetAdminMeQuery();
@@ -90,6 +94,32 @@ export function UserSearch() {
   };
   const [issued, setIssued] = useState<{ email: string; password: string } | null>(null);
 
+  /**
+   * Deactivating does not end the session on its own: the access token already in the browser keeps
+   * working until it expires, so a dismissed or compromised account stays usable in the meantime.
+   * The two go together, and the revocation is what makes the deactivation bite.
+   */
+  const onDeactivate = async (user: AdminUserRow) => {
+    setActionError(null);
+    try {
+      await setActive({ userId: user.userId, active: false }).unwrap();
+      await revokeSessions({ userId: user.userId }).unwrap();
+    } catch (e) {
+      setActionError(apiErrorMessage(e));
+    }
+  };
+
+  /** Cut the sessions of an account that stays active — the answer to a suspected compromise. */
+  const onCutSessions = async (user: AdminUserRow) => {
+    setActionError(null);
+    try {
+      await revokeSessions({ userId: user.userId }).unwrap();
+      setNotice(`Les sessions de ${user.email} ont été coupées.`);
+    } catch (e) {
+      setActionError(apiErrorMessage(e));
+    }
+  };
+
   const onSearch = () => {
     if (query.trim().length > 0) search({ q: query.trim() });
   };
@@ -116,6 +146,16 @@ export function UserSearch() {
   return (
     <Card>
       <CardContent>
+        {actionError && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setActionError(null)}>
+            {actionError}
+          </Alert>
+        )}
+        {notice && (
+          <Alert severity="success" sx={{ mb: 2 }} onClose={() => setNotice(null)}>
+            {notice}
+          </Alert>
+        )}
         <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
           Utilisateurs
         </Typography>
@@ -201,9 +241,21 @@ export function UserSearch() {
                         <Button
                           size="small"
                           color={u.active ? "error" : "primary"}
-                          onClick={() => setActive({ userId: u.userId, active: !u.active })}
+                          onClick={() =>
+                            u.active
+                              ? void onDeactivate(u)
+                              : void setActive({ userId: u.userId, active: true })
+                          }
                         >
                           {u.active ? "Désactiver" : "Réactiver"}
+                        </Button>
+                        <Button
+                          size="small"
+                          startIcon={<LogOut size={14} />}
+                          onClick={() => void onCutSessions(u)}
+                          disabled={!u.active}
+                        >
+                          Couper les sessions
                         </Button>
                         {canAnonymize && (
                           <Button
