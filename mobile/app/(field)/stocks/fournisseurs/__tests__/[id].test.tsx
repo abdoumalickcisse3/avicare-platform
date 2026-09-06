@@ -1,5 +1,10 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 
+const toggleSwitch = (el: Parameters<typeof fireEvent>[0], value: boolean): Promise<void> =>
+  act(async () => {
+    fireEvent(el, 'valueChange', value);
+  });
+
 // React 19 + RNTL 14: fireEvent schedules a state update that isn't flushed by
 // the time it returns, so gestures are wrapped in an async act (see the
 // established pattern in `lots/[unitId]/__tests__/mortalite.test.tsx`).
@@ -29,9 +34,29 @@ jest.mock('@/auth/useSession', () => ({
   useFarmAccess: jest.fn(() => farmAccess),
 }));
 
-const SUPPLIER = { id: 3, commercialName: 'Provende du Sahel', phone: '77 000 00 00', notifyWhatsapp: true };
+const SUPPLIER = {
+  id: 3,
+  commercialName: 'Provende du Sahel',
+  contactPerson: 'Moussa Diop',
+  phone: '77 000 00 00',
+  email: 'contact@provende.sn',
+  address: 'Zone industrielle',
+  city: 'Thiès',
+  types: ['FEED'],
+  paymentTerms: '30J',
+  notes: 'Livraison le mardi',
+  active: true,
+  notifyWhatsapp: true,
+};
+interface UpdateSupplierArgs {
+  farmId: number;
+  id: number;
+  body: Record<string, unknown>;
+}
+const mockUpdateSupplier = jest.fn((_args: UpdateSupplierArgs) => ({ unwrap: () => Promise.resolve(SUPPLIER) }));
 jest.mock('@/store/api/suppliersApi', () => ({
   useGetSupplierQuery: jest.fn(() => ({ data: SUPPLIER })),
+  useUpdateSupplierMutation: jest.fn(() => [mockUpdateSupplier, { isLoading: false }]),
 }));
 
 const STATEMENT = {
@@ -82,6 +107,7 @@ describe('Fournisseur detail (compte-courant)', () => {
   beforeEach(() => {
     farmAccess.farmRole = 'OWNER';
     mockRecordPayment.mockClear();
+    mockUpdateSupplier.mockClear();
   });
 
   it('affiche le solde et le relevé', async () => {
@@ -112,5 +138,44 @@ describe('Fournisseur detail (compte-courant)', () => {
 
     expect(screen.getByText("Bon d'achat BA-12")).toBeTruthy();
     expect(screen.queryByLabelText('Enregistrer un paiement')).toBeNull();
+    expect(screen.queryByLabelText('Prévenir par WhatsApp')).toBeNull();
+  });
+
+  it('la case WhatsApp envoie le fournisseur complet, pas seulement le champ modifié', async () => {
+    await render(<FournisseurDetailScreen />);
+
+    await toggleSwitch(screen.getByLabelText('Prévenir par WhatsApp'), false);
+
+    expect(mockUpdateSupplier).toHaveBeenCalledTimes(1);
+    const call = mockUpdateSupplier.mock.calls[0]![0];
+    expect(call.farmId).toBe(7);
+    expect(call.id).toBe(3);
+    expect(call.body).toEqual({
+      commercialName: 'Provende du Sahel',
+      contactPerson: 'Moussa Diop',
+      phone: '77 000 00 00',
+      email: 'contact@provende.sn',
+      address: 'Zone industrielle',
+      city: 'Thiès',
+      types: ['FEED'],
+      paymentTerms: '30J',
+      notes: 'Livraison le mardi',
+      // Only this field actually changed — the switch was on, this toggles it off.
+      notifyWhatsapp: false,
+    });
+  });
+
+  it('désactive la case WhatsApp et explique pourquoi sans téléphone renseigné', async () => {
+    const original = SUPPLIER.phone;
+    // @ts-expect-error mutating the shared fixture for this one test
+    SUPPLIER.phone = null;
+    try {
+      await render(<FournisseurDetailScreen />);
+      const toggle = screen.getByLabelText('Prévenir par WhatsApp');
+      expect(toggle.props.accessibilityState?.disabled ?? toggle.props.disabled).toBe(true);
+      expect(screen.getByText('Renseignez un téléphone pour activer les avis.')).toBeTruthy();
+    } finally {
+      SUPPLIER.phone = original;
+    }
   });
 });
