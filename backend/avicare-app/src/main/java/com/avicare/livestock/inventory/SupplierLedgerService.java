@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -40,19 +41,45 @@ public class SupplierLedgerService {
     return ledgerRepository.balanceFor(farmId, supplierId);
   }
 
-  /** Le solde de chaque fournisseur actif, ceux sans écriture compris — à zéro. */
+  /**
+   * Le solde de chaque fournisseur actif, ceux sans écriture compris — à zéro — plus tout
+   * fournisseur désactivé dont le solde n'est pas nul.
+   *
+   * <p>Se retirer (passer {@code active} à {@code false}) n'efface pas ce qu'on lui doit encore :
+   * une dette ne disparaît pas parce que la ferme a cessé d'acheter chez ce fournisseur. L'appel
+   * supplémentaire ne va chercher que les fournisseurs désactivés qui ont réellement une écriture
+   * au registre, jamais toute la table.
+   */
   @Transactional(readOnly = true)
   public List<SupplierBalance> balances(Long farmId) {
     Map<Long, Long> bySupplier =
         ledgerRepository.balancesBySupplier(farmId).stream()
             .collect(Collectors.toMap(row -> (Long) row[0], row -> ((Number) row[1]).longValue()));
 
-    return supplierRepository.findByFarmIdAndActiveTrueOrderByCommercialName(farmId).stream()
-        .map(
-            s ->
-                new SupplierBalance(
-                    s.getId(), s.getCommercialName(), bySupplier.getOrDefault(s.getId(), 0L)))
-        .toList();
+    List<Supplier> active =
+        supplierRepository.findByFarmIdAndActiveTrueOrderByCommercialName(farmId);
+    Set<Long> activeIds = active.stream().map(Supplier::getId).collect(Collectors.toSet());
+
+    List<SupplierBalance> balances = new ArrayList<>();
+    for (Supplier s : active) {
+      balances.add(
+          new SupplierBalance(
+              s.getId(), s.getCommercialName(), bySupplier.getOrDefault(s.getId(), 0L)));
+    }
+
+    List<Long> inactiveWithBalance =
+        bySupplier.entrySet().stream()
+            .filter(e -> e.getValue() != 0L && !activeIds.contains(e.getKey()))
+            .map(Map.Entry::getKey)
+            .toList();
+    if (!inactiveWithBalance.isEmpty()) {
+      for (Supplier s : supplierRepository.findAllById(inactiveWithBalance)) {
+        balances.add(
+            new SupplierBalance(s.getId(), s.getCommercialName(), bySupplier.get(s.getId())));
+      }
+    }
+
+    return balances;
   }
 
   @Transactional(readOnly = true)
@@ -96,6 +123,13 @@ public class SupplierLedgerService {
    * Le débit dérivé d'un bon d'achat reçu. Idempotent : appelé deux fois pour le même bon, il ne
    * fait rien la seconde. L'index unique de la base dit la même chose ; les deux se valent mieux
    * qu'un seul.
+   *
+   * <p>Ne revérifie PAS que {@code supplierId} appartient à {@code farmId} : contrairement aux
+   * méthodes manuelles de cette classe, qui rechargent le fournisseur via {@link #requireSupplier},
+   * celle-ci fait confiance à l'appelant pour l'avoir déjà chargé par un chemin scopé à la ferme.
+   * C'est le cas aujourd'hui — {@code PurchaseOrderService.receive} charge le bon d'achat par
+   * {@code findByFarmIdAndId} avant d'appeler cette méthode — mais tout futur appelant doit
+   * reproduire cette garantie lui-même plutôt que de la supposer ici.
    */
   @Transactional
   public void recordPurchaseOrderDebit(
