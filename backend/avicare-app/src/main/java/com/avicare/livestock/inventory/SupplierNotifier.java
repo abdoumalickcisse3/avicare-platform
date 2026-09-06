@@ -1,5 +1,6 @@
 package com.avicare.livestock.inventory;
 
+import com.avicare.common.api.exception.NotFoundException;
 import com.avicare.livestock.domain.Supplier;
 import com.avicare.notification.api.WhatsAppOutboxFacade;
 import com.avicare.tenancy.api.TenancyFacade;
@@ -8,6 +9,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
@@ -22,9 +24,16 @@ import org.springframework.stereotype.Component;
  *
  * <p>Aucune promesse de désabonnement : l'instance Konekt est un téléphone connecté dont personne
  * ne lit les réponses. Le message nomme la ferme, et c'est à elle que le fournisseur s'adresse.
+ *
+ * <p>Le notifieur ne doit jamais pouvoir casser l'écriture métier qu'il rapporte : il tourne dans
+ * la même transaction, après cette écriture. {@code enqueue} ne lève jamais, mais la résolution du
+ * nom de ferme le peut ({@link NotFoundException}) ; elle est donc contenue ici, pas laissée à la
+ * chance. Un message qui ne peut pas dire de qui il vient est pire qu'aucun message — on n'envoie
+ * rien plutôt que d'envoyer un numéro inconnu au fournisseur.
  */
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class SupplierNotifier {
 
   private final WhatsAppOutboxFacade whatsApp;
@@ -36,6 +45,7 @@ public class SupplierNotifier {
       Long farmId, Supplier supplier, long amountXof, long balanceAfterXof, LocalDate date) {
     if (!shouldNotify(supplier)) return;
     String farmName = farmName(farmId);
+    if (farmName == null) return;
 
     String remaining =
         balanceAfterXof > 0
@@ -56,6 +66,7 @@ public class SupplierNotifier {
   public void purchaseOrderSent(Long farmId, Supplier supplier, String orderNumber, long totalXof) {
     if (!shouldNotify(supplier)) return;
     String farmName = farmName(farmId);
+    if (farmName == null) return;
 
     whatsApp.enqueue(
         supplier.getPhone(),
@@ -67,9 +78,20 @@ public class SupplierNotifier {
             + " FCFA. Merci de confirmer la livraison.");
   }
 
-  /** Le nom que le fournisseur reconnaîtra. Résolu ici pour qu'aucun appelant n'ait à le porter. */
+  /**
+   * Le nom que le fournisseur reconnaîtra. Résolu ici pour qu'aucun appelant n'ait à le porter.
+   *
+   * <p>{@code null} si la ferme est introuvable — n'arrive pas aujourd'hui (on est après l'écriture
+   * métier, sur une ferme qui existe forcément), mais l'écriture ne doit pas dépendre de ça restant
+   * vrai demain. Les appelants doivent renoncer à l'envoi sur {@code null}, jamais propager.
+   */
   private String farmName(Long farmId) {
-    return tenancyFacade.findById(farmId).name();
+    try {
+      return tenancyFacade.findById(farmId).name();
+    } catch (NotFoundException e) {
+      log.warn("Cannot notify supplier: farm {} not found", farmId);
+      return null;
+    }
   }
 
   /** L'interrupteur, et un numéro pour y aller. Un interrupteur sans numéro n'envoie rien. */
