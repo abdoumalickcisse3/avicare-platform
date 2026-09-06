@@ -126,6 +126,16 @@ class SupplierLedgerRepositoryTest {
   }
 
   @Test
+  void aMethodOutsideThePaymentMethodEnumViolatesTheCheckConstraint() {
+    long[] ids = seed();
+    SupplierLedgerEntry credit = entry(ids[0], ids[1], LedgerDirection.CREDIT, 100_000L);
+    credit.setMethod("BITCOIN");
+
+    assertThatThrownBy(() -> repository.saveAndFlush(credit))
+        .isInstanceOf(DataIntegrityViolationException.class);
+  }
+
+  @Test
   void aSoftDeletedEntryLeavesTheBalance() {
     long[] ids = seed();
     SupplierLedgerEntry debit =
