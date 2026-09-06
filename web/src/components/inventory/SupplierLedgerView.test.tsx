@@ -79,10 +79,30 @@ function mockFetch(opts?: {
   );
 }
 
+function mockFetchLedgerError() {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () =>
+      new Response(
+        JSON.stringify({ type: "about:blank", title: "Accès refusé", status: 403 }),
+        { status: 403, headers: { "Content-Type": "application/json" } },
+      ),
+    ),
+  );
+}
+
 describe("SupplierLedgerView", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     roleMock.mockReturnValue("OWNER");
+  });
+
+  it("montre une erreur plutôt que « Compte soldé » quand le relevé échoue", async () => {
+    mockFetchLedgerError();
+    renderWithProviders(<SupplierLedgerView supplierId={3} />);
+
+    expect(await screen.findByText("Accès refusé")).toBeInTheDocument();
+    expect(screen.queryByText("Compte soldé")).toBeNull();
   });
 
   it("montre le solde et le relevé", async () => {

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+  Alert,
   Box,
   Button,
   Card,
@@ -36,7 +37,7 @@ function balanceLabel(balanceXof: number): string {
 
 export function SupplierLedgerView({ supplierId }: { supplierId: number }) {
   const { farmId, hasFarm } = useSelectedFarm();
-  const { data, isLoading } = useGetSupplierLedgerQuery(
+  const { data, isLoading, error } = useGetSupplierLedgerQuery(
     { farmId: farmId as number, supplierId },
     { skip: !hasFarm },
   );
@@ -60,6 +61,15 @@ export function SupplierLedgerView({ supplierId }: { supplierId: number }) {
       showToast(apiErrorMessage(e), "error");
     }
   };
+
+  // A failed load must never read as "Compte soldé" — that is a debt disguised as none owed.
+  if (error) {
+    return (
+      <Box>
+        <Alert severity="error">{apiErrorMessage(error)}</Alert>
+      </Box>
+    );
+  }
 
   return (
     <Box>

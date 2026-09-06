@@ -17,6 +17,7 @@ import {
 import { useState } from "react";
 import { useGetFarmAnalyticsQuery } from "@/store/api/financeApi";
 import { useGetSupplierBalancesQuery } from "@/store/api/supplierLedgerApi";
+import { useInventoryGating } from "@/hooks/useInventoryGating";
 import { PeriodSelector } from "@/components/dashboard/PeriodSelector";
 import { periodToRange } from "@/lib/dashboard";
 import type { DashboardPeriodState } from "@/types/dashboard";
@@ -37,12 +38,19 @@ export function FarmAnalyticsView({ farmId }: { farmId: number }) {
   const { data, isLoading, error } = useGetFarmAnalyticsQuery({ farmId, ...range });
   // Current-state snapshot, not scoped by the period selector above: it answers "what do we owe
   // right now", not "what did we owe during this window".
-  const { data: supplierBalances } = useGetSupplierBalancesQuery({ farmId });
+  const { hasInventory } = useInventoryGating();
+  const { data: supplierBalances, error: supplierBalancesError } = useGetSupplierBalancesQuery(
+    { farmId },
+    { skip: !hasInventory },
+  );
   // An advance paid to one supplier does not cancel a debt to another — they are different
   // counterparties, so only strictly positive balances are summed.
   const totalOwedToSuppliersXof = (supplierBalances ?? [])
     .filter((b) => b.balanceXof > 0)
     .reduce((sum, b) => sum + b.balanceXof, 0);
+  // A member with finance access but no inventory access (or a query that failed outright) must
+  // never read as "nothing owed" — that is a debt disguised as a clean balance.
+  const supplierBalanceUnavailable = !hasInventory || Boolean(supplierBalancesError);
 
   // The selector stays mounted through every state: it would otherwise vanish on each change,
   // which is exactly when the reader wants it.
@@ -134,7 +142,7 @@ export function FarmAnalyticsView({ farmId }: { farmId: number }) {
               Dû aux fournisseurs
             </Typography>
             <Typography variant="h5" sx={{ fontWeight: 700 }}>
-              {formatCurrency(totalOwedToSuppliersXof)}
+              {supplierBalanceUnavailable ? "—" : formatCurrency(totalOwedToSuppliersXof)}
             </Typography>
           </CardContent>
         </Card>
