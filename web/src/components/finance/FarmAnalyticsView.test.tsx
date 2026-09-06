@@ -39,10 +39,14 @@ const emptyAnalytics: FarmAnalytics = {
   revenueByUnit: [],
 };
 
-function mockFetchOnce(data: unknown) {
+function mockFetchOnce(data: unknown, balances: unknown[] = []) {
   vi.stubGlobal(
     "fetch",
-    vi.fn(async () => respond(data)),
+    vi.fn(async (input: unknown) => {
+      const url = input instanceof Request ? input.url : String(input);
+      if (url.includes("/balances")) return respond(balances);
+      return respond(data);
+    }),
   );
 }
 
@@ -97,5 +101,17 @@ describe("FarmAnalyticsView", () => {
     expect(
       await screen.findByText("Aucune donnée financière pour le moment."),
     ).toBeInTheDocument();
+  });
+
+  it("sums only strictly positive supplier balances into the amount owed", async () => {
+    mockFetchOnce(analytics, [
+      { supplierId: 1, supplierName: "Provende du Sahel", balanceXof: 120000 },
+      { supplierId: 2, supplierName: "Avance réglée", balanceXof: -50000 },
+      { supplierId: 3, supplierName: "Compte soldé", balanceXof: 0 },
+    ]);
+    renderWithProviders(<FarmAnalyticsView farmId={1} />);
+
+    expect(await screen.findByText("Dû aux fournisseurs")).toBeInTheDocument();
+    expect(await findByFormattedCurrency(120000)).toBeInTheDocument();
   });
 });

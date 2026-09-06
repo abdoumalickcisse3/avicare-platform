@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import { useState } from "react";
 import { useGetFarmAnalyticsQuery } from "@/store/api/financeApi";
+import { useGetSupplierBalancesQuery } from "@/store/api/supplierLedgerApi";
 import { PeriodSelector } from "@/components/dashboard/PeriodSelector";
 import { periodToRange } from "@/lib/dashboard";
 import type { DashboardPeriodState } from "@/types/dashboard";
@@ -34,6 +35,14 @@ export function FarmAnalyticsView({ farmId }: { farmId: number }) {
   const [period, setPeriod] = useState<DashboardPeriodState>({ kind: "preset", preset: "30d" });
   const range = periodToRange(period);
   const { data, isLoading, error } = useGetFarmAnalyticsQuery({ farmId, ...range });
+  // Current-state snapshot, not scoped by the period selector above: it answers "what do we owe
+  // right now", not "what did we owe during this window".
+  const { data: supplierBalances } = useGetSupplierBalancesQuery({ farmId });
+  // An advance paid to one supplier does not cancel a debt to another — they are different
+  // counterparties, so only strictly positive balances are summed.
+  const totalOwedToSuppliersXof = (supplierBalances ?? [])
+    .filter((b) => b.balanceXof > 0)
+    .reduce((sum, b) => sum + b.balanceXof, 0);
 
   // The selector stays mounted through every state: it would otherwise vanish on each change,
   // which is exactly when the reader wants it.
@@ -79,7 +88,7 @@ export function FarmAnalyticsView({ farmId }: { farmId: number }) {
         sx={{
           display: "grid",
           gap: { xs: 2, md: 3 },
-          gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
+          gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" },
           mb: 3,
         }}
       >
@@ -116,6 +125,16 @@ export function FarmAnalyticsView({ farmId }: { farmId: number }) {
               }}
             >
               {formatCurrency(data.marginXof)}
+            </Typography>
+          </CardContent>
+        </Card>
+        <Card variant="outlined">
+          <CardContent>
+            <Typography variant="body2" color="text.secondary">
+              Dû aux fournisseurs
+            </Typography>
+            <Typography variant="h5" sx={{ fontWeight: 700 }}>
+              {formatCurrency(totalOwedToSuppliersXof)}
             </Typography>
           </CardContent>
         </Card>

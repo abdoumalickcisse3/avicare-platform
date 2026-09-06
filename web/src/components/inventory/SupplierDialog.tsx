@@ -10,9 +10,12 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
+  FormHelperText,
   IconButton,
   MenuItem,
   Stack,
+  Switch,
   TextField,
   Typography,
 } from "@mui/material";
@@ -74,6 +77,12 @@ function SupplierBody({
   const [types, setTypes] = useState<string[]>(supplier?.types ?? []);
   const [paymentTerms, setPaymentTerms] = useState(supplier?.paymentTerms ?? "");
   const [notes, setNotes] = useState(supplier?.notes ?? "");
+  // Standing account-level switch (distinct from the per-payment `notifySupplier` checkbox).
+  // Loaded from the fetched supplier, never defaulted: a full-replacement PUT that omits it
+  // would silently turn it off.
+  const [notifyWhatsapp, setNotifyWhatsapp] = useState(supplier?.notifyWhatsapp ?? false);
+
+  const hasPhone = phone.trim().length > 0;
 
   const toggleType = (t: string) =>
     setTypes((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]));
@@ -88,6 +97,9 @@ function SupplierBody({
       types,
       paymentTerms: paymentTerms || undefined,
       notes: notes || undefined,
+      // Always sent explicitly: this is a full-replacement PUT, so omitting the field would
+      // reset it to false even when only another field on the form changed.
+      notifyWhatsapp,
     };
     try {
       if (isEdit && supplier) {
@@ -168,6 +180,21 @@ function SupplierBody({
             multiline
             minRows={2}
           />
+          <Box>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={notifyWhatsapp}
+                  onChange={(e) => setNotifyWhatsapp(e.target.checked)}
+                  disabled={!hasPhone}
+                />
+              }
+              label="Prévenir par WhatsApp"
+            />
+            {!hasPhone && (
+              <FormHelperText>Renseignez un téléphone pour activer les avis.</FormHelperText>
+            )}
+          </Box>
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 3, py: 2 }}>
