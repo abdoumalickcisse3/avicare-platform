@@ -197,9 +197,20 @@ class SupplierLedgerServiceTest {
         line(5L, LocalDate.of(2026, 9, 5), LedgerDirection.CREDIT, 10_000L, LedgerSource.MANUAL);
     when(ledgerRepository.findByFarmIdAndId(FARM, 5L)).thenReturn(Optional.of(manual));
 
-    service.deleteEntry(FARM, 5L);
+    service.deleteEntry(FARM, SUPPLIER, 5L);
 
     verify(ledgerRepository).delete(manual);
+  }
+
+  @Test
+  void refusesToDeleteALineThroughTheWrongSupplier() {
+    SupplierLedgerEntry manual =
+        line(5L, LocalDate.of(2026, 9, 5), LedgerDirection.CREDIT, 10_000L, LedgerSource.MANUAL);
+    when(ledgerRepository.findByFarmIdAndId(FARM, 5L)).thenReturn(Optional.of(manual));
+
+    assertThatThrownBy(() -> service.deleteEntry(FARM, 99L, 5L))
+        .isInstanceOf(NotFoundException.class);
+    verify(ledgerRepository, never()).delete(any(SupplierLedgerEntry.class));
   }
 
   @Test
@@ -213,7 +224,7 @@ class SupplierLedgerServiceTest {
             LedgerSource.PURCHASE_ORDER);
     when(ledgerRepository.findByFarmIdAndId(FARM, 6L)).thenReturn(Optional.of(derived));
 
-    assertThatThrownBy(() -> service.deleteEntry(FARM, 6L))
+    assertThatThrownBy(() -> service.deleteEntry(FARM, SUPPLIER, 6L))
         .isInstanceOf(BusinessRuleException.class);
     verify(ledgerRepository, never()).delete(any(SupplierLedgerEntry.class));
   }

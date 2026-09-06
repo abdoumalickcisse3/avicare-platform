@@ -123,13 +123,21 @@ public class SupplierLedgerService {
 
   /**
    * Seule une ligne saisie à la main s'efface : une ligne dérivée se corrige par son bon d'achat.
+   *
+   * <p>{@code supplierId} doit correspondre à celui de la ligne : une écriture d'un autre
+   * fournisseur de la même ferme répond 404, pas 403 — l'URL ne doit pas trahir qu'une ligne avec
+   * cet id existe ailleurs.
    */
   @Transactional
-  public void deleteEntry(Long farmId, Long entryId) {
+  public void deleteEntry(Long farmId, Long supplierId, Long entryId) {
     SupplierLedgerEntry entry =
         ledgerRepository
             .findByFarmIdAndId(farmId, entryId)
             .orElseThrow(() -> NotFoundException.of("SupplierLedgerEntry", entryId));
+
+    if (!entry.getSupplierId().equals(supplierId)) {
+      throw NotFoundException.of("SupplierLedgerEntry", entryId);
+    }
 
     if (entry.getSource() != LedgerSource.MANUAL) {
       throw new BusinessRuleException(
