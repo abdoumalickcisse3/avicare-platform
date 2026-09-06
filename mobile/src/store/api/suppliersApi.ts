@@ -9,11 +9,18 @@ export interface Supplier {
   id: number;
   commercialName: string;
   phone?: string | null;
+  /** Standing per-supplier switch: may a ledger payment notify this supplier by WhatsApp at all. */
+  notifyWhatsapp: boolean;
 }
 
 export interface SupplierInput {
   commercialName: string;
   phone?: string;
+  /**
+   * Required (not optional): the backend PUT/POST replaces the whole resource, and an omitted
+   * boolean is read as `false`. Every caller must resend the supplier's current value.
+   */
+  notifyWhatsapp: boolean;
 }
 
 interface ApiEnvelope<T> {
