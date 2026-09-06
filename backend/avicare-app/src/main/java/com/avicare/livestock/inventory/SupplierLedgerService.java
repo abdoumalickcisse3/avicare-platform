@@ -32,6 +32,7 @@ public class SupplierLedgerService {
 
   private final SupplierLedgerEntryRepository ledgerRepository;
   private final SupplierRepository supplierRepository;
+  private final SupplierNotifier supplierNotifier;
 
   @Transactional(readOnly = true)
   public long balance(Long farmId, Long supplierId) {
@@ -153,7 +154,7 @@ public class SupplierLedgerService {
       SupplierLedgerCommand cmd,
       LedgerDirection direction,
       Long userId) {
-    requireSupplier(farmId, supplierId);
+    Supplier supplier = requireSupplier(farmId, supplierId);
     if (cmd.amountXof() <= 0) {
       throw new ValidationException("LEDGER_AMOUNT_NOT_POSITIVE", "Amount must be greater than 0");
     }
@@ -173,7 +174,18 @@ public class SupplierLedgerService {
       entry.setReference(cmd.reference());
     }
     entry.setCreatedBy(userId);
-    return ledgerRepository.save(entry);
+    entry = ledgerRepository.save(entry);
+
+    if (direction == LedgerDirection.CREDIT && cmd.notifySupplier()) {
+      supplierNotifier.paymentRecorded(
+          farmId,
+          supplier,
+          entry.getAmountXof(),
+          ledgerRepository.balanceFor(farmId, supplierId),
+          entry.getEntryDate());
+    }
+
+    return entry;
   }
 
   private Supplier requireSupplier(Long farmId, Long supplierId) {

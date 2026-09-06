@@ -50,6 +50,7 @@ public class PurchaseOrderService {
   private final StockMovementService stockMovementService;
   private final FinanceFacade financeFacade;
   private final SupplierLedgerService supplierLedgerService;
+  private final SupplierNotifier supplierNotifier;
 
   @Transactional
   public PurchaseOrder createDraft(Long farmId, PurchaseOrderDraftCommand cmd, Long userId) {
@@ -95,6 +96,13 @@ public class PurchaseOrderService {
     po.setStatus(PurchaseOrderStatus.SENT);
     po.setSentBy(userId);
     po.setSentAt(LocalDateTime.now());
+
+    // La commande part : c'est le moment où le fournisseur a besoin de la connaître.
+    if (po.getSupplier() != null && po.getTotalXof() != null) {
+      supplierNotifier.purchaseOrderSent(
+          farmId, po.getSupplier(), po.getOrderNumber(), po.getTotalXof());
+    }
+
     return po;
   }
 

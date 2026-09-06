@@ -30,6 +30,7 @@ class SupplierLedgerServiceTest {
 
   private SupplierLedgerEntryRepository ledgerRepository;
   private SupplierRepository supplierRepository;
+  private SupplierNotifier supplierNotifier;
   private SupplierLedgerService service;
 
   private static final Long FARM = 7L;
@@ -40,7 +41,8 @@ class SupplierLedgerServiceTest {
   void setUp() {
     ledgerRepository = Mockito.mock(SupplierLedgerEntryRepository.class);
     supplierRepository = Mockito.mock(SupplierRepository.class);
-    service = new SupplierLedgerService(ledgerRepository, supplierRepository);
+    supplierNotifier = Mockito.mock(SupplierNotifier.class);
+    service = new SupplierLedgerService(ledgerRepository, supplierRepository, supplierNotifier);
 
     Supplier supplier = new Supplier();
     supplier.setId(SUPPLIER);
