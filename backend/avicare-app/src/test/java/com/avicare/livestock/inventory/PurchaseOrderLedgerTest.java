@@ -36,27 +36,42 @@ class PurchaseOrderLedgerTest {
           // chantier, sans rapport avec le compte-courant.
           "StockMovementService.java");
 
+  /**
+   * The ledger's own files, not the whole {@code com.avicare.livestock} bounded context: {@code
+   * closure/UnitClosureService.java} and {@code health/VetVisitService.java} also import {@code
+   * FinanceFacade} — legitimately, for their own pre-existing expense-recording duties, unrelated
+   * to the supplier ledger. Walking the full context would demand adding them to {@link #ALLOWED}
+   * too, which would dilute a list whose whole point is to name exactly the two files where the
+   * ledger's charge and treasury concerns cross. So this walks the four packages that actually hold
+   * ledger code instead.
+   */
+  private static final List<String> LEDGER_ROOTS =
+      List.of(
+          "src/main/java/com/avicare/livestock/inventory",
+          "src/main/java/com/avicare/livestock/domain",
+          "src/main/java/com/avicare/livestock/repository",
+          "src/main/java/com/avicare/livestock/controller");
+
   @Test
   void theLedgerPackageNeverImportsFinance() throws Exception {
-    java.nio.file.Path root =
-        java.nio.file.Path.of("src/main/java/com/avicare/livestock/inventory");
-
-    List<String> offenders;
-    try (var files = java.nio.file.Files.walk(root)) {
-      offenders =
-          files
-              .filter(p -> p.toString().endsWith(".java"))
-              .filter(
-                  p -> {
-                    try {
-                      return java.nio.file.Files.readString(p).contains("com.avicare.finance");
-                    } catch (java.io.IOException e) {
-                      throw new IllegalStateException(e);
-                    }
-                  })
-              .map(p -> p.getFileName().toString())
-              .filter(name -> !ALLOWED.contains(name))
-              .toList();
+    List<String> offenders = new java.util.ArrayList<>();
+    for (String root : LEDGER_ROOTS) {
+      try (var files = java.nio.file.Files.walk(java.nio.file.Path.of(root))) {
+        offenders.addAll(
+            files
+                .filter(p -> p.toString().endsWith(".java"))
+                .filter(
+                    p -> {
+                      try {
+                        return java.nio.file.Files.readString(p).contains("com.avicare.finance");
+                      } catch (java.io.IOException e) {
+                        throw new IllegalStateException(e);
+                      }
+                    })
+                .map(p -> p.getFileName().toString())
+                .filter(name -> !ALLOWED.contains(name))
+                .toList());
+      }
     }
 
     assertThat(offenders)

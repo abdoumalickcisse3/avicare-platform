@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -96,6 +97,32 @@ class SupplierLedgerServiceTest {
     assertThat(saved.getValue().getSource()).isEqualTo(LedgerSource.MANUAL);
   }
 
+  /**
+   * The consent gate (decision 9): the standing switch on the supplier only says an avis is
+   * possible, not wanted for this entry. A caller that withholds consent for one payment must not
+   * be overruled.
+   */
+  @Test
+  void aPaymentWithoutConsentForThisEntryNeverNotifies() {
+    SupplierLedgerCommand withoutConsent =
+        new SupplierLedgerCommand(
+            200_000L, LocalDate.of(2026, 9, 5), "Versement", "CASH", null, null, false);
+
+    service.recordPayment(FARM, SUPPLIER, withoutConsent, USER);
+
+    verify(supplierNotifier, never()).paymentRecorded(any(), any(), anyLong(), anyLong(), any());
+  }
+
+  /**
+   * A manual charge (a debt, not a receipt) never notifies, whatever {@code notifySupplier} says.
+   */
+  @Test
+  void aManualChargeNeverNotifiesEvenWithConsent() {
+    service.recordCharge(FARM, SUPPLIER, cmd(240_000L), USER);
+
+    verify(supplierNotifier, never()).paymentRecorded(any(), any(), anyLong(), anyLong(), any());
+  }
+
   @Test
   void refusesAnAmountThatIsNotStrictlyPositive() {
     assertThatThrownBy(() -> service.recordPayment(FARM, SUPPLIER, cmd(0L), USER))
@@ -164,6 +191,45 @@ class SupplierLedgerServiceTest {
     assertThat(balances)
         .extracting(SupplierBalance::supplierId, SupplierBalance::balanceXof)
         .containsExactly(tuple(SUPPLIER, 300_000L), tuple(4L, 0L));
+  }
+
+  /**
+   * A supplier retires by {@code active = false}; {@code suppliers} has no {@code deleted_at}. That
+   * must not silently drop what the farm still owes them from the total — the decision is that a
+   * debt does not disappear because you stopped buying from someone.
+   */
+  @Test
+  void includesADeactivatedSupplierWithANonZeroBalance() {
+    Supplier active = new Supplier();
+    active.setId(SUPPLIER);
+    active.setFarmId(FARM);
+    active.setCommercialName("Provende du Sahel");
+
+    Supplier retiredButOwed = new Supplier();
+    retiredButOwed.setId(20L);
+    retiredButOwed.setFarmId(FARM);
+    retiredButOwed.setCommercialName("Ancien fournisseur");
+
+    Supplier retiredAndSettled = new Supplier();
+    retiredAndSettled.setId(21L);
+    retiredAndSettled.setFarmId(FARM);
+    retiredAndSettled.setCommercialName("Fournisseur soldé");
+
+    when(supplierRepository.findByFarmIdAndActiveTrueOrderByCommercialName(FARM))
+        .thenReturn(List.of(active));
+    when(ledgerRepository.balancesBySupplier(FARM))
+        .thenReturn(
+            List.<Object[]>of(
+                new Object[] {SUPPLIER, 100_000L},
+                new Object[] {20L, 400_000L},
+                new Object[] {21L, 0L}));
+    when(supplierRepository.findAllById(List.of(20L))).thenReturn(List.of(retiredButOwed));
+
+    List<SupplierBalance> balances = service.balances(FARM);
+
+    assertThat(balances)
+        .extracting(SupplierBalance::supplierId, SupplierBalance::balanceXof)
+        .containsExactlyInAnyOrder(tuple(SUPPLIER, 100_000L), tuple(20L, 400_000L));
   }
 
   @Test

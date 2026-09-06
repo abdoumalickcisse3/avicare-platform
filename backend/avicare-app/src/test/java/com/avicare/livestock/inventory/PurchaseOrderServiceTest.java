@@ -15,6 +15,7 @@ import com.avicare.livestock.domain.PurchaseOrder;
 import com.avicare.livestock.domain.PurchaseOrderItem;
 import com.avicare.livestock.domain.PurchaseOrderStatus;
 import com.avicare.livestock.domain.StockItem;
+import com.avicare.livestock.domain.Supplier;
 import com.avicare.livestock.repository.PurchaseOrderRepository;
 import com.avicare.livestock.repository.SupplierRepository;
 import java.math.BigDecimal;
@@ -171,6 +172,83 @@ class PurchaseOrderServiceTest {
 
     verify(financeFacade, never())
         .recordPurchaseExpenses(anyLong(), anyLong(), any(), any(), any(), anyLong());
+  }
+
+  /**
+   * The branch's own stated worst-case: neither call-site hook (the supplier debit on receipt, the
+   * WhatsApp notice on submission) had ever been verified. A refactor could drop either line and
+   * all other tests would still pass.
+   */
+  @Test
+  void receive_withPartialReceipt_recordsSupplierLedgerDebitForReceivedValueNotOrderedTotal() {
+    PurchaseOrder po = new PurchaseOrder();
+    po.setId(300L);
+    po.setFarmId(FARM_ID);
+    po.setOrderNumber("BC-2026-003");
+    po.setStatus(PurchaseOrderStatus.SENT);
+    Supplier supplier = new Supplier();
+    supplier.setId(9L);
+    po.setSupplier(supplier);
+
+    // Ordered 100 (the item() fixture's fixed quantity), unit price 1 XOF: an ordered value of
+    // 100 against a received value of 60 makes the two impossible to confuse.
+    PurchaseOrderItem feedStarter = item(30L, ArticleSource.INVENTORY, "feed-starter", 1);
+    po.addItem(feedStarter);
+
+    when(purchaseOrderRepository.findByFarmIdAndId(FARM_ID, po.getId()))
+        .thenReturn(Optional.of(po));
+    when(inventoryCatalogService.listAllAvailableArticles(org.mockito.ArgumentMatchers.anyLong()))
+        .thenReturn(
+            List.of(
+                new InventoryCatalogItemDto(
+                    "feed-starter",
+                    ArticleSource.INVENTORY,
+                    "Aliment démarrage",
+                    "FEED",
+                    "kg",
+                    1,
+                    false)));
+    when(stockItemService.createOrGet(
+            eq(FARM_ID), any(ArticleSource.class), any(String.class), eq(USER_ID)))
+        .thenReturn(mock(StockItem.class));
+
+    LocalDate deliveryDate = LocalDate.of(2026, 7, 10);
+    PurchaseOrderReceiveCommand cmd =
+        new PurchaseOrderReceiveCommand(
+            deliveryDate,
+            List.of(new PurchaseOrderReceiveCommand.LineReceipt(30L, new BigDecimal("60"))));
+
+    service.receive(FARM_ID, po.getId(), cmd, USER_ID);
+
+    verify(supplierLedgerService)
+        .recordPurchaseOrderDebit(
+            eq(FARM_ID),
+            eq(supplier.getId()),
+            eq(po.getId()),
+            eq("BC-2026-003"),
+            eq(60L),
+            eq(deliveryDate),
+            eq(USER_ID));
+  }
+
+  @Test
+  void submitToSupplier_notifiesSupplier() {
+    PurchaseOrder po = new PurchaseOrder();
+    po.setId(400L);
+    po.setFarmId(FARM_ID);
+    po.setOrderNumber("BC-2026-004");
+    po.setStatus(PurchaseOrderStatus.DRAFT);
+    po.setTotalXof(150_000L);
+    Supplier supplier = new Supplier();
+    supplier.setId(11L);
+    po.setSupplier(supplier);
+
+    when(purchaseOrderRepository.findByFarmIdAndId(FARM_ID, po.getId()))
+        .thenReturn(Optional.of(po));
+
+    service.submitToSupplier(FARM_ID, po.getId(), USER_ID);
+
+    verify(supplierNotifier).purchaseOrderSent(FARM_ID, supplier, "BC-2026-004", 150_000L);
   }
 
   private static PurchaseOrderItem item(
