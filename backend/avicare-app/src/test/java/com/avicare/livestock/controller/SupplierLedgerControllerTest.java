@@ -55,6 +55,6 @@ class SupplierLedgerControllerTest {
   void deletingAnEntryReachesTheService() {
     controller.deleteEntry(7L, 3L, 5L);
 
-    verify(service).deleteEntry(7L, 5L);
+    verify(service).deleteEntry(7L, 3L, 5L);
   }
 }

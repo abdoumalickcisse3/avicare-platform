@@ -80,7 +80,7 @@ public class SupplierLedgerController {
   @PreAuthorize(InventoryAccess.WRITE_MANAGER)
   public void deleteEntry(
       @PathVariable Long farmId, @PathVariable Long supplierId, @PathVariable Long entryId) {
-    supplierLedgerService.deleteEntry(farmId, entryId);
+    supplierLedgerService.deleteEntry(farmId, supplierId, entryId);
   }
 
   private static SupplierLedgerCommand toCommand(SupplierLedgerEntryRequest r) {
