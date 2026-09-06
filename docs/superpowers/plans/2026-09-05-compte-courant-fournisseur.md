@@ -485,7 +485,7 @@ fournisseur se retire par un booléen active."
 - Produces:
   - `SupplierBalance(Long supplierId, String supplierName, long balanceXof)`
   - `SupplierStatementLine(Long id, LocalDate entryDate, LedgerDirection direction, LedgerSource source, long amountXof, String label, String method, String reference, Long purchaseOrderId, long runningBalanceXof)`
-  - `SupplierLedgerCommand(long amountXof, LocalDate entryDate, String label, String method, String reference, String notes)`
+  - `SupplierLedgerCommand(long amountXof, LocalDate entryDate, String label, String method, String reference, String notes, boolean notifySupplier)` — porte la case « Prévenir le fournisseur » saisie par l'éleveur ; en Task 2 elle est simplement transportée, c'est la Task 5 qui la lit. **Le composant s'appelle `notifySupplier` et jamais `notify`** : `Object.notify()` est `final`, donc un record dont un composant s'appelle `notify` ne compile pas (JLS 8.10.3). Même interdit pour `wait`, `notifyAll`, `getClass`, `clone`, `finalize`.
   - `SupplierLedgerService.balance(Long, Long) : long`
   - `SupplierLedgerService.balances(Long) : List<SupplierBalance>`
   - `SupplierLedgerService.statement(Long, Long) : List<SupplierStatementLine>`
@@ -537,7 +537,7 @@ import java.time.LocalDate;
 /**
  * Ce que l'éleveur saisit pour un paiement ou une dette de carnet.
  *
- * <p>{@code notify} porte la case « Prévenir le fournisseur » : l'interrupteur de la fiche dit si
+ * <p>{@code notifySupplier} porte la case « Prévenir le fournisseur » : l'interrupteur de la fiche dit si
  * l'avis est possible, cette case dit si l'éleveur le veut pour CE versement. Les deux doivent être
  * vrais. Un versement corrigeant une erreur de saisie n'a pas à partir chez le fournisseur.
  */
@@ -548,7 +548,7 @@ public record SupplierLedgerCommand(
     String method,
     String reference,
     String notes,
-    boolean notify) {}
+    boolean notifySupplier) {}
 ```
 
 - [ ] **Step 2 : écrire le test (il doit échouer)**
@@ -1105,7 +1105,7 @@ import java.time.LocalDate;
 /**
  * Ce que le client envoie pour un paiement ou une dette de carnet.
  *
- * <p>{@code notify} est un {@code Boolean} et non un {@code boolean} : un client qui l'omet ne doit
+ * <p>{@code notifySupplier} est un {@code Boolean} et non un {@code boolean} : un client qui l'omet ne doit
  * pas être lu comme « surtout ne préviens pas ». Absent, il vaut vrai — l'interrupteur de la fiche
  * reste seul juge.
  */
@@ -1116,7 +1116,7 @@ public record SupplierLedgerEntryRequest(
     String method,
     String reference,
     String notes,
-    Boolean notify) {}
+    Boolean notifySupplier) {}
 ```
 
 ```java
@@ -1263,7 +1263,7 @@ public class SupplierLedgerController {
         r.method(),
         r.reference(),
         r.notes(),
-        r.notify() == null || r.notify());
+        r.notifySupplier() == null || r.notifySupplier());
   }
 }
 ```
@@ -1633,7 +1633,7 @@ Attendu : `Tests run: 4, Failures: 0`. Si l'assertion sur `"200 000"` échoue, c
 et, à la fin de `recordManual`, **seulement pour un versement** — on n'écrit pas au fournisseur pour lui annoncer qu'on a noté une dette envers lui :
 
 ```java
-    if (direction == LedgerDirection.CREDIT && cmd.notify()) {
+    if (direction == LedgerDirection.CREDIT && cmd.notifySupplier()) {
       supplierNotifier.paymentRecorded(
           farmId,
           supplier,
@@ -2107,7 +2107,7 @@ fournisseur a `notifyWhatsapp` actif**. Une prop `direction: "DEBIT" | "CREDIT"`
 affichés. Suivez la structure de `web/src/components/inventory/StockMovementDialog.tsx`, qui a déjà
 la forme « dialogue MUI + mutation + toast » de ce dossier.
 
-> La case voyage : le corps de la requête porte `notify: boolean` (Task 4), et `recordPayment` ne
+> La case voyage : le corps de la requête porte `notifySupplier: boolean` (Task 4), et `recordPayment` ne
 > prévient que si l'interrupteur de la fiche **et** cette case sont vrais. Deux garde-fous à deux
 > échelles — la relation d'un côté, ce versement-là de l'autre. Ne rendez jamais la case sans
 > l'envoyer : une case qui ne fait rien est pire que pas de case.
@@ -2289,5 +2289,5 @@ git commit -m "docs(spec): compte-courant fournisseur livré"
 2. **La somme du débit.** Task 3 Step 3 doit sommer `expenseLines`, pas lire `po.getTotalXof()`. C'est la différence entre endetter de ce qui est arrivé et de ce qui a été commandé.
 3. **Les six contextes DB-less.** Le build local passe sans eux ; la CI échoue. Vérifier que le `grep` a été rejoué et pas la liste recopiée.
 4. **Le PUT de remplacement.** Task 7 Step 1 et Task 8 Step 4 : si `updateSupplier` omet `notifyWhatsapp`, chaque modification de fiche éteindra l'interrupteur en silence.
-5. **La case « Prévenir » voyage.** Le corps porte `notify`, et le service ne prévient que si l'interrupteur de la fiche ET la case sont vrais. Une case rendue mais non envoyée est un mensonge d'interface — vérifier le trajet complet, pas seulement la case.
+5. **La case « Prévenir » voyage.** Le corps porte `notifySupplier` — jamais `notify`, qui ne compile pas comme composant de record — et le service ne prévient que si l'interrupteur de la fiche ET la case sont vrais. Une case rendue mais non envoyée est un mensonge d'interface — vérifier le trajet complet, pas seulement la case.
 6. **La parité.** Les URL du slice mobile doivent être identiques à celles du web, sinon `parity.test.ts` casse — et si une divergence est délibérée, elle s'inscrit dans `KNOWN_DIVERGENCES` avec sa raison.
