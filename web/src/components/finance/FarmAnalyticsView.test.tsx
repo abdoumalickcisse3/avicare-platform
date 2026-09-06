@@ -6,6 +6,11 @@ import { formatCurrency } from "@/lib/format";
 import { colors } from "@/theme/tokens";
 import type { FarmAnalytics } from "@/types";
 
+let hasInventory = true;
+vi.mock("@/hooks/useInventoryGating", () => ({
+  useInventoryGating: () => ({ hasInventory }),
+}));
+
 function respond(data: unknown) {
   return Promise.resolve(
     new Response(JSON.stringify({ data }), { status: 200, headers: { "Content-Type": "application/json" } }),
@@ -57,7 +62,28 @@ function findByFormattedCurrency(amount: number) {
   return screen.findByText((content) => content.replace(/\s+/g, " ") === target);
 }
 
-afterEach(() => vi.unstubAllGlobals());
+function mockFetchWithFailingBalances(data: unknown) {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: unknown) => {
+      const url = input instanceof Request ? input.url : String(input);
+      if (url.includes("/balances")) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({ type: "about:blank", title: "Accès refusé", status: 403 }),
+            { status: 403, headers: { "Content-Type": "application/json" } },
+          ),
+        );
+      }
+      return respond(data);
+    }),
+  );
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  hasInventory = true;
+});
 
 describe("FarmAnalyticsView", () => {
   beforeEach(() => {
@@ -113,5 +139,23 @@ describe("FarmAnalyticsView", () => {
 
     expect(await screen.findByText("Dû aux fournisseurs")).toBeInTheDocument();
     expect(await findByFormattedCurrency(120000)).toBeInTheDocument();
+  });
+
+  it("does not render a zero total when the supplier balances query fails", async () => {
+    mockFetchWithFailingBalances(analytics);
+    renderWithProviders(<FarmAnalyticsView farmId={1} />);
+
+    expect(await screen.findByText("Dû aux fournisseurs")).toBeInTheDocument();
+    expect(screen.getByText("—")).toBeInTheDocument();
+    expect(screen.queryByText((content) => content.replace(/\s+/g, " ") === formatCurrency(0).replace(/\s+/g, " "))).toBeNull();
+  });
+
+  it("does not render a zero total when the member lacks inventory access", async () => {
+    hasInventory = false;
+    mockFetchOnce(analytics);
+    renderWithProviders(<FarmAnalyticsView farmId={1} />);
+
+    expect(await screen.findByText("Dû aux fournisseurs")).toBeInTheDocument();
+    expect(screen.getByText("—")).toBeInTheDocument();
   });
 });
