@@ -753,6 +753,8 @@ export interface Supplier {
   paymentTerms: string | null;
   notes: string | null;
   active: boolean;
+  /** Standing per-supplier switch: may a ledger payment notify this supplier by WhatsApp at all. */
+  notifyWhatsapp: boolean;
 }
 export interface SupplierInput {
   commercialName: string;
@@ -764,6 +766,34 @@ export interface SupplierInput {
   types?: string[];
   paymentTerms?: string;
   notes?: string;
+}
+
+/** Une ligne du compte-courant fournisseur (miroir de SupplierLedgerEntryResponse). */
+export interface SupplierLedgerEntry {
+  id: number;
+  entryDate: string;
+  direction: "DEBIT" | "CREDIT";
+  source: "PURCHASE_ORDER" | "MANUAL";
+  amountXof: number;
+  label: string | null;
+  method: string | null;
+  reference: string | null;
+  purchaseOrderId: number | null;
+  runningBalanceXof: number;
+}
+
+/** Le relevé complet d'un fournisseur. */
+export interface SupplierStatement {
+  supplierId: number;
+  balanceXof: number;
+  entries: SupplierLedgerEntry[];
+}
+
+/** Le solde d'un fournisseur dans la vue d'ensemble. */
+export interface SupplierBalance {
+  supplierId: number;
+  supplierName: string;
+  balanceXof: number;
 }
 
 export interface PurchaseOrderLine {
