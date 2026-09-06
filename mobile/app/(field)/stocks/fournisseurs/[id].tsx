@@ -1,7 +1,11 @@
 /**
  * Fournisseur detail — the supplier current account (compte-courant), mirroring the web
- * `/stocks/fournisseurs/[id]`: balance in words, the statement, and a sheet to record a
- * payment. OWNER/MANAGER only (mirrors the backend gate).
+ * `/stocks/fournisseurs/[id]`: balance in words, the statement, a sheet to record a payment, and
+ * the standing "Prévenir par WhatsApp" switch. OWNER/MANAGER only (mirrors the backend gate).
+ *
+ * The switch exists here — not just at creation on the list screen — so a phone-only farmer can
+ * revoke consent, not just grant it: the create sheet in `fournisseurs.tsx` has no edit
+ * counterpart, and a switch that can only be turned on is a trap.
  *
  * Recording a payment is an ordinary online mutation, never queued: `@/sync/types` — money
  * writes stay online because the server doesn't deduplicate them, and here a replayed payment
@@ -17,7 +21,7 @@ import { ArrowLeft } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { useFarmAccess } from '@/auth/useSession';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
-import { useGetSupplierQuery } from '@/store/api/suppliersApi';
+import { useGetSupplierQuery, useUpdateSupplierMutation } from '@/store/api/suppliersApi';
 import { useGetSupplierLedgerQuery, useRecordSupplierPaymentMutation } from '@/store/api/supplierLedgerApi';
 import { PAYMENT_METHOD_LABELS, PAYMENT_METHOD_OPTIONS } from '@/lib/commercial';
 import { formatCurrency } from '@/lib/format';
@@ -48,12 +52,43 @@ export default function FournisseurDetailScreen() {
   const { data: statement, isLoading } = useGetSupplierLedgerQuery(
     selectedFarmId === null ? skipToken : { farmId: selectedFarmId, supplierId },
   );
+  const [updateSupplier, { isLoading: updatingNotify }] = useUpdateSupplierMutation();
 
   const [sheetOpen, setSheetOpen] = useState(false);
 
   if (selectedFarmId === null) {
     return <Redirect href="/(field)" />;
   }
+
+  /**
+   * A full-replacement PUT: every field the supplier already has is resent, only
+   * `notifyWhatsapp` changes. Omitting a field here would silently erase it (`SupplierInput`
+   * comment in `suppliersApi.ts`) — this is why the phone can grant WhatsApp consent but, without
+   * this, could never revoke it.
+   */
+  const toggleNotify = async (value: boolean) => {
+    if (!supplier) return;
+    try {
+      await updateSupplier({
+        farmId: selectedFarmId,
+        id: supplierId,
+        body: {
+          commercialName: supplier.commercialName,
+          contactPerson: supplier.contactPerson ?? undefined,
+          phone: supplier.phone ?? undefined,
+          email: supplier.email ?? undefined,
+          address: supplier.address ?? undefined,
+          city: supplier.city ?? undefined,
+          types: supplier.types ?? [],
+          paymentTerms: supplier.paymentTerms ?? undefined,
+          notes: supplier.notes ?? undefined,
+          notifyWhatsapp: value,
+        },
+      }).unwrap();
+    } catch {
+      Alert.alert('Fournisseur', "Le réglage n’a pas pu être mis à jour. Réessayez.");
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -66,6 +101,23 @@ export default function FournisseurDetailScreen() {
           <Text style={styles.subtitle}>{isLoading ? '…' : balanceLabel(statement?.balanceXof ?? 0)}</Text>
         </View>
       </View>
+
+      {canWrite && supplier && (
+        <View style={styles.notifyRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.fieldLabel}>Prévenir par WhatsApp</Text>
+            {!supplier.phone && (
+              <Text style={styles.helper}>Renseignez un téléphone pour activer les avis.</Text>
+            )}
+          </View>
+          <Switch
+            value={Boolean(supplier.notifyWhatsapp)}
+            onValueChange={toggleNotify}
+            disabled={!supplier.phone || updatingNotify}
+            accessibilityLabel="Prévenir par WhatsApp"
+          />
+        </View>
+      )}
 
       <ScrollView contentContainerStyle={styles.content}>
         {!statement?.entries.length ? (
@@ -261,6 +313,8 @@ const styles = StyleSheet.create({
   title: { ...tokens.typography.displayMd, color: tokens.colors.field.text },
   subtitle: { ...tokens.typography.bodySm, fontWeight: '600', color: tokens.colors.field.textMuted, marginTop: 2 },
 
+  notifyRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[3], paddingHorizontal: tokens.layout.screenPadding, paddingBottom: tokens.spacing[3] },
+
   content: { paddingHorizontal: tokens.layout.screenPadding, paddingTop: tokens.spacing[2], paddingBottom: tokens.spacing[8] },
   muted: { ...tokens.typography.bodyMd, color: tokens.colors.field.textMuted, textAlign: 'center', paddingVertical: tokens.spacing[8] },
   list: { gap: tokens.spacing[2] },
@@ -277,6 +331,7 @@ const styles = StyleSheet.create({
   sheetTitle: { ...tokens.typography.headingMd, color: tokens.colors.field.text },
   sheetSubtitle: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginBottom: tokens.spacing[1] },
   fieldLabel: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginTop: tokens.spacing[2] },
+  helper: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginTop: 2 },
   input: { minHeight: 46, borderRadius: tokens.radii.lg, borderWidth: 1, borderColor: tokens.colors.neutral[300], paddingHorizontal: tokens.spacing[3], color: tokens.colors.field.text },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.spacing[2] },
   chip: { paddingHorizontal: tokens.spacing[3], paddingVertical: tokens.spacing[2], borderRadius: tokens.radii.full, borderWidth: 1, borderColor: tokens.colors.neutral[300], backgroundColor: tokens.colors.neutral[0] },

@@ -7,15 +7,38 @@ import { baseApi } from './baseApi';
 
 export interface Supplier {
   id: number;
+  farmId?: number;
   commercialName: string;
+  contactPerson?: string | null;
   phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  city?: string | null;
+  types?: string[];
+  paymentTerms?: string | null;
+  notes?: string | null;
+  active?: boolean;
   /** Standing per-supplier switch: may a ledger payment notify this supplier by WhatsApp at all. */
   notifyWhatsapp: boolean;
 }
 
+/**
+ * The backend PUT/POST replaces the whole resource (`SupplierService.apply`, full-replacement
+ * semantics) — there is no PATCH. Every caller MUST resend every field the supplier already has,
+ * not just the one it means to change: an omitted field is read as absent/false, not "leave
+ * unchanged", so a caller that only sends `notifyWhatsapp` silently erases contactPerson, email,
+ * address, city, types, paymentTerms and notes.
+ */
 export interface SupplierInput {
   commercialName: string;
+  contactPerson?: string;
   phone?: string;
+  email?: string;
+  address?: string;
+  city?: string;
+  types?: string[];
+  paymentTerms?: string;
+  notes?: string;
   /**
    * Required (not optional): the backend PUT/POST replaces the whole resource, and an omitted
    * boolean is read as `false`. Every caller must resend the supplier's current value.
