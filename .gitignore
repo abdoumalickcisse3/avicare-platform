@@ -67,3 +67,6 @@ infra/data/
 
 # OpenAPI generated
 shared/types/generated/
+
+# Espace de travail des plans superpowers (scratch, non versionné)
+.superpowers/

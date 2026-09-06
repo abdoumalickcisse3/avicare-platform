@@ -963,6 +963,25 @@ import org.junit.jupiter.api.Test;
  */
 class PurchaseOrderLedgerTest {
 
+  /**
+   * Les deux seuls fichiers du paquet autorisés à connaître les dépenses, et pourquoi.
+   *
+   * <p>Ils enregistrent la CHARGE — c'est leur travail et il précède ce chantier. Le compte-courant
+   * enregistre la TRÉSORERIE, et ne doit jamais toucher aux dépenses : les deux ensemble
+   * doubleraient le coût de l'aliment.
+   *
+   * <p>Cette liste est une porte, pas une passoire : y ajouter un fichier est une décision qui se
+   * défend en revue, et c'est exactement la friction voulue.
+   */
+  private static final java.util.Set<String> ALLOWED =
+      java.util.Set.of(
+          // Reçoit un bon d'achat : enregistre la dépense d'achat, et (Task 3) le débit du
+          // compte-courant. C'est le point précis où charge et trésorerie se croisent.
+          "PurchaseOrderService.java",
+          // Enregistre la dépense d'une entrée de stock directe (garde V25). Antérieur à ce
+          // chantier, sans rapport avec le compte-courant.
+          "StockMovementService.java");
+
   @Test
   void theLedgerPackageNeverImportsFinance() throws Exception {
     java.nio.file.Path root =
@@ -982,15 +1001,15 @@ class PurchaseOrderLedgerTest {
                     }
                   })
               .map(p -> p.getFileName().toString())
-              .filter(name -> !name.equals("PurchaseOrderService.java"))
+              .filter(name -> !ALLOWED.contains(name))
               .toList();
     }
 
     assertThat(offenders)
         .as(
-            "Le compte-courant ne doit pas pouvoir écrire de dépense. "
-                + "PurchaseOrderService est la seule exception : il enregistre la charge ET le débit, "
-                + "et c'est précisément le point où les deux se croisent.")
+            "Le compte-courant ne doit pas pouvoir écrire de dépense. Deux fichiers du paquet "
+                + "connaissent les dépenses et sont listés dans ALLOWED avec leur raison ; tout "
+                + "autre est un aller simple vers l'aliment compté deux fois.")
         .isEmpty();
   }
 }
