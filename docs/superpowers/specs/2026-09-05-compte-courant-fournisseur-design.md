@@ -254,8 +254,12 @@ comme côté client (`CommercialAccess.WRITE_MANAGER`).
 DTO : records Java 21. `method` reprend les valeurs de `PaymentMethod` déjà utilisées côté client,
 plutôt qu'un second vocabulaire pour la même chose.
 
-Codes d'erreur, selon la règle 400/422 fixée le 2026-09-05 (PR #303) : montant nul ou négatif →
-**422** (règle métier) ; corps malformé → **400**. Un fournisseur ou une ligne appartenant à une
+Codes d'erreur, selon la règle 400/422 fixée le 2026-09-05 (PR #303) : un montant nul ou négatif
+part en **400**, pas en 422 — `@Positive` sur le DTO déclenche `MethodArgumentNotValidException`,
+que `GlobalExceptionHandler` rend en RFC7807 **avec l'erreur par champ**. C'est mieux qu'un 422
+générique : le client sait quel champ refuser. La garde `ValidationException` du service reste, mais
+comme filet pour les appelants non-HTTP, pas comme chemin nominal. Corps malformé → **400**
+également. Un fournisseur ou une ligne appartenant à une
 autre ferme → **404**, et non 403 : c'est le patron déjà en place (`VetVisitController.getInFarm`,
 `NotFoundException.of`), et il ne divulgue pas l'existence de la ressource voisine.
 
