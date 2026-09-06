@@ -238,6 +238,36 @@ class Journey:
             if order:
                 self.call("POST", f + f"/inventory/purchase-orders/{order}/submit", {})
 
+        self.section("Compte-courant fournisseur")
+        if supplier:
+            payload, _ = self.call("GET", f + f"/inventory/suppliers/{supplier}/ledger")
+            statement = self.unwrap(payload) or {}
+            if statement.get("balanceXof") != 0 or statement.get("entries"):
+                self.failures.append(
+                    f"compte-courant d'un fournisseur neuf non vide : {statement}"
+                )
+            self.call("POST", f + f"/inventory/suppliers/{supplier}/ledger/charges", {
+                "amountXof": 120000, "entryDate": today, "label": "Livraison sans bon d'achat",
+            })
+            self.call("POST", f + f"/inventory/suppliers/{supplier}/ledger/payments", {
+                "amountXof": 50000, "entryDate": today, "label": "Acompte", "method": "CASH",
+            })
+            payload, _ = self.call("GET", f + f"/inventory/suppliers/{supplier}/ledger")
+            statement = self.unwrap(payload) or {}
+            expected_balance = 120000 - 50000
+            entries = statement.get("entries") or []
+            if statement.get("balanceXof") != expected_balance or len(entries) != 2:
+                self.failures.append(
+                    f"solde du compte-courant attendu {expected_balance}, obtenu {statement}"
+                )
+            payload, _ = self.call("GET", f + "/inventory/suppliers/balances")
+            balances = self.unwrap(payload) or []
+            row = next((b for b in balances if b.get("supplierId") == supplier), None)
+            if not row or row.get("balanceXof") != expected_balance:
+                self.failures.append(
+                    f"solde du fournisseur absent ou faux dans /balances : {row}"
+                )
+
         self.section("Commerce")
         payload, _ = self.call("POST", f + "/commercial/clients", {
             "clientType": "INDIVIDUAL", "displayName": "Client Parcours",
