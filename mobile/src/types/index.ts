@@ -445,6 +445,37 @@ export interface PurchaseOrderReceiveInput {
   lines: { itemId: number; receivedQuantity: number }[];
 }
 
+/**
+ * The supplier current account (compte-courant fournisseur) — what the farm owes, what it has
+ * paid. Mirrors the web `SupplierLedgerEntry`/`SupplierStatement`/`SupplierBalance`.
+ */
+export interface SupplierLedgerEntry {
+  id: number;
+  entryDate: string;
+  direction: 'DEBIT' | 'CREDIT';
+  source: 'PURCHASE_ORDER' | 'MANUAL';
+  amountXof: number;
+  label: string | null;
+  method: string | null;
+  reference: string | null;
+  purchaseOrderId: number | null;
+  runningBalanceXof: number;
+}
+
+/** One supplier's full statement. */
+export interface SupplierStatement {
+  supplierId: number;
+  balanceXof: number;
+  entries: SupplierLedgerEntry[];
+}
+
+/** One supplier's balance, as shown in the overview list. */
+export interface SupplierBalance {
+  supplierId: number;
+  supplierName: string;
+  balanceXof: number;
+}
+
 /** Direction of a stock movement (mirrors the web `MovementType`). */
 export type MovementType = 'IN' | 'OUT' | 'ADJUSTMENT';
 

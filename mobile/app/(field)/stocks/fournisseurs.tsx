@@ -1,19 +1,28 @@
 /**
  * Fournisseurs — the suppliers directory, mirroring the web `/stocks/fournisseurs`
- * (same `getSuppliers`/`createSupplier`). List + add a supplier (commercial name
- * + phone). Edit/delete stay web-side for now. `inventory:write` gates adding.
+ * (same `getSuppliers`/`createSupplier`). List + add a supplier (commercial name,
+ * phone, WhatsApp notice switch) + each row's current-account balance, pressable
+ * to its statement. Edit stays web-side for now. `inventory:write` gates adding.
  */
 import { useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
-import { ArrowLeft, Phone, Plus, Truck } from 'lucide-react-native';
+import { ArrowLeft, ChevronRight, Phone, Plus, Truck } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { useFarmAccess } from '@/auth/useSession';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { useCreateSupplierMutation, useGetSuppliersQuery } from '@/store/api/suppliersApi';
+import { useGetSupplierBalancesQuery } from '@/store/api/supplierLedgerApi';
+import { formatCurrency } from '@/lib/format';
+
+function balanceColor(balanceXof: number): string {
+  if (balanceXof > 0) return tokens.colors.error;
+  if (balanceXof < 0) return tokens.colors.success;
+  return tokens.colors.field.textMuted;
+}
 
 export default function FournisseursScreen() {
   const router = useRouter();
@@ -24,11 +33,20 @@ export default function FournisseursScreen() {
   const { data: suppliers, isLoading } = useGetSuppliersQuery(
     selectedFarmId === null ? skipToken : { farmId: selectedFarmId },
   );
+  const { data: balances } = useGetSupplierBalancesQuery(
+    selectedFarmId === null ? skipToken : { farmId: selectedFarmId },
+  );
+  const balanceBySupplier = new Map((balances ?? []).map((b) => [b.supplierId, b.balanceXof]));
   const [createSupplier, { isLoading: saving }] = useCreateSupplierMutation();
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  // Standing account-level switch. Never defaulted from anything but local state here — this
+  // sheet only ever creates, so there is no fetched value to lose — but the field must still be
+  // sent explicitly on every submit: omitted, the backend reads it as false.
+  const [notifyWhatsapp, setNotifyWhatsapp] = useState(false);
+  const hasPhone = phone.trim().length > 0;
 
   if (selectedFarmId === null) {
     return <Redirect href="/(field)" />;
@@ -37,9 +55,17 @@ export default function FournisseursScreen() {
   const submit = async () => {
     if (!name.trim()) return;
     try {
-      await createSupplier({ farmId: selectedFarmId, body: { commercialName: name.trim(), phone: phone.trim() || undefined } }).unwrap();
+      await createSupplier({
+        farmId: selectedFarmId,
+        body: {
+          commercialName: name.trim(),
+          phone: phone.trim() || undefined,
+          notifyWhatsapp: hasPhone && notifyWhatsapp,
+        },
+      }).unwrap();
       setName('');
       setPhone('');
+      setNotifyWhatsapp(false);
       setSheetOpen(false);
     } catch {
       Alert.alert('Fournisseur', "Le fournisseur n’a pas pu être ajouté. Réessayez.");
@@ -65,22 +91,35 @@ export default function FournisseursScreen() {
           <Text style={styles.muted}>Aucun fournisseur.</Text>
         ) : (
           <View style={styles.list}>
-            {(suppliers ?? []).map((s) => (
-              <View key={s.id} style={styles.card}>
-                <View style={styles.avatar}>
-                  <Truck size={18} color={tokens.colors.primary[700]} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.name}>{s.commercialName}</Text>
-                  {s.phone ? (
-                    <View style={styles.phoneRow}>
-                      <Phone size={12} color={tokens.colors.field.textMuted} />
-                      <Text style={styles.phone}>{s.phone}</Text>
-                    </View>
-                  ) : null}
-                </View>
-              </View>
-            ))}
+            {(suppliers ?? []).map((s) => {
+              const balance = balanceBySupplier.get(s.id) ?? 0;
+              return (
+                <Pressable
+                  key={s.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Fiche de ${s.commercialName}`}
+                  onPress={() => router.push(`/(field)/stocks/fournisseurs/${s.id}`)}
+                  style={styles.card}
+                >
+                  <View style={styles.avatar}>
+                    <Truck size={18} color={tokens.colors.primary[700]} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.name}>{s.commercialName}</Text>
+                    {s.phone ? (
+                      <View style={styles.phoneRow}>
+                        <Phone size={12} color={tokens.colors.field.textMuted} />
+                        <Text style={styles.phone}>{s.phone}</Text>
+                      </View>
+                    ) : null}
+                    <Text style={[styles.balance, { color: balanceColor(balance) }]}>
+                      {balance === 0 ? 'Solde —' : `Solde ${formatCurrency(balance)}`}
+                    </Text>
+                  </View>
+                  <ChevronRight size={18} color={tokens.colors.field.textMuted} />
+                </Pressable>
+              );
+            })}
           </View>
         )}
       </ScrollView>
@@ -99,6 +138,18 @@ export default function FournisseursScreen() {
           <TextInput value={name} onChangeText={setName} placeholder="Ex. Sénégal Aliments" accessibilityLabel="Nom commercial" style={styles.input} />
           <Text style={styles.fieldLabel}>Téléphone</Text>
           <TextInput value={phone} onChangeText={setPhone} placeholder="Optionnel" keyboardType="phone-pad" accessibilityLabel="Téléphone" style={styles.input} />
+          <View style={styles.switchRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.fieldLabel}>Prévenir par WhatsApp</Text>
+              {!hasPhone && <Text style={styles.helper}>Renseignez un téléphone pour activer les avis.</Text>}
+            </View>
+            <Switch
+              value={notifyWhatsapp}
+              onValueChange={setNotifyWhatsapp}
+              disabled={!hasPhone}
+              accessibilityLabel="Prévenir par WhatsApp"
+            />
+          </View>
           <Pressable accessibilityRole="button" accessibilityLabel="Enregistrer le fournisseur" onPress={submit} disabled={!name.trim() || saving} style={[styles.commit, (!name.trim() || saving) && styles.commitDisabled]}>
             <Text style={styles.commitLabel}>Enregistrer</Text>
           </Pressable>
@@ -123,6 +174,7 @@ const styles = StyleSheet.create({
   name: { ...tokens.typography.headingMd, fontSize: 16, color: tokens.colors.field.text },
   phoneRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 },
   phone: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted },
+  balance: { ...tokens.typography.bodySm, fontWeight: '600', marginTop: 3 },
 
   fab: { position: 'absolute', right: tokens.layout.screenPadding, bottom: tokens.spacing[6], width: 56, height: 56, borderRadius: tokens.radii.full, backgroundColor: tokens.colors.accent[400], alignItems: 'center', justifyContent: 'center', shadowColor: tokens.colors.primary[900], shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 4 },
 
@@ -131,6 +183,8 @@ const styles = StyleSheet.create({
   sheetTitle: { ...tokens.typography.headingMd, color: tokens.colors.field.text, marginBottom: tokens.spacing[1] },
   fieldLabel: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginTop: tokens.spacing[2] },
   input: { minHeight: 46, borderRadius: tokens.radii.lg, borderWidth: 1, borderColor: tokens.colors.neutral[300], paddingHorizontal: tokens.spacing[3], color: tokens.colors.field.text },
+  switchRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[3], marginTop: tokens.spacing[3] },
+  helper: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginTop: 2 },
   commit: { minHeight: tokens.touch.primaryButton, borderRadius: tokens.radii.lg, backgroundColor: tokens.colors.accent[400], alignItems: 'center', justifyContent: 'center', marginTop: tokens.spacing[3] },
   commitDisabled: { opacity: 0.4 },
   commitLabel: { ...tokens.typography.button, fontSize: 16, color: tokens.colors.primary[900] },

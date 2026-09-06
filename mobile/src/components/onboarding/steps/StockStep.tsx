@@ -41,7 +41,12 @@ export function StockStep() {
             onAdd={async (v) => {
               await createSupplier({
                 farmId,
-                body: { commercialName: (v.commercialName ?? '').trim(), phone: v.phone?.trim() || undefined },
+                body: {
+                  commercialName: (v.commercialName ?? '').trim(),
+                  phone: v.phone?.trim() || undefined,
+                  // Onboarding's quick-add has no opt-in UI: explicit false, not a silent default.
+                  notifyWhatsapp: false,
+                },
               }).unwrap();
             }}
           />
