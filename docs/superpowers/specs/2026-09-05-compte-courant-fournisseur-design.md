@@ -3,7 +3,28 @@
 > Spec de cadrage. Rédigée après mesure du dépôt : chaque affirmation du §1 sort du code
 > réel, pas de la roadmap.
 >
-> **Statut : design validé le 2026-09-05, prêt à planifier.**
+> **Statut : LIVRÉ le 2026-09-06**, branche `feat/compte-courant-fournisseur`, neuf tâches.
+> 1 930 tests verts (backend 710, web 525, mobile 695) ; les trois seules erreurs backend sont les
+> tests Testcontainers qui ne tournent pas sur cette machine et passent en CI.
+>
+> **Les onze décisions du §3 ont toutes tenu**, sauf une correction et une découverte :
+>
+> - **Décision 8 (montants) tenue, mais la §5 était fausse sur les codes d'erreur.** J'y écrivais
+>   qu'un montant non positif répond 422 au titre de la règle métier. C'est 400 : `@Positive` sur le
+>   DTO se déclenche avant le service et produit une erreur RFC7807 **par champ**, ce qui vaut mieux
+>   — le client sait quel champ est refusé. La `ValidationException` du service reste comme filet
+>   pour les appelants non-HTTP. Corrigé au §5.
+> - **Trou de conception trouvé à l'implémentation :** `notifyWhatsapp` n'avait aucun chemin HTTP.
+>   La colonne existait, le notifieur la lisait, et rien ne pouvait la mettre à vrai — la
+>   fonctionnalité serait partie morte. Ouverte dans `SupplierRequest`/`SupplierResponse`, puis
+>   rendue **obligatoire** dans les types web et mobile : un appelant qui l'omet ne compile plus,
+>   au lieu d'éteindre l'interrupteur en silence (sémantique de remplacement du PUT).
+>
+> Deux garanties de cette spec ont été rendues **structurelles** plutôt que déclaratives :
+> `PurchaseOrderLedgerTest` interdit au paquet du registre d'importer le contexte finance, avec une
+> liste `ALLOWED` de deux fichiers portant chacun sa raison ; et `SupplierNotifier` échoue **fermé**
+> si le nom de la ferme est introuvable — pas de message, et surtout pas d'exception qui annulerait
+> le paiement qu'il rapporte.
 >
 > Origine : la confrontation de l'enquête terrain (`docs/🐔 Enquête sur la gestion d'élevage
 > avicole(Sheet1).csv`, 17 réponses) au modèle métier, le 2026-09-05. Quatorze éleveurs sur
