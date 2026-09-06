@@ -12,4 +12,5 @@ public record SupplierCommand(
     String city,
     List<String> types,
     String paymentTerms,
-    String notes) {}
+    String notes,
+    boolean notifyWhatsapp) {}

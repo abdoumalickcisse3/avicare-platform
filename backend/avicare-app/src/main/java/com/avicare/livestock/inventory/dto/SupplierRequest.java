@@ -16,7 +16,8 @@ public record SupplierRequest(
     @Size(max = 120) String city,
     List<String> types,
     @Size(max = 200) String paymentTerms,
-    @Size(max = 2000) String notes) {
+    @Size(max = 2000) String notes,
+    boolean notifyWhatsapp) {
 
   public SupplierCommand toCommand() {
     return new SupplierCommand(
@@ -28,6 +29,7 @@ public record SupplierRequest(
         city,
         types == null ? List.of() : types,
         paymentTerms,
-        notes);
+        notes,
+        notifyWhatsapp);
   }
 }

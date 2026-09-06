@@ -249,7 +249,7 @@ class PurchaseOrderFlowIT {
         .create(
             farmId,
             new SupplierCommand(
-                "SENAVICOLE", null, null, null, null, null, List.of("FEED"), null, null),
+                "SENAVICOLE", null, null, null, null, null, List.of("FEED"), null, null, false),
             1L)
         .getId();
   }
