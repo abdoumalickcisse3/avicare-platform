@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Alert,
   Box,
@@ -20,19 +21,30 @@ import {
   useDeleteSupplierMutation,
   useGetSuppliersQuery,
 } from "@/store/api/suppliersApi";
+import { useGetSupplierBalancesQuery } from "@/store/api/supplierLedgerApi";
 import { useInventoryGating } from "@/hooks/useInventoryGating";
 import { SupplierDialog } from "@/components/inventory/SupplierDialog";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { apiErrorMessage } from "@/lib/apiError";
+import { formatCurrency } from "@/lib/format";
 import { colors } from "@/theme/tokens";
 import type { Supplier } from "@/types";
 
 export default function SuppliersPage() {
+  const router = useRouter();
   const { farmId, hasFarm, hasInventory } = useInventoryGating();
   const { showToast } = useToast();
   const { data: suppliers, isLoading } = useGetSuppliersQuery(
     { farmId: farmId as number },
     { skip: !hasFarm || !hasInventory },
+  );
+  const { data: balances } = useGetSupplierBalancesQuery(
+    { farmId: farmId as number },
+    { skip: !hasFarm || !hasInventory },
+  );
+  const balanceBySupplier = useMemo(
+    () => new Map((balances ?? []).map((b) => [b.supplierId, b.balanceXof])),
+    [balances],
   );
   const [deleteSupplier] = useDeleteSupplierMutation();
 
@@ -108,51 +120,69 @@ export default function SuppliersPage() {
             gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" },
           }}
         >
-          {suppliers!.map((s) => (
-            <Card key={s.id}>
-              <CardContent>
-                <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {s.commercialName}
-                  </Typography>
-                  <IconButton
-                    size="small"
-                    aria-label="Actions"
-                    onClick={(e) => {
-                      setMenuEl(e.currentTarget);
-                      setMenuSupplier(s);
-                    }}
-                  >
-                    <MoreVertical size={18} />
-                  </IconButton>
-                </Stack>
-                <Stack spacing={0.5} sx={{ mt: 1, color: colors.neutral[600], fontSize: 14 }}>
-                  {s.contactPerson && (
-                    <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                      <User size={14} /> <span>{s.contactPerson}</span>
-                    </Stack>
-                  )}
-                  {s.phone && (
-                    <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                      <Phone size={14} /> <span>{s.phone}</span>
-                    </Stack>
-                  )}
-                  {s.email && (
-                    <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                      <Mail size={14} /> <span>{s.email}</span>
-                    </Stack>
-                  )}
-                </Stack>
-                {s.types.length > 0 && (
-                  <Stack direction="row" spacing={0.5} sx={{ mt: 1.5, flexWrap: "wrap" }} useFlexGap>
-                    {s.types.map((t) => (
-                      <Chip key={t} label={t} size="small" variant="outlined" />
-                    ))}
+          {suppliers!.map((s) => {
+            const balance = balanceBySupplier.get(s.id) ?? 0;
+            const balanceColor =
+              balance > 0 ? colors.error.main : balance < 0 ? colors.success.main : colors.neutral[500];
+            return (
+              <Card
+                key={s.id}
+                sx={{ cursor: "pointer" }}
+                onClick={() => router.push(`/stocks/fournisseurs/${s.id}`)}
+              >
+                <CardContent>
+                  <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      {s.commercialName}
+                    </Typography>
+                    <IconButton
+                      size="small"
+                      aria-label="Actions"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMenuEl(e.currentTarget);
+                        setMenuSupplier(s);
+                      }}
+                    >
+                      <MoreVertical size={18} />
+                    </IconButton>
                   </Stack>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                  <Stack spacing={0.5} sx={{ mt: 1, color: colors.neutral[600], fontSize: 14 }}>
+                    {s.contactPerson && (
+                      <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                        <User size={14} /> <span>{s.contactPerson}</span>
+                      </Stack>
+                    )}
+                    {s.phone && (
+                      <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                        <Phone size={14} /> <span>{s.phone}</span>
+                      </Stack>
+                    )}
+                    {s.email && (
+                      <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                        <Mail size={14} /> <span>{s.email}</span>
+                      </Stack>
+                    )}
+                  </Stack>
+                  <Stack direction="row" spacing={1} sx={{ mt: 1.5, alignItems: "center" }}>
+                    <Typography variant="caption" color="text.secondary">
+                      Solde
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: balanceColor }}>
+                      {balance === 0 ? "—" : formatCurrency(balance)}
+                    </Typography>
+                  </Stack>
+                  {s.types.length > 0 && (
+                    <Stack direction="row" spacing={0.5} sx={{ mt: 1.5, flexWrap: "wrap" }} useFlexGap>
+                      {s.types.map((t) => (
+                        <Chip key={t} label={t} size="small" variant="outlined" />
+                      ))}
+                    </Stack>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </Box>
       )}
 

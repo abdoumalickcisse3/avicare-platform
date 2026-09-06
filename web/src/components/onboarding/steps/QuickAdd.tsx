@@ -90,7 +90,12 @@ export function SupplierQuickAdd({ farmId }: { farmId: number }) {
     try {
       await createSupplier({
         farmId,
-        body: { commercialName: name.trim(), phone: phone.trim() || undefined },
+        body: {
+          commercialName: name.trim(),
+          phone: phone.trim() || undefined,
+          // No opt-in UI at this quick-add step: a new supplier starts with notices off.
+          notifyWhatsapp: false,
+        },
       }).unwrap();
       setName("");
       setPhone("");

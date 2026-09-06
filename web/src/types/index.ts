@@ -766,6 +766,11 @@ export interface SupplierInput {
   types?: string[];
   paymentTerms?: string;
   notes?: string;
+  /**
+   * Required (not optional): the backend PUT/POST replaces the whole resource, and an omitted
+   * boolean is read as `false`. Every caller must resend the supplier's current value.
+   */
+  notifyWhatsapp: boolean;
 }
 
 /** Une ligne du compte-courant fournisseur (miroir de SupplierLedgerEntryResponse). */
