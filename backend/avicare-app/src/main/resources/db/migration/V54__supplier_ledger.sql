@@ -11,7 +11,7 @@ CREATE TABLE supplier_ledger_entries (
     amount_xof        BIGINT NOT NULL CHECK (amount_xof > 0),
     entry_date        DATE NOT NULL,
     label             VARCHAR(200),
-    method            VARCHAR(20),
+    method            VARCHAR(20) CHECK (method IS NULL OR method IN ('CASH', 'MOBILE_MONEY', 'BANK_TRANSFER')),
     reference         VARCHAR(100),
     notes             TEXT,
     purchase_order_id BIGINT REFERENCES purchase_orders(id) ON DELETE SET NULL,
@@ -23,9 +23,6 @@ CREATE TABLE supplier_ledger_entries (
 
 CREATE INDEX idx_supplier_ledger_farm_supplier
     ON supplier_ledger_entries(farm_id, supplier_id) WHERE deleted_at IS NULL;
-
-CREATE INDEX idx_supplier_ledger_farm
-    ON supplier_ledger_entries(farm_id) WHERE deleted_at IS NULL;
 
 -- Un bon d'achat n'endette qu'une fois, gravé dans la base et pas seulement
 -- dans le service.
