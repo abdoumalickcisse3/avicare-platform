@@ -70,5 +70,6 @@ public class SupplierService {
     supplier.setTypes(cmd.types() != null ? cmd.types() : List.of());
     supplier.setPaymentTerms(cmd.paymentTerms());
     supplier.setNotes(cmd.notes());
+    supplier.setNotifyWhatsapp(cmd.notifyWhatsapp());
   }
 }

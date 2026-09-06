@@ -16,7 +16,8 @@ public record SupplierResponse(
     List<String> types,
     String paymentTerms,
     String notes,
-    boolean active) {
+    boolean active,
+    boolean notifyWhatsapp) {
 
   public static SupplierResponse from(Supplier s) {
     return new SupplierResponse(
@@ -31,6 +32,7 @@ public record SupplierResponse(
         s.getTypes(),
         s.getPaymentTerms(),
         s.getNotes(),
-        s.isActive());
+        s.isActive(),
+        s.isNotifyWhatsapp());
   }
 }

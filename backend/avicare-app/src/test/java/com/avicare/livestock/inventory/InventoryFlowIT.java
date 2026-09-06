@@ -150,12 +150,15 @@ class InventoryFlowIT {
                 "Dakar",
                 List.of("FEED", "MIXED"),
                 "CREDIT_30D",
-                null),
+                null,
+                true),
             1L);
     assertThat(s.getTypes()).containsExactly("FEED", "MIXED");
     assertThat(supplierService.listForFarm(farmA)).hasSize(1);
     // JSONB round-trips through a reload.
     assertThat(supplierService.get(farmA, s.getId()).getTypes()).containsExactly("FEED", "MIXED");
+    // The WhatsApp opt-in set at creation reads back true.
+    assertThat(supplierService.get(farmA, s.getId()).isNotifyWhatsapp()).isTrue();
 
     supplierService.update(
         farmA,
@@ -169,11 +172,14 @@ class InventoryFlowIT {
             "Dakar",
             List.of("FEED"),
             "CASH",
-            "updated"),
+            "updated",
+            true),
         1L);
     assertThat(supplierService.get(farmA, s.getId()).getCommercialName())
         .isEqualTo("SENAVICOLE SARL");
     assertThat(supplierService.get(farmA, s.getId()).getTypes()).containsExactly("FEED");
+    // An update that resends the same opt-in preserves it, like every other unchanged field.
+    assertThat(supplierService.get(farmA, s.getId()).isNotifyWhatsapp()).isTrue();
 
     // tenant isolation: farm B cannot reach farm A's supplier.
     long farmB = createFarm();
