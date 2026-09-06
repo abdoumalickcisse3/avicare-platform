@@ -62,6 +62,9 @@ public class Supplier {
   @Column(nullable = false)
   private boolean active = true;
 
+  @Column(name = "notify_whatsapp", nullable = false)
+  private boolean notifyWhatsapp = false;
+
   @Column(name = "created_by")
   private Long createdBy;
 

@@ -44,6 +44,7 @@ class PurchaseOrderServiceTest {
   @Mock StockMovementService stockMovementService;
   @Mock FinanceFacade financeFacade;
   @Mock SupplierLedgerService supplierLedgerService;
+  @Mock SupplierNotifier supplierNotifier;
 
   PurchaseOrderService service;
 
@@ -60,7 +61,8 @@ class PurchaseOrderServiceTest {
             stockItemService,
             stockMovementService,
             financeFacade,
-            supplierLedgerService);
+            supplierLedgerService,
+            supplierNotifier);
   }
 
   @Test
