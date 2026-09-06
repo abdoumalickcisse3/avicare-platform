@@ -2,6 +2,7 @@ package com.avicare.livestock.inventory;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
@@ -137,6 +138,47 @@ class SupplierLedgerServiceTest {
     assertThat(statement)
         .extracting(SupplierStatementLine::runningBalanceXof)
         .containsExactly(500_000L, 300_000L, 400_000L);
+  }
+
+  @Test
+  void includesASupplierWithNoLedgerEntriesAtZero() {
+    Supplier withEntries = new Supplier();
+    withEntries.setId(SUPPLIER);
+    withEntries.setFarmId(FARM);
+    withEntries.setCommercialName("Provende du Sahel");
+
+    Supplier withoutEntries = new Supplier();
+    withoutEntries.setId(4L);
+    withoutEntries.setFarmId(FARM);
+    withoutEntries.setCommercialName("Cabinet Véto Baobab");
+
+    when(supplierRepository.findByFarmIdAndActiveTrueOrderByCommercialName(FARM))
+        .thenReturn(List.of(withEntries, withoutEntries));
+    when(ledgerRepository.balancesBySupplier(FARM))
+        .thenReturn(List.<Object[]>of(new Object[] {SUPPLIER, 300_000L}));
+
+    List<SupplierBalance> balances = service.balances(FARM);
+
+    assertThat(balances)
+        .extracting(SupplierBalance::supplierId, SupplierBalance::balanceXof)
+        .containsExactly(tuple(SUPPLIER, 300_000L), tuple(4L, 0L));
+  }
+
+  @Test
+  void reportsANegativeBalanceWithoutClampingToZero() {
+    Supplier supplier = new Supplier();
+    supplier.setId(SUPPLIER);
+    supplier.setFarmId(FARM);
+    supplier.setCommercialName("Provende du Sahel");
+
+    when(supplierRepository.findByFarmIdAndActiveTrueOrderByCommercialName(FARM))
+        .thenReturn(List.of(supplier));
+    when(ledgerRepository.balancesBySupplier(FARM))
+        .thenReturn(List.<Object[]>of(new Object[] {SUPPLIER, -150_000L}));
+
+    List<SupplierBalance> balances = service.balances(FARM);
+
+    assertThat(balances).extracting(SupplierBalance::balanceXof).containsExactly(-150_000L);
   }
 
   @Test
