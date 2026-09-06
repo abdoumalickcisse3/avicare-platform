@@ -49,6 +49,7 @@ public class PurchaseOrderService {
   private final StockItemService stockItemService;
   private final StockMovementService stockMovementService;
   private final FinanceFacade financeFacade;
+  private final SupplierLedgerService supplierLedgerService;
 
   @Transactional
   public PurchaseOrder createDraft(Long farmId, PurchaseOrderDraftCommand cmd, Long userId) {
@@ -171,6 +172,22 @@ public class PurchaseOrderService {
     if (!expenseLines.isEmpty()) {
       financeFacade.recordPurchaseExpenses(
           farmId, po.getId(), po.getOrderNumber(), deliveryDate, expenseLines, userId);
+    }
+
+    // Le compte-courant du fournisseur : la contrepartie de trésorerie de la charge
+    // enregistrée juste au-dessus. Même somme — la valeur REÇUE, jamais le total commandé,
+    // parce que la réception est partielle possible.
+    long receivedValueXof =
+        expenseLines.stream().mapToLong(FinanceFacade.PurchaseExpenseLine::lineTotalXof).sum();
+    if (receivedValueXof > 0 && po.getSupplier() != null) {
+      supplierLedgerService.recordPurchaseOrderDebit(
+          farmId,
+          po.getSupplier().getId(),
+          po.getId(),
+          po.getOrderNumber(),
+          receivedValueXof,
+          deliveryDate,
+          userId);
     }
 
     return po;

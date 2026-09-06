@@ -40,6 +40,7 @@ import com.avicare.livestock.repository.SaleItemRepository;
 import com.avicare.livestock.repository.SaleRepository;
 import com.avicare.livestock.repository.StockItemRepository;
 import com.avicare.livestock.repository.StockMovementRepository;
+import com.avicare.livestock.repository.SupplierLedgerEntryRepository;
 import com.avicare.livestock.repository.SupplierRepository;
 import com.avicare.livestock.repository.TreatmentExecutedRepository;
 import com.avicare.livestock.repository.VaccinationProgramLotRepository;
@@ -175,6 +176,7 @@ class PartnerPortalControllerIT {
   @MockitoBean private PurchaseOrderItemRepository purchaseOrderItemRepository;
   @MockitoBean private FeedFormulaRepository feedFormulaRepository;
   @MockitoBean private SupplierRepository supplierRepository;
+  @MockitoBean private SupplierLedgerEntryRepository supplierLedgerEntryRepository;
   @MockitoBean private ClientRepository clientRepository;
   @MockitoBean private OrderRepository orderRepository;
   @MockitoBean private SaleRepository saleRepository;
