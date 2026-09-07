@@ -15,6 +15,7 @@ import {
 import { useGetSalesQuery } from '@/store/api/salesApi';
 import { useGetDeliveriesQuery } from '@/store/api/deliveriesApi';
 import { formatCurrency } from '@/lib/format';
+import { apiErrorMessage } from '@/lib/apiError';
 import { tokens } from '@/theme';
 
 type Source = 'SALE' | 'DELIVERY';
@@ -40,27 +41,46 @@ export function GenerateInvoiceSheet({
   const [sourceId, setSourceId] = useState<number | null>(null);
   const [dueDate, setDueDate] = useState('');
 
-  const invoicedSaleIds = useMemo(
-    () => new Set((invoices ?? []).filter((i) => i.saleId != null).map((i) => i.saleId)),
-    [invoices],
-  );
-  const invoicedDeliveryIds = useMemo(
-    () => new Set((invoices ?? []).filter((i) => i.deliveryId != null).map((i) => i.deliveryId)),
-    [invoices],
-  );
-  const eligibleSales = useMemo(
-    () => (sales ?? []).filter((s) => s.status === 'COMPLETED' && !invoicedSaleIds.has(s.id)),
-    [sales, invoicedSaleIds],
-  );
-  const eligibleDeliveries = useMemo(
-    () => (deliveries ?? []).filter((d) => d.status === 'DELIVERED' && !invoicedDeliveryIds.has(d.id)),
-    [deliveries, invoicedDeliveryIds],
-  );
+  /**
+   * Une facture ANNULÉE ne retient plus sa source (V56) : on ne compte que les vivantes.
+   *
+   * Et la source déjà facturée n'est plus retirée de la liste — elle y reste, désactivée, avec
+   * son numéro de facture. Elle disparaissait sans un mot : on ouvrait « Générer une facture »,
+   * on ne trouvait pas sa vente, et rien ne disait pourquoi.
+   */
+  const liveInvoiceBySale = useMemo(() => {
+    const m = new Map<number, string>();
+    for (const i of invoices ?? []) {
+      if (i.saleId != null && i.status !== 'CANCELLED') m.set(i.saleId, i.invoiceNumber);
+    }
+    return m;
+  }, [invoices]);
+  const liveInvoiceByDelivery = useMemo(() => {
+    const m = new Map<number, string>();
+    for (const i of invoices ?? []) {
+      if (i.deliveryId != null && i.status !== 'CANCELLED') m.set(i.deliveryId, i.invoiceNumber);
+    }
+    return m;
+  }, [invoices]);
 
   const options =
     source === 'SALE'
-      ? eligibleSales.map((s) => ({ id: s.id, label: s.saleNumber, total: s.totalXof }))
-      : eligibleDeliveries.map((d) => ({ id: d.id, label: d.deliveryNumber, total: d.totalXof }));
+      ? (sales ?? [])
+          .filter((s) => s.status === 'COMPLETED')
+          .map((s) => ({
+            id: s.id,
+            label: s.saleNumber,
+            total: s.totalXof,
+            invoicedAs: liveInvoiceBySale.get(s.id) ?? null,
+          }))
+      : (deliveries ?? [])
+          .filter((d) => d.status === 'DELIVERED')
+          .map((d) => ({
+            id: d.id,
+            label: d.deliveryNumber,
+            total: d.totalXof,
+            invoicedAs: liveInvoiceByDelivery.get(d.id) ?? null,
+          }));
 
   const switchSource = (s: Source) => {
     setSource(s);
@@ -76,8 +96,13 @@ export function GenerateInvoiceSheet({
         await fromDelivery({ farmId, deliveryId: sourceId, dueDate: dueDate || undefined }).unwrap();
       }
       onDone();
-    } catch {
-      Alert.alert('Facture', "La facture n’a pas pu être générée. Réessayez.");
+    } catch (err) {
+      // Le serveur sait pourquoi il refuse — vente annulée, source déjà facturée, échéance
+      // invalide. « Réessayez » serait un mauvais conseil : aucun de ces cas ne changera.
+      Alert.alert(
+        'Facture',
+        apiErrorMessage(err, "La facture n’a pas pu être générée. Réessayez."),
+      );
     }
   };
 
@@ -114,11 +139,21 @@ export function GenerateInvoiceSheet({
               <Pressable
                 key={o.id}
                 accessibilityRole="button"
-                accessibilityLabel={o.label}
+                accessibilityLabel={o.invoicedAs ? `${o.label} — déjà facturée` : o.label}
+                disabled={o.invoicedAs !== null}
                 onPress={() => setSourceId(o.id)}
-                style={[styles.optionRow, sourceId === o.id && styles.optionRowOn]}
+                style={[
+                  styles.optionRow,
+                  sourceId === o.id && styles.optionRowOn,
+                  o.invoicedAs !== null && styles.optionRowDone,
+                ]}
               >
-                <Text style={[styles.optionLabel, sourceId === o.id && styles.optionLabelOn]}>{o.label}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.optionLabel, sourceId === o.id && styles.optionLabelOn]}>{o.label}</Text>
+                  {o.invoicedAs !== null && (
+                    <Text style={styles.optionDone}>Déjà facturée · {o.invoicedAs}</Text>
+                  )}
+                </View>
                 <Text style={styles.optionTotal}>{formatCurrency(o.total)}</Text>
               </Pressable>
             ))
@@ -179,6 +214,8 @@ const styles = StyleSheet.create({
     marginBottom: tokens.spacing[2],
   },
   optionRowOn: { borderColor: tokens.colors.primary[600], backgroundColor: tokens.colors.primary[50] },
+  optionRowDone: { opacity: 0.55, backgroundColor: tokens.colors.neutral[50] },
+  optionDone: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginTop: 2 },
   optionLabel: { ...tokens.typography.bodyMd, fontWeight: '600', color: tokens.colors.field.text },
   optionLabelOn: { color: tokens.colors.primary[700] },
   optionTotal: { ...tokens.typography.bodyMd, color: tokens.colors.field.text, fontVariant: ['tabular-nums'] },
