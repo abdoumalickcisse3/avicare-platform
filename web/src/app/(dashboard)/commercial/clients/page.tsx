@@ -95,14 +95,38 @@ export default function ClientsPage() {
     () => (clients ?? []).filter((c) => c.currentBalanceXof > 0).length,
     [clients],
   );
+  /**
+   * Clients au-dessus de leur limite de crédit (D26 — indicatif, jamais bloquant).
+   *
+   * Le ratio était affiché ligne par ligne, sans moyen de filtrer dessus : sur cinquante clients,
+   * repérer les trois qui débordent demandait de tous les lire. Dérivé côté client comme l'onglet
+   * « débiteurs » juste à côté, à partir des champs que la liste porte déjà.
+   */
+  const overLimit = useMemo(
+    () =>
+      (clients ?? []).filter(
+        (c) => c.creditLimitXof != null && c.creditLimitXof > 0 && c.currentBalanceXof > c.creditLimitXof,
+      ),
+    [clients],
+  );
+
+  // L'onglet disparaît dès que plus personne ne déborde. Si on s'y trouvait, on retombe sur
+  // « Tous » plutôt que de rester sur une valeur qui ne désigne plus aucun onglet.
+  const overLimitTabVisible = overLimit.length > 0;
+  const activeTab = tab === "over-limit" && !overLimitTabVisible ? "all" : tab;
 
   const filtered = useMemo(() => {
     const base =
-      tab === "debtors"
+      activeTab === "debtors"
         ? [...(clients ?? [])]
             .filter((c) => c.currentBalanceXof > 0)
             .sort((a, b) => b.currentBalanceXof - a.currentBalanceXof)
-        : (clients ?? []);
+        : activeTab === "over-limit"
+          ? [...overLimit].sort(
+              (a, b) =>
+                b.currentBalanceXof / b.creditLimitXof! - a.currentBalanceXof / a.creditLimitXof!,
+            )
+          : (clients ?? []);
     const q = search.trim().toLowerCase();
     return q
       ? base.filter(
@@ -111,7 +135,7 @@ export default function ClientsPage() {
             (c.phone ?? "").toLowerCase().includes(q),
         )
       : base;
-  }, [clients, search, tab]);
+  }, [clients, overLimit, search, activeTab]);
 
   if (hasFarm && !hasCommercial) {
     return <Alert severity="info">Activez le module Commercial pour gérer vos clients.</Alert>;
@@ -163,7 +187,7 @@ export default function ClientsPage() {
       </Stack>
 
       <Tabs
-        value={tab}
+        value={activeTab}
         onChange={(_e, v) => setTab(v)}
         sx={{ mb: 2, borderBottom: `1px solid ${colors.neutral[200]}` }}
       >
@@ -173,6 +197,14 @@ export default function ClientsPage() {
           value="debtors"
           label={`Débiteurs${debtorsCount ? ` (${debtorsCount})` : ""}`}
         />
+        {/* Onglet masqué quand personne ne déborde : un onglet vide en permanence est du bruit. */}
+        {overLimitTabVisible && (
+          <Tab
+            key="over-limit"
+            value="over-limit"
+            label={`Encours dépassé (${overLimit.length})`}
+          />
+        )}
       </Tabs>
 
       <TextField

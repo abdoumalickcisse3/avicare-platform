@@ -115,31 +115,31 @@ const HOOKS_WITH_NO_SCREEN: { hook: string; side: "web" | "mobile"; why: string 
   {
     hook: "useGetClientsOverCreditLimitQuery",
     side: "web",
-    why: "Liste des clients au-dessus de leur encours (D26) : aucune surface. Décision produit à trier.",
+    why: "Pas un manque : la page Clients porte un onglet « Encours dépassé », dérivé côté client des champs que la liste transporte déjà (`creditLimitXof`, `currentBalanceXof`) — comme l'onglet « Débiteurs » à côté. Endpoint redondant.",
   },
   { hook: "useGetClientsOverCreditLimitQuery", side: "mobile", why: "Idem côté mobile." },
   {
     hook: "useGetProgramsByBreedQuery",
     side: "web",
-    why: "Filtrage du catalogue de programmes par race : le catalogue complet est affiché tel quel. À trier.",
+    why: "Pas un manque : `VaccinationSection` filtre déjà par race côté client (`suggested`), AVEC un repli sur le catalogue complet quand aucun programme ne correspond — que l'endpoint serveur ne saurait pas faire. La version client est meilleure.",
   },
   { hook: "useGetProgramsByBreedQuery", side: "mobile", why: "Idem côté mobile." },
   {
     hook: "useGetMovementsByLotQuery",
     side: "web",
-    why: "Mouvements de stock filtrés par lot : la fiche article montre tous les mouvements. À trier.",
+    why: "Pas un manque : la fiche article porte un onglet « Consommation par lot », filtré côté client sur `productionUnitId`. Endpoint redondant.",
   },
   { hook: "useGetMovementsByLotQuery", side: "mobile", why: "Idem côté mobile." },
   {
     hook: "useUpdateStockNotesMutation",
     side: "web",
-    why: "Notes libres sur une ligne de stock : aucun champ ne les expose. À trier.",
+    why: "LE SEUL VRAI RESTE : des notes libres sur une ligne de stock, qu'aucun écran n'affiche ni ne saisit, sur aucune des deux apps. Champ mort — à exposer ou à retirer du modèle, c'est une décision produit, pas un oubli d'écran.",
   },
   { hook: "useUpdateStockNotesMutation", side: "mobile", why: "Idem côté mobile." },
   {
     hook: "useGetSaleQuery",
     side: "web",
-    why: "Fiche vente détaillée : les deux apps listent les ventes sans page de détail.",
+    why: "Pas un manque : la liste des ventes rend déjà les lignes de chaque vente (« 500× Maïs +2 ») — l'endpoint de liste renvoie les ventes complètes. Une page de détail montrerait la même donnée.",
   },
   { hook: "useGetSaleQuery", side: "mobile", why: "Idem côté mobile." },
 
