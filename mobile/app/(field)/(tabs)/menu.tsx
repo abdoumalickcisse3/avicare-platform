@@ -3,12 +3,18 @@
  * For non-admin roles this is where profile/logout live (they have no drawer);
  * admins can also reach it, though they usually use the drawer. lucide icons,
  * config-driven from `constants/navigation`.
+ *
+ * The account card is the mobile mirror of the web account menu, and the only
+ * account surface a FARMER can reach: Réglages is gated by `settings:read`,
+ * which their role does not carry. So « Mon profil » and « Mes avances » hang
+ * here rather than under Réglages.
  */
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
-import { ChevronRight, LogOut, User, Wifi, WifiOff } from 'lucide-react-native';
+import { ChevronRight, HandCoins, LogOut, User, UserCog, Wifi, WifiOff } from 'lucide-react-native';
 import { fontFamily, tokens } from '@/theme';
 import { AppHeader } from '@/components/AppHeader';
 import { Card, PrimaryButton } from '@/components/ui';
@@ -18,6 +24,7 @@ import { useFarmAccess } from '@/auth/useSession';
 import { getDrawerItems } from '@/constants/navigation';
 import { useSyncStatus } from '@/sync/useSyncStatus';
 import { signOut } from '@/auth/signOut';
+import { MyAdvancesSheet } from '@/finance/MyAdvancesSheet';
 
 export default function MenuScreen() {
   const router = useRouter();
@@ -25,6 +32,7 @@ export default function MenuScreen() {
   const { data: farms } = useListFarmsQuery();
   const { isAdmin, can } = useFarmAccess();
   const sync = useSyncStatus();
+  const [advancesOpen, setAdvancesOpen] = useState(false);
   const selectedFarm = farms?.find((f) => f.id === selectedFarmId);
   const farmName = selectedFarm?.name ?? 'Ferme';
   const sections = getDrawerItems(isAdmin, can, selectedFarm?.productionFocus ?? []);
@@ -44,6 +52,37 @@ export default function MenuScreen() {
             <Text style={styles.profileName}>Mon compte</Text>
             <Text style={styles.profileSub}>{farmName}</Text>
           </View>
+        </Card>
+
+        <Card padded={false}>
+          <Pressable
+            onPress={() => router.push('/(field)/reglages/profil')}
+            style={styles.row}
+            accessibilityRole="button"
+            accessibilityLabel="Mon profil"
+          >
+            <UserCog size={22} color={tokens.colors.primary[600]} />
+            <Text style={styles.rowLabel}>Mon profil</Text>
+            <ChevronRight size={20} color={tokens.colors.neutral[400]} />
+          </Pressable>
+          {/* Asking for an advance is the field worker's own act, and the field worker has
+              nothing but this phone. The farm side of the decision lives in Finance. */}
+          <Pressable
+            disabled={selectedFarmId === null}
+            onPress={() => setAdvancesOpen(true)}
+            style={[styles.row, styles.rowBorder]}
+            accessibilityRole="button"
+            accessibilityLabel="Mes avances"
+          >
+            <HandCoins
+              size={22}
+              color={selectedFarmId === null ? tokens.colors.neutral[400] : tokens.colors.primary[600]}
+            />
+            <Text style={[styles.rowLabel, selectedFarmId === null && styles.disabled]}>
+              Mes avances
+            </Text>
+            <ChevronRight size={20} color={tokens.colors.neutral[400]} />
+          </Pressable>
         </Card>
 
         <Text style={styles.groupLabel}>NAVIGATION</Text>
@@ -103,6 +142,14 @@ export default function MenuScreen() {
           <PrimaryButton label="Déconnexion" icon={LogOut} role="danger" size="primary" onPress={logout} />
         </View>
       </ScrollView>
+
+      {selectedFarmId !== null && (
+        <MyAdvancesSheet
+          farmId={selectedFarmId}
+          open={advancesOpen}
+          onClose={() => setAdvancesOpen(false)}
+        />
+      )}
     </SafeAreaView>
   );
 }
