@@ -223,13 +223,44 @@ class SupplierLedgerServiceTest {
                 new Object[] {SUPPLIER, 100_000L},
                 new Object[] {20L, 400_000L},
                 new Object[] {21L, 0L}));
-    when(supplierRepository.findAllById(List.of(20L))).thenReturn(List.of(retiredButOwed));
+    when(supplierRepository.findByFarmIdAndIdIn(FARM, List.of(20L)))
+        .thenReturn(List.of(retiredButOwed));
 
     List<SupplierBalance> balances = service.balances(FARM);
 
     assertThat(balances)
         .extracting(SupplierBalance::supplierId, SupplierBalance::balanceXof)
         .containsExactlyInAnyOrder(tuple(SUPPLIER, 100_000L), tuple(20L, 400_000L));
+  }
+
+  /**
+   * The lookup for a deactivated supplier's balance must be farm-scoped by construction ({@code
+   * findByFarmIdAndIdIn}), not by trusting that the ids handed to it already belong to this farm.
+   * This is the assertion an unscoped {@code findAllById} would still pass if it returned nothing
+   * for an id outside the farm: a test that only checked "the inactive supplier appears" would not
+   * catch a regression back to the unscoped lookup, because Mockito would simply return an empty
+   * stub either way. Here the id exists in the aggregate but the farm-scoped repository call is
+   * stubbed to omit it — proving the scope, not just the shape.
+   */
+  @Test
+  void aDeactivatedSupplierOutsideTheFarmScopedLookupNeverAppears() {
+    Supplier active = new Supplier();
+    active.setId(SUPPLIER);
+    active.setFarmId(FARM);
+    active.setCommercialName("Provende du Sahel");
+
+    when(supplierRepository.findByFarmIdAndActiveTrueOrderByCommercialName(FARM))
+        .thenReturn(List.of(active));
+    when(ledgerRepository.balancesBySupplier(FARM))
+        .thenReturn(
+            List.<Object[]>of(new Object[] {SUPPLIER, 100_000L}, new Object[] {99L, 400_000L}));
+    // The farm-scoped lookup is asked for id 99 but returns nothing for it, as it would if 99
+    // belonged to another farm despite appearing in this farm's ledger aggregate.
+    when(supplierRepository.findByFarmIdAndIdIn(FARM, List.of(99L))).thenReturn(List.of());
+
+    List<SupplierBalance> balances = service.balances(FARM);
+
+    assertThat(balances).extracting(SupplierBalance::supplierId).containsExactly(SUPPLIER);
   }
 
   @Test
