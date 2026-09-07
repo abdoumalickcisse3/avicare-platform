@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Autocomplete,
   Box,
@@ -104,44 +104,43 @@ function PurchaseOrderBody({
   );
 
   /**
-   * Le catalogue arrive après le premier rendu : on rattache alors chaque ligne à son article.
+   * Le catalogue arrive après le premier rendu : les lignes d'un brouillon rechargé ne portent
+   * d'abord que leur `articleKey`, et l'article est **dérivé**, jamais recopié dans l'état.
    *
-   * `articleKey` est effacée dans la foulée, **qu'on ait trouvé l'article ou non** : un article
-   * retiré du catalogue depuis la rédaction du brouillon ne se résout jamais, et laisser sa clé
-   * en attente ferait boucler le rendu indéfiniment. La ligne reste alors vide, à recompléter —
-   * ce qui est la bonne réponse : l'article n'existe plus.
+   * Le rattacher dans un effet marcherait, mais au prix d'un rendu en cascade (et la règle de
+   * lint le refuse à juste titre). Le dériver n'a pas ce défaut, et règle gratuitement le cas de
+   * l'article retiré du catalogue depuis la rédaction du brouillon : il ne se résout jamais, la
+   * ligne reste à recompléter — ce qui est la bonne réponse, l'article n'existe plus.
    */
-  useEffect(() => {
-    if (articles.length === 0) return;
-    setLines((cur) =>
-      cur.some((l) => l.articleKey)
-        ? cur.map((l) =>
-            l.articleKey
-              ? {
-                  ...l,
-                  article: articles.find((a) => a.articleKey === l.articleKey) ?? null,
-                  articleKey: undefined,
-                }
-              : l,
-          )
-        : cur,
-    );
-  }, [articles]);
+  const resolved = useMemo(
+    () =>
+      lines.map((l) =>
+        l.articleKey
+          ? { ...l, article: articles.find((a) => a.articleKey === l.articleKey) ?? null }
+          : l,
+      ),
+    [lines, articles],
+  );
 
   const lineTotal = (l: LineDraft) => {
     const q = Number(l.qty.replace(",", "."));
     const p = Number(l.unitPrice);
     return Number.isFinite(q) && Number.isFinite(p) ? q * p : 0;
   };
-  const total = useMemo(() => lines.reduce((s, l) => s + lineTotal(l), 0), [lines]);
+  const total = useMemo(() => resolved.reduce((s, l) => s + lineTotal(l), 0), [resolved]);
 
+  /** Choisir un article efface la clé en attente : c'est la sélection qui fait foi désormais. */
   const setLine = (i: number, patch: Partial<LineDraft>) =>
-    setLines((cur) => cur.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
+    setLines((cur) =>
+      cur.map((l, idx) =>
+        idx === i ? { ...l, ...patch, ...("article" in patch ? { articleKey: undefined } : {}) } : l,
+      ),
+    );
   const addLine = () => setLines((cur) => [...cur, emptyLine()]);
   const removeLine = (i: number) =>
     setLines((cur) => (cur.length > 1 ? cur.filter((_l, idx) => idx !== i) : cur));
 
-  const validLines = lines.filter(
+  const validLines = resolved.filter(
     (l) => l.article && Number(l.qty.replace(",", ".")) > 0 && Number(l.unitPrice) > 0,
   );
   const canSubmit = supplierId !== "" && validLines.length > 0;
@@ -217,7 +216,7 @@ function PurchaseOrderBody({
             Lignes de commande
           </Typography>
           <Stack spacing={1.5}>
-            {lines.map((l, i) => (
+            {resolved.map((l, i) => (
               <Stack key={i} direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ alignItems: "center" }}>
                 <Autocomplete
                   sx={{ flex: 2, width: "100%" }}
