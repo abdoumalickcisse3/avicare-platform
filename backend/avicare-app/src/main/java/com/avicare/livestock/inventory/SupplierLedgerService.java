@@ -73,7 +73,10 @@ public class SupplierLedgerService {
             .map(Map.Entry::getKey)
             .toList();
     if (!inactiveWithBalance.isEmpty()) {
-      for (Supplier s : supplierRepository.findAllById(inactiveWithBalance)) {
+      // Scopé par farmId, pas findAllById : les ids viennent d'un agrégat déjà scopé à cette
+      // ferme, mais la garantie doit tenir par construction, pas par ce que cet appelant-là
+      // choisit de passer.
+      for (Supplier s : supplierRepository.findByFarmIdAndIdIn(farmId, inactiveWithBalance)) {
         balances.add(
             new SupplierBalance(s.getId(), s.getCommercialName(), bySupplier.get(s.getId())));
       }
