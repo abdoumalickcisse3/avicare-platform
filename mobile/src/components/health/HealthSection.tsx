@@ -12,7 +12,7 @@
  */
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Eye, Pill, ShieldCheck, Stethoscope, Syringe } from 'lucide-react-native';
+import { Eye, Pill, ShieldCheck, Stethoscope, Syringe, Trash2 } from 'lucide-react-native';
 import { fontFamily, tokens } from '@/theme';
 import {
   useAssignProgramMutation,
@@ -24,6 +24,7 @@ import {
   useGetVaccinationsQuery,
   useGetVeterinariansQuery,
   useGetVetVisitsQuery,
+  useDeleteObservationMutation,
   useDeleteTreatmentMutation,
   useDeleteVetVisitMutation,
   useRemoveProgramMutation,
@@ -66,6 +67,7 @@ export function HealthSection({ farmId, unitId }: { farmId: number; unitId: numb
   const [assignProgram] = useAssignProgramMutation();
   const [removeProgram] = useRemoveProgramMutation();
   const [deleteTreatment] = useDeleteTreatmentMutation();
+  const [deleteObservation] = useDeleteObservationMutation();
   const [deleteVetVisit] = useDeleteVetVisitMutation();
 
   // Lot health status. The web flags VIGILANCE on a recent critical observation **or** a late
@@ -95,6 +97,25 @@ export function HealthSection({ farmId, unitId }: { farmId: number; unitId: numb
       : `${formatNumber(vaccinations?.length ?? 0)} vaccination${(vaccinations?.length ?? 0) > 1 ? 's' : ''}`,
     `${formatNumber(observations?.length ?? 0)} observation${(observations?.length ?? 0) > 1 ? 's' : ''}`,
   ];
+
+  const confirmDeleteObservation = (o: HealthObservation) => {
+    Alert.alert(
+      'Supprimer cette observation ?',
+      o.severity === 'CRITICAL'
+        ? `« ${o.title} » disparaîtra de l’historique du lot, et l’alerte sanitaire qu’elle déclenche avec elle.`
+        : `« ${o.title} » disparaîtra de l’historique du lot.`,
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: () => {
+            deleteObservation({ farmId, id: o.id, unitId });
+          },
+        },
+      ],
+    );
+  };
 
   return (
     <View style={{ gap: tokens.spacing[4] }}>
@@ -259,6 +280,20 @@ export function HealthSection({ farmId, unitId }: { farmId: number; unitId: numb
                   </View>
                   <Text style={styles.rowSub}>{o.observationDate}{o.description ? ` · ${o.description}` : ''}</Text>
                 </View>
+                {/* A CRITICAL observation raises the lot's alert banner farm-wide. One filed by
+                    mistake could be recorded on the phone but only withdrawn from a desktop,
+                    leaving the whole farm flagged. Same `health:write` gate as filing one. */}
+                {canWrite && (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Supprimer l'observation ${o.title}`}
+                    onPress={() => confirmDeleteObservation(o)}
+                    hitSlop={8}
+                    style={styles.rowDelete}
+                  >
+                    <Trash2 size={15} color={tokens.colors.field.textMuted} />
+                  </Pressable>
+                )}
               </View>
             );
           })
@@ -316,6 +351,7 @@ const styles = StyleSheet.create({
   muted: { ...tokens.typography.bodyMd, color: tokens.colors.field.textMuted, textAlign: 'center', paddingVertical: tokens.spacing[3] },
   row: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[3], paddingVertical: tokens.spacing[3] },
   border: { borderTopWidth: 1, borderTopColor: tokens.colors.neutral[100] },
+  rowDelete: { padding: tokens.spacing[1] },
   disc: { width: 34, height: 34, borderRadius: tokens.radii.full, alignItems: 'center', justifyContent: 'center' },
   rowTitle: { ...tokens.typography.bodyMd, fontWeight: '600', color: tokens.colors.field.text },
   rowSub: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted },

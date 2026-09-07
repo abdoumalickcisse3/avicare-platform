@@ -1,3 +1,4 @@
+import { Alert } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 
 const toggleSwitch = (el: Parameters<typeof fireEvent>[0], value: boolean): Promise<void> =>
@@ -17,6 +18,17 @@ const type = (el: Parameters<typeof fireEvent.changeText>[0], text: string): Pro
   act(async () => {
     fireEvent.changeText(el, text);
   });
+
+/** Runs the button of a confirmation Alert by its label. */
+async function confirmAlert(label: string) {
+  const spy = Alert.alert as unknown as jest.Mock;
+  const buttons = spy.mock.calls.at(-1)?.[2] as { text: string; onPress?: () => void }[];
+  const button = buttons.find((b) => b.text === label);
+  if (!button?.onPress) throw new Error(`No "${label}" button in the last Alert`);
+  await act(async () => {
+    button.onPress?.();
+  });
+}
 
 jest.mock('expo-router', () => ({
   useLocalSearchParams: jest.fn(() => ({ id: '3' })),
@@ -54,9 +66,13 @@ interface UpdateSupplierArgs {
   body: Record<string, unknown>;
 }
 const mockUpdateSupplier = jest.fn((_args: UpdateSupplierArgs) => ({ unwrap: () => Promise.resolve(SUPPLIER) }));
+const mockDeleteSupplier = jest.fn((_args: { farmId: number; id: number }) => ({
+  unwrap: () => Promise.resolve(),
+}));
 jest.mock('@/store/api/suppliersApi', () => ({
   useGetSupplierQuery: jest.fn(() => ({ data: SUPPLIER })),
   useUpdateSupplierMutation: jest.fn(() => [mockUpdateSupplier, { isLoading: false }]),
+  useDeleteSupplierMutation: jest.fn(() => [mockDeleteSupplier, { isLoading: false }]),
 }));
 
 const STATEMENT = {
@@ -96,9 +112,18 @@ interface RecordPaymentArgs {
   body: Record<string, unknown>;
 }
 const mockRecordPayment = jest.fn((_args: RecordPaymentArgs) => ({ unwrap: () => Promise.resolve(9) }));
+const mockRecordCharge = jest.fn((_args: RecordPaymentArgs) => ({ unwrap: () => Promise.resolve(9) }));
+const mockDeleteEntry = jest.fn(
+  (_args: { farmId: number; supplierId: number; entryId: number }) => ({
+    unwrap: () => Promise.resolve(),
+  }),
+);
+const mockLedger: { result: unknown } = { result: { data: STATEMENT, isLoading: false } };
 jest.mock('@/store/api/supplierLedgerApi', () => ({
-  useGetSupplierLedgerQuery: jest.fn(() => ({ data: STATEMENT, isLoading: false })),
+  useGetSupplierLedgerQuery: jest.fn(() => mockLedger.result),
   useRecordSupplierPaymentMutation: jest.fn(() => [mockRecordPayment, { isLoading: false }]),
+  useRecordSupplierChargeMutation: jest.fn(() => [mockRecordCharge, { isLoading: false }]),
+  useDeleteLedgerEntryMutation: jest.fn(() => [mockDeleteEntry, { isLoading: false }]),
 }));
 
 import FournisseurDetailScreen from '../[id]';
@@ -106,9 +131,15 @@ import FournisseurDetailScreen from '../[id]';
 describe('Fournisseur detail (compte-courant)', () => {
   beforeEach(() => {
     farmAccess.farmRole = 'OWNER';
+    jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
     mockRecordPayment.mockClear();
     mockUpdateSupplier.mockClear();
+    mockRecordCharge.mockClear();
+    mockDeleteEntry.mockClear();
+    mockDeleteSupplier.mockClear();
+    mockLedger.result = { data: STATEMENT, isLoading: false };
   });
+  afterEach(() => jest.restoreAllMocks());
 
   it('affiche le solde et le relevé', async () => {
     await render(<FournisseurDetailScreen />);
@@ -177,5 +208,57 @@ describe('Fournisseur detail (compte-courant)', () => {
     } finally {
       SUPPLIER.phone = original;
     }
+  });
+
+  it('enregistre une dette sans mode de paiement ni avis WhatsApp', async () => {
+    // Un DEBIT est ce qu'on lui doit : il n'y a rien à lui accuser réception.
+    await render(<FournisseurDetailScreen />);
+    await press(screen.getByLabelText('Ajouter une dette'));
+
+    expect(screen.getByText(/le carnet de la boutique/)).toBeTruthy();
+    expect(screen.queryByText('Mode de paiement')).toBeNull();
+    expect(screen.queryByLabelText('Prévenir Provende du Sahel par WhatsApp')).toBeNull();
+
+    await type(await screen.findByLabelText('Montant'), '12000');
+    await press(screen.getByLabelText('Confirmer la dette'));
+
+    expect(mockRecordCharge).toHaveBeenCalledTimes(1);
+    const [chargeArg] = mockRecordCharge.mock.calls[0] ?? [];
+    expect(chargeArg?.body.amountXof).toBe(12000);
+    expect(chargeArg?.body).not.toHaveProperty('method');
+    expect(mockRecordPayment).not.toHaveBeenCalled();
+  });
+
+  it("ne supprime qu'une ligne manuelle, jamais celle d'un bon d'achat", async () => {
+    await render(<FournisseurDetailScreen />);
+
+    expect(screen.getByLabelText('Supprimer la ligne du 2026-09-03')).toBeTruthy();
+    expect(screen.queryByLabelText('Supprimer la ligne du 2026-09-01')).toBeNull();
+
+    await press(screen.getByLabelText('Supprimer la ligne du 2026-09-03'));
+    await confirmAlert('Supprimer');
+
+    expect(mockDeleteEntry).toHaveBeenCalledWith({ farmId: 7, supplierId: 3, entryId: 2 });
+  });
+
+  it('dit que la dette survit au retrait du fournisseur', async () => {
+    // Désactivation douce : le solde reste compté dans le total de la ferme (PR #312).
+    await render(<FournisseurDetailScreen />);
+    await press(screen.getByLabelText('Retirer ce fournisseur'));
+
+    const [title, message] = (Alert.alert as unknown as jest.Mock).mock.calls.at(-1) as string[];
+    expect(title).toBe('Retirer ce fournisseur ?');
+    expect(message).toMatch(/reste compté dans votre dette fournisseurs/);
+
+    await confirmAlert('Retirer');
+    expect(mockDeleteSupplier).toHaveBeenCalledWith({ farmId: 7, id: 3 });
+  });
+
+  it("n'affiche pas « Compte soldé » quand le relevé ne charge pas", async () => {
+    mockLedger.result = { data: undefined, isLoading: false, error: { status: 403 } };
+    await render(<FournisseurDetailScreen />);
+
+    expect(screen.getByText('Solde indisponible')).toBeTruthy();
+    expect(screen.queryByText('Compte soldé')).toBeNull();
   });
 });
