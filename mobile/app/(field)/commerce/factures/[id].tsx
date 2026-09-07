@@ -2,10 +2,15 @@
  * Facture (invoice) detail — mirrors the web `/commercial/factures/[id]`: header
  * with number + status, client, amounts (total / encaissé / reste), due date and
  * line items. When the invoice still has a balance, OWNER/MANAGER can record a
- * payment against it (reuses the shared PaymentSheet).
+ * payment against it (reuses the shared PaymentSheet), or cancel it.
+ *
+ * Cancelling writes off what the client still owed on this invoice — the backend removes the
+ * outstanding amount from their running account (`clientService.adjustBalance`), so the
+ * confirmation names that amount rather than saying "annuler". A PAID or already-CANCELLED
+ * invoice is refused server-side (INVALID_INVOICE_TRANSITION), so the button is not offered.
  */
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
@@ -14,7 +19,7 @@ import { ArrowLeft } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { useFarmAccess } from '@/auth/useSession';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
-import { useGetInvoiceQuery } from '@/store/api/invoicesApi';
+import { useCancelInvoiceMutation, useGetInvoiceQuery } from '@/store/api/invoicesApi';
 import { useGetClientsQuery } from '@/store/api/clientsApi';
 import { PaymentSheet } from '@/commerce/PaymentSheet';
 import { INVOICE_STATUS_LABELS, invoiceStatusColor } from '@/lib/commercial';
@@ -37,6 +42,8 @@ export default function FactureDetailScreen() {
     selectedFarmId === null ? skipToken : { farmId: selectedFarmId },
   );
 
+  const [cancelInvoice, { isLoading: cancelling }] = useCancelInvoiceMutation();
+
   const [sheetOpen, setSheetOpen] = useState(false);
 
   if (selectedFarmId === null) {
@@ -48,6 +55,33 @@ export default function FactureDetailScreen() {
       ? 'Client de passage'
       : (clients?.find((c) => c.id === invoice?.clientId)?.displayName ?? 'Client');
   const canPay = canCollect && !!invoice && invoice.outstandingXof > 0;
+  // Mirrors the backend guard: only a live invoice with something left on it can be cancelled.
+  const canCancel =
+    canCollect && !!invoice && invoice.status !== 'CANCELLED' && invoice.status !== 'PAID';
+
+  const doCancel = () => {
+    if (!invoice) return;
+    Alert.alert(
+      'Annuler cette facture ?',
+      invoice.outstandingXof > 0
+        ? `${formatCurrency(invoice.outstandingXof)} seront retirés du compte de ${clientName}. La facture reste au dossier, marquée annulée.`
+        : 'La facture reste au dossier, marquée annulée.',
+      [
+        { text: 'Retour', style: 'cancel' },
+        {
+          text: 'Annuler la facture',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await cancelInvoice({ farmId: selectedFarmId, id: invoiceId }).unwrap();
+            } catch {
+              Alert.alert('Facture', "La facture n’a pas pu être annulée. Réessayez.");
+            }
+          },
+        },
+      ],
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -98,6 +132,18 @@ export default function FactureDetailScreen() {
               ))}
               {(invoice.items ?? []).length === 0 && <Text style={styles.muted}>—</Text>}
             </View>
+
+            {canCancel && (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Annuler la facture"
+                onPress={doCancel}
+                disabled={cancelling}
+                style={styles.cancelInvoice}
+              >
+                <Text style={styles.cancelInvoiceLabel}>Annuler la facture</Text>
+              </Pressable>
+            )}
           </>
         )}
       </ScrollView>
@@ -133,6 +179,8 @@ function Amount({ label, value, color }: { label: string; value: number; color?:
 }
 
 const styles = StyleSheet.create({
+  cancelInvoice: { minHeight: tokens.touch.button, alignItems: 'center', justifyContent: 'center', marginTop: tokens.spacing[6] },
+  cancelInvoiceLabel: { ...tokens.typography.button, color: tokens.colors.errorDark },
   container: { flex: 1, backgroundColor: tokens.colors.neutral[50] },
   header: {
     flexDirection: 'row',

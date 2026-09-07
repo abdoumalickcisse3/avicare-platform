@@ -37,9 +37,15 @@ jest.mock('@/store/api/suppliersApi', () => ({
   useUpdateSupplierMutation: jest.fn(() => [jest.fn(), { isLoading: false }]),
   useDeleteSupplierMutation: jest.fn(() => [mockDeleteSupplier, { isLoading: false }]),
 }));
-const mockDeleteSupplier = jest.fn(() => ({ unwrap: () => Promise.resolve() }));
-const mockRecordCharge = jest.fn(() => ({ unwrap: () => Promise.resolve(1) }));
-const mockDeleteEntry = jest.fn(() => ({ unwrap: () => Promise.resolve() }));
+type LedgerArg = { farmId: number; supplierId: number; body: Record<string, unknown> };
+
+const mockDeleteSupplier = jest.fn((_arg: { farmId: number; id: number }) => ({
+  unwrap: () => Promise.resolve(),
+}));
+const mockRecordCharge = jest.fn((_arg: LedgerArg) => ({ unwrap: () => Promise.resolve(1) }));
+const mockDeleteEntry = jest.fn((_arg: { farmId: number; supplierId: number; entryId: number }) => ({
+  unwrap: () => Promise.resolve(),
+}));
 const mockLedger: { result: unknown } = {
   result: {
     data: {
@@ -107,7 +113,8 @@ describe('Fournisseur — compte-courant', () => {
         body: expect.objectContaining({ amountXof: 12000 }),
       }),
     );
-    expect(mockRecordCharge.mock.calls[0][0].body).not.toHaveProperty('method');
+    const [chargeArg] = mockRecordCharge.mock.calls[0] ?? [];
+    expect(chargeArg?.body).not.toHaveProperty('method');
   });
 
   it('removes a manual line only, never one derived from a purchase order', async () => {

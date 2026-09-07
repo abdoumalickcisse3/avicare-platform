@@ -2,8 +2,13 @@
  * Commande (order) detail — mirrors the web `/commercial/commandes/[id]`: header
  * with number + status, client, expected delivery, line items, total, and the
  * workflow actions. PENDING → Confirmer, CONFIRMED → Préparer (WRITE_FARMER:
- * OWNER/MANAGER/FARMER); Annuler is OWNER/MANAGER (WRITE_MANAGER). Creating the
- * delivery ("Livrer") is a separate flow (follow-up).
+ * OWNER/MANAGER/FARMER); Annuler is OWNER/MANAGER (WRITE_MANAGER).
+ *
+ * Once the order is DELIVERED its delivery is shown here, and can be cancelled from here — the
+ * web offers that from its deliveries table, and the phone had no deliveries screen at all, so
+ * a delivery recorded by mistake on the phone could only be undone from a desktop. Cancelling
+ * reopens the order and puts the stock back (D21/D27 in reverse), which is what the
+ * confirmation says.
  */
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,7 +25,11 @@ import {
   useGetOrderQuery,
   useStartOrderPreparationMutation,
 } from '@/store/api/ordersApi';
-import { useCreateDeliveryFromOrderMutation } from '@/store/api/deliveriesApi';
+import {
+  useCancelDeliveryMutation,
+  useCreateDeliveryFromOrderMutation,
+  useGetDeliveriesQuery,
+} from '@/store/api/deliveriesApi';
 import { useGetClientsQuery } from '@/store/api/clientsApi';
 import { ORDER_STATUS_LABELS, orderStatusColor } from '@/lib/commercial';
 import { formatCurrency, formatNumber } from '@/lib/format';
@@ -47,6 +56,15 @@ export default function CommandeDetailScreen() {
   const [startPreparation, { isLoading: preparing }] = useStartOrderPreparationMutation();
   const [cancelOrder] = useCancelOrderMutation();
   const [createDelivery, { isLoading: delivering }] = useCreateDeliveryFromOrderMutation();
+  const [cancelDelivery, { isLoading: cancellingDelivery }] = useCancelDeliveryMutation();
+
+  // Only asked for once the order has actually been delivered: there is nothing to show, and
+  // nothing to undo, before that.
+  const { data: deliveries } = useGetDeliveriesQuery(
+    selectedFarmId === null || order?.status !== 'DELIVERED'
+      ? skipToken
+      : { farmId: selectedFarmId },
+  );
 
   if (selectedFarmId === null) {
     return <Redirect href="/(field)" />;
@@ -84,6 +102,30 @@ export default function CommandeDetailScreen() {
         onPress: () => run(() => cancelOrder({ farmId: selectedFarmId, id: orderId }).unwrap(), 'Annuler'),
       },
     ]);
+
+  // The backend refuses to cancel anything but a DELIVERED delivery (INVALID_DELIVERY_TRANSITION),
+  // so an already-cancelled one offers nothing.
+  const delivery = (deliveries ?? []).find((d) => d.orderId === orderId && d.status === 'DELIVERED');
+
+  const doCancelDelivery = () => {
+    if (!delivery) return;
+    Alert.alert(
+      'Annuler la livraison ?',
+      `${delivery.deliveryNumber} sera annulée : la commande repasse à livrer et le stock est réintégré.`,
+      [
+        { text: 'Retour', style: 'cancel' },
+        {
+          text: 'Annuler la livraison',
+          style: 'destructive',
+          onPress: () =>
+            run(
+              () => cancelDelivery({ farmId: selectedFarmId, id: delivery.id }).unwrap(),
+              'Annuler la livraison',
+            ),
+        },
+      ],
+    );
+  };
 
   const busy = confirming || preparing || delivering;
 
@@ -132,6 +174,30 @@ export default function CommandeDetailScreen() {
               <Text style={styles.totalCaption}>Total</Text>
               <Text style={styles.totalVal}>{formatCurrency(order.totalXof)}</Text>
             </View>
+
+            {delivery && (
+              <>
+                <Text style={styles.sectionTitle}>Livraison</Text>
+                <View style={styles.deliveryCard}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.itemLabel}>{delivery.deliveryNumber}</Text>
+                    <Text style={styles.itemMeta}>Livrée le {delivery.deliveryDate}</Text>
+                  </View>
+                  <Text style={styles.itemTotal}>{formatCurrency(delivery.totalXof)}</Text>
+                </View>
+                {canCancel && (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Annuler la livraison"
+                    onPress={doCancelDelivery}
+                    disabled={cancellingDelivery}
+                    style={styles.cancelDelivery}
+                  >
+                    <Text style={styles.cancelDeliveryLabel}>Annuler la livraison</Text>
+                  </Pressable>
+                )}
+              </>
+            )}
           </>
         )}
       </ScrollView>
@@ -232,4 +298,15 @@ const styles = StyleSheet.create({
   commitLabel: { ...tokens.typography.button, fontSize: 16, color: tokens.colors.primary[900] },
   cancelBtn: { minHeight: tokens.touch.primaryButton, borderRadius: tokens.radii.lg, borderWidth: 1, borderColor: tokens.colors.neutral[300], alignItems: 'center', justifyContent: 'center', paddingHorizontal: tokens.spacing[5] },
   cancelLabel: { ...tokens.typography.button, fontSize: 15, color: tokens.colors.field.textMuted },
+  deliveryCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: tokens.spacing[3],
+    borderRadius: tokens.radii.lg,
+    borderWidth: 1,
+    borderColor: tokens.colors.neutral[200],
+    backgroundColor: tokens.colors.neutral[0],
+  },
+  cancelDelivery: { minHeight: tokens.touch.button, alignItems: 'center', justifyContent: 'center', marginTop: tokens.spacing[3] },
+  cancelDeliveryLabel: { ...tokens.typography.button, color: tokens.colors.errorDark },
 });

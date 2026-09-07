@@ -1,8 +1,8 @@
 /**
  * Commercial deliveries — mirrors `web/src/store/api/deliveriesApi.ts`. Mobile
  * reads the deliveries list to let the user invoice a DELIVERED delivery that
- * isn't invoiced yet (the "Générer facture" flow). Creating a delivery from an
- * order ("Livrer") is a follow-up.
+ * isn't invoiced yet (the "Générer facture" flow), creates one from an order
+ * ("Livrer"), and cancels one from the order it came from.
  */
 import { baseApi } from './baseApi';
 import type { Delivery, DeliveryFromOrderInput, DeliveryStatus } from '@/types';
@@ -37,8 +37,14 @@ export const deliveriesApi = baseApi.injectEndpoints({
     }),
 
     /**
-     * Cancelling a delivery releases the stock it had reserved, so it invalidates the flock and
-     * tray counts too — the D27 coupling runs in reverse.
+     * Cancelling a delivery reopens the order and puts the stock back (D21/D27 run in reverse:
+     * a compensating IN movement, or a restock on the production unit), so the flock and tray
+     * counts move too.
+     *
+     * The tag ids below are the ones the queries actually provide — `Delivery`/`Order` publish
+     * `list` lowercase, tray stock publishes `CURRENT`. This mutation shipped with `LIST` on all
+     * three while it was reachable from nowhere, so nothing ever revealed that a cancellation
+     * refreshed none of them.
      */
     cancelDelivery: build.mutation<Delivery, { farmId: number; id: number; reason?: string }>({
       query: ({ farmId, id, reason }) => ({
@@ -49,10 +55,11 @@ export const deliveriesApi = baseApi.injectEndpoints({
       transformResponse: (r: ApiEnvelope<Delivery>) => r.data,
       invalidatesTags: (_r, _e, { id }) => [
         { type: 'Delivery', id },
-        { type: 'Delivery', id: 'LIST' },
-        { type: 'Order', id: 'LIST' },
+        { type: 'Delivery', id: 'list' },
+        { type: 'Order', id: 'list' },
         { type: 'PoultryBatch', id: 'LIST' },
-        { type: 'TrayStock', id: 'LIST' },
+        { type: 'TrayStock', id: 'CURRENT' },
+        { type: 'Dashboard', id: 'current' },
       ],
     }),
   }),
