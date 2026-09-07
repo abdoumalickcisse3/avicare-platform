@@ -18,6 +18,13 @@ jest.mock('@/store/api/membersApi', () => ({
     ],
   })),
 }));
+// The farm P&L now also reads the supplier current accounts; mocks are per API module.
+let mockSupplierBalances: { result: unknown } = {
+  result: { data: [{ supplierId: 1, supplierName: 'Provendier', balanceXof: 120000 }, { supplierId: 2, supplierName: 'Avance', balanceXof: -5000 }] },
+};
+jest.mock('@/store/api/supplierLedgerApi', () => ({
+  useGetSupplierBalancesQuery: jest.fn(() => mockSupplierBalances.result),
+}));
 jest.mock('@/store/api/financeApi', () => ({
   useGetExpenseSummaryQuery: jest.fn(() => ({ data: { categories: [], totalXof: 125000 } })),
   useGetExpensesQuery: jest.fn(() => ({ data: [{ id: 1, categoryKey: 'feed', amountXof: 50000, expenseDate: '2026-08-01', label: 'Sac aliment', notes: null, productionUnitId: null, source: 'MANUAL' }], isLoading: false })),
@@ -51,7 +58,17 @@ jest.mock('@/store/api/financeApi', () => ({
   })),
 }));
 
+import { formatCurrency } from '@/lib/format';
 import FinanceScreen from '../finance';
+
+afterEach(() => {
+  mockSupplierBalances.result = {
+    data: [
+      { supplierId: 1, supplierName: 'Provendier', balanceXof: 120000 },
+      { supplierId: 2, supplierName: 'Avance', balanceXof: -5000 },
+    ],
+  };
+});
 
 describe('Finance', () => {
   it('shows the expenses tab with the list and a create action', async () => {
@@ -62,6 +79,27 @@ describe('Finance', () => {
     await press(screen.getByLabelText('Onglet Salaires'));
     // The empty state names the month: generation is per-period and cannot be re-run.
     expect(screen.getByText(/Aucun salaire pour \d{4}-\d{2}/)).toBeTruthy();
+  });
+
+  it('shows what the farm owes its suppliers, outside the period selector', async () => {
+    // Only strictly positive balances are summed: an advance to one supplier does not cancel
+    // a debt to another.
+    await render(<FinanceScreen />);
+    await press(screen.getByLabelText('Onglet Analytique'));
+
+    expect(screen.getByText('Dû aux fournisseurs')).toBeTruthy();
+    expect(screen.getByText(formatCurrency(120000))).toBeTruthy();
+  });
+
+  it('does not read as nothing owed when the supplier balances fail to load', async () => {
+    // A member with finance access but no inventory access gets a 403 here. Rendering 0 FCFA
+    // would be a debt disguised as a clean balance.
+    mockSupplierBalances.result = { error: { status: 403 } };
+    await render(<FinanceScreen />);
+    await press(screen.getByLabelText('Onglet Analytique'));
+
+    expect(screen.getByText('—')).toBeTruthy();
+    expect(screen.queryByText(formatCurrency(0))).toBeNull();
   });
 
   it('shows the Analytique tab with the P&L margin and breakdowns', async () => {

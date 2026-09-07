@@ -5,14 +5,20 @@
  * centre, the revenue split as a segmented bar, dépenses par catégorie as a
  * vertical bar chart, and revenu par lot as ranked bars. Totals are cumulative.
  * Read-only.
+ *
+ * « Dû aux fournisseurs » is the one figure here that is not scoped by the period
+ * selector: it answers "what do we owe right now", not "what did we owe during
+ * this window". The debt to the feed supplier is challenge number one for most of
+ * the farmers surveyed, so it belongs on the P&L screen and not only in Stocks.
  */
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
-import { ArrowDownRight, ArrowUpRight, PackageOpen, TrendingUp } from 'lucide-react-native';
+import { ArrowDownRight, ArrowUpRight, PackageOpen, TrendingUp, Truck } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { useSelector } from 'react-redux';
 import { useGetFarmAnalyticsQuery } from '@/store/api/financeApi';
+import { useGetSupplierBalancesQuery } from '@/store/api/supplierLedgerApi';
 import { PeriodSelector } from '@/components/PeriodSelector';
 import { periodToRange } from '@/lib/period';
 import { selectPeriod } from '@/store/slices/selectionSlice';
@@ -163,6 +169,17 @@ export function FinanceAnalytics({ farmId }: { farmId: number }) {
   // two period selectors on one app end up disagreeing about what "30 jours" means.
   const period = useSelector(selectPeriod);
   const { data, isLoading } = useGetFarmAnalyticsQuery({ farmId, ...periodToRange(period) });
+  const { data: supplierBalances, error: supplierBalancesError } = useGetSupplierBalancesQuery({
+    farmId,
+  });
+  // An advance paid to one supplier does not cancel a debt to another — different
+  // counterparties, so only strictly positive balances are summed.
+  const totalOwedToSuppliersXof = (supplierBalances ?? [])
+    .filter((b) => b.balanceXof > 0)
+    .reduce((sum, b) => sum + b.balanceXof, 0);
+  // A member without inventory access (403) or a query that simply failed must never read as
+  // "nothing owed" — that is a debt disguised as a clean balance.
+  const supplierBalanceUnavailable = Boolean(supplierBalancesError);
 
   // Stays mounted through every state: the selector would otherwise vanish on each change,
   // which is exactly when the reader wants it.
@@ -213,6 +230,29 @@ export function FinanceAnalytics({ farmId }: { farmId: number }) {
           )}
         </View>
       </Animated.View>
+
+      {/* Dû aux fournisseurs — current state, deliberately outside the period selector */}
+      <View style={styles.card}>
+        <View style={styles.titleRow}>
+          <Truck size={16} color={tokens.colors.warningDark} />
+          <Text style={styles.sectionTitle}>Dû aux fournisseurs</Text>
+        </View>
+        <Text
+          style={[
+            styles.owedValue,
+            { color: supplierBalanceUnavailable || totalOwedToSuppliersXof === 0
+                ? tokens.colors.field.textMuted
+                : tokens.colors.warningDark },
+          ]}
+        >
+          {supplierBalanceUnavailable ? '—' : formatCurrency(totalOwedToSuppliersXof)}
+        </Text>
+        <Text style={styles.mutedSmall}>
+          {supplierBalanceUnavailable
+            ? 'Solde indisponible — il n’est pas nul pour autant.'
+            : 'Solde du jour, toutes périodes confondues.'}
+        </Text>
+      </View>
 
       {/* Revenus vs Dépenses — donut */}
       <View style={styles.card}>
@@ -298,6 +338,7 @@ const styles = StyleSheet.create({
   marginPct: { ...tokens.typography.headingMd, fontSize: 15, fontWeight: '700' },
 
   card: { backgroundColor: tokens.colors.neutral[0], borderRadius: tokens.radii.xl, borderWidth: 1, borderColor: tokens.colors.neutral[200], padding: tokens.spacing[4], gap: tokens.spacing[3] },
+  owedValue: { ...tokens.typography.numericSm, fontSize: 24, lineHeight: 30 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[2] },
   sectionTitle: { ...tokens.typography.headingMd, fontSize: 15, color: tokens.colors.field.text },
 
