@@ -30,8 +30,11 @@ import {
   useReceivePurchaseOrderMutation,
   useSubmitPurchaseOrderMutation,
 } from "@/store/api/purchaseOrdersApi";
+import { Pencil } from "lucide-react";
 import { useInventoryGating } from "@/hooks/useInventoryGating";
+import { canManageCatalog, useFarmRole } from "@/hooks/useFarmRole";
 import { PurchaseOrderWorkflowActions } from "./PurchaseOrderWorkflowActions";
+import { PurchaseOrderDialog } from "./PurchaseOrderDialog";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { apiErrorMessage } from "@/lib/apiError";
 import { formatCurrency, formatDate } from "@/lib/format";
@@ -53,6 +56,10 @@ export function PurchaseOrderDetailView({ poId }: { poId: number }) {
   const [receive, { isLoading: receiving }] = useReceivePurchaseOrderMutation();
   const [cancel, { isLoading: cancelling }] = useCancelPurchaseOrderMutation();
   const busy = submitting || receiving || cancelling;
+  // Toute écriture sur un bon d'achat est OWNER/MANAGER côté serveur
+  // (`InventoryAccess.WRITE_MANAGER`). Les actions du workflow n'étaient gardées par rien.
+  const canWrite = canManageCatalog(useFarmRole(farmId));
+  const [editOpen, setEditOpen] = useState(false);
 
   const [receiveOpen, setReceiveOpen] = useState(false);
   const [received, setReceived] = useState<Record<number, string>>({});
@@ -127,13 +134,24 @@ export function PurchaseOrderDetailView({ poId }: { poId: number }) {
             <Chip label={meta.label} sx={{ bgcolor: meta.bg, color: meta.fg, fontWeight: 600 }} />
           )}
         </Stack>
-        <PurchaseOrderWorkflowActions
-          status={po.status}
-          onSubmit={doSubmit}
-          onReceive={openReceive}
-          onCancel={doCancel}
-          busy={busy}
-        />
+        {canWrite && (
+          <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+            {/* Un brouillon existe pour être revu : le corriger évite d'annuler et de tout
+                ressaisir sur un bon de dix lignes. Le backend l'accepte tant qu'il est DRAFT. */}
+            {po.status === "DRAFT" && (
+              <Button variant="outlined" startIcon={<Pencil size={16} />} onClick={() => setEditOpen(true)}>
+                Corriger
+              </Button>
+            )}
+            <PurchaseOrderWorkflowActions
+              status={po.status}
+              onSubmit={doSubmit}
+              onReceive={openReceive}
+              onCancel={doCancel}
+              busy={busy}
+            />
+          </Stack>
+        )}
       </Stack>
 
       <Box
@@ -238,6 +256,15 @@ export function PurchaseOrderDetailView({ poId }: { poId: number }) {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {farmId && (
+        <PurchaseOrderDialog
+          open={editOpen}
+          onClose={() => setEditOpen(false)}
+          farmId={farmId}
+          purchaseOrder={po}
+        />
+      )}
     </Box>
   );
 }

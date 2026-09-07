@@ -22,6 +22,7 @@ import {
 import { Plus } from "lucide-react";
 import { useGetPurchaseOrdersQuery } from "@/store/api/purchaseOrdersApi";
 import { useInventoryGating } from "@/hooks/useInventoryGating";
+import { canManageCatalog, useFarmRole } from "@/hooks/useFarmRole";
 import { PurchaseOrderDialog } from "@/components/inventory/PurchaseOrderDialog";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { PO_STATUS_META } from "@/lib/inventory";
@@ -41,6 +42,8 @@ const TABS: { key: string; label: string; status?: PurchaseOrderStatus }[] = [
 export default function PurchaseOrdersPage() {
   const router = useRouter();
   const { farmId, hasFarm, hasInventory } = useInventoryGating();
+  // Créer un bon d'achat est OWNER/MANAGER côté serveur (`InventoryAccess.WRITE_MANAGER`).
+  const canWrite = canManageCatalog(useFarmRole(farmId));
   const [tab, setTab] = useState("all");
   const [createOpen, setCreateOpen] = useState(false);
 
@@ -69,9 +72,11 @@ export default function PurchaseOrdersPage() {
             Créez et suivez vos commandes fournisseurs.
           </Typography>
         </Box>
-        <Button variant="contained" color="primary" startIcon={<Plus size={18} />} onClick={() => setCreateOpen(true)} disabled={!hasFarm}>
-          Créer un bon d&apos;achat
-        </Button>
+        {canWrite && (
+          <Button variant="contained" color="primary" startIcon={<Plus size={18} />} onClick={() => setCreateOpen(true)} disabled={!hasFarm}>
+            Créer un bon d&apos;achat
+          </Button>
+        )}
       </Stack>
 
       <Tabs value={tab} onChange={(_e, v) => setTab(v)} sx={{ mb: 2 }} variant="scrollable" scrollButtons="auto">

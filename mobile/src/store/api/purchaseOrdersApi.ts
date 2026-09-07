@@ -1,8 +1,8 @@
 /**
  * Purchase orders — mirrors `web/src/store/api/purchaseOrdersApi.ts`. Buy stock
  * (feed, etc.) from a supplier: create (DRAFT) → submit (SENT) → receive
- * (RECEIVED, which cascades IN stock movements) or cancel. Gated
- * `module.inventory`.
+ * (RECEIVED, which cascades IN stock movements) or cancel. Un brouillon se corrige tant qu'il
+ * est DRAFT. Gated `module.inventory`, écritures OWNER/MANAGER.
  */
 import { baseApi } from './baseApi';
 import type { PurchaseOrder, PurchaseOrderInput, PurchaseOrderReceiveInput, PurchaseOrderStatus } from '@/types';
@@ -40,6 +40,22 @@ export const purchaseOrdersApi = baseApi.injectEndpoints({
       transformResponse: (r: ApiEnvelope<PurchaseOrder>) => r.data,
       invalidatesTags: [{ type: 'PurchaseOrder', id: 'list' }],
     }),
+    /**
+     * Réécrit un brouillon. Le backend n'accepte que le statut DRAFT
+     * (`PurchaseOrderService.updateDraft`) : un bon envoyé se corrige en l'annulant.
+     */
+    updatePurchaseOrder: build.mutation<
+      PurchaseOrder,
+      { farmId: number; id: number; body: PurchaseOrderInput }
+    >({
+      query: ({ farmId, id, body }) => ({ url: `${base(farmId)}/${id}`, method: 'PUT', body }),
+      transformResponse: (r: ApiEnvelope<PurchaseOrder>) => r.data,
+      invalidatesTags: (_r, _e, { id }) => [
+        { type: 'PurchaseOrder', id },
+        { type: 'PurchaseOrder', id: 'list' },
+      ],
+    }),
+
     submitPurchaseOrder: build.mutation<PurchaseOrder, { farmId: number; id: number }>({
       query: ({ farmId, id }) => ({ url: `${base(farmId)}/${id}/submit`, method: 'POST' }),
       transformResponse: (r: ApiEnvelope<PurchaseOrder>) => r.data,
@@ -62,6 +78,7 @@ export const {
   useGetPurchaseOrdersQuery,
   useGetPurchaseOrderQuery,
   useCreatePurchaseOrderMutation,
+  useUpdatePurchaseOrderMutation,
   useSubmitPurchaseOrderMutation,
   useReceivePurchaseOrderMutation,
   useCancelPurchaseOrderMutation,

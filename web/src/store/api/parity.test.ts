@@ -145,11 +145,6 @@ const HOOKS_WITH_NO_SCREEN: { hook: string; side: "web" | "mobile"; why: string 
 
   /* ── Web seulement ───────────────────────────────────────────────────────────────────── */
   {
-    hook: "useUpdatePurchaseOrderMutation",
-    side: "web",
-    why: "Modifier un bon d'achat après création : offert par aucune des deux apps. À trier.",
-  },
-  {
     hook: "useGetAccountSettingsQuery",
     side: "web",
     why: "Réglages de compte génériques : jamais montés (cf. la même URL dans DESKTOP_ONLY).",

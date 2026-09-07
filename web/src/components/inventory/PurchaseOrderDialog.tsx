@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Autocomplete,
   Box,
@@ -20,6 +20,7 @@ import { Plus, Trash2, X } from "lucide-react";
 import {
   useCreatePurchaseOrderMutation,
   useSubmitPurchaseOrderMutation,
+  useUpdatePurchaseOrderMutation,
 } from "@/store/api/purchaseOrdersApi";
 import { useGetSuppliersQuery } from "@/store/api/suppliersApi";
 import { useGetAllArticlesQuery } from "@/store/api/inventoryCatalogApi";
@@ -27,42 +28,105 @@ import { useToast } from "@/components/feedback/ToastProvider";
 import { apiErrorMessage } from "@/lib/apiError";
 import { formatCurrency } from "@/lib/format";
 import { colors } from "@/theme/tokens";
-import type { InventoryCatalogItem } from "@/types";
+import type { InventoryCatalogItem, PurchaseOrder } from "@/types";
 
 interface LineDraft {
   article: InventoryCatalogItem | null;
+  /** Clé de l'article d'un brouillon rechargé, le temps que le catalogue arrive. */
+  articleKey?: string;
   qty: string;
   unitPrice: string;
 }
 
 const emptyLine = (): LineDraft => ({ article: null, qty: "", unitPrice: "" });
 
+/**
+ * Crée un bon d'achat, ou **corrige un brouillon**.
+ *
+ * Le brouillon existe précisément pour être revu avant d'être envoyé, et le backend accepte de le
+ * réécrire tant qu'il est en DRAFT (`PurchaseOrderService.updateDraft`). Aucun des deux fronts ne
+ * le proposait : une quantité mal tapée obligeait à annuler le bon et à tout ressaisir — sur un
+ * bon de dix lignes, à la main.
+ */
 export function PurchaseOrderDialog({
   open,
   onClose,
   farmId,
+  purchaseOrder = null,
 }: {
   open: boolean;
   onClose: () => void;
   farmId: number;
+  /** Un brouillon à corriger, ou null pour en créer un. */
+  purchaseOrder?: PurchaseOrder | null;
 }) {
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-      {open && <PurchaseOrderBody onClose={onClose} farmId={farmId} />}
+      {/* Monté seulement quand il est ouvert : l'état du formulaire repart donc de zéro (ou du
+          brouillon) à chaque ouverture, sans effet de bord à écrire. */}
+      {open && (
+        <PurchaseOrderBody onClose={onClose} farmId={farmId} purchaseOrder={purchaseOrder} />
+      )}
     </Dialog>
   );
 }
 
-function PurchaseOrderBody({ onClose, farmId }: { onClose: () => void; farmId: number }) {
+function PurchaseOrderBody({
+  onClose,
+  farmId,
+  purchaseOrder,
+}: {
+  onClose: () => void;
+  farmId: number;
+  purchaseOrder: PurchaseOrder | null;
+}) {
   const { showToast } = useToast();
   const { data: suppliers = [] } = useGetSuppliersQuery({ farmId });
   const { data: articles = [] } = useGetAllArticlesQuery({ farmId });
   const [createPo, { isLoading: creating }] = useCreatePurchaseOrderMutation();
+  const [updatePo, { isLoading: updating }] = useUpdatePurchaseOrderMutation();
   const [submitPo, { isLoading: submitting }] = useSubmitPurchaseOrderMutation();
 
-  const [supplierId, setSupplierId] = useState<number | "">("");
-  const [expected, setExpected] = useState("");
-  const [lines, setLines] = useState<LineDraft[]>([emptyLine()]);
+  const editing = purchaseOrder !== null;
+  const [supplierId, setSupplierId] = useState<number | "">(purchaseOrder?.supplierId ?? "");
+  const [expected, setExpected] = useState(purchaseOrder?.expectedDeliveryDate ?? "");
+  const [lines, setLines] = useState<LineDraft[]>(() =>
+    purchaseOrder
+      ? purchaseOrder.items.map((it) => ({
+          // L'article est résolu plus bas, une fois le catalogue chargé : la ligne garde sa clé
+          // en attendant, pour que le brouillon ne perde pas ses lignes au premier rendu.
+          article: null,
+          articleKey: it.articleKey,
+          qty: String(it.orderedQuantity),
+          unitPrice: String(it.unitPriceXof),
+        }))
+      : [emptyLine()],
+  );
+
+  /**
+   * Le catalogue arrive après le premier rendu : on rattache alors chaque ligne à son article.
+   *
+   * `articleKey` est effacée dans la foulée, **qu'on ait trouvé l'article ou non** : un article
+   * retiré du catalogue depuis la rédaction du brouillon ne se résout jamais, et laisser sa clé
+   * en attente ferait boucler le rendu indéfiniment. La ligne reste alors vide, à recompléter —
+   * ce qui est la bonne réponse : l'article n'existe plus.
+   */
+  useEffect(() => {
+    if (articles.length === 0) return;
+    setLines((cur) =>
+      cur.some((l) => l.articleKey)
+        ? cur.map((l) =>
+            l.articleKey
+              ? {
+                  ...l,
+                  article: articles.find((a) => a.articleKey === l.articleKey) ?? null,
+                  articleKey: undefined,
+                }
+              : l,
+          )
+        : cur,
+    );
+  }, [articles]);
 
   const lineTotal = (l: LineDraft) => {
     const q = Number(l.qty.replace(",", "."));
@@ -95,12 +159,14 @@ function PurchaseOrderBody({ onClose, farmId }: { onClose: () => void; farmId: n
 
   const save = async (thenSubmit: boolean) => {
     try {
-      const po = await createPo({ farmId, body: buildBody() }).unwrap();
+      const po = editing
+        ? await updatePo({ farmId, id: purchaseOrder.id, body: buildBody() }).unwrap()
+        : await createPo({ farmId, body: buildBody() }).unwrap();
       if (thenSubmit) {
         await submitPo({ farmId, id: po.id }).unwrap();
         showToast("Bon d'achat envoyé au fournisseur.", "success");
       } else {
-        showToast("Brouillon enregistré.", "success");
+        showToast(editing ? "Brouillon corrigé." : "Brouillon enregistré.", "success");
       }
       onClose();
     } catch (err) {
@@ -108,13 +174,13 @@ function PurchaseOrderBody({ onClose, farmId }: { onClose: () => void; farmId: n
     }
   };
 
-  const busy = creating || submitting;
+  const busy = creating || updating || submitting;
 
   return (
     <>
       <DialogTitle component="div" sx={{ pr: 6 }}>
         <Typography variant="h5" sx={{ fontWeight: 700 }}>
-          Nouveau bon d&apos;achat
+          {editing ? `Corriger ${purchaseOrder.orderNumber}` : "Nouveau bon d'achat"}
         </Typography>
         <IconButton onClick={onClose} aria-label="Fermer" sx={{ position: "absolute", top: 12, right: 12 }}>
           <X size={20} />

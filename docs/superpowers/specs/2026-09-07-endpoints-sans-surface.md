@@ -109,7 +109,7 @@ aller-retour réseau pour un filtre d'onglet.
 | Endpoint | Verdict |
 |---|---|
 | ~~`deleteVaccination`~~ | ✅ **Livré** — c'était un oubli, et l'instruction a révélé trois gardes fausses (§3 bis). |
-| `updatePurchaseOrder` | Modifier un brouillon de bon d'achat. Aucune des deux apps ne l'offre — un brouillon existe pourtant pour être revu. |
+| ~~`updatePurchaseOrder`~~ | ✅ **Livré** (web + mobile) — un brouillon existe pour être revu ; aucun front ne le permettait. L'instruction a aussi montré que les écritures sur un bon d'achat n'étaient gardées par rien côté web. |
 | ~~`getClientsOverCreditLimit`~~ | ✅ Le manque était **l'usage, pas l'endpoint** : le ratio d'encours était affiché ligne par ligne sans moyen de filtrer dessus. Onglet « Encours dépassé » ajouté, dérivé côté client comme « Débiteurs ». L'endpoint reste redondant. |
 | `getProgramsByBreed` | ❌ **Pas un manque.** `VaccinationSection` filtre déjà par race, **avec un repli** sur le catalogue complet quand aucun programme ne correspond — ce que l'endpoint serveur ne sait pas faire. La version client est meilleure. |
 | `getMovementsByLot` | ❌ **Pas un manque.** La fiche article porte un onglet « Consommation par lot », filtré côté client. |
@@ -168,16 +168,17 @@ annonçait « sept décisions produit » et « trois redondances à supprimer »
 
 Après avoir ouvert chaque écran appelant :
 
-- **5 capacités réellement manquantes**, livrées — trois côté web (seuil d'alerte, archivage
-  d'article, vaccinations d'un lot), la suppression d'une vaccination, l'onglet « Encours
-  dépassé » ;
-- **3 défauts de garde** trouvés en chemin, tous du même genre — un bouton offert à qui le
-  backend refuse : suppression d'un traitement (offerte à tous) et d'une observation (deux apps) ;
+- **6 capacités réellement manquantes**, livrées — trois côté web (seuil d'alerte, archivage
+  d'article, vaccinations d'un lot), la suppression d'une vaccination, la correction d'un
+  brouillon de bon d'achat, l'onglet « Encours dépassé » ;
+- **5 défauts de garde** trouvés en chemin, tous du même genre — un bouton offert à qui le
+  backend refuse : suppression d'un traitement (offerte à tous), d'une observation (deux apps),
+  et toutes les écritures sur un bon d'achat ;
 - **1 défaut de calcul** : une facture déclarée en retard un jour trop tôt, contredisant le
   tableau de bord sur le même écran ;
 - **10 faux positifs** de ma part, chacun corrigé au registre avec ce que le front fait vraiment.
 
-**Il reste `updateStockNotes`** (§3), et la correction d'un brouillon de bon d'achat, en cours. Tout le reste du registre est soit
+**Il reste une seule décision** : `updateStockNotes` (§3). Tout le reste du registre est soit
 attendu (§4), soit redondant avec ce qui est déjà rendu.
 
 ## Comment ce rapport se périme
