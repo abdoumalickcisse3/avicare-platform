@@ -100,17 +100,21 @@ aller-retour réseau pour un filtre d'onglet.
 
 ---
 
-## 3. Décisions produit en attente
+## 3. Décisions produit — instruites, et il n'en reste qu'une
 
-| Endpoint | La question |
+> Cette section listait sept « décisions à prendre ». En ouvrant chaque écran appelant : **six
+> n'en étaient pas.** L'information était déjà rendue, autrement — et dans deux cas mieux que ne
+> l'aurait fait l'endpoint dédié.
+
+| Endpoint | Verdict |
 |---|---|
-| `getClientsOverCreditLimit` | Veut-on un écran « clients au-dessus de leur encours » ? D26 dit que l'alerte est indicative et non bloquante — reste à savoir où on la montre. |
-| ~~`deleteVaccination`~~ | ✅ **Livré.** C'était un oubli — et l'instruction a révélé mieux : les gardes de suppression du module sanitaire ne suivaient le backend nulle part. Voir §5. |
-| `updatePurchaseOrder` | Modifier un bon d'achat après création. Aucune des deux apps ne l'offre. |
-| `updateStockNotes` | Notes libres sur une ligne de stock. Aucun champ ne les expose. |
-| `getSale` | Fiche vente détaillée : les deux apps listent les ventes sans page de détail. |
-| `getProgramsByBreed` | Filtrer le catalogue de programmes par race. Le catalogue complet est affiché tel quel. |
-| `getMovementsByLot` | Mouvements de stock filtrés par lot. La fiche article les montre tous. |
+| ~~`deleteVaccination`~~ | ✅ **Livré** — c'était un oubli, et l'instruction a révélé trois gardes fausses (§3 bis). |
+| `updatePurchaseOrder` | Modifier un brouillon de bon d'achat. Aucune des deux apps ne l'offre — un brouillon existe pourtant pour être revu. |
+| ~~`getClientsOverCreditLimit`~~ | ✅ Le manque était **l'usage, pas l'endpoint** : le ratio d'encours était affiché ligne par ligne sans moyen de filtrer dessus. Onglet « Encours dépassé » ajouté, dérivé côté client comme « Débiteurs ». L'endpoint reste redondant. |
+| `getProgramsByBreed` | ❌ **Pas un manque.** `VaccinationSection` filtre déjà par race, **avec un repli** sur le catalogue complet quand aucun programme ne correspond — ce que l'endpoint serveur ne sait pas faire. La version client est meilleure. |
+| `getMovementsByLot` | ❌ **Pas un manque.** La fiche article porte un onglet « Consommation par lot », filtré côté client. |
+| `getSale` | ❌ **Pas un manque.** La liste des ventes rend déjà les lignes de chaque vente (« 500× Maïs +2 ») : l'endpoint de liste renvoie les ventes complètes. |
+| **`updateStockNotes`** | ⚠️ **Le seul vrai reste.** Des notes libres sur une ligne de stock, qu'aucun écran n'affiche ni ne saisit, sur aucune des deux apps. Champ mort : à exposer, ou à retirer du modèle. C'est une décision produit, pas un oubli d'écran. |
 
 ---
 
@@ -157,8 +161,26 @@ ouvrir le code avant de coder quoi que ce soit.
 
 ---
 
+## Où en est-on
+
+Tout est instruit. Le relevé de départ comptait 22 hooks web et 12 mobiles sans appelant ; il
+annonçait « sept décisions produit » et « trois redondances à supprimer ».
+
+Après avoir ouvert chaque écran appelant :
+
+- **5 capacités réellement manquantes**, livrées — trois côté web (seuil d'alerte, archivage
+  d'article, vaccinations d'un lot), la suppression d'une vaccination, l'onglet « Encours
+  dépassé » ;
+- **3 défauts de garde** trouvés en chemin, tous du même genre — un bouton offert à qui le
+  backend refuse : suppression d'un traitement (offerte à tous) et d'une observation (deux apps) ;
+- **1 défaut de calcul** : une facture déclarée en retard un jour trop tôt, contredisant le
+  tableau de bord sur le même écran ;
+- **10 faux positifs** de ma part, chacun corrigé au registre avec ce que le front fait vraiment.
+
+**Il reste `updateStockNotes`** (§3), et la correction d'un brouillon de bon d'achat, en cours. Tout le reste du registre est soit
+attendu (§4), soit redondant avec ce qui est déjà rendu.
+
 ## Comment ce rapport se périme
 
 Bien. Chaque ligne traitée disparaît du registre `HOOKS_WITH_NO_SCREEN`, et le test échoue si
-elle y reste. Quand le registre ne contient plus que la section 4, ce document n'a plus lieu
-d'être.
+elle y reste. Quand `updateStockNotes` sera tranché, ce document n'aura plus lieu d'être.
