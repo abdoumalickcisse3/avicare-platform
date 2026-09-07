@@ -27,6 +27,7 @@ jest.mock('@/store/api/financeApi', () => ({
   useUpdateExpenseMutation: jest.fn(() => [jest.fn(), { isLoading: false }]),
   useDeleteExpenseMutation: jest.fn(() => [jest.fn(), { isLoading: false }]),
   useGetSalarySettingsQuery: jest.fn(() => ({ data: [{ id: 1, userId: 3, monthlySalaryXof: 90000, active: true }] })),
+  useUpsertSalarySettingMutation: jest.fn(() => [jest.fn(() => ({ unwrap: () => Promise.resolve({}) })), { isLoading: false }]),
   useGenerateSalariesMutation: jest.fn(() => [jest.fn(), { isLoading: false }]),
   useGetAdvancesQuery: jest.fn(() => ({
     data: [
@@ -86,6 +87,33 @@ describe('Finance — lot 6', () => {
     await press(screen.getByLabelText('Onglet Salaires'));
 
     expect(screen.getByLabelText('Générer les salaires')).toBeTruthy();
+  });
+
+  it('lists the salary settings and lets a manager change one', async () => {
+    // Without a setting the generation writes nothing, so the phone has to be able to add one.
+    await render(<FinanceScreen />);
+    await press(screen.getByLabelText('Onglet Salaires'));
+
+    expect(screen.getByText('Réglages de salaire')).toBeTruthy();
+    expect(screen.getByLabelText('Ajouter un réglage de salaire')).toBeTruthy();
+    expect(screen.getByLabelText('Modifier le salaire de Awa Ndiaye')).toBeTruthy();
+  });
+
+  it('locks the member when changing an existing salary setting', async () => {
+    // The backend keys the setting on the member: a different one would create a second row.
+    await render(<FinanceScreen />);
+    await press(screen.getByLabelText('Onglet Salaires'));
+    await press(screen.getByLabelText('Modifier le salaire de Awa Ndiaye'));
+
+    expect(screen.getByText('Modifier le salaire')).toBeTruthy();
+    expect(screen.getByLabelText('Choisir un membre').props.accessibilityState.disabled).toBe(true);
+  });
+
+  it('names the salaried member rather than their id', async () => {
+    await render(<FinanceScreen />);
+    await press(screen.getByLabelText('Onglet Salaires'));
+
+    expect(screen.queryByText('Salarié #3')).toBeNull();
   });
 
   it('lists advances with the name behind the userId', async () => {

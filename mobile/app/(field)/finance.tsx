@@ -3,8 +3,9 @@
  * `/finance/salaires`), reshaped into a single field screen with a Dépenses /
  * Salaires segmented control. Same backend (`financeApi`), same
  * `expense_categories` catalog. Four segments: Dépenses (record, correct, delete
- * — only MANUAL ones, the rest are refused by the backend), Salaires (generate a
- * month, pay a line), Avances (grant or refuse), Analyse.
+ * — only MANUAL ones, the rest are refused by the backend), Salaires (the monthly
+ * salary settings every line is computed from, generate a month, pay a line),
+ * Avances (grant or refuse), Analyse.
  *
  * Reachable by OWNER / MANAGER (finance tab); writes are OWNER / MANAGER.
  */
@@ -16,7 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Redirect } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
-import { Plus, Receipt, Wallet } from 'lucide-react-native';
+import { Pencil, Plus, Receipt, Wallet } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { AppHeader } from '@/components/AppHeader';
 import { useFarmAccess } from '@/auth/useSession';
@@ -36,10 +37,11 @@ import {
 import { useGetMembersQuery } from '@/store/api/membersApi';
 import { AdvancesPanel } from '@/finance/AdvancesPanel';
 import { SalaryGenerateSheet } from '@/finance/SalaryGenerateSheet';
+import { SalarySettingSheet } from '@/finance/SalarySettingSheet';
 import { formatCurrency } from '@/lib/format';
 import { ExpenseSheet } from '@/finance/ExpenseSheet';
 import { FinanceAnalytics } from '@/finance/FinanceAnalytics';
-import type { Expense, ExpenseSource, Salary, SalaryStatus } from '@/types';
+import type { Expense, ExpenseSource, Salary, SalarySetting, SalaryStatus } from '@/types';
 
 type Tab = 'expenses' | 'salaries' | 'advances' | 'analytics';
 
@@ -70,6 +72,8 @@ export default function FinanceScreen() {
   const [editing, setEditing] = useState<Expense | null>(null);
   const [generateOpen, setGenerateOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [settingSheetOpen, setSettingSheetOpen] = useState(false);
+  const [editingSetting, setEditingSetting] = useState<SalarySetting | null>(null);
   const period = useMemo(currentPeriod, []);
 
   const arg = selectedFarmId === null ? skipToken : { farmId: selectedFarmId };
@@ -104,6 +108,9 @@ export default function FinanceScreen() {
   // ways of counting the same money is how the two apps end up disagreeing about it.
   const { data: expenseSummary } = useGetExpenseSummaryQuery(tab === 'expenses' ? arg : skipToken);
   const totalExpenses = expenseSummary?.totalXof ?? 0;
+  // Generation only ever picks up the active settings — with none, the run would write nothing
+  // and the button would be a dead end.
+  const activeSettingsCount = salarySettings.filter((st) => st.active).length;
   const totalSalariesDue = useMemo(
     () => (salaries ?? []).filter((s) => s.status === 'DUE').reduce((sum, s) => sum + s.netXof, 0),
     [salaries],
@@ -271,62 +278,127 @@ export default function FinanceScreen() {
           />
         ) : tab === 'analytics' ? (
           <FinanceAnalytics farmId={selectedFarmId} />
-        ) : salariesLoading ? (
-          <Text style={styles.muted}>Chargement…</Text>
-        ) : (salaries ?? []).length === 0 ? (
-          <View style={styles.emptyBox}>
-            <View style={styles.emptyDisc}>
-              <Wallet size={28} color={tokens.colors.primary[600]} />
-            </View>
-            <Text style={styles.emptyText}>Aucun salaire pour {period}.</Text>
-            {canManage ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Générer les salaires"
-                onPress={() => setGenerateOpen(true)}
-                style={styles.emptyCta}
-              >
-                <Text style={styles.emptyCtaText}>Générer les salaires du mois</Text>
-              </Pressable>
-            ) : (
-              <Text style={styles.emptySub}>
-                Seuls le propriétaire et le gestionnaire génèrent les salaires.
-              </Text>
-            )}
-          </View>
         ) : (
-          <View style={styles.list}>
-            {(salaries ?? []).map((s: Salary, i) => {
-              const meta = STATUS_META[s.status];
-              return (
-                <Animated.View key={s.id} entering={FadeInDown.delay(i * 40).springify().damping(18)} style={styles.card}>
-                  <View style={styles.cardTop}>
-                    <Text style={styles.cardLabel}>Salarié #{s.userId}</Text>
-                    <Text style={styles.cardAmount}>{formatCurrency(s.netXof)}</Text>
-                  </View>
-                  <View style={styles.cardBottom}>
-                    <Text style={styles.cardMeta}>
-                      {s.period} · Brut {formatCurrency(s.grossXof)}
-                    </Text>
-                    <View style={[styles.statusChip, { borderColor: meta.color }]}>
-                      <Text style={[styles.statusText, { color: meta.color }]}>{meta.label}</Text>
-                    </View>
-                  </View>
-                  {canManage && s.status === 'DUE' && (
+          <>
+            {/* Réglages de salaire — the rows every generated line is computed from. Without one,
+                the generation below writes nothing, so this section comes first. */}
+            <View style={styles.block}>
+              <View style={styles.blockHead}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.blockTitle}>Réglages de salaire</Text>
+                  <Text style={styles.blockSub}>Salaire mensuel par membre de la ferme.</Text>
+                </View>
+                {canManage && (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Ajouter un réglage de salaire"
+                    onPress={() => {
+                      setEditingSetting(null);
+                      setSettingSheetOpen(true);
+                    }}
+                    style={styles.blockAdd}
+                  >
+                    <Plus size={18} color={tokens.colors.primary[700]} />
+                  </Pressable>
+                )}
+              </View>
+
+              {salarySettings.length === 0 ? (
+                <Text style={styles.blockEmpty}>
+                  {canManage
+                    ? 'Aucun réglage. Ajoutez le salaire mensuel d’un membre avant de générer le mois.'
+                    : 'Aucun réglage. Seuls le propriétaire et le gestionnaire en ajoutent.'}
+                </Text>
+              ) : (
+                <View style={styles.settingList}>
+                  {salarySettings.map((st) => (
                     <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={`Payer le salaire #${s.userId}`}
-                      onPress={() => confirmPay(s)}
-                      disabled={paying}
-                      style={styles.payBtn}
+                      key={st.id}
+                      disabled={!canManage}
+                      accessibilityRole={canManage ? 'button' : undefined}
+                      accessibilityLabel={canManage ? `Modifier le salaire de ${memberName(st.userId)}` : undefined}
+                      onPress={() => {
+                        setEditingSetting(st);
+                        setSettingSheetOpen(true);
+                      }}
+                      style={styles.settingRow}
                     >
-                      <Text style={styles.payLabel}>Marquer payé</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.settingName} numberOfLines={1}>
+                          {memberName(st.userId)}
+                        </Text>
+                        {!st.active && <Text style={styles.settingOff}>Inactif</Text>}
+                      </View>
+                      <Text style={styles.settingAmount}>{formatCurrency(st.monthlySalaryXof)}</Text>
+                      {canManage && <Pencil size={16} color={tokens.colors.field.textMuted} />}
                     </Pressable>
-                  )}
-                </Animated.View>
-              );
-            })}
-          </View>
+                  ))}
+                </View>
+              )}
+            </View>
+
+            {salariesLoading ? (
+              <Text style={styles.muted}>Chargement…</Text>
+            ) : (salaries ?? []).length === 0 ? (
+              <View style={styles.emptyBox}>
+                <View style={styles.emptyDisc}>
+                  <Wallet size={28} color={tokens.colors.primary[600]} />
+                </View>
+                <Text style={styles.emptyText}>Aucun salaire pour {period}.</Text>
+                {!canManage ? (
+                  <Text style={styles.emptySub}>
+                    Seuls le propriétaire et le gestionnaire génèrent les salaires.
+                  </Text>
+                ) : activeSettingsCount === 0 ? (
+                  <Text style={styles.emptySub}>
+                    Ajoutez d’abord un réglage de salaire actif : la génération se base dessus.
+                  </Text>
+                ) : (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Générer les salaires"
+                    onPress={() => setGenerateOpen(true)}
+                    style={styles.emptyCta}
+                  >
+                    <Text style={styles.emptyCtaText}>Générer les salaires du mois</Text>
+                  </Pressable>
+                )}
+              </View>
+            ) : (
+              <View style={styles.list}>
+                {(salaries ?? []).map((s: Salary, i) => {
+                  const meta = STATUS_META[s.status];
+                  return (
+                    <Animated.View key={s.id} entering={FadeInDown.delay(i * 40).springify().damping(18)} style={styles.card}>
+                      <View style={styles.cardTop}>
+                        <Text style={styles.cardLabel}>{memberName(s.userId)}</Text>
+                        <Text style={styles.cardAmount}>{formatCurrency(s.netXof)}</Text>
+                      </View>
+                      <View style={styles.cardBottom}>
+                        <Text style={styles.cardMeta}>
+                          {s.period} · Brut {formatCurrency(s.grossXof)}
+                        </Text>
+                        <View style={[styles.statusChip, { borderColor: meta.color }]}>
+                          <Text style={[styles.statusText, { color: meta.color }]}>{meta.label}</Text>
+                        </View>
+                      </View>
+                      {canManage && s.status === 'DUE' && (
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={`Payer le salaire de ${memberName(s.userId)}`}
+                          onPress={() => confirmPay(s)}
+                          disabled={paying}
+                          style={styles.payBtn}
+                        >
+                          <Text style={styles.payLabel}>Marquer payé</Text>
+                        </Pressable>
+                      )}
+                    </Animated.View>
+                  );
+                })}
+              </View>
+            )}
+          </>
         )}
       </ScrollView>
 
@@ -352,6 +424,22 @@ export default function FinanceScreen() {
         onDone={() => {
           setSheetOpen(false);
           setEditing(null);
+        }}
+      />
+
+      <SalarySettingSheet
+        farmId={selectedFarmId}
+        open={settingSheetOpen}
+        setting={editingSetting}
+        members={members.filter((m) => m.active).map((m) => ({ userId: m.userId, fullName: m.fullName }))}
+        takenUserIds={salarySettings.map((st) => st.userId)}
+        onClose={() => {
+          setSettingSheetOpen(false);
+          setEditingSetting(null);
+        }}
+        onDone={() => {
+          setSettingSheetOpen(false);
+          setEditingSetting(null);
         }}
       />
 
@@ -421,6 +509,37 @@ const styles = StyleSheet.create({
   emptySub: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, textAlign: 'center', paddingHorizontal: tokens.spacing[6] },
 
   list: { gap: tokens.spacing[3] },
+
+  block: { marginBottom: tokens.spacing[5], gap: tokens.spacing[3] },
+  blockHead: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[3] },
+  blockTitle: { ...tokens.typography.headingMd, fontSize: 16, color: tokens.colors.field.text },
+  blockSub: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginTop: 2 },
+  blockAdd: {
+    width: 40,
+    height: 40,
+    borderRadius: tokens.radii.full,
+    backgroundColor: tokens.colors.primary[50],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  blockEmpty: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted },
+  settingList: { gap: tokens.spacing[2] },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.spacing[3],
+    minHeight: tokens.touch.button,
+    backgroundColor: tokens.colors.neutral[0],
+    borderRadius: tokens.radii.lg,
+    borderWidth: 1,
+    borderColor: tokens.colors.neutral[200],
+    paddingHorizontal: tokens.spacing[3],
+    paddingVertical: tokens.spacing[3],
+  },
+  settingName: { ...tokens.typography.bodyMd, color: tokens.colors.field.text },
+  settingOff: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginTop: 2 },
+  settingAmount: { ...tokens.typography.numericSm, fontSize: 14, color: tokens.colors.field.text },
+
   card: { backgroundColor: tokens.colors.neutral[0], borderRadius: tokens.radii.xl, borderWidth: 1, borderColor: tokens.colors.neutral[200], padding: tokens.spacing[4], gap: tokens.spacing[2] },
   cardTop: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: tokens.spacing[2] },
   cardLabel: { ...tokens.typography.bodyMd, fontWeight: '700', color: tokens.colors.field.text, flex: 1 },
