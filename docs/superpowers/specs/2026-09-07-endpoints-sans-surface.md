@@ -58,19 +58,45 @@ Les deux gestes de stock sont gardés par `inventory:write`, comme le mobile et 
 
 ---
 
-## 2. Redondances — supprimer plutôt que monter
+## 2. Redondances — instruites, et le verdict n'est pas celui annoncé
 
-| Endpoint | Pourquoi il ne sert pas |
+> La première version recommandait de **supprimer** ces endpoints, au motif que « deux chemins
+> vers le même chiffre finissent par ne plus dire la même chose ». En allant voir, deux des trois
+> ne sont pas deux chemins du tout — et le troisième cachait un vrai défaut.
+
+### 2.1 Sanitaire : une seule implémentation, deux routes — ne rien faire
+
+`AlertService` appelle **exactement les mêmes méthodes de service** que les endpoints dédiés :
+
+| Endpoint | Ce qu'il appelle | Ce que l'agrégat `getHealthAlerts` appelle |
+|---|---|---|
+| `GET …/treatments/active-withdrawals` | `treatmentService.getActiveWithdrawals` | la même méthode |
+| `GET …/vet-visits/upcoming-follow-ups` | `vetVisitService.listUpcomingFollowUps` | la même méthode |
+
+Il n'y a qu'un seul calcul, exposé par deux routes. **Aucun risque de divergence** : mon argument
+ne tenait pas. Les supprimer serait cosmétique, avec un risque de régression non nul pour zéro
+bénéfice. **Décision : on les garde**, et leurs lignes restent au registre avec ce motif.
+
+### 2.2 Factures en retard : deux implémentations, et elles ne disaient pas la même chose
+
+Là, il y avait bien deux calculs — un prédicat SQL et un prédicat TypeScript — et ils
+**divergeaient d'un jour** :
+
+| Facture due le 7 septembre, consultée le 7 | Verdict |
 |---|---|
-| `getActiveWithdrawals` | Les délais d'attente actifs arrivent déjà par l'agrégat `getHealthAlerts`, qui alimente l'écran Sanitaire des deux côtés. **Il n'y a pas de trou sanitaire** : le délai d'attente est bien affiché. |
-| `getUpcomingFollowUps` | Même chose, les visites de suivi viennent de `getHealthAlerts`. |
-| `getOverdueInvoices` | Les impayés sont dérivés côté client (`isInvoiceOverdue`) sur la liste des factures. Deux façons de calculer la même chose : en garder une. |
-| `getLowStockItems` (web) | Le stock bas **est** rendu : `stocks/page.tsx` via `alerts.lowStockItems`, le tableau de bord via `lowStockCount`. Deux endpoints pour le même chiffre. |
-| `getClientCredit` (web) | L'encours **est** affiché : `ClientDetailView` le montre avec son ratio à la limite, lu sur l'objet Client. |
-| `getFeedFormula` (web) | Le web édite une formule depuis l'objet déjà chargé par `getAvailableFormulas`. |
+| Backend : `due_date < today` (`findOverdue` **et** `sumOverdue`) | pas en retard |
+| Web : `new Date(dueDate).getTime() < Date.now()` | **en retard** dès minuit UTC |
 
-**Recommandation : supprimer les bindings front, et les endpoints backend s'ils n'ont pas
-d'autre client.** Deux chemins vers le même chiffre finissent par ne plus dire la même chose.
+Conséquences visibles : le tableau de bord (« En retard : X F », calculé par le backend) et la
+page Factures (« N en retard », calculée par le web) se contredisaient exactement des factures
+dues du jour ; et un client était annoncé en retard alors qu'il avait jusqu'au soir pour payer.
+
+Le backend a raison — une échéance au 7 n'est pas dépassée le 7. `isInvoiceOverdue` compare
+désormais des **dates**, pas des instants, et six cas le tiennent (`commercial.overdue.test.ts`).
+
+L'endpoint `/overdue` reste inutilisé, mais ce n'est plus la question : les deux définitions
+concordent. **Décision : on le garde**, et on garde la dérivation côté client, qui évite un
+aller-retour réseau pour un filtre d'onglet.
 
 ---
 

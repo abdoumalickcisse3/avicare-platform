@@ -97,14 +97,28 @@ export const INVOICE_STATUS_META: Record<
   CANCELLED: { label: "Annulée", color: colors.neutral[600], bg: colors.neutral[200] },
 };
 
+/** Aujourd'hui en `YYYY-MM-DD` **local** — le pendant client de `LocalDate.now()` côté serveur. */
+function todayIso(): string {
+  const d = new Date();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  return `${d.getFullYear()}-${m}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 /**
- * An invoice is overdue when its due date has passed and it is neither fully paid
- * nor cancelled (derived, mirrors the backend listOverdue, Décision D26).
+ * Une facture est en retard quand son échéance est **passée** et qu'elle n'est ni payée ni
+ * annulée (dérivé — miroir de `InvoiceRepository.findOverdue` / `sumOverdue`, décision D26).
+ *
+ * Comparaison de **dates**, pas d'instants : `new Date("2026-09-07").getTime() < Date.now()`
+ * plaçait en retard une facture due le jour même, dès minuit UTC. Le backend applique
+ * `due_date < today` aux deux endroits où il compte les retards, si bien que le tableau de bord
+ * et cette page se contredisaient des factures dues du jour — et qu'un client était annoncé en
+ * retard alors qu'il avait jusqu'au soir pour payer.
  */
 export function isInvoiceOverdue(inv: Invoice): boolean {
   if (inv.status === "PAID" || inv.status === "CANCELLED") return false;
   if (!inv.dueDate) return false;
-  return new Date(inv.dueDate).getTime() < Date.now();
+  // Les deux côtés sont en `YYYY-MM-DD` : l'ordre lexicographique est l'ordre chronologique.
+  return inv.dueDate < todayIso();
 }
 
 /**
