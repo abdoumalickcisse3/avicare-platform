@@ -14,6 +14,17 @@ import { describe, expect, it } from "vitest";
  *
  * A surface that is deliberately web-only is listed in DESKTOP_ONLY, with the reason. Adding a line
  * there is a decision; forgetting one is now a failing test.
+ *
+ * The URL comparison alone has a blind spot, and it cost us: an endpoint *declared* in a slice
+ * but called from no screen still publishes its URL, so both apps looked to be at parity while
+ * eight capabilities — cancelling a delivery, cancelling an invoice, recording a supplier debt,
+ * removing a ledger line, retiring a supplier, deleting an observation, deleting an egg
+ * collection — existed on the phone only as dead code. Worse, three of those mutations shipped
+ * with cache tags no query provides; nothing revealed it because nothing ever ran them.
+ *
+ * So the last test below compares *mounted* hooks: every hook a slice exports must be used by
+ * something outside `store/api`. A hook nobody calls is either a screen still to build or a
+ * binding to delete — both are decisions, and both belong in HOOKS_WITH_NO_SCREEN with a reason.
  */
 
 // Whole source trees, not just the RTK Query slices: the mobile app posts its field writes
@@ -41,6 +52,158 @@ const DESKTOP_ONLY: { prefix: string; why: string }[] = [
   {
     prefix: "/api/v1/account/settings",
     why: "Réglages de compte génériques : aucun écran mobile ne les expose encore.",
+  },
+];
+
+/**
+ * Hooks a slice exports that no screen calls, on either app, with why. Same register discipline
+ * as KNOWN_DIVERGENCES: the assertion checks the real set *equals* this list, so mounting one
+ * without deleting its line fails as loudly as leaving a new one unmounted.
+ */
+/**
+ * Hooks a slice exports that no screen calls, with why.
+ *
+ * This started as a snapshot of what was already unmounted the day the check was written — it is
+ * a baseline to work down, not a set of endorsed decisions. Several lines say "à trier": that is
+ * honest, and better than inventing a justification.
+ *
+ * The discipline is the same as KNOWN_DIVERGENCES: the assertion checks the real set *equals*
+ * this list, so mounting one without deleting its line fails as loudly as leaving a new one
+ * unmounted. What the check buys is the ratchet — the list can only shrink by accident.
+ */
+const HOOKS_WITH_NO_SCREEN: { hook: string; side: "web" | "mobile"; why: string }[] = [
+  /* ── Mounted on the phone, not on the web: parity running the other way ──────────────── */
+  {
+    hook: "useGetVaccinationsQuery",
+    side: "web",
+    why: "Le mobile liste les vaccinations d'un lot (`HealthSection`) ; le web n'affiche que l'échéancier du programme. Écart web, à trancher.",
+  },
+  {
+    hook: "useGetLowStockItemsQuery",
+    side: "web",
+    why: "Alertes de stock bas : montées sur l'onglet Stocks du mobile, absentes du web.",
+  },
+  {
+    hook: "useGetFeedFormulaQuery",
+    side: "web",
+    why: "Lecture d'une formule seule : le mobile s'en sert pour l'édition d'une formule, le web recharge la liste.",
+  },
+  {
+    hook: "useUpdateStockThresholdMutation",
+    side: "web",
+    why: "Le seuil d'alerte d'un article se règle depuis la fiche article du mobile, pas depuis le web.",
+  },
+  {
+    hook: "useDeactivateStockItemMutation",
+    side: "web",
+    why: "Désactiver un article de stock : geste offert par le mobile seul.",
+  },
+  {
+    hook: "useGetClientCreditQuery",
+    side: "web",
+    why: "L'encours d'un client (D26, alerte indicative) est affiché par la fiche client du mobile, pas par celle du web.",
+  },
+
+  /* ── Sur aucun des deux : endpoints livrés sans surface ──────────────────────────────── */
+  {
+    hook: "useGetActiveWithdrawalsQuery",
+    side: "web",
+    why: "Les délais d'attente actifs arrivent déjà par l'agrégat `getHealthAlerts`, qui alimente l'écran Sanitaire des deux côtés. Endpoint redondant : à supprimer plutôt qu'à monter.",
+  },
+  { hook: "useGetActiveWithdrawalsQuery", side: "mobile", why: "Idem côté mobile." },
+  {
+    hook: "useGetUpcomingFollowUpsQuery",
+    side: "web",
+    why: "Même chose : les visites de suivi à venir viennent de `getHealthAlerts`.",
+  },
+  { hook: "useGetUpcomingFollowUpsQuery", side: "mobile", why: "Idem côté mobile." },
+  {
+    hook: "useGetOverdueInvoicesQuery",
+    side: "web",
+    why: "Les impayés sont dérivés côté client (`isInvoiceOverdue`) sur la liste des factures ; l'endpoint dédié n'a jamais eu d'écran. À trancher : l'un ou l'autre.",
+  },
+  { hook: "useGetOverdueInvoicesQuery", side: "mobile", why: "Idem côté mobile." },
+  {
+    hook: "useGetClientsOverCreditLimitQuery",
+    side: "web",
+    why: "Liste des clients au-dessus de leur encours (D26) : aucune surface. Décision produit à trier.",
+  },
+  { hook: "useGetClientsOverCreditLimitQuery", side: "mobile", why: "Idem côté mobile." },
+  {
+    hook: "useGetProgramsByBreedQuery",
+    side: "web",
+    why: "Filtrage du catalogue de programmes par race : le catalogue complet est affiché tel quel. À trier.",
+  },
+  { hook: "useGetProgramsByBreedQuery", side: "mobile", why: "Idem côté mobile." },
+  {
+    hook: "useGetMovementsByLotQuery",
+    side: "web",
+    why: "Mouvements de stock filtrés par lot : la fiche article montre tous les mouvements. À trier.",
+  },
+  { hook: "useGetMovementsByLotQuery", side: "mobile", why: "Idem côté mobile." },
+  {
+    hook: "useUpdateStockNotesMutation",
+    side: "web",
+    why: "Notes libres sur une ligne de stock : aucun champ ne les expose. À trier.",
+  },
+  { hook: "useUpdateStockNotesMutation", side: "mobile", why: "Idem côté mobile." },
+  {
+    hook: "useDeleteVaccinationMutation",
+    side: "web",
+    why: "Supprimer une vaccination : ni le web ni le mobile ne l'offrent, alors que les traitements et les visites, si. Écart à trancher.",
+  },
+  { hook: "useDeleteVaccinationMutation", side: "mobile", why: "Idem côté mobile." },
+  {
+    hook: "useGetSaleQuery",
+    side: "web",
+    why: "Fiche vente détaillée : les deux apps listent les ventes sans page de détail.",
+  },
+  { hook: "useGetSaleQuery", side: "mobile", why: "Idem côté mobile." },
+
+  /* ── Web seulement ───────────────────────────────────────────────────────────────────── */
+  {
+    hook: "useLogoutMutation",
+    side: "web",
+    why: "Le bouton Déconnexion du Header dispatche `logout()`, qui ne fait que vider le stockage local : le refresh token n'est jamais révoqué côté serveur. Constat d'audit connu, non corrigé — le binding est là, il n'est pas appelé.",
+  },
+  {
+    hook: "useUpdatePurchaseOrderMutation",
+    side: "web",
+    why: "Modifier un bon d'achat après création : offert par aucune des deux apps. À trier.",
+  },
+  {
+    hook: "useGetAccountSettingsQuery",
+    side: "web",
+    why: "Réglages de compte génériques : jamais montés (cf. la même URL dans DESKTOP_ONLY).",
+  },
+  { hook: "useLazyGetAccountSettingsQuery", side: "web", why: "Variante lazy du précédent." },
+  { hook: "useUpsertSettingMutation", side: "web", why: "Écriture du précédent." },
+  {
+    hook: "useGetIntegrityChecksQuery",
+    side: "web",
+    why: "Console super-admin : les contrôles d'intégrité nocturnes (ADR-012) n'ont pas encore d'écran. Cf. DESKTOP_ONLY /api/v1/admin/.",
+  },
+  {
+    hook: "useGetPurgePreviewQuery",
+    side: "web",
+    why: "Console super-admin : aperçu de purge RGPD sans écran. Cf. DESKTOP_ONLY /api/v1/admin/.",
+  },
+
+  /* ── Mobile seulement ────────────────────────────────────────────────────────────────── */
+  {
+    hook: "useGetDeliveryQuery",
+    side: "mobile",
+    why: "Le web s'en sert pour le bon de livraison imprimable ; imprimer est un geste de bureau, et le mobile lit sa livraison depuis la liste, sur la fiche commande.",
+  },
+  {
+    hook: "useRecordVaccinationMutation",
+    side: "mobile",
+    why: "Pas un manque : la saisie terrain passe par la file hors-ligne (`enqueueFieldMutation`), qui poste l'URL directement. Le hook RTK reste pour un futur appel en ligne.",
+  },
+  {
+    hook: "useRecordObservationMutation",
+    side: "mobile",
+    why: "Même chose : l'observation part par la file hors-ligne.",
   },
 ];
 
@@ -161,10 +324,41 @@ const KNOWN_DIVERGENCES: { url: string; side: "web" | "mobile"; why: string }[] 
   },
 ];
 
+/**
+ * Every hook a slice exports, and whether anything outside `store/api` calls it.
+ *
+ * The export block is `export const { useX, useY } = fooApi;` on both apps — the one place a
+ * hook becomes public. A hook named there and nowhere else is unreachable UI.
+ */
+function unmountedHooks(apiDir: string, roots: string[]): string[] {
+  const callers = roots
+    .flatMap(sourceFiles)
+    .filter((f) => !f.startsWith(apiDir))
+    .map((f) => stripComments(readFileSync(f, "utf8")))
+    .join("\n");
+
+  const out = new Set<string>();
+  for (const file of readdirSync(apiDir)) {
+    if (!file.endsWith(".ts") || file.includes(".test.")) continue;
+    const source = readFileSync(join(apiDir, file), "utf8");
+    // `[^}]` already spans newlines, so no /s flag (the tsconfig target rejects it).
+    const block = /export const \{([^}]*)\} = \w+;/.exec(source);
+    if (!block) continue;
+    for (const hook of block[1].match(/\buse\w+/g) ?? []) {
+      if (!new RegExp(`\\b${hook}\\b`).test(callers)) out.add(hook);
+    }
+  }
+  return [...out].sort();
+}
+
 const exempt = (url: string) => DESKTOP_ONLY.some((s) => url.startsWith(s.prefix));
 const declared = (side: "web" | "mobile") =>
   KNOWN_DIVERGENCES.filter((d) => d.side === side)
     .map((d) => d.url)
+    .sort();
+const declaredHooks = (side: "web" | "mobile") =>
+  HOOKS_WITH_NO_SCREEN.filter((h) => h.side === side)
+    .map((h) => h.hook)
     .sort();
 
 describe("web ↔ mobile API parity", () => {
@@ -194,5 +388,29 @@ describe("web ↔ mobile API parity", () => {
       "Called by a mobile screen and by nothing on the web — usually a screen that never got its " +
         "twin, or an endpoint renamed on one side only.",
     ).toEqual(declared("mobile"));
+  });
+
+  // The URL tests above see a slice's declaration; these see whether a screen ever calls it.
+  // Eight capabilities lived on the phone as dead code while the URL tests were green.
+  it("leaves no web hook unmounted, and mounts none silently", () => {
+    const actual = unmountedHooks(join(process.cwd(), "src/store/api"), WEB_ROOTS);
+
+    expect(
+      actual,
+      "Exported by a web slice and called by no screen: unreachable UI. Mount it, delete the " +
+        "binding, or add it to HOOKS_WITH_NO_SCREEN with the reason. If you have just mounted " +
+        "one, delete its line there.",
+    ).toEqual(declaredHooks("web"));
+  });
+
+  it("leaves no mobile hook unmounted, and mounts none silently", () => {
+    const actual = unmountedHooks(join(process.cwd(), "../mobile/src/store/api"), MOBILE_ROOTS);
+
+    expect(
+      actual,
+      "Exported by a mobile slice and called by no screen. This is how the phone ends up able " +
+        "to record something it cannot correct — mount it, or register it in " +
+        "HOOKS_WITH_NO_SCREEN with the reason.",
+    ).toEqual(declaredHooks("mobile"));
   });
 });
