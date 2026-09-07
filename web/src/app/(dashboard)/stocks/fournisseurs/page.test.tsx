@@ -5,6 +5,12 @@ import { renderWithProviders } from "@/test/render";
 import { formatCurrency } from "@/lib/format";
 import SuppliersPage from "./page";
 
+// Les écritures fournisseur sont OWNER/MANAGER côté serveur : sans rôle, rien n'est offert.
+let role = "OWNER";
+vi.mock("@/hooks/useFarmRole", async (orig) => ({
+  ...(await orig<typeof import("@/hooks/useFarmRole")>()),
+  useFarmRole: () => role,
+}));
 vi.mock("@/hooks/useInventoryGating", () => ({
   useInventoryGating: () => ({ farmId: 7, hasFarm: true, hasInventory: true }),
 }));
@@ -117,5 +123,21 @@ describe("SuppliersPage", () => {
     const [url, body] = put.mock.calls[0];
     expect(url).toContain("/inventory/suppliers/1");
     expect(body.notifyWhatsapp).toBe(true);
+  });
+
+  it("n'offre aucune action d'écriture à un ouvrier", async () => {
+    // `InventoryAccess.WRITE_MANAGER` : créer, éditer et supprimer un fournisseur sont
+    // réservés au propriétaire et au gérant. La liste, elle, reste lisible.
+    role = "FARMER";
+    try {
+      mockFetch();
+      renderWithProviders(<SuppliersPage />);
+
+      expect(await screen.findByText("Provende du Sahel")).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Actions" })).toBeNull();
+      expect(screen.queryByRole("button", { name: /Nouveau fournisseur/ })).toBeNull();
+    } finally {
+      role = "OWNER";
+    }
   });
 });

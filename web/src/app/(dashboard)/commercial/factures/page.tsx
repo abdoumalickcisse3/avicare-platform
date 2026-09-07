@@ -27,6 +27,7 @@ import { useGetInvoicesQuery } from "@/store/api/invoicesApi";
 import { useGetClientsQuery } from "@/store/api/clientsApi";
 import { useGetPaymentsQuery, useVoidPaymentMutation } from "@/store/api/paymentsApi";
 import { useCommercialGating } from "@/hooks/useCommercialGating";
+import { canManageCatalog, useFarmRole } from "@/hooks/useFarmRole";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { apiErrorMessage } from "@/lib/apiError";
 import { InvoiceDialog } from "@/components/commercial/InvoiceDialog";
@@ -50,6 +51,9 @@ const INVOICE_TABS: { key: string; label: string; status?: InvoiceStatus; overdu
 export default function FacturesPage() {
   const router = useRouter();
   const { farmId, hasFarm, hasCommercial } = useCommercialGating();
+  // Toute écriture commerciale est OWNER/MANAGER côté serveur
+  // (`CommercialAccess.WRITE_MANAGER`) : on cache plutôt que de proposer un 403.
+  const canWrite = canManageCatalog(useFarmRole(farmId));
   const { showToast } = useToast();
   const skip = !hasFarm || !hasCommercial;
   const { data: invoices, isLoading: invoicesLoading } = useGetInvoicesQuery({ farmId: farmId as number }, { skip });
@@ -265,7 +269,7 @@ export default function FacturesPage() {
                           />
                         </TableCell>
                         <TableCell align="right">
-                          {!cancelled && (
+                          {canWrite && !cancelled && (
                             <IconButton
                               size="small"
                               aria-label="Actions"

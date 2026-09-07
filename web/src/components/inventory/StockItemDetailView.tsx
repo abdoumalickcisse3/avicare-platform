@@ -31,7 +31,7 @@ import {
   useGetStockItemQuery,
 } from "@/store/api/inventoryStockApi";
 import { useInventoryGating } from "@/hooks/useInventoryGating";
-import { useFarmPermissions } from "@/hooks/useFarmPermissions";
+import { canManageCatalog, useFarmRole } from "@/hooks/useFarmRole";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { apiErrorMessage } from "@/lib/apiError";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
@@ -57,10 +57,10 @@ const monoBold = { ...mono, fontWeight: 700 } as const;
 export function StockItemDetailView({ stockItemId }: { stockItemId: number }) {
   const { farmId, hasFarm, hasInventory } = useInventoryGating();
   const skip = !hasFarm || !hasInventory;
-  // Le backend réserve l'écriture d'inventaire ; on cache plutôt que de proposer un geste qui
-  // répondra 403. Même garde que la fiche article du mobile.
-  const { can } = useFarmPermissions(farmId);
-  const canWrite = can("inventory:write");
+  // Le backend garde sur le RÔLE (`InventoryAccess.WRITE_MANAGER`), pas sur la permission :
+  // `inventory:write` coïncide par défaut, mais devient faux dès qu'un propriétaire accorde
+  // cette permission à la main. On cache plutôt que de proposer un geste qui répondra 403.
+  const canWrite = canManageCatalog(useFarmRole(farmId));
   const { showToast } = useToast();
   const [tab, setTab] = useState(0);
   const [moveOpen, setMoveOpen] = useState(false);

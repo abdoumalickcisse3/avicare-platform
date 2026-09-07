@@ -23,6 +23,7 @@ import {
 } from "@/store/api/suppliersApi";
 import { useGetSupplierBalancesQuery } from "@/store/api/supplierLedgerApi";
 import { useInventoryGating } from "@/hooks/useInventoryGating";
+import { canManageCatalog, useFarmRole } from "@/hooks/useFarmRole";
 import { SupplierDialog } from "@/components/inventory/SupplierDialog";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -33,6 +34,9 @@ import type { Supplier } from "@/types";
 export default function SuppliersPage() {
   const router = useRouter();
   const { farmId, hasFarm, hasInventory } = useInventoryGating();
+  // Toute écriture d'inventaire est OWNER/MANAGER côté serveur
+  // (`InventoryAccess.WRITE_MANAGER`) : on cache plutôt que de proposer un 403.
+  const canWrite = canManageCatalog(useFarmRole(farmId));
   const { showToast } = useToast();
   const { data: suppliers, isLoading } = useGetSuppliersQuery(
     { farmId: farmId as number },
@@ -91,9 +95,11 @@ export default function SuppliersPage() {
             Centralisez vos partenaires d&apos;approvisionnement.
           </Typography>
         </Box>
-        <Button variant="contained" color="primary" startIcon={<Plus size={18} />} onClick={openCreate} disabled={!hasFarm}>
-          Nouveau fournisseur
-        </Button>
+        {canWrite && (
+          <Button variant="contained" color="primary" startIcon={<Plus size={18} />} onClick={openCreate} disabled={!hasFarm}>
+            Nouveau fournisseur
+          </Button>
+        )}
       </Stack>
 
       {isLoading && <Skeleton variant="rectangular" height={200} sx={{ borderRadius: 3 }} />}
@@ -106,9 +112,11 @@ export default function SuppliersPage() {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Ajoutez votre premier partenaire pour centraliser vos achats.
           </Typography>
-          <Button variant="contained" color="primary" startIcon={<Plus size={18} />} onClick={openCreate}>
-            Nouveau fournisseur
-          </Button>
+          {canWrite && (
+            <Button variant="contained" color="primary" startIcon={<Plus size={18} />} onClick={openCreate}>
+              Nouveau fournisseur
+            </Button>
+          )}
         </Box>
       )}
 
@@ -135,17 +143,19 @@ export default function SuppliersPage() {
                     <Typography variant="h6" sx={{ fontWeight: 600 }}>
                       {s.commercialName}
                     </Typography>
-                    <IconButton
-                      size="small"
-                      aria-label="Actions"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setMenuEl(e.currentTarget);
-                        setMenuSupplier(s);
-                      }}
-                    >
-                      <MoreVertical size={18} />
-                    </IconButton>
+                    {canWrite && (
+                      <IconButton
+                        size="small"
+                        aria-label="Actions"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMenuEl(e.currentTarget);
+                          setMenuSupplier(s);
+                        }}
+                      >
+                        <MoreVertical size={18} />
+                      </IconButton>
+                    )}
                   </Stack>
                   <Stack spacing={0.5} sx={{ mt: 1, color: colors.neutral[600], fontSize: 14 }}>
                     {s.contactPerson && (

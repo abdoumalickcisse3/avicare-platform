@@ -42,8 +42,10 @@ function slugify(s: string): string {
 
 export default function BibliothequeScreen() {
   const router = useRouter();
-  const { can } = useFarmAccess();
-  const canWrite = can('inventory:write');
+  const { can, farmRole, isAdmin } = useFarmAccess();
+  // Le backend garde sur le RÔLE, pas sur la permission : `inventory:write` coïncide par défaut,
+  // mais devient faux dès qu'un propriétaire l'accorde à la main.
+  const canWrite = isAdmin || farmRole === 'OWNER' || farmRole === 'MANAGER';
   const selectedFarmId = useSelector(selectSelectedFarmId);
 
   const { data: articles, isLoading } = useGetInventoryArticlesQuery(

@@ -70,7 +70,8 @@ jest.mock('react-redux', () => ({
   useStore: jest.fn(() => ({})),
 }));
 
-const mockAccess = { can: jest.fn(() => true), isAdmin: true, farmRole: 'OWNER', session: null };
+// `isAdmin` court-circuite le rôle : à false par défaut, sinon les gardes ne se testent pas.
+const mockAccess = { can: jest.fn(() => true), isAdmin: false, farmRole: 'OWNER', session: null };
 jest.mock('@/auth/useSession', () => ({ useFarmAccess: () => mockAccess }));
 jest.mock('@/inventory/StockMovementSheet', () => ({ StockMovementSheet: () => null }));
 
@@ -86,6 +87,8 @@ import StockItemScreen from '../[itemId]';
 
 beforeEach(() => {
   mockAccess.can = jest.fn(() => true);
+  mockAccess.farmRole = 'OWNER';
+  mockAccess.isAdmin = false;
 });
 
 describe('StockItemScreen', () => {
@@ -135,10 +138,25 @@ describe('StockItemScreen', () => {
 
   it('hides every write from a reader without inventory:write', async () => {
     mockAccess.can = jest.fn(() => false);
+    mockAccess.farmRole = 'VETERINARIAN';
 
     await render(<StockItemScreen />);
 
     expect(screen.queryByLabelText('Enregistrer un mouvement')).toBeNull();
+    expect(screen.queryByLabelText("Modifier le seuil d'alerte")).toBeNull();
+    expect(screen.queryByLabelText('Archiver cet article')).toBeNull();
+  });
+
+  it('laisse un ouvrier saisir un mouvement mais pas régler le seuil', async () => {
+    // Le backend fait exactement cette différence : le mouvement est WRITE_FARMER (permission),
+    // le seuil et l'archivage sont WRITE_MANAGER (rôle). Une seule garde pour les trois serait
+    // soit trop lâche, soit trop stricte.
+    mockAccess.can = jest.fn(() => true);
+    mockAccess.farmRole = 'FARMER';
+
+    await render(<StockItemScreen />);
+
+    expect(screen.getByLabelText('Enregistrer un mouvement')).toBeTruthy();
     expect(screen.queryByLabelText("Modifier le seuil d'alerte")).toBeNull();
     expect(screen.queryByLabelText('Archiver cet article')).toBeNull();
   });

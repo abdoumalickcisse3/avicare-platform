@@ -27,6 +27,7 @@ import { useGetOrdersQuery } from "@/store/api/ordersApi";
 import { useGetClientsQuery } from "@/store/api/clientsApi";
 import { useCancelDeliveryMutation, useGetDeliveriesQuery } from "@/store/api/deliveriesApi";
 import { useCommercialGating } from "@/hooks/useCommercialGating";
+import { canManageCatalog, useFarmRole } from "@/hooks/useFarmRole";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { apiErrorMessage } from "@/lib/apiError";
 import { OrderDialog } from "@/components/commercial/OrderDialog";
@@ -56,6 +57,9 @@ function articlesSummary(order: Order): string {
 export default function CommandesPage() {
   const router = useRouter();
   const { farmId, hasFarm, hasCommercial } = useCommercialGating();
+  // Toute écriture commerciale est OWNER/MANAGER côté serveur
+  // (`CommercialAccess.WRITE_MANAGER`) : on cache plutôt que de proposer un 403.
+  const canWrite = canManageCatalog(useFarmRole(farmId));
   const { showToast } = useToast();
   const skip = !hasFarm || !hasCommercial;
   const { data: orders, isLoading: ordersLoading } = useGetOrdersQuery({ farmId: farmId as number }, { skip });
@@ -279,7 +283,7 @@ export default function CommandesPage() {
                           />
                         </TableCell>
                         <TableCell align="right">
-                          {d.status === "DELIVERED" && (
+                          {canWrite && d.status === "DELIVERED" && (
                             <IconButton
                               size="small"
                               aria-label="Actions"

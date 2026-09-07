@@ -52,7 +52,7 @@ export default function FormulaEditorScreen() {
   const id = formulaId ? Number(formulaId) : null;
   const router = useRouter();
   const farmId = useSelector(selectSelectedFarmId);
-  const { can } = useFarmAccess();
+  const { farmRole, isAdmin } = useFarmAccess();
 
   const { data: existing } = useGetFeedFormulaQuery(
     farmId === null || id === null ? skipToken : { farmId, id },
@@ -88,7 +88,9 @@ export default function FormulaEditorScreen() {
   const available = articles.filter((a) => !ingredients.some((i) => i.articleKey === a.articleKey));
 
   if (farmId === null) return <Redirect href="/(field)" />;
-  if (!can('inventory:write')) return <Redirect href="/(field)/stocks/formules" />;
+  // Le backend garde sur le RÔLE (`InventoryAccess.WRITE_MANAGER`), pas sur la permission.
+  const canWrite = isAdmin || farmRole === 'OWNER' || farmRole === 'MANAGER';
+  if (!canWrite) return <Redirect href="/(field)/stocks/formules" />;
 
   const saving = creating || updating;
   const canSave = name.trim().length > 0 && ingredients.length > 0 && !saving;

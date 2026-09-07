@@ -39,6 +39,7 @@ import { useGetSalesQuery } from "@/store/api/salesApi";
 import { useGetInvoicesQuery } from "@/store/api/invoicesApi";
 import { useGetPaymentsQuery } from "@/store/api/paymentsApi";
 import { useCommercialGating } from "@/hooks/useCommercialGating";
+import { canManageCatalog, useFarmRole } from "@/hooks/useFarmRole";
 import { ClientDialog } from "./ClientDialog";
 import { OrderDialog } from "./OrderDialog";
 import { PaymentDialog } from "./PaymentDialog";
@@ -74,6 +75,9 @@ function TimelineIcon({ kind }: { kind: TimelineKind }) {
 
 export function ClientDetailView({ clientId }: { clientId: number }) {
   const { farmId, hasFarm, hasCommercial } = useCommercialGating();
+  // Toute écriture commerciale est OWNER/MANAGER côté serveur
+  // (`CommercialAccess.WRITE_MANAGER`) : on cache plutôt que de proposer un 403.
+  const canWrite = canManageCatalog(useFarmRole(farmId));
   const { showToast } = useToast();
   const skip = !hasFarm || !hasCommercial;
 
@@ -197,7 +201,7 @@ export function ClientDetailView({ clientId }: { clientId: number }) {
           </Box>
         </Stack>
         <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }} useFlexGap>
-          {unpaidInvoice && (
+          {canWrite && unpaidInvoice && (
             <Button
               variant="outlined"
               color="primary"
@@ -214,18 +218,22 @@ export function ClientDetailView({ clientId }: { clientId: number }) {
           >
             Nouvelle commande
           </Button>
-          <Button
-            variant="outlined"
-            color="inherit"
-            startIcon={<Power size={16} />}
-            onClick={onDeactivate}
-            disabled={!client.active}
-          >
-            Désactiver
-          </Button>
-          <Button variant="outlined" color="inherit" startIcon={<Pencil size={16} />} onClick={() => setEditOpen(true)}>
-            Éditer
-          </Button>
+          {canWrite && (
+            <Button
+              variant="outlined"
+              color="inherit"
+              startIcon={<Power size={16} />}
+              onClick={onDeactivate}
+              disabled={!client.active}
+            >
+              Désactiver
+            </Button>
+          )}
+          {canWrite && (
+            <Button variant="outlined" color="inherit" startIcon={<Pencil size={16} />} onClick={() => setEditOpen(true)}>
+              Éditer
+            </Button>
+          )}
         </Stack>
       </Stack>
 

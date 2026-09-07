@@ -8,9 +8,11 @@ vi.mock("@/hooks/useInventoryGating", () => ({
   useInventoryGating: () => ({ farmId: 7, hasFarm: true, hasInventory: true, isLoading: false }),
 }));
 
-let canWrite = true;
-vi.mock("@/hooks/useFarmPermissions", () => ({
-  useFarmPermissions: () => ({ can: (p: string) => canWrite && p === "inventory:write" }),
+// Le backend garde sur le rôle, pas sur la permission.
+let role = "OWNER";
+vi.mock("@/hooks/useFarmRole", async (orig) => ({
+  ...(await orig<typeof import("@/hooks/useFarmRole")>()),
+  useFarmRole: () => role,
 }));
 
 // The chart pulls in a ResizeObserver-dependent tree that adds nothing to these assertions.
@@ -59,7 +61,7 @@ function mockFetch(opts?: {
 
 afterEach(() => {
   vi.unstubAllGlobals();
-  canWrite = true;
+  role = "OWNER";
 });
 
 describe("StockItemDetailView", () => {
@@ -104,9 +106,9 @@ describe("StockItemDetailView", () => {
     expect(writes.some((w) => w.url.includes("/deactivate") && w.method === "POST")).toBe(true);
   });
 
-  it("n'offre ni le seuil ni l'archivage sans inventory:write", async () => {
+  it("n'offre ni le seuil ni l'archivage à un ouvrier", async () => {
     // Le backend répond 403 : cacher plutôt que proposer un geste qui échouera.
-    canWrite = false;
+    role = "FARMER";
     mockFetch();
     renderWithProviders(<StockItemDetailView stockItemId={4} />);
 
