@@ -32,8 +32,11 @@ export default function AchatDetailScreen() {
   const poId = rawId ? Number(rawId) : NaN;
 
   const selectedFarmId = useSelector(selectSelectedFarmId);
-  const { can } = useFarmAccess();
-  const canWrite = can('inventory:write');
+  const { farmRole, isAdmin } = useFarmAccess();
+  // Le backend garde chaque écriture sur le RÔLE (`InventoryAccess.WRITE_MANAGER`), pas sur la
+  // permission : un membre à qui l'on aurait accordé `inventory:write` à la main verrait les
+  // boutons et prendrait un 403.
+  const canWrite = isAdmin || farmRole === 'OWNER' || farmRole === 'MANAGER';
 
   const { data: po, isLoading } = useGetPurchaseOrderQuery(
     selectedFarmId === null ? skipToken : { farmId: selectedFarmId, id: poId },
@@ -116,9 +119,21 @@ export default function AchatDetailScreen() {
       {po && canWrite && (po.status === 'DRAFT' || po.status === 'SENT') && (
         <View style={styles.footer}>
           {po.status === 'DRAFT' && (
-            <Pressable accessibilityRole="button" accessibilityLabel="Envoyer le bon d'achat" onPress={doSubmit} disabled={busy} style={[styles.commit, busy && styles.commitDisabled]}>
-              <Text style={styles.commitLabel}>Envoyer</Text>
-            </Pressable>
+            <>
+              {/* Un brouillon existe pour être revu : le corriger évite d'annuler le bon et de
+                  tout ressaisir. Le backend l'accepte tant qu'il est DRAFT. */}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Corriger le brouillon"
+                onPress={() => router.push(`/(field)/stocks/achat-nouveau?id=${po.id}`)}
+                style={styles.secondaryBtn}
+              >
+                <Text style={styles.secondaryLabel}>Corriger</Text>
+              </Pressable>
+              <Pressable accessibilityRole="button" accessibilityLabel="Envoyer le bon d'achat" onPress={doSubmit} disabled={busy} style={[styles.commit, busy && styles.commitDisabled]}>
+                <Text style={styles.commitLabel}>Envoyer</Text>
+              </Pressable>
+            </>
           )}
           {po.status === 'SENT' && (
             <Pressable accessibilityRole="button" accessibilityLabel="Réceptionner le bon d'achat" onPress={doReceive} disabled={busy} style={[styles.commit, busy && styles.commitDisabled]}>
@@ -173,6 +188,8 @@ const styles = StyleSheet.create({
   commit: { flex: 1, minHeight: tokens.touch.primaryButton, borderRadius: tokens.radii.lg, backgroundColor: tokens.colors.accent[400], alignItems: 'center', justifyContent: 'center' },
   commitDisabled: { opacity: 0.4 },
   commitLabel: { ...tokens.typography.button, fontSize: 16, color: tokens.colors.primary[900] },
+  secondaryBtn: { minHeight: tokens.touch.primaryButton, borderRadius: tokens.radii.lg, borderWidth: tokens.layout.borderWidth, borderColor: tokens.colors.field.rule, alignItems: 'center', justifyContent: 'center', paddingHorizontal: tokens.spacing[5] },
+  secondaryLabel: { ...tokens.typography.button, color: tokens.colors.field.text },
   cancelBtn: { minHeight: tokens.touch.primaryButton, borderRadius: tokens.radii.lg, borderWidth: 1, borderColor: tokens.colors.neutral[300], alignItems: 'center', justifyContent: 'center', paddingHorizontal: tokens.spacing[5] },
   cancelLabel: { ...tokens.typography.button, fontSize: 15, color: tokens.colors.field.textMuted },
 });

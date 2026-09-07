@@ -11,8 +11,12 @@ const type = (el: Parameters<typeof fireEvent.changeText>[0], t: string): Promis
 
 const mockCreate = jest.fn(() => ({ unwrap: () => Promise.resolve({ id: 1 }) }));
 
+// Sans `?id=`, l'écran crée ; avec, il corrige ce brouillon.
+const mockParams: { id?: string } = {};
+const mockExisting: { value: unknown } = { value: undefined };
 jest.mock('expo-router', () => ({
   useRouter: jest.fn(() => ({ back: jest.fn(), replace: jest.fn() })),
+  useLocalSearchParams: jest.fn(() => mockParams),
   Redirect: () => null,
 }));
 jest.mock('react-redux', () => ({
@@ -38,13 +42,21 @@ jest.mock('@/store/api/inventoryStockApi', () => ({
   })),
 }));
 jest.mock('@/store/api/purchaseOrdersApi', () => ({
+  useGetPurchaseOrderQuery: jest.fn(() => ({ data: mockExisting.value })),
+  useUpdatePurchaseOrderMutation: jest.fn(() => [jest.fn(), { isLoading: false }]),
   useCreatePurchaseOrderMutation: jest.fn(() => [mockCreate, { isLoading: false }]),
 }));
 
 import AchatNouveauScreen from '../achat-nouveau';
 
 describe('Nouveau bon d\'achat', () => {
-  beforeEach(() => mockCreate.mockClear());
+  beforeEach(() => {
+    mockCreate.mockClear();
+    // Les deux fixtures sont partagées : les remettre à zéro évite qu'un test en ouvre un autre
+    // en mode correction sans le vouloir.
+    delete mockParams.id;
+    mockExisting.value = undefined;
+  });
 
   it('picks a supplier + an article, then creates the order', async () => {
     await render(<AchatNouveauScreen />);
@@ -60,5 +72,22 @@ describe('Nouveau bon d\'achat', () => {
         lines: [expect.objectContaining({ articleKey: 'feed_starter', articleSource: 'INVENTORY', orderedQuantity: 500 })],
       }),
     });
+  });
+
+  it('recharge un brouillon quand on vient le corriger', async () => {
+    // Le brouillon existe pour être revu : l'écran doit rouvrir CE bon, pas un formulaire vide.
+    mockParams.id = '4';
+    mockExisting.value = {
+      id: 4, farmId: 7, orderNumber: 'BA-001', supplierId: 2, supplierName: 'Sénégal Aliments',
+      status: 'DRAFT', orderDate: '2026-08-01', expectedDeliveryDate: '2026-08-05',
+      actualDeliveryDate: null, totalXof: 150000, notes: null,
+      items: [{ id: 11, articleKey: 'FEED_STARTER', articleSource: 'INVENTORY', articleLabelSnapshot: 'Aliment démarrage', unit: 'kg', orderedQuantity: 500, receivedQuantity: 0, unitPriceXof: 300, lineTotalXof: 150000, notes: null }],
+    };
+
+    await render(<AchatNouveauScreen />);
+
+    expect(screen.getByText('Corriger le brouillon')).toBeTruthy();
+    // La ligne du brouillon est là, avec sa quantité — pas un formulaire vide.
+    expect(screen.getByText('Aliment démarrage')).toBeTruthy();
   });
 });

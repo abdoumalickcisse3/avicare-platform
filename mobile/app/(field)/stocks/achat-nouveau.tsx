@@ -1,14 +1,22 @@
 /**
- * Nouveau bon d'achat — mobile port of the web `PurchaseOrderDialog`. Pick a
- * supplier (required), add articles (from the farm's stock items) with a
- * quantity and unit price, optional expected delivery date → createPurchaseOrder
- * (DRAFT). Online-only; `inventory:write`.
+ * Bon d'achat — création, et correction d'un brouillon. Port mobile du web
+ * `PurchaseOrderDialog`. On choisit un fournisseur (obligatoire), on ajoute des articles du
+ * stock avec quantité et prix unitaire, une date de livraison prévue facultative → DRAFT.
+ *
+ * Avec `?id=<n>`, l'écran ouvre ce brouillon et le réécrit au lieu d'en créer un. Le brouillon
+ * existe pour être revu avant d'être envoyé, et le backend l'accepte tant qu'il est DRAFT
+ * (`PurchaseOrderService.updateDraft`) — sans quoi une quantité mal tapée obligeait à annuler le
+ * bon et à tout ressaisir.
+ *
+ * En ligne seulement. Écritures réservées au propriétaire et au gérant : le backend garde sur le
+ * RÔLE (`InventoryAccess.WRITE_MANAGER`), pas sur la permission — un membre à qui l'on aurait
+ * accordé `inventory:write` à la main prendrait un 403.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { Redirect, useRouter } from 'expo-router';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
 import { ArrowLeft, Check, ChevronDown, Minus, Package, Plus, Trash2 } from 'lucide-react-native';
@@ -17,7 +25,11 @@ import { useFarmAccess } from '@/auth/useSession';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { useGetSuppliersQuery } from '@/store/api/suppliersApi';
 import { useGetStockItemsQuery } from '@/store/api/inventoryStockApi';
-import { useCreatePurchaseOrderMutation } from '@/store/api/purchaseOrdersApi';
+import {
+  useCreatePurchaseOrderMutation,
+  useGetPurchaseOrderQuery,
+  useUpdatePurchaseOrderMutation,
+} from '@/store/api/purchaseOrdersApi';
 import { formatCurrency } from '@/lib/format';
 import type { ArticleSource, PurchaseOrderInput } from '@/types';
 
@@ -50,19 +62,59 @@ export function buildPurchaseOrderInput(lines: Line[], supplierId: number, expec
 
 export default function AchatNouveauScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ id?: string }>();
+  const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const editingId = rawId ? Number(rawId) : null;
+
   const selectedFarmId = useSelector(selectSelectedFarmId);
-  const { can, session } = useFarmAccess();
-  const canWrite = can('inventory:write');
+  const { farmRole, isAdmin, session } = useFarmAccess();
+  const canWrite = isAdmin || farmRole === 'OWNER' || farmRole === 'MANAGER';
 
   const arg = selectedFarmId === null ? skipToken : { farmId: selectedFarmId };
   const { data: suppliers } = useGetSuppliersQuery(arg);
   const { data: items } = useGetStockItemsQuery(arg);
-  const [createPO, { isLoading: saving }] = useCreatePurchaseOrderMutation();
+  const [createPO, { isLoading: creating }] = useCreatePurchaseOrderMutation();
+  const [updatePO, { isLoading: updating }] = useUpdatePurchaseOrderMutation();
+  const saving = creating || updating;
+
+  const { data: existing } = useGetPurchaseOrderQuery(
+    selectedFarmId === null || editingId === null
+      ? skipToken
+      : { farmId: selectedFarmId, id: editingId },
+  );
 
   const [supplierId, setSupplierId] = useState<number | null>(null);
   const [supplierPickerOpen, setSupplierPickerOpen] = useState(false);
   const [lines, setLines] = useState<Line[]>([]);
   const [expectedDate, setExpectedDate] = useState('');
+
+  /**
+   * Recharge le brouillon dans le formulaire, une fois qu'il est arrivé.
+   *
+   * Clé sur `existing.id` et non sur l'objet : le cache RTK renvoie une nouvelle référence à
+   * chaque invalidation, et se recaler dessus effacerait ce que l'utilisateur est en train de
+   * taper. Le libellé et l'unité viennent du catalogue quand l'article y est encore ; sinon on
+   * garde le libellé figé sur le bon, qui reste lisible.
+   */
+  useEffect(() => {
+    if (!existing) return;
+    setSupplierId(existing.supplierId);
+    setExpectedDate(existing.expectedDeliveryDate ?? '');
+    setLines(
+      existing.items.map((it) => {
+        const item = (items ?? []).find((i) => i.articleKey === it.articleKey);
+        return {
+          articleKey: it.articleKey,
+          articleSource: it.articleSource,
+          label: it.articleLabelSnapshot ?? articleLabel(it.articleKey),
+          unit: it.unit ?? item?.unit ?? 'unité',
+          quantity: it.orderedQuantity,
+          unitPriceXof: it.unitPriceXof,
+        };
+      }),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existing?.id]);
 
   const total = lines.reduce((s, l) => s + l.quantity * l.unitPriceXof, 0);
   const supplierLabel = supplierId == null ? 'Choisir un fournisseur' : (suppliers?.find((s) => s.id === supplierId)?.commercialName ?? 'Fournisseur');
@@ -82,14 +134,27 @@ export default function AchatNouveauScreen() {
   const submit = async () => {
     if (selectedFarmId === null || supplierId == null || lines.length === 0) return;
     try {
-      await createPO({ farmId: selectedFarmId, body: buildPurchaseOrderInput(lines, supplierId, expectedDate) }).unwrap();
+      const body = buildPurchaseOrderInput(lines, supplierId, expectedDate);
+      if (editingId !== null) {
+        await updatePO({ farmId: selectedFarmId, id: editingId, body }).unwrap();
+      } else {
+        await createPO({ farmId: selectedFarmId, body }).unwrap();
+      }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      router.replace('/(field)/stocks/achats');
+      // Après une correction on revient sur la fiche du bon, pas sur la liste : c'est là que
+      // l'on vérifie ce qu'on vient d'écrire, et que l'on décide de l'envoyer.
+      router.replace(
+        editingId !== null
+          ? `/(field)/stocks/achats/${editingId}`
+          : '/(field)/stocks/achats',
+      );
     } catch (err) {
       const message =
         (err as { data?: { detail?: string; message?: string } })?.data?.detail ??
         (err as { data?: { message?: string } })?.data?.message ??
-        'Le bon d’achat n’a pas pu être créé. Réessayez.';
+        (editingId !== null
+          ? 'Le brouillon n’a pas pu être corrigé. Réessayez.'
+          : 'Le bon d’achat n’a pas pu être créé. Réessayez.');
       Alert.alert('Bon d’achat', message);
     }
   };
@@ -110,8 +175,14 @@ export default function AchatNouveauScreen() {
           <ArrowLeft size={22} color={tokens.colors.field.text} />
         </Pressable>
         <View style={{ flex: 1 }}>
-          <Text style={styles.title}>Nouveau bon d'achat</Text>
-          <Text style={styles.subtitle}>Commander du stock à un fournisseur</Text>
+          <Text style={styles.title}>
+            {editingId !== null ? 'Corriger le brouillon' : "Nouveau bon d'achat"}
+          </Text>
+          <Text style={styles.subtitle}>
+            {editingId !== null
+              ? 'Les lignes remplacent celles du brouillon'
+              : 'Commander du stock à un fournisseur'}
+          </Text>
         </View>
       </View>
 
