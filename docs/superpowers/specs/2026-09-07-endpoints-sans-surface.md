@@ -130,6 +130,7 @@ les suivait :
 | Traitement | **OWNER seul** | ❌ **aucune garde** → offerte au gérant, au vétérinaire, à tous | ✅ correct |
 | Vaccination | OWNER / MANAGER | ⬜ absente | ⬜ absente |
 | Visite vétérinaire | OWNER / MANAGER | ✅ | ✅ |
+| Collecte d'œufs | OWNER / MANAGER (`LayerAccess`) | ❌ **aucune garde** | ❌ `poultry:write` |
 
 Le traitement est le plus sérieux : il porte des **délais d'attente**, et l'effacer efface la trace
 de ce qui a été administré à des bêtes qui partiront à la vente. La corbeille était offerte à tout
@@ -171,7 +172,7 @@ Après avoir ouvert chaque écran appelant :
 - **6 capacités réellement manquantes**, livrées — trois côté web (seuil d'alerte, archivage
   d'article, vaccinations d'un lot), la suppression d'une vaccination, la correction d'un
   brouillon de bon d'achat, l'onglet « Encours dépassé » ;
-- **5 défauts de garde** trouvés en chemin, tous du même genre — un bouton offert à qui le
+- **6 défauts de garde** trouvés en chemin, tous du même genre — un bouton offert à qui le
   backend refuse : suppression d'un traitement (offerte à tous), d'une observation (deux apps),
   et toutes les écritures sur un bon d'achat ;
 - **1 défaut de calcul** : une facture déclarée en retard un jour trop tôt, contredisant le
