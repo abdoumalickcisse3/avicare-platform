@@ -68,7 +68,8 @@ export const invoicesApi = baseApi.injectEndpoints({
       transformResponse: (r: ApiEnvelope<Invoice>) => r.data,
       invalidatesTags: (_r, _e, { id }) => [
         { type: 'Invoice', id },
-        { type: 'Invoice', id: 'LIST' },
+        // `list` lowercase is what getInvoices provides; `LIST` refreshed nothing.
+        { type: 'Invoice', id: 'list' },
         { type: 'Invoice', id: 'OVERDUE' },
         { type: 'Client', id: 'list' },
       ],
