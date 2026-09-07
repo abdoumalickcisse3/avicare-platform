@@ -72,36 +72,41 @@ const DESKTOP_ONLY: { prefix: string; why: string }[] = [
  * unmounted. What the check buys is the ratchet — the list can only shrink by accident.
  */
 const HOOKS_WITH_NO_SCREEN: { hook: string; side: "web" | "mobile"; why: string }[] = [
-  /* ── Mounted on the phone, not on the web: parity running the other way ──────────────── */
-  {
-    hook: "useGetVaccinationsQuery",
-    side: "web",
-    why: "Le mobile liste les vaccinations d'un lot (`HealthSection`) ; le web n'affiche que l'échéancier du programme. Écart web, à trancher.",
-  },
-  {
-    hook: "useGetLowStockItemsQuery",
-    side: "web",
-    why: "Alertes de stock bas : montées sur l'onglet Stocks du mobile, absentes du web.",
-  },
-  {
-    hook: "useGetFeedFormulaQuery",
-    side: "web",
-    why: "Lecture d'une formule seule : le mobile s'en sert pour l'édition d'une formule, le web recharge la liste.",
-  },
+  /* ── Mounted on the phone, not on the web: a real gap, verified in the calling code ───
+     Chaque ligne ici a été vérifiée en ouvrant l'écran web correspondant. Trois autres candidats
+     ont été écartés après vérification : le web rend bien le stock bas, l'encours client et la
+     lecture d'une formule — par un autre endpoint (voir la section « redondances » plus bas). */
   {
     hook: "useUpdateStockThresholdMutation",
     side: "web",
-    why: "Le seuil d'alerte d'un article se règle depuis la fiche article du mobile, pas depuis le web.",
+    why: "`StockItemDetailView` AFFICHE le seuil d'alerte en KPI mais n'offre aucun moyen de le régler ; le mobile le règle depuis la fiche article. Le web peut voir le seuil sans jamais le changer.",
   },
   {
     hook: "useDeactivateStockItemMutation",
     side: "web",
-    why: "Désactiver un article de stock : geste offert par le mobile seul.",
+    why: "Désactiver un article de stock : offert par le mobile seul (le web ne désactive que les formules d'aliment).",
+  },
+  {
+    hook: "useGetVaccinationsQuery",
+    side: "web",
+    why: "`VaccinationSection` n'affiche que l'échéancier d'un programme assigné : sur un lot sans programme, elle dit « Aucun programme assigné » et les vaccinations réellement enregistrées restent invisibles. Le mobile les compte au moins en repli.",
+  },
+
+  /* ── Redondances : la capacité EST rendue, par un autre endpoint ──────────────────────── */
+  {
+    hook: "useGetLowStockItemsQuery",
+    side: "web",
+    why: "Pas un manque : `stocks/page.tsx` rend le stock bas via `alerts.lowStockItems`, et le tableau de bord via `lowStockCount`. Deux endpoints pour le même chiffre — en garder un.",
   },
   {
     hook: "useGetClientCreditQuery",
     side: "web",
-    why: "L'encours d'un client (D26, alerte indicative) est affiché par la fiche client du mobile, pas par celle du web.",
+    why: "Pas un manque : `ClientDetailView` affiche l'encours et son ratio à la limite, lus sur l'objet Client (`currentBalanceXof`). Endpoint redondant.",
+  },
+  {
+    hook: "useGetFeedFormulaQuery",
+    side: "web",
+    why: "Pas un manque : le web édite une formule depuis l'objet déjà chargé par `getAvailableFormulas`. Lire une formule seule ne sert qu'au mobile.",
   },
 
   /* ── Sur aucun des deux : endpoints livrés sans surface ──────────────────────────────── */
@@ -161,11 +166,6 @@ const HOOKS_WITH_NO_SCREEN: { hook: string; side: "web" | "mobile"; why: string 
   { hook: "useGetSaleQuery", side: "mobile", why: "Idem côté mobile." },
 
   /* ── Web seulement ───────────────────────────────────────────────────────────────────── */
-  {
-    hook: "useLogoutMutation",
-    side: "web",
-    why: "Le bouton Déconnexion du Header dispatche `logout()`, qui ne fait que vider le stockage local : le refresh token n'est jamais révoqué côté serveur. Constat d'audit connu, non corrigé — le binding est là, il n'est pas appelé.",
-  },
   {
     hook: "useUpdatePurchaseOrderMutation",
     side: "web",
@@ -329,6 +329,12 @@ const KNOWN_DIVERGENCES: { url: string; side: "web" | "mobile"; why: string }[] 
  *
  * The export block is `export const { useX, useY } = fooApi;` on both apps — the one place a
  * hook becomes public. A hook named there and nowhere else is unreachable UI.
+ *
+ * A React hook is not the only way to reach an endpoint: outside a component — in a thunk, a
+ * route guard — the caller dispatches `fooApi.endpoints.bar.initiate(...)` instead, which is
+ * correct and names the *endpoint*, not the hook. Reading hook names alone reported `logout` as
+ * unmounted while `authActions` was calling it exactly that way, so the endpoint name behind
+ * each hook counts as a call site too.
  */
 function unmountedHooks(apiDir: string, roots: string[]): string[] {
   const callers = roots
@@ -345,7 +351,15 @@ function unmountedHooks(apiDir: string, roots: string[]): string[] {
     const block = /export const \{([^}]*)\} = \w+;/.exec(source);
     if (!block) continue;
     for (const hook of block[1].match(/\buse\w+/g) ?? []) {
-      if (!new RegExp(`\\b${hook}\\b`).test(callers)) out.add(hook);
+      // useGetFooQuery / useLazyGetFooQuery / useFooMutation → the `getFoo` / `foo` endpoint.
+      const endpoint = hook
+        .replace(/^use(Lazy)?/, "")
+        .replace(/(Query|Mutation)$/, "");
+      const name = endpoint.charAt(0).toLowerCase() + endpoint.slice(1);
+      const called =
+        new RegExp(`\\b${hook}\\b`).test(callers) ||
+        new RegExp(`endpoints\\.${name}\\b`).test(callers);
+      if (!called) out.add(hook);
     }
   }
   return [...out].sort();
