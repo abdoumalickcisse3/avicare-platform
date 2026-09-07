@@ -10,6 +10,12 @@
  * Recording a payment is an ordinary online mutation, never queued: `@/sync/types` — money
  * writes stay online because the server doesn't deduplicate them, and here a replayed payment
  * would also send the supplier a second WhatsApp receipt for the same one.
+ *
+ * The ledger writes both ways: a CREDIT (we pay the supplier) and a DEBIT (we note what we owe
+ * him outside a purchase order — the carnet the farmer keeps at the shop). Only a CREDIT can
+ * carry the WhatsApp notice; there is nothing to acknowledge in a debt we record ourselves.
+ * A MANUAL line can be removed; one derived from a purchase order is corrected through its
+ * order, so the backend refuses it and the row offers nothing.
  */
 import { useState } from 'react';
 import { Alert, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
@@ -17,12 +23,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, Trash2 } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { useFarmAccess } from '@/auth/useSession';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
-import { useGetSupplierQuery, useUpdateSupplierMutation } from '@/store/api/suppliersApi';
-import { useGetSupplierLedgerQuery, useRecordSupplierPaymentMutation } from '@/store/api/supplierLedgerApi';
+import {
+  useDeleteSupplierMutation,
+  useGetSupplierQuery,
+  useUpdateSupplierMutation,
+} from '@/store/api/suppliersApi';
+import {
+  useDeleteLedgerEntryMutation,
+  useGetSupplierLedgerQuery,
+  useRecordSupplierChargeMutation,
+  useRecordSupplierPaymentMutation,
+} from '@/store/api/supplierLedgerApi';
 import { PAYMENT_METHOD_LABELS, PAYMENT_METHOD_OPTIONS } from '@/lib/commercial';
 import { formatCurrency } from '@/lib/format';
 import type { PaymentMethod, SupplierLedgerEntry } from '@/types';
@@ -49,12 +64,18 @@ export default function FournisseurDetailScreen() {
   const { data: supplier } = useGetSupplierQuery(
     selectedFarmId === null ? skipToken : { farmId: selectedFarmId, id: supplierId },
   );
-  const { data: statement, isLoading } = useGetSupplierLedgerQuery(
+  const {
+    data: statement,
+    isLoading,
+    error: ledgerError,
+  } = useGetSupplierLedgerQuery(
     selectedFarmId === null ? skipToken : { farmId: selectedFarmId, supplierId },
   );
   const [updateSupplier, { isLoading: updatingNotify }] = useUpdateSupplierMutation();
+  const [deleteEntry] = useDeleteLedgerEntryMutation();
+  const [deleteSupplier] = useDeleteSupplierMutation();
 
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [sheetDirection, setSheetDirection] = useState<'DEBIT' | 'CREDIT' | null>(null);
 
   if (selectedFarmId === null) {
     return <Redirect href="/(field)" />;
@@ -90,6 +111,55 @@ export default function FournisseurDetailScreen() {
     }
   };
 
+  /** Removing a line moves the balance, so the confirmation says so before it does. */
+  const confirmRemove = (entry: SupplierLedgerEntry) => {
+    Alert.alert(
+      'Supprimer cette ligne ?',
+      'Elle disparaîtra du relevé et le solde sera recalculé.',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteEntry({ farmId: selectedFarmId, supplierId, entryId: entry.id }).unwrap();
+            } catch {
+              Alert.alert('Relevé', "La ligne n’a pas pu être supprimée. Réessayez.");
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  /**
+   * A soft delete (`SupplierService.deactivate`): the supplier leaves the directory, the history
+   * stays, and — since PR #312 — what is still owed to him keeps counting in the farm total. The
+   * confirmation says so, because "supprimer" otherwise reads as "the debt goes away too".
+   */
+  const confirmRemoveSupplier = () => {
+    Alert.alert(
+      'Retirer ce fournisseur ?',
+      'Il sort de la liste des fournisseurs actifs. Son relevé est conservé, et ce que vous lui devez reste compté dans votre dette fournisseurs.',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Retirer',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteSupplier({ farmId: selectedFarmId, id: supplierId }).unwrap();
+              router.back();
+            } catch {
+              Alert.alert('Fournisseur', "Le fournisseur n’a pas pu être retiré. Réessayez.");
+            }
+          },
+        },
+      ],
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
@@ -98,7 +168,15 @@ export default function FournisseurDetailScreen() {
         </Pressable>
         <View style={{ flex: 1 }}>
           <Text style={styles.title}>{supplier?.commercialName ?? 'Fournisseur'}</Text>
-          <Text style={styles.subtitle}>{isLoading ? '…' : balanceLabel(statement?.balanceXof ?? 0)}</Text>
+          {/* A failed load must never read as "Compte soldé": that is a debt disguised as none
+              owed. Same rule as the web fix dc52e07. */}
+          <Text style={styles.subtitle}>
+            {isLoading
+              ? '…'
+              : ledgerError || !statement
+                ? 'Solde indisponible'
+                : balanceLabel(statement.balanceXof)}
+          </Text>
         </View>
       </View>
 
@@ -120,14 +198,32 @@ export default function FournisseurDetailScreen() {
       )}
 
       <ScrollView contentContainerStyle={styles.content}>
-        {!statement?.entries.length ? (
+        {ledgerError ? (
+          <Text style={styles.muted}>Le relevé n’a pas pu être chargé. Réessayez.</Text>
+        ) : !statement?.entries.length ? (
           <Text style={styles.muted}>Aucun mouvement avec ce fournisseur.</Text>
         ) : (
           <View style={styles.list}>
             {statement.entries.map((e) => (
-              <EntryRow key={e.id} entry={e} />
+              <EntryRow
+                key={e.id}
+                entry={e}
+                canRemove={canWrite && e.source === 'MANUAL'}
+                onRemove={() => confirmRemove(e)}
+              />
             ))}
           </View>
+        )}
+
+        {canWrite && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Retirer ce fournisseur"
+            onPress={confirmRemoveSupplier}
+            style={styles.removeSupplier}
+          >
+            <Text style={styles.removeSupplierLabel}>Retirer ce fournisseur</Text>
+          </Pressable>
         )}
       </ScrollView>
 
@@ -135,18 +231,27 @@ export default function FournisseurDetailScreen() {
         <View style={styles.footer}>
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel="Ajouter une dette"
+            onPress={() => setSheetDirection('DEBIT')}
+            style={styles.secondary}
+          >
+            <Text style={styles.secondaryLabel}>Ajouter une dette</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
             accessibilityLabel="Enregistrer un paiement"
-            onPress={() => setSheetOpen(true)}
-            style={styles.commit}
+            onPress={() => setSheetDirection('CREDIT')}
+            style={[styles.commit, styles.footerPrimary]}
           >
             <Text style={styles.commitLabel}>Enregistrer un paiement</Text>
           </Pressable>
         </View>
       )}
 
-      <PaymentSheet
-        open={sheetOpen}
-        onClose={() => setSheetOpen(false)}
+      <LedgerEntrySheet
+        open={sheetDirection !== null}
+        direction={sheetDirection ?? 'CREDIT'}
+        onClose={() => setSheetDirection(null)}
         farmId={selectedFarmId}
         supplierId={supplierId}
         supplierName={supplier?.commercialName}
@@ -156,7 +261,16 @@ export default function FournisseurDetailScreen() {
   );
 }
 
-function EntryRow({ entry }: { entry: SupplierLedgerEntry }) {
+function EntryRow({
+  entry,
+  canRemove,
+  onRemove,
+}: {
+  entry: SupplierLedgerEntry;
+  /** A line derived from a purchase order is corrected through its order, never here. */
+  canRemove: boolean;
+  onRemove: () => void;
+}) {
   const isCredit = entry.direction === 'CREDIT';
   return (
     <View style={styles.entryRow}>
@@ -170,17 +284,33 @@ function EntryRow({ entry }: { entry: SupplierLedgerEntry }) {
         </Text>
         <Text style={styles.entryBalance}>{formatCurrency(entry.runningBalanceXof)}</Text>
       </View>
+      {canRemove && (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Supprimer la ligne du ${entry.entryDate}`}
+          onPress={onRemove}
+          hitSlop={8}
+          style={styles.entryRemove}
+        >
+          <Trash2 size={16} color={tokens.colors.field.textMuted} />
+        </Pressable>
+      )}
     </View>
   );
 }
 
 /**
- * Records a payment (CREDIT) against the ledger — online-only, deliberately never queued (see
- * file header). The WhatsApp checkbox only appears when the supplier's standing switch is on;
- * a second, per-payment gate, sent as `notifySupplier`.
+ * Writes one line of the ledger — online-only, deliberately never queued (see file header).
+ *
+ * CREDIT is a payment we make; DEBIT is a debt we note down (the shop carnet), and it carries
+ * neither payment method nor WhatsApp notice: there is nothing for the supplier to acknowledge
+ * in a debt we record on our own side. The WhatsApp switch appears on a CREDIT only, and only
+ * when the supplier's standing switch is on — a second, per-payment gate sent as
+ * `notifySupplier`.
  */
-function PaymentSheet({
+function LedgerEntrySheet({
   open,
+  direction,
   onClose,
   farmId,
   supplierId,
@@ -188,13 +318,17 @@ function PaymentSheet({
   canNotify,
 }: {
   open: boolean;
+  direction: 'DEBIT' | 'CREDIT';
   onClose: () => void;
   farmId: number;
   supplierId: number;
   supplierName: string | undefined;
   canNotify: boolean;
 }) {
-  const [recordPayment, { isLoading }] = useRecordSupplierPaymentMutation();
+  const isCredit = direction === 'CREDIT';
+  const [recordPayment, { isLoading: paying }] = useRecordSupplierPaymentMutation();
+  const [recordCharge, { isLoading: charging }] = useRecordSupplierChargeMutation();
+  const isLoading = paying || charging;
   const [amount, setAmount] = useState('');
   const [label, setLabel] = useState('');
   const [method, setMethod] = useState<PaymentMethod>('CASH');
@@ -215,23 +349,35 @@ function PaymentSheet({
 
   const submit = async () => {
     if (!Number.isFinite(value) || value <= 0) return;
+    const body = {
+      amountXof: value,
+      entryDate: todayIso(),
+      label: label.trim() || undefined,
+    };
     try {
-      await recordPayment({
-        farmId,
-        supplierId,
-        body: {
-          amountXof: value,
-          entryDate: todayIso(),
-          label: label.trim() || undefined,
-          method,
-          reference: reference.trim() || undefined,
-          // Always explicit: omitted, the server reads it as true.
-          notifySupplier: canNotify && notifySupplier,
-        },
-      }).unwrap();
+      if (isCredit) {
+        await recordPayment({
+          farmId,
+          supplierId,
+          body: {
+            ...body,
+            method,
+            reference: reference.trim() || undefined,
+            // Always explicit: omitted, the server reads it as true.
+            notifySupplier: canNotify && notifySupplier,
+          },
+        }).unwrap();
+      } else {
+        await recordCharge({ farmId, supplierId, body }).unwrap();
+      }
       close();
     } catch {
-      Alert.alert('Paiement', "Le paiement n’a pas pu être enregistré. Réessayez.");
+      Alert.alert(
+        isCredit ? 'Paiement' : 'Dette',
+        isCredit
+          ? "Le paiement n’a pas pu être enregistré. Réessayez."
+          : "La dette n’a pas pu être enregistrée. Réessayez.",
+      );
     }
   };
 
@@ -239,8 +385,16 @@ function PaymentSheet({
     <Modal visible={open} transparent animationType="slide" onRequestClose={close}>
       <Pressable style={styles.backdrop} accessibilityLabel="Fermer" onPress={close} />
       <View style={styles.sheet}>
-        <Text style={styles.sheetTitle}>Enregistrer un paiement</Text>
+        <Text style={styles.sheetTitle}>
+          {isCredit ? 'Enregistrer un paiement' : 'Ajouter une dette'}
+        </Text>
         {supplierName && <Text style={styles.sheetSubtitle}>{supplierName}</Text>}
+        {!isCredit && (
+          <Text style={styles.sheetHelper}>
+            Ce que vous devez au fournisseur hors bon d’achat — le carnet de la boutique. Aucune
+            dépense n’est créée : elle l’est à la réception du bon d’achat.
+          </Text>
+        )}
 
         <Text style={styles.fieldLabel}>Montant *</Text>
         <TextInput
@@ -256,17 +410,21 @@ function PaymentSheet({
         <Text style={styles.fieldLabel}>Libellé</Text>
         <TextInput value={label} onChangeText={setLabel} placeholder="Optionnel" accessibilityLabel="Libellé" style={styles.input} />
 
-        <Text style={styles.fieldLabel}>Mode de paiement</Text>
-        <View style={styles.chipRow}>
-          {PAYMENT_METHOD_OPTIONS.map((m) => (
-            <Chip key={m} label={PAYMENT_METHOD_LABELS[m]} active={method === m} onPress={() => setMethod(m)} />
-          ))}
-        </View>
+        {isCredit && (
+          <>
+            <Text style={styles.fieldLabel}>Mode de paiement</Text>
+            <View style={styles.chipRow}>
+              {PAYMENT_METHOD_OPTIONS.map((m) => (
+                <Chip key={m} label={PAYMENT_METHOD_LABELS[m]} active={method === m} onPress={() => setMethod(m)} />
+              ))}
+            </View>
 
-        <Text style={styles.fieldLabel}>Référence</Text>
-        <TextInput value={reference} onChangeText={setReference} placeholder="Optionnel" accessibilityLabel="Référence" style={styles.input} />
+            <Text style={styles.fieldLabel}>Référence</Text>
+            <TextInput value={reference} onChangeText={setReference} placeholder="Optionnel" accessibilityLabel="Référence" style={styles.input} />
+          </>
+        )}
 
-        {canNotify && (
+        {isCredit && canNotify && (
           <View style={styles.switchRow}>
             <Text style={[styles.fieldLabel, { marginTop: 0, flex: 1 }]}>
               {supplierName ? `Prévenir ${supplierName} par WhatsApp` : 'Prévenir par WhatsApp'}
@@ -281,7 +439,7 @@ function PaymentSheet({
 
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Confirmer le paiement"
+          accessibilityLabel={isCredit ? 'Confirmer le paiement' : 'Confirmer la dette'}
           onPress={submit}
           disabled={!canSubmit}
           style={[styles.commit, !canSubmit && styles.commitDisabled]}
@@ -324,7 +482,24 @@ const styles = StyleSheet.create({
   entryAmount: { ...tokens.typography.bodyMd, fontWeight: '700', fontVariant: ['tabular-nums'] },
   entryBalance: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, fontVariant: ['tabular-nums'], marginTop: 2 },
 
-  footer: { paddingHorizontal: tokens.layout.screenPadding, paddingTop: tokens.spacing[3], paddingBottom: tokens.spacing[4], borderTopWidth: tokens.layout.ruleWidth, borderTopColor: tokens.colors.neutral[200], backgroundColor: tokens.colors.neutral[0] },
+  entryRemove: { marginLeft: tokens.spacing[2], padding: tokens.spacing[1] },
+
+  footer: { flexDirection: 'row', gap: tokens.spacing[2], paddingHorizontal: tokens.layout.screenPadding, paddingTop: tokens.spacing[3], paddingBottom: tokens.spacing[4], borderTopWidth: tokens.layout.ruleWidth, borderTopColor: tokens.colors.neutral[200], backgroundColor: tokens.colors.neutral[0] },
+  secondary: {
+    flex: 1,
+    minHeight: tokens.touch.button,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: tokens.radii.lg,
+    borderWidth: tokens.layout.borderWidth,
+    borderColor: tokens.colors.field.rule,
+  },
+  secondaryLabel: { ...tokens.typography.button, color: tokens.colors.field.text },
+  // `commit` carries the sheet's submit margin; in the footer row the two buttons share the width.
+  footerPrimary: { flex: 1, marginTop: 0 },
+  removeSupplier: { minHeight: tokens.touch.button, alignItems: 'center', justifyContent: 'center', marginTop: tokens.spacing[6] },
+  removeSupplierLabel: { ...tokens.typography.button, color: tokens.colors.errorDark },
+  sheetHelper: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginTop: tokens.spacing[1] },
 
   backdrop: { flex: 1, backgroundColor: 'rgba(18,43,18,0.35)' },
   sheet: { backgroundColor: tokens.colors.neutral[0], borderTopLeftRadius: tokens.radii.xl, borderTopRightRadius: tokens.radii.xl, padding: tokens.layout.screenPadding, paddingBottom: tokens.spacing[8], gap: tokens.spacing[2] },
