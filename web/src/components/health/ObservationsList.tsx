@@ -23,6 +23,7 @@ import { formatDate } from "@/lib/format";
 import { severityChip, humanizeKey } from "@/lib/health";
 import { colors } from "@/theme/tokens";
 import { useFarmPermissions } from "@/hooks/useFarmPermissions";
+import { canManageCatalog, useFarmRole } from "@/hooks/useFarmRole";
 import { ObservationDialog } from "./ObservationDialog";
 
 export function ObservationsList({
@@ -40,6 +41,11 @@ export function ObservationsList({
   const { data: observations, isLoading, error } = useGetObservationsQuery({ farmId, unitId });
   const { can } = useFarmPermissions(farmId);
   const canWrite = can("health:write");
+  // Enregistrer une observation est un geste de terrain (`health:write`) ; l'effacer est un geste
+  // de supervision, réservé au propriétaire et au gérant côté backend
+  // (`HealthAccess.WRITE_BASIC_MANAGER`). La corbeille suivait la garde de saisie : un ouvrier la
+  // voyait et prenait un 403.
+  const canDelete = canManageCatalog(useFarmRole(farmId));
   const [deleteObservation] = useDeleteObservationMutation();
   const [open, setOpen] = useState(false);
 
@@ -114,9 +120,11 @@ export function ObservationsList({
                     {o.suspectedDisease ? ` · ${humanizeKey(o.suspectedDisease)}` : ""}
                   </Typography>
                 </Box>
-                <IconButton size="small" aria-label="Supprimer" onClick={() => onDelete(o.id)}>
-                  <Trash2 size={16} />
-                </IconButton>
+                {canDelete && (
+                  <IconButton size="small" aria-label="Supprimer" onClick={() => onDelete(o.id)}>
+                    <Trash2 size={16} />
+                  </IconButton>
+                )}
               </Box>
             );
           })}

@@ -35,6 +35,7 @@ jest.mock('@/store/api/healthApi', () => ({
   useAssignProgramMutation: () => [jest.fn()],
   useRemoveProgramMutation: () => [jest.fn()],
   useDeleteObservationMutation: jest.fn(() => [jest.fn(), { isLoading: false }]),
+  useDeleteVaccinationMutation: jest.fn(() => [jest.fn(), { isLoading: false }]),
   useDeleteTreatmentMutation: () => [jest.fn()],
   useDeleteVetVisitMutation: () => [jest.fn()],
 }));
@@ -132,6 +133,38 @@ describe('HealthSection', () => {
     expect(queryByLabelText('Nouveau traitement')).toBeNull();
     // The two basic entries stay: they need only `health:write`.
     expect(getByLabelText('Nouvelle vaccination')).toBeTruthy();
+  });
+
+  it('reserves removing a vaccination or an observation to a supervisor', async () => {
+    // Enregistrer est un geste de terrain (`health:write`) ; effacer est un geste de supervision,
+    // et le backend le réserve à OWNER/MANAGER (`WRITE_BASIC_MANAGER`). Offert sur `health:write`,
+    // un FARMER voyait la corbeille et prenait un 403.
+    state.vaccinations = [
+      { id: 1, unitId: 12, vaccineKey: 'newcastle_b1', administeredDate: '2026-08-01', route: null, dosePerSubject: null, doseUnit: null, subjectsCount: 400, vaccineBatchNumber: null, vaccineExpiryDate: null, administeredByUserId: null, notes: null, createdBy: null, createdAt: '2026-08-01T08:00:00' },
+    ];
+    state.observations = [
+      { id: 2, unitId: 12, title: 'Toux', observationDate: '2026-08-02', severity: 'CRITICAL', description: null, suspectedDisease: null, affectedCount: null, createdBy: null, createdAt: '2026-08-02T08:00:00' },
+    ];
+    mockAccess.farmRole = 'FARMER';
+
+    const { queryByLabelText } = await render(<HealthSection farmId={7} unitId={12} />);
+
+    expect(queryByLabelText('Supprimer la vaccination Newcastle B1')).toBeNull();
+    expect(queryByLabelText("Supprimer l'observation Toux")).toBeNull();
+  });
+
+  it('offers both removals to the owner', async () => {
+    state.vaccinations = [
+      { id: 1, unitId: 12, vaccineKey: 'newcastle_b1', administeredDate: '2026-08-01', route: null, dosePerSubject: null, doseUnit: null, subjectsCount: 400, vaccineBatchNumber: null, vaccineExpiryDate: null, administeredByUserId: null, notes: null, createdBy: null, createdAt: '2026-08-01T08:00:00' },
+    ];
+    state.observations = [
+      { id: 2, unitId: 12, title: 'Toux', observationDate: '2026-08-02', severity: 'CRITICAL', description: null, suspectedDisease: null, affectedCount: null, createdBy: null, createdAt: '2026-08-02T08:00:00' },
+    ];
+
+    const { getByLabelText } = await render(<HealthSection farmId={7} unitId={12} />);
+
+    expect(getByLabelText('Supprimer la vaccination Newcastle B1')).toBeTruthy();
+    expect(getByLabelText("Supprimer l'observation Toux")).toBeTruthy();
   });
 
   it('hides every entry action without health:write', async () => {

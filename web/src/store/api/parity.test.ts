@@ -137,12 +137,6 @@ const HOOKS_WITH_NO_SCREEN: { hook: string; side: "web" | "mobile"; why: string 
   },
   { hook: "useUpdateStockNotesMutation", side: "mobile", why: "Idem côté mobile." },
   {
-    hook: "useDeleteVaccinationMutation",
-    side: "web",
-    why: "Supprimer une vaccination : ni le web ni le mobile ne l'offrent, alors que les traitements et les visites, si. Écart à trancher.",
-  },
-  { hook: "useDeleteVaccinationMutation", side: "mobile", why: "Idem côté mobile." },
-  {
     hook: "useGetSaleQuery",
     side: "web",
     why: "Fiche vente détaillée : les deux apps listent les ventes sans page de détail.",

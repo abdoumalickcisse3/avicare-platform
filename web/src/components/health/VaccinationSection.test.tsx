@@ -1,9 +1,16 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "@/test/render";
 
 vi.mock("@/hooks/useFarmPermissions", () => ({
   useFarmPermissions: () => ({ can: () => true }),
+}));
+
+let role = "OWNER";
+vi.mock("@/hooks/useFarmRole", async (orig) => ({
+  ...(await orig<typeof import("@/hooks/useFarmRole")>()),
+  useFarmRole: () => role,
 }));
 
 import { VaccinationSection } from "./VaccinationSection";
@@ -64,7 +71,10 @@ function setup() {
   );
 }
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  role = "OWNER";
+});
 
 describe("VaccinationSection", () => {
   it("montre les vaccinations faites sur un lot sans programme assigné", async () => {
@@ -77,6 +87,25 @@ describe("VaccinationSection", () => {
     expect(await screen.findByText("Vaccinations enregistrées")).toBeInTheDocument();
     expect(screen.getByText("NEWCASTLE HB1")).toBeInTheDocument();
     expect(screen.getByText(/480 sujets/)).toBeInTheDocument();
+  });
+
+  it("réserve le retrait d'une dose au propriétaire ou au gérant", async () => {
+    // Enregistrer demande `health:write` ; retirer est un geste de supervision, réservé
+    // OWNER/MANAGER côté backend (`WRITE_BASIC_MANAGER`).
+    role = "FARMER";
+    mockFetch();
+    setup();
+
+    expect(await screen.findByText("Vaccinations enregistrées")).toBeInTheDocument();
+    expect(screen.queryByLabelText(/^Supprimer la vaccination/)).toBeNull();
+  });
+
+  it("l'offre au propriétaire, en disant ce que la dose redevient", async () => {
+    mockFetch();
+    setup();
+
+    await userEvent.click(await screen.findByLabelText("Supprimer la vaccination NEWCASTLE HB1"));
+    expect(screen.getByText(/celle-ci redeviendra à faire/)).toBeInTheDocument();
   });
 
   it("ne montre pas de section vide quand rien n'a été administré", async () => {

@@ -22,6 +22,7 @@ import { isFeatureForbidden } from "@/lib/poultry";
 import { formatDate } from "@/lib/format";
 import { daysBetween, humanizeKey, isoToday } from "@/lib/health";
 import { colors } from "@/theme/tokens";
+import { useFarmRole } from "@/hooks/useFarmRole";
 import { TreatmentDialog } from "./TreatmentDialog";
 import { WithdrawalNotice } from "./WithdrawalNotice";
 import type { ExecutedTreatment } from "@/types";
@@ -52,6 +53,11 @@ export function ActiveTreatmentsList({
 }) {
   const { showToast } = useToast();
   const { data: treatments, isLoading, error } = useGetTreatmentsQuery({ farmId, unitId });
+  // Le backend réserve la suppression d'un traitement au PROPRIÉTAIRE seul
+  // (`HealthAccess.ADMIN_ADVANCED_OWNER`) : un traitement porte des délais d'attente, et l'effacer
+  // efface la trace de ce qui a été administré à des bêtes qui partiront à la vente. La corbeille
+  // était offerte à tout le monde et répondait 403 — au gérant comme au vétérinaire.
+  const canDelete = useFarmRole(farmId) === "OWNER";
   const [deleteTreatment] = useDeleteTreatmentMutation();
   const [open, setOpen] = useState(false);
 
@@ -121,9 +127,11 @@ export function ActiveTreatmentsList({
                       {t.doseUnit} · {t.route}
                     </Typography>
                   </Box>
-                  <IconButton size="small" aria-label="Supprimer" onClick={() => onDelete(t.id)}>
-                    <Trash2 size={16} />
-                  </IconButton>
+                  {canDelete && (
+                    <IconButton size="small" aria-label="Supprimer" onClick={() => onDelete(t.id)}>
+                      <Trash2 size={16} />
+                    </IconButton>
+                  )}
                 </Stack>
                 {active && (
                   <Box sx={{ mt: 1 }}>

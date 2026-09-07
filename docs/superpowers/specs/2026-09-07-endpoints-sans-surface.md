@@ -105,12 +105,33 @@ aller-retour réseau pour un filtre d'onglet.
 | Endpoint | La question |
 |---|---|
 | `getClientsOverCreditLimit` | Veut-on un écran « clients au-dessus de leur encours » ? D26 dit que l'alerte est indicative et non bloquante — reste à savoir où on la montre. |
-| `deleteVaccination` | Les traitements et les visites vétérinaires se suppriment, pas les vaccinations. Incohérence assumée ou oubli ? |
+| ~~`deleteVaccination`~~ | ✅ **Livré.** C'était un oubli — et l'instruction a révélé mieux : les gardes de suppression du module sanitaire ne suivaient le backend nulle part. Voir §5. |
 | `updatePurchaseOrder` | Modifier un bon d'achat après création. Aucune des deux apps ne l'offre. |
 | `updateStockNotes` | Notes libres sur une ligne de stock. Aucun champ ne les expose. |
 | `getSale` | Fiche vente détaillée : les deux apps listent les ventes sans page de détail. |
 | `getProgramsByBreed` | Filtrer le catalogue de programmes par race. Le catalogue complet est affiché tel quel. |
 | `getMovementsByLot` | Mouvements de stock filtrés par lot. La fiche article les montre tous. |
+
+---
+
+## 3 bis. Ce que l'instruction de `deleteVaccination` a révélé
+
+Chaque suppression sanitaire a sa propre garde côté serveur, plus étroite que la saisie —
+enregistrer est un geste de terrain, effacer est un geste de supervision. Aucun des deux fronts ne
+les suivait :
+
+| Suppression | Backend | Web (avant) | Mobile (avant) |
+|---|---|---|---|
+| Observation | OWNER / MANAGER | ❌ `health:write` → un ouvrier voyait la corbeille, prenait un 403 | ❌ idem |
+| Traitement | **OWNER seul** | ❌ **aucune garde** → offerte au gérant, au vétérinaire, à tous | ✅ correct |
+| Vaccination | OWNER / MANAGER | ⬜ absente | ⬜ absente |
+| Visite vétérinaire | OWNER / MANAGER | ✅ | ✅ |
+
+Le traitement est le plus sérieux : il porte des **délais d'attente**, et l'effacer efface la trace
+de ce qui a été administré à des bêtes qui partiront à la vente. La corbeille était offerte à tout
+le monde.
+
+Tout est aligné, et six tests tiennent les gardes — dont quatre échouent sur l'ancien code.
 
 ---
 
