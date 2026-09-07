@@ -54,7 +54,9 @@ public class InvoiceService {
       throw new BusinessRuleException(
           "SALE_CANCELLED", "Cannot invoice a cancelled sale " + sale.getSaleNumber());
     }
-    if (invoiceRepository.findByFarmIdAndSaleId(farmId, saleId).isPresent()) {
+    if (invoiceRepository
+        .findByFarmIdAndSaleIdAndStatusNot(farmId, saleId, InvoiceStatus.CANCELLED)
+        .isPresent()) {
       throw new BusinessRuleException(
           "ALREADY_INVOICED", "Sale " + sale.getSaleNumber() + " is already invoiced");
     }
@@ -89,7 +91,9 @@ public class InvoiceService {
           "DELIVERY_CANCELLED",
           "Cannot invoice a cancelled delivery " + delivery.getDeliveryNumber());
     }
-    if (invoiceRepository.findByFarmIdAndDeliveryId(farmId, deliveryId).isPresent()) {
+    if (invoiceRepository
+        .findByFarmIdAndDeliveryIdAndStatusNot(farmId, deliveryId, InvoiceStatus.CANCELLED)
+        .isPresent()) {
       throw new BusinessRuleException(
           "ALREADY_INVOICED", "Delivery " + delivery.getDeliveryNumber() + " is already invoiced");
     }

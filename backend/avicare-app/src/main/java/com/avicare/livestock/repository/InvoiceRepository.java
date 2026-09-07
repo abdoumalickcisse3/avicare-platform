@@ -19,9 +19,18 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
 
   Optional<Invoice> findByFarmIdAndId(Long farmId, Long id);
 
-  Optional<Invoice> findByFarmIdAndSaleId(Long farmId, Long saleId);
+  /**
+   * The live invoice of a source, if any — cancelled ones do not count.
+   *
+   * <p>This is what "already invoiced" means (V56). Asking without the status excluded made a
+   * cancelled invoice block its source forever: a wrong due date, corrected by cancelling and
+   * re-issuing, left the sale permanently un-invoiceable. The cancelled number stays on file; the
+   * source becomes billable again.
+   */
+  Optional<Invoice> findByFarmIdAndSaleIdAndStatusNot(Long farmId, Long saleId, InvoiceStatus status);
 
-  Optional<Invoice> findByFarmIdAndDeliveryId(Long farmId, Long deliveryId);
+  Optional<Invoice> findByFarmIdAndDeliveryIdAndStatusNot(
+      Long farmId, Long deliveryId, InvoiceStatus status);
 
   /**
    * Unpaid invoices whose due date has passed (D24 — "overdue" is derived, not a stored status):
