@@ -2,12 +2,14 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Alert,
   Box,
   Breadcrumbs,
   Button,
   Card,
+  CardActionArea,
   CardContent,
   Chip,
   Skeleton,
@@ -22,14 +24,20 @@ import {
   Tabs,
   Typography,
 } from "@mui/material";
-import { Plus } from "lucide-react";
+import { Bell, Plus } from "lucide-react";
 import {
+  useDeactivateStockItemMutation,
   useGetMovementsByItemQuery,
   useGetStockItemQuery,
 } from "@/store/api/inventoryStockApi";
 import { useInventoryGating } from "@/hooks/useInventoryGating";
+import { useFarmPermissions } from "@/hooks/useFarmPermissions";
+import { useToast } from "@/components/feedback/ToastProvider";
+import { apiErrorMessage } from "@/lib/apiError";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { StockHistoryChart } from "./StockHistoryChart";
 import { StockMovementDialog } from "./StockMovementDialog";
+import { ThresholdDialog } from "./ThresholdDialog";
 import { formatCurrency, formatDate, formatNumber } from "@/lib/format";
 import {
   ARTICLE_SOURCE_LABELS,
@@ -49,8 +57,29 @@ const monoBold = { ...mono, fontWeight: 700 } as const;
 export function StockItemDetailView({ stockItemId }: { stockItemId: number }) {
   const { farmId, hasFarm, hasInventory } = useInventoryGating();
   const skip = !hasFarm || !hasInventory;
+  // Le backend réserve l'écriture d'inventaire ; on cache plutôt que de proposer un geste qui
+  // répondra 403. Même garde que la fiche article du mobile.
+  const { can } = useFarmPermissions(farmId);
+  const canWrite = can("inventory:write");
+  const { showToast } = useToast();
   const [tab, setTab] = useState(0);
   const [moveOpen, setMoveOpen] = useState(false);
+  const [thresholdOpen, setThresholdOpen] = useState(false);
+  const [archiveOpen, setArchiveOpen] = useState(false);
+  const [deactivate, { isLoading: archiving }] = useDeactivateStockItemMutation();
+  const router = useRouter();
+
+  /** Archivage = désactivation douce : l'historique reste, l'article quitte la liste active. */
+  const archive = async () => {
+    try {
+      await deactivate({ farmId: farmId as number, id: stockItemId }).unwrap();
+      showToast("Article archivé.", "success");
+      setArchiveOpen(false);
+      router.push("/stocks/articles");
+    } catch (err) {
+      showToast(apiErrorMessage(err), "error");
+    }
+  };
 
   const { data: item, isLoading } = useGetStockItemQuery(
     { farmId: farmId as number, id: stockItemId },
@@ -118,10 +147,34 @@ export function StockItemDetailView({ stockItemId }: { stockItemId: number }) {
       >
         <Kpi label="Stock actuel" value={formatQty(item.currentQuantity, item.unit)} />
         <Kpi label="Valeur du stock" value={value != null ? formatCurrency(value) : "—"} />
-        <Kpi
-          label="Seuil d'alerte"
-          value={item.alertThreshold != null ? formatQty(item.alertThreshold, item.unit) : "—"}
-        />
+        {/* Le seuil n'était qu'un chiffre : on le voyait sans pouvoir le changer. Il reste une
+            tuile parmi les quatre — cliquable pour qui a le droit d'écrire. */}
+        {canWrite ? (
+          <Card>
+            <CardActionArea
+              aria-label="Modifier le seuil d'alerte"
+              onClick={() => setThresholdOpen(true)}
+              sx={{ height: "100%" }}
+            >
+              <CardContent>
+                <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
+                  <Bell size={13} color={colors.neutral[500]} />
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                    Seuil d&apos;alerte
+                  </Typography>
+                </Stack>
+                <Typography variant="h6" sx={{ ...monoBold, mt: 0.5 }}>
+                  {item.alertThreshold != null ? formatQty(item.alertThreshold, item.unit) : "Définir"}
+                </Typography>
+              </CardContent>
+            </CardActionArea>
+          </Card>
+        ) : (
+          <Kpi
+            label="Seuil d'alerte"
+            value={item.alertThreshold != null ? formatQty(item.alertThreshold, item.unit) : "—"}
+          />
+        )}
         <Kpi label="Conso. 30 jours" value={formatQty(consumption30d, item.unit)} />
       </Box>
 
@@ -166,13 +219,41 @@ export function StockItemDetailView({ stockItemId }: { stockItemId: number }) {
         </Table>
       </TableContainer>
 
+      {/* Archiver — au pied de page, à distance des gestes courants. */}
+      {canWrite && (
+        <Box sx={{ mt: 4, display: "flex", justifyContent: "flex-start" }}>
+          <Button color="error" onClick={() => setArchiveOpen(true)}>
+            Archiver cet article
+          </Button>
+        </Box>
+      )}
+
       {farmId && (
-        <StockMovementDialog
-          open={moveOpen}
-          onClose={() => setMoveOpen(false)}
-          farmId={farmId}
-          preselectStockItemId={item.id}
-        />
+        <>
+          <StockMovementDialog
+            open={moveOpen}
+            onClose={() => setMoveOpen(false)}
+            farmId={farmId}
+            preselectStockItemId={item.id}
+          />
+          <ThresholdDialog
+            open={thresholdOpen}
+            onClose={() => setThresholdOpen(false)}
+            farmId={farmId}
+            item={item}
+          />
+          <ConfirmDialog
+            open={archiveOpen}
+            title={`Archiver ${item.articleKey} ?`}
+            // Désactivation douce : le dire, sinon « archiver » se lit comme « effacer ».
+            message="L'article disparaît de la liste des stocks. Son historique reste consultable, et rien de ce qui a été consommé n'est effacé."
+            confirmLabel="Archiver"
+            danger
+            loading={archiving}
+            onConfirm={archive}
+            onClose={() => setArchiveOpen(false)}
+          />
+        </>
       )}
     </Box>
   );

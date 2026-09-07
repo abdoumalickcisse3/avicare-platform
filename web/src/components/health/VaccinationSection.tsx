@@ -6,6 +6,7 @@ import {
   Button,
   Card,
   Chip,
+  Divider,
   MenuItem,
   Skeleton,
   Stack,
@@ -18,12 +19,15 @@ import {
   useGetProgramAssignmentQuery,
   useGetProgramsQuery,
   useGetScheduleQuery,
+  useGetVaccinationsQuery,
   useRemoveProgramMutation,
 } from "@/store/api/healthApi";
 import { useGetBreedsQuery } from "@/store/api/breedsApi";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { apiErrorMessage } from "@/lib/apiError";
 import { colors } from "@/theme/tokens";
+import { formatDate, formatNumber } from "@/lib/format";
+import { humanizeKey } from "@/lib/health";
 import { VaccinationCalendar } from "./VaccinationCalendar";
 import { useFarmPermissions } from "@/hooks/useFarmPermissions";
 import { VaccinationDialog, type VaccinationPrefill } from "./VaccinationDialog";
@@ -57,6 +61,15 @@ export function VaccinationSection({
     { skip: !assignment },
   );
   const { data: programs = [] } = useGetProgramsQuery({ farmId });
+  /**
+   * Les doses réellement administrées, indépendamment d'un programme.
+   *
+   * Sans cette liste, la section n'affichait que l'échéancier d'un programme assigné : sur un lot
+   * sans programme, elle proposait « Saisir une vaccination ponctuelle » puis n'en montrait
+   * aucune trace. On pouvait vacciner et n'en avoir aucun accusé de réception — le mobile, lui,
+   * les compte depuis toujours.
+   */
+  const { data: vaccinations = [] } = useGetVaccinationsQuery({ farmId, unitId });
   const { data: breeds = [] } = useGetBreedsQuery();
   const [assignProgram, { isLoading: assigning }] = useAssignProgramMutation();
   const [removeProgram] = useRemoveProgramMutation();
@@ -205,6 +218,37 @@ export function VaccinationSection({
           currentAgeDays={currentAgeDays}
           onSelectEntry={(e) => openFromEntry(e)}
         />
+      )}
+
+      {vaccinations.length > 0 && (
+        <Box sx={{ mt: 3 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+            Vaccinations enregistrées
+          </Typography>
+          <Stack divider={<Divider />}>
+            {[...vaccinations]
+              .sort((a, b) => b.administeredDate.localeCompare(a.administeredDate))
+              .map((v) => (
+                <Stack
+                  key={v.id}
+                  direction="row"
+                  spacing={1.5}
+                  sx={{ alignItems: "center", py: 1 }}
+                >
+                  <Syringe size={16} color={colors.success.main} />
+                  <Box sx={{ minWidth: 0, flex: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      {humanizeKey(v.vaccineKey)}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {formatDate(v.administeredDate)} · {formatNumber(v.subjectsCount)} sujets
+                      {v.route ? ` · ${humanizeKey(v.route)}` : ""}
+                    </Typography>
+                  </Box>
+                </Stack>
+              ))}
+          </Stack>
+        </Box>
       )}
 
       <VaccinationDialog
