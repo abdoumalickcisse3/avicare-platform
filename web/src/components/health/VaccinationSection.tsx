@@ -7,18 +7,20 @@ import {
   Card,
   Chip,
   Divider,
+  IconButton,
   MenuItem,
   Skeleton,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
-import { CalendarRange, Plus, Syringe, X } from "lucide-react";
+import { CalendarRange, Plus, Syringe, Trash2, X } from "lucide-react";
 import {
   useAssignProgramMutation,
   useGetProgramAssignmentQuery,
   useGetProgramsQuery,
   useGetScheduleQuery,
+  useDeleteVaccinationMutation,
   useGetVaccinationsQuery,
   useRemoveProgramMutation,
 } from "@/store/api/healthApi";
@@ -30,7 +32,10 @@ import { formatDate, formatNumber } from "@/lib/format";
 import { humanizeKey } from "@/lib/health";
 import { VaccinationCalendar } from "./VaccinationCalendar";
 import { useFarmPermissions } from "@/hooks/useFarmPermissions";
+import { canManageCatalog, useFarmRole } from "@/hooks/useFarmRole";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { VaccinationDialog, type VaccinationPrefill } from "./VaccinationDialog";
+import type { Vaccination } from "@/types";
 
 export function VaccinationSection({
   farmId,
@@ -70,6 +75,25 @@ export function VaccinationSection({
    * les compte depuis toujours.
    */
   const { data: vaccinations = [] } = useGetVaccinationsQuery({ farmId, unitId });
+  /**
+   * Retirer une dose est un geste de **supervision** : le backend le réserve au propriétaire et
+   * au gérant (`HealthAccess.WRITE_BASIC_MANAGER`), là où l'enregistrer demande seulement
+   * `health:write`. Un ouvrier saisit, un responsable corrige.
+   */
+  const canDelete = canManageCatalog(useFarmRole(farmId));
+  const [deleteVaccination] = useDeleteVaccinationMutation();
+  const [toRemove, setToRemove] = useState<Vaccination | null>(null);
+
+  const confirmRemove = async () => {
+    if (!toRemove) return;
+    try {
+      await deleteVaccination({ farmId, id: toRemove.id, unitId }).unwrap();
+      setToRemove(null);
+      showToast("Vaccination supprimée.", "success");
+    } catch (err) {
+      showToast(apiErrorMessage(err), "error");
+    }
+  };
   const { data: breeds = [] } = useGetBreedsQuery();
   const [assignProgram, { isLoading: assigning }] = useAssignProgramMutation();
   const [removeProgram] = useRemoveProgramMutation();
@@ -245,11 +269,31 @@ export function VaccinationSection({
                       {v.route ? ` · ${humanizeKey(v.route)}` : ""}
                     </Typography>
                   </Box>
+                  {canDelete && (
+                    <IconButton
+                      size="small"
+                      aria-label={`Supprimer la vaccination ${humanizeKey(v.vaccineKey)}`}
+                      onClick={() => setToRemove(v)}
+                    >
+                      <Trash2 size={16} />
+                    </IconButton>
+                  )}
                 </Stack>
               ))}
           </Stack>
         </Box>
       )}
+
+      <ConfirmDialog
+        open={Boolean(toRemove)}
+        title="Supprimer cette vaccination ?"
+        // Une dose retirée sort aussi de l'échéancier du programme : la dose redevient « à faire ».
+        message="Elle disparaît de l'historique du lot. Si elle correspondait à une dose du programme, celle-ci redeviendra à faire."
+        confirmLabel="Supprimer"
+        danger
+        onConfirm={confirmRemove}
+        onClose={() => setToRemove(null)}
+      />
 
       <VaccinationDialog
         open={dialogOpen}

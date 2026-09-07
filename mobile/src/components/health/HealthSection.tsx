@@ -25,6 +25,7 @@ import {
   useGetVeterinariansQuery,
   useGetVetVisitsQuery,
   useDeleteObservationMutation,
+  useDeleteVaccinationMutation,
   useDeleteTreatmentMutation,
   useDeleteVetVisitMutation,
   useRemoveProgramMutation,
@@ -68,6 +69,7 @@ export function HealthSection({ farmId, unitId }: { farmId: number; unitId: numb
   const [removeProgram] = useRemoveProgramMutation();
   const [deleteTreatment] = useDeleteTreatmentMutation();
   const [deleteObservation] = useDeleteObservationMutation();
+  const [deleteVaccination] = useDeleteVaccinationMutation();
   const [deleteVetVisit] = useDeleteVetVisitMutation();
 
   // Lot health status. The web flags VIGILANCE on a recent critical observation **or** a late
@@ -97,6 +99,24 @@ export function HealthSection({ farmId, unitId }: { farmId: number; unitId: numb
       : `${formatNumber(vaccinations?.length ?? 0)} vaccination${(vaccinations?.length ?? 0) > 1 ? 's' : ''}`,
     `${formatNumber(observations?.length ?? 0)} observation${(observations?.length ?? 0) > 1 ? 's' : ''}`,
   ];
+
+  const confirmDeleteVaccination = (v: Vaccination) => {
+    Alert.alert(
+      'Supprimer cette vaccination ?',
+      // Retirer une dose la remet « à faire » dans l'échéancier du programme, s'il y en a un.
+      `« ${humanizeKey(v.vaccineKey)} » disparaît de l’historique du lot. Si elle correspondait à une dose du programme, celle-ci redeviendra à faire.`,
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: () => {
+            deleteVaccination({ farmId, id: v.id, unitId });
+          },
+        },
+      ],
+    );
+  };
 
   const confirmDeleteObservation = (o: HealthObservation) => {
     Alert.alert(
@@ -257,6 +277,18 @@ export function HealthSection({ farmId, unitId }: { farmId: number; unitId: numb
                 <Text style={styles.rowTitle}>{humanizeKey(v.vaccineKey)}</Text>
                 <Text style={styles.rowSub}>{v.administeredDate} · {formatNumber(v.subjectsCount)} sujets{v.route ? ` · ${v.route}` : ''}</Text>
               </View>
+              {/* Supervisory, like the observation above: OWNER/MANAGER only. */}
+              {canManage && (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Supprimer la vaccination ${humanizeKey(v.vaccineKey)}`}
+                  onPress={() => confirmDeleteVaccination(v)}
+                  hitSlop={8}
+                  style={styles.rowDelete}
+                >
+                  <Trash2 size={15} color={tokens.colors.field.textMuted} />
+                </Pressable>
+              )}
             </View>
           ))
         )}
@@ -282,8 +314,12 @@ export function HealthSection({ farmId, unitId }: { farmId: number; unitId: numb
                 </View>
                 {/* A CRITICAL observation raises the lot's alert banner farm-wide. One filed by
                     mistake could be recorded on the phone but only withdrawn from a desktop,
-                    leaving the whole farm flagged. Same `health:write` gate as filing one. */}
-                {canWrite && (
+                    leaving the whole farm flagged.
+                    Gated on `canManage`, NOT on `health:write`: recording is a field act, removing
+                    is a supervisory one, and the backend reserves it to OWNER/MANAGER
+                    (`HealthAccess.WRITE_BASIC_MANAGER`). Offered on `health:write`, a FARMER saw
+                    the bin and got a 403. */}
+                {canManage && (
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={`Supprimer l'observation ${o.title}`}
