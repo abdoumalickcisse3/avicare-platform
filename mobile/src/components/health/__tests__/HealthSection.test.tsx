@@ -34,6 +34,7 @@ jest.mock('@/store/api/healthApi', () => ({
   useGetVeterinariansQuery: () => ({ data: [] }),
   useAssignProgramMutation: () => [jest.fn()],
   useRemoveProgramMutation: () => [jest.fn()],
+  useDeleteObservationMutation: jest.fn(() => [jest.fn(), { isLoading: false }]),
   useDeleteTreatmentMutation: () => [jest.fn()],
   useDeleteVetVisitMutation: () => [jest.fn()],
 }));

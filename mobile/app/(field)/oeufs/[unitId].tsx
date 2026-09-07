@@ -5,12 +5,12 @@
  * (eggProductionApi + productionUnits) — nothing recomputed.
  */
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
-import { ArrowLeft, ClipboardList, Droplets, Egg, HeartCrack, Plus, Wheat } from 'lucide-react-native';
+import { ArrowLeft, ClipboardList, Droplets, Egg, HeartCrack, Plus, Trash2, Wheat } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { HealthSection } from '@/components/health/HealthSection';
 import { CloseDayButton } from '@/components/layer/CloseDayButton';
@@ -19,7 +19,7 @@ import { Production7dChart } from '@/components/charts/Production7dChart';
 import { GradesDonut } from '@/components/charts/GradesDonut';
 import { FlockCountCurve } from '@/components/charts/FlockCountCurve';
 import { useGetUnitEventsQuery, useListProductionUnitsQuery } from '@/store/api/productionUnitsApi';
-import { useGetCollectionsQuery, useGetDailyProductionsQuery, useGetRollingRateQuery, useGetTrayStockQuery } from '@/store/api/eggProductionApi';
+import { useDeleteCollectionMutation, useGetCollectionsQuery, useGetDailyProductionsQuery, useGetRollingRateQuery, useGetTrayStockQuery } from '@/store/api/eggProductionApi';
 import { useGetDailyRecordsQuery } from '@/store/api/poultryBatchesApi';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { useFarmAccess } from '@/auth/useSession';
@@ -55,6 +55,7 @@ export default function LayerDetailScreen() {
   const selectedFarmId = useSelector(selectSelectedFarmId);
   const { can } = useFarmAccess();
   const canWrite = can('poultry:write');
+  const [deleteCollection] = useDeleteCollectionMutation();
   const [tab, setTab] = useState<Tab>('overview');
 
   const skip = selectedFarmId === null || Number.isNaN(unitId);
@@ -89,6 +90,28 @@ export default function LayerDetailScreen() {
   );
 
   if (selectedFarmId === null) return <Redirect href="/(field)" />;
+
+  /** Removing a round moves the day's total and the tray stock, so the confirmation names it. */
+  const confirmDeleteCollection = (c: EggCollection) => {
+    Alert.alert(
+      'Supprimer cette collecte ?',
+      `${formatNumber(c.totalEggs)} œufs du ${c.collectionDate} (${c.timeslotKey}) sortiront de la production du lot.`,
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteCollection({ farmId, id: c.id, unitId }).unwrap();
+            } catch {
+              Alert.alert('Collecte', "La collecte n’a pas pu être supprimée. Réessayez.");
+            }
+          },
+        },
+      ],
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -177,6 +200,20 @@ export default function LayerDetailScreen() {
                     <Text style={styles.recTitle}>{c.collectionDate} · {c.timeslotKey}</Text>
                     <Text style={styles.recSub}>{formatNumber(c.totalEggs)} œufs · {c.brokenEggs} cassés</Text>
                   </View>
+                  {/* A miscounted round is corrected by removing it and collecting again: the
+                      backend keys a collection on (date, créneau), so the same slot cannot be
+                      recorded twice. Without this the phone could only add to the mistake. */}
+                  {canWrite && (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Supprimer la collecte du ${c.collectionDate} ${c.timeslotKey}`}
+                      onPress={() => confirmDeleteCollection(c)}
+                      hitSlop={8}
+                      style={styles.recDelete}
+                    >
+                      <Trash2 size={15} color={tokens.colors.field.textMuted} />
+                    </Pressable>
+                  )}
                 </View>
               ))
             )}
@@ -358,6 +395,7 @@ const styles = StyleSheet.create({
   muted: { ...tokens.typography.bodyMd, color: tokens.colors.field.textMuted, textAlign: 'center', paddingVertical: tokens.spacing[4] },
   recRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[3], paddingVertical: tokens.spacing[3] },
   recBorder: { borderTopWidth: 1, borderTopColor: tokens.colors.neutral[100] },
+  recDelete: { padding: tokens.spacing[1], marginLeft: tokens.spacing[1] },
   recDisc: { width: 34, height: 34, borderRadius: tokens.radii.full, backgroundColor: tokens.colors.accent[50], alignItems: 'center', justifyContent: 'center' },
   recTitle: { ...tokens.typography.bodyMd, fontWeight: '600', color: tokens.colors.field.text },
   recSub: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted },
