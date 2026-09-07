@@ -32,9 +32,12 @@
         {
           "microphonePermission": "Jawdi utilise le micro pour la saisie vocale sur le terrain.",
           "speechRecognitionPermission": "Jawdi reconnaît votre voix pour préparer vos saisies.",
-          "androidSpeechServicePackages": ["com.google.android.googlequicksearchbox"]
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox"
+          ]
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "extra": {
       "apiUrl": "http://localhost:8080"

@@ -36,6 +36,22 @@ jest.mock('expo-haptics', () => ({
 jest.mock('@/auth/useSession', () => ({
   useFarmAccess: jest.fn(() => ({ farmRole: 'OWNER', can: () => true, isAdmin: true, session: null })),
 }));
+// L'écran sort maintenant un PDF : nom de la ferme, moteur d'impression, feuille de partage.
+jest.mock('@/store/api/farmsApi', () => ({
+  useListFarmsQuery: jest.fn(() => ({ data: [{ id: 7, name: 'Ferme Complète' }] })),
+}));
+const mockPrintToFile = jest.fn(async (_a: { html: string }) => ({ uri: 'file:///tmp/f.pdf' }));
+const mockPrintAsync = jest.fn(async (_a: { html: string }) => undefined);
+jest.mock('expo-print', () => ({
+  printToFileAsync: (a: { html: string }) => mockPrintToFile(a),
+  printAsync: (a: { html: string }) => mockPrintAsync(a),
+}));
+const mockShareAvailable = { value: true };
+const mockShare = jest.fn(async (_uri: string, _opts: unknown) => undefined);
+jest.mock('expo-sharing', () => ({
+  isAvailableAsync: async () => mockShareAvailable.value,
+  shareAsync: (uri: string, opts: unknown) => mockShare(uri, opts),
+}));
 jest.mock('@/store/api/clientsApi', () => ({
   useGetClientsQuery: jest.fn(() => ({ data: [{ id: 3, displayName: 'Awa Diop' }] })),
 }));
@@ -69,6 +85,10 @@ beforeEach(() => {
 });
 afterEach(() => {
   jest.restoreAllMocks();
+  mockShareAvailable.value = true;
+  mockPrintToFile.mockClear();
+  mockPrintAsync.mockClear();
+  mockShare.mockClear();
   mockInvoice.status = 'ISSUED';
   mockInvoice.outstandingXof = 12000;
   mockInvoice.amountPaidXof = 0;
@@ -95,6 +115,33 @@ describe('Facture detail', () => {
 
     await confirmAlert('Annuler la facture');
     expect(mockCancelInvoice).toHaveBeenCalledWith({ farmId: 7, id: 9 });
+  });
+
+  it('sort la facture en PDF et ouvre le partage', async () => {
+    // Le web imprime depuis /factures/{id}/imprimer ; le mobile n'avait rien. Ici le fichier
+    // existe sur l'appareil, donc l'éleveur peut l'envoyer à son client depuis WhatsApp.
+    await render(<FactureDetailScreen />);
+    await press(screen.getByLabelText('Imprimer ou partager la facture'));
+
+    expect(mockPrintToFile).toHaveBeenCalled();
+    const html = mockPrintToFile.mock.calls[0]?.[0]?.html ?? '';
+    expect(html).toContain('F-001');
+    expect(html).toContain('Ferme Complète');
+    expect(html).toContain('Awa Diop');
+    expect(mockShare).toHaveBeenCalledWith(
+      'file:///tmp/f.pdf',
+      expect.objectContaining({ mimeType: 'application/pdf' }),
+    );
+  });
+
+  it('retombe sur la boîte d\'impression quand le partage est indisponible', async () => {
+    // Émulateur nu, restrictions : la boîte système sait aussi enregistrer en PDF.
+    mockShareAvailable.value = false;
+    await render(<FactureDetailScreen />);
+    await press(screen.getByLabelText('Imprimer ou partager la facture'));
+
+    expect(mockShare).not.toHaveBeenCalled();
+    expect(mockPrintAsync).toHaveBeenCalled();
   });
 
   it('offers no cancellation on a paid invoice', async () => {

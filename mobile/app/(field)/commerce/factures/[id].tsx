@@ -15,11 +15,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
-import { ArrowLeft } from 'lucide-react-native';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
+import { ArrowLeft, Share2 } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { useFarmAccess } from '@/auth/useSession';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { useCancelInvoiceMutation, useGetInvoiceQuery } from '@/store/api/invoicesApi';
+import { useListFarmsQuery } from '@/store/api/farmsApi';
+import { invoiceHtml } from '@/commerce/invoiceHtml';
 import { useGetClientsQuery } from '@/store/api/clientsApi';
 import { PaymentSheet } from '@/commerce/PaymentSheet';
 import { INVOICE_STATUS_LABELS, invoiceStatusColor } from '@/lib/commercial';
@@ -42,7 +46,9 @@ export default function FactureDetailScreen() {
     selectedFarmId === null ? skipToken : { farmId: selectedFarmId },
   );
 
+  const { data: farms } = useListFarmsQuery();
   const [cancelInvoice, { isLoading: cancelling }] = useCancelInvoiceMutation();
+  const [sharing, setSharing] = useState(false);
 
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -55,6 +61,39 @@ export default function FactureDetailScreen() {
       ? 'Client de passage'
       : (clients?.find((c) => c.id === invoice?.clientId)?.displayName ?? 'Client');
   const canPay = canCollect && !!invoice && invoice.outstandingXof > 0;
+  const client = clients?.find((c) => c.id === invoice?.clientId) ?? null;
+  const farmName = farms?.find((f) => f.id === selectedFarmId)?.name ?? 'Ma ferme';
+
+  /**
+   * Sort la facture en PDF, puis ouvre la feuille de partage du téléphone : imprimer, envoyer par
+   * WhatsApp, enregistrer. C'est ce que le web fait avec `/factures/{id}/imprimer` — sauf qu'ici
+   * le fichier existe sur l'appareil, donc l'éleveur peut l'envoyer à son client sans réseau au
+   * moment de l'envoi.
+   *
+   * Le partage n'est pas disponible partout (émulateur nu, restrictions) : on retombe alors sur
+   * la boîte d'impression système, qui sait aussi enregistrer en PDF.
+   */
+  const sharePdf = async () => {
+    if (!invoice || sharing) return;
+    setSharing(true);
+    try {
+      const html = invoiceHtml({ invoice, client, farmName });
+      const { uri } = await Print.printToFileAsync({ html });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, {
+          mimeType: 'application/pdf',
+          dialogTitle: `Facture ${invoice.invoiceNumber}`,
+          UTI: 'com.adobe.pdf',
+        });
+      } else {
+        await Print.printAsync({ html });
+      }
+    } catch {
+      Alert.alert('Facture', "Le PDF n'a pas pu être produit. Réessayez.");
+    } finally {
+      setSharing(false);
+    }
+  };
   // Mirrors the backend guard: only a live invoice with something left on it can be cancelled.
   const canCancel =
     canCollect && !!invoice && invoice.status !== 'CANCELLED' && invoice.status !== 'PAID';
@@ -97,6 +136,20 @@ export default function FactureDetailScreen() {
             </Text>
           )}
         </View>
+        {/* Sortir la facture : n'importe quel membre qui peut la lire peut l'imprimer ou
+            l'envoyer — c'est une lecture, pas une écriture. */}
+        {invoice && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Imprimer ou partager la facture"
+            onPress={sharePdf}
+            disabled={sharing}
+            hitSlop={8}
+            style={[styles.headerAction, sharing && styles.headerActionBusy]}
+          >
+            <Share2 size={20} color={tokens.colors.primary[700]} />
+          </Pressable>
+        )}
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
@@ -179,6 +232,17 @@ function Amount({ label, value, color }: { label: string; value: number; color?:
 }
 
 const styles = StyleSheet.create({
+  headerAction: {
+    width: 40,
+    height: 40,
+    borderRadius: tokens.radii.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: tokens.colors.primary[50],
+    borderWidth: 1,
+    borderColor: tokens.colors.primary[100],
+  },
+  headerActionBusy: { opacity: 0.5 },
   cancelInvoice: { minHeight: tokens.touch.button, alignItems: 'center', justifyContent: 'center', marginTop: tokens.spacing[6] },
   cancelInvoiceLabel: { ...tokens.typography.button, color: tokens.colors.errorDark },
   container: { flex: 1, backgroundColor: tokens.colors.neutral[50] },
