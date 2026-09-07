@@ -53,8 +53,13 @@ export default function LayerDetailScreen() {
   const raw = Array.isArray(params.unitId) ? params.unitId[0] : params.unitId;
   const unitId = raw ? Number(raw) : NaN;
   const selectedFarmId = useSelector(selectSelectedFarmId);
-  const { can } = useFarmAccess();
+  const { can, farmRole, isAdmin } = useFarmAccess();
   const canWrite = can('poultry:write');
+  // Saisir une collecte est un geste de terrain (`poultry:write`, que porte un FARMER) ; la
+  // supprimer est un geste de supervision, réservé OWNER/MANAGER côté backend
+  // (`LayerAccess.WRITE_MANAGER`). Gardée sur `poultry:write`, la corbeille s'offrait à un
+  // ouvrier qui prenait un 403.
+  const canDelete = isAdmin || farmRole === 'OWNER' || farmRole === 'MANAGER';
   const [deleteCollection] = useDeleteCollectionMutation();
   const [tab, setTab] = useState<Tab>('overview');
 
@@ -203,7 +208,7 @@ export default function LayerDetailScreen() {
                   {/* A miscounted round is corrected by removing it and collecting again: the
                       backend keys a collection on (date, créneau), so the same slot cannot be
                       recorded twice. Without this the phone could only add to the mistake. */}
-                  {canWrite && (
+                  {canDelete && (
                     <Pressable
                       accessibilityRole="button"
                       accessibilityLabel={`Supprimer la collecte du ${c.collectionDate} ${c.timeslotKey}`}

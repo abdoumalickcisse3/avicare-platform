@@ -31,6 +31,7 @@ import { formatDate } from "@/lib/format";
 import { isoDaysAgo, isoToday, sortGradeKeys, timeslotLabel } from "@/lib/layer";
 import { colors } from "@/theme/tokens";
 import { useFarmPermissions } from "@/hooks/useFarmPermissions";
+import { canManageCatalog, useFarmRole } from "@/hooks/useFarmRole";
 import { EggCollectionDialog } from "./EggCollectionDialog";
 import type { ProductionUnit } from "@/types";
 
@@ -58,6 +59,10 @@ export function LayerCollectionsTab({
   const [open, setOpen] = useState(false);
   const { can } = useFarmPermissions(farmId);
   const canWrite = can("poultry:write");
+  // Saisir une collecte est un geste de terrain (`poultry:write`, que porte un FARMER) ; la
+  // supprimer est un geste de supervision, réservé OWNER/MANAGER côté backend
+  // (`LayerAccess.WRITE_MANAGER`). La corbeille n'était gardée par rien du tout.
+  const canDelete = canManageCatalog(useFarmRole(farmId));
   const { data: collections, isLoading, error } = useGetCollectionsQuery({
     farmId,
     unitId: unit.id,
@@ -185,14 +190,16 @@ export function LayerCollectionsTab({
                     {gradesSummary(c.gradesCount ?? {})}
                   </TableCell>
                   <TableCell align="right">
-                    <IconButton
-                      size="small"
-                      aria-label="Supprimer la collecte"
-                      onClick={() => onDelete(c.id)}
-                      sx={{ color: colors.neutral[400] }}
-                    >
-                      <Trash2 size={16} />
-                    </IconButton>
+                    {canDelete && (
+                      <IconButton
+                        size="small"
+                        aria-label="Supprimer la collecte"
+                        onClick={() => onDelete(c.id)}
+                        sx={{ color: colors.neutral[400] }}
+                      >
+                        <Trash2 size={16} />
+                      </IconButton>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
