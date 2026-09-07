@@ -34,29 +34,27 @@ registre — soit parce que l'écran est fait, soit parce que le binding l'est.
 
 ---
 
-## 1. À décider en priorité
+## 1. Trois capacités mobiles absentes du web — ✅ comblées
 
-### 1.1 Trois capacités sur le mobile, absentes du web
-
-La règle du projet est « ce qui part sur le web part aussi sur le mobile ». Ces trois-là sont
+La règle du projet est « ce qui part sur le web part aussi sur le mobile ». Ces trois-là étaient
 parties dans l'autre sens. **Chacune a été vérifiée en ouvrant l'écran web** — la première
 version de ce rapport en annonçait six, dont trois n'en étaient pas (voir §2).
 
-| Capacité | Mobile | Web |
+| Capacité | Ce qui manquait au web | État |
 |---|---|---|
-| **Régler le seuil d'alerte d'un article** | fiche article | le seuil est **affiché** en KPI, jamais réglable |
-| **Désactiver un article de stock** | fiche article | absent (le web ne désactive que les formules) |
-| Vaccinations enregistrées sur un lot | comptées en repli | invisibles sans programme assigné |
+| **Régler le seuil d'alerte d'un article** | le seuil était **affiché** en KPI, jamais réglable | ✅ tuile cliquable + `ThresholdDialog` |
+| **Archiver un article de stock** | le web ne désactivait que les formules | ✅ au pied de la fiche article |
+| **Vaccinations enregistrées sur un lot** | invisibles sans programme assigné | ✅ liste sous l'échéancier |
 
-Le seuil est le plus net : `StockItemDetailView` montre « Seuil d'alerte » comme un chiffre, et
-rien sur cette page ne permet de le changer. Un gérant au bureau voit la valeur qui déclenche ses
-alertes sans pouvoir l'ajuster.
+Le seuil était le plus net : `StockItemDetailView` montrait « Seuil d'alerte » comme un chiffre,
+et rien sur la page ne permettait de le changer. Un gérant au bureau voyait la valeur qui
+déclenche ses alertes sans pouvoir l'ajuster.
 
-La troisième est plus discrète : `VaccinationSection` n'affiche que l'échéancier d'un programme.
-Sur un lot sans programme assigné, elle dit « Aucun programme vaccinal assigné » — et les
-vaccinations réellement faites, enregistrées hors programme, n'apparaissent nulle part.
+La troisième était plus discrète : `VaccinationSection` proposait « Saisir une vaccination
+ponctuelle » sur un lot sans programme, puis n'en montrait aucune trace. On pouvait vacciner sans
+le moindre accusé de réception.
 
-**Recommandation : les trois, elles sont petites.**
+Les deux gestes de stock sont gardés par `inventory:write`, comme le mobile et comme le backend.
 
 ---
 
