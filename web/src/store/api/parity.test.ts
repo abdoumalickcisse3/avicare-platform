@@ -97,19 +97,19 @@ const HOOKS_WITH_NO_SCREEN: { hook: string; side: "web" | "mobile"; why: string 
   {
     hook: "useGetActiveWithdrawalsQuery",
     side: "web",
-    why: "Les délais d'attente actifs arrivent déjà par l'agrégat `getHealthAlerts`, qui alimente l'écran Sanitaire des deux côtés. Endpoint redondant : à supprimer plutôt qu'à monter.",
+    why: "Les délais d'attente actifs arrivent par l'agrégat `getHealthAlerts`, qui alimente l'écran Sanitaire des deux côtés — et qui appelle EXACTEMENT la même méthode de service (`treatmentService.getActiveWithdrawals`). Un seul calcul, deux routes : rien à monter, rien à supprimer non plus.",
   },
   { hook: "useGetActiveWithdrawalsQuery", side: "mobile", why: "Idem côté mobile." },
   {
     hook: "useGetUpcomingFollowUpsQuery",
     side: "web",
-    why: "Même chose : les visites de suivi à venir viennent de `getHealthAlerts`.",
+    why: "Même chose : `getHealthAlerts` appelle `vetVisitService.listUpcomingFollowUps`, la méthode même de l'endpoint dédié.",
   },
   { hook: "useGetUpcomingFollowUpsQuery", side: "mobile", why: "Idem côté mobile." },
   {
     hook: "useGetOverdueInvoicesQuery",
     side: "web",
-    why: "Les impayés sont dérivés côté client (`isInvoiceOverdue`) sur la liste des factures ; l'endpoint dédié n'a jamais eu d'écran. À trancher : l'un ou l'autre.",
+    why: "Les impayés sont dérivés côté client (`isInvoiceOverdue`), ce qui évite un aller-retour réseau pour un filtre d'onglet. Les deux définitions divergeaient d'un jour ; elles concordent depuis `commercial.overdue.test.ts`. L'endpoint reste, inutilisé mais cohérent.",
   },
   { hook: "useGetOverdueInvoicesQuery", side: "mobile", why: "Idem côté mobile." },
   {
