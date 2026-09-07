@@ -104,6 +104,25 @@ class InvoiceServiceIT {
     // cancel reverses the receivable
     invoiceService.cancel(farmId, invoice.getId(), "erreur", 1L);
     assertThat(clientService.getById(farmId, clientId).getCurrentBalanceXof()).isZero();
+
+    /*
+     * ...and frees the sale (V56). The guard above says "one LIVE invoice per source", not "one
+     * ever": an invoice issued with the wrong due date, cancelled to be redone, used to leave the
+     * sale permanently un-invoiceable — enforced twice over, by the service and by a unique index
+     * that ignored the status. The farmer had no way out from inside the app.
+     *
+     * The cancelled number stays on file; the new invoice takes the next one.
+     */
+    Invoice reissued = invoiceService.createFromSale(farmId, sale.getId(), null, 1L);
+    assertThat(reissued.getStatus()).isEqualTo(InvoiceStatus.ISSUED);
+    assertThat(reissued.getInvoiceNumber()).isEqualTo(String.format("F-%d-002", year));
+    assertThat(reissued.getTotalXof()).isEqualTo(42_500L);
+    // and it raises the receivable again
+    assertThat(clientService.getById(farmId, clientId).getCurrentBalanceXof()).isEqualTo(42_500L);
+
+    // the live one still guards: a second invoice on the same sale is refused
+    assertThatThrownBy(() -> invoiceService.createFromSale(farmId, sale.getId(), null, 1L))
+        .isInstanceOf(BusinessRuleException.class);
   }
 
   @Test
