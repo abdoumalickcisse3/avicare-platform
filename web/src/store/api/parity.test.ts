@@ -72,25 +72,9 @@ const DESKTOP_ONLY: { prefix: string; why: string }[] = [
  * unmounted. What the check buys is the ratchet — the list can only shrink by accident.
  */
 const HOOKS_WITH_NO_SCREEN: { hook: string; side: "web" | "mobile"; why: string }[] = [
-  /* ── Mounted on the phone, not on the web: a real gap, verified in the calling code ───
-     Chaque ligne ici a été vérifiée en ouvrant l'écran web correspondant. Trois autres candidats
-     ont été écartés après vérification : le web rend bien le stock bas, l'encours client et la
-     lecture d'une formule — par un autre endpoint (voir la section « redondances » plus bas). */
-  {
-    hook: "useUpdateStockThresholdMutation",
-    side: "web",
-    why: "`StockItemDetailView` AFFICHE le seuil d'alerte en KPI mais n'offre aucun moyen de le régler ; le mobile le règle depuis la fiche article. Le web peut voir le seuil sans jamais le changer.",
-  },
-  {
-    hook: "useDeactivateStockItemMutation",
-    side: "web",
-    why: "Désactiver un article de stock : offert par le mobile seul (le web ne désactive que les formules d'aliment).",
-  },
-  {
-    hook: "useGetVaccinationsQuery",
-    side: "web",
-    why: "`VaccinationSection` n'affiche que l'échéancier d'un programme assigné : sur un lot sans programme, elle dit « Aucun programme assigné » et les vaccinations réellement enregistrées restent invisibles. Le mobile les compte au moins en repli.",
-  },
+  /* ── Écarts web réels : plus aucun. Les trois derniers (régler le seuil d'alerte, archiver
+     un article, lister les vaccinations d'un lot) ont été comblés. Trois autres candidats
+     avaient été écartés après vérification — voir « redondances » juste en dessous. */
 
   /* ── Redondances : la capacité EST rendue, par un autre endpoint ──────────────────────── */
   {
