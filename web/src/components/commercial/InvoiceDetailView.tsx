@@ -25,6 +25,7 @@ import { useCancelInvoiceMutation, useGetInvoiceQuery } from "@/store/api/invoic
 import { useGetPaymentsQuery, useVoidPaymentMutation } from "@/store/api/paymentsApi";
 import { useGetClientQuery } from "@/store/api/clientsApi";
 import { useCommercialGating } from "@/hooks/useCommercialGating";
+import { canManageCatalog, useFarmRole } from "@/hooks/useFarmRole";
 import { DocumentFlow } from "./DocumentFlow";
 import { PaymentDialog } from "./PaymentDialog";
 import { useToast } from "@/components/feedback/ToastProvider";
@@ -43,6 +44,9 @@ const mono = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums
 
 export function InvoiceDetailView({ invoiceId }: { invoiceId: number }) {
   const { farmId, hasFarm, hasCommercial } = useCommercialGating();
+  // Toute écriture commerciale est OWNER/MANAGER côté serveur
+  // (`CommercialAccess.WRITE_MANAGER`) : on cache plutôt que de proposer un 403.
+  const canWrite = canManageCatalog(useFarmRole(farmId));
   const { showToast } = useToast();
   const skip = !hasFarm || !hasCommercial;
 
@@ -294,13 +298,13 @@ export function InvoiceDetailView({ invoiceId }: { invoiceId: number }) {
                         </Typography>
                       ) : null}
                     </Box>
-                    {!cancelled ? (
+                    {!cancelled && canWrite ? (
                       <Button size="small" color="inherit" onClick={() => onVoid(p.id)}>
                         Annuler
                       </Button>
-                    ) : (
+                    ) : cancelled ? (
                       <Chip label="Annulé" size="small" sx={{ bgcolor: colors.neutral[200] }} />
-                    )}
+                    ) : null}
                   </Stack>
                 );
               })}

@@ -31,6 +31,7 @@ import {
   useGetClientsQuery,
 } from "@/store/api/clientsApi";
 import { useCommercialGating } from "@/hooks/useCommercialGating";
+import { canManageCatalog, useFarmRole } from "@/hooks/useFarmRole";
 import { ClientDialog } from "@/components/commercial/ClientDialog";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -77,6 +78,9 @@ function CreditCell({ client }: { client: Client }) {
 export default function ClientsPage() {
   const router = useRouter();
   const { farmId, hasFarm, hasCommercial } = useCommercialGating();
+  // Toute écriture commerciale est OWNER/MANAGER côté serveur
+  // (`CommercialAccess.WRITE_MANAGER`) : on cache plutôt que de proposer un 403.
+  const canWrite = canManageCatalog(useFarmRole(farmId));
   const { showToast } = useToast();
   const { data: clients, isLoading } = useGetClientsQuery(
     { farmId: farmId as number },
@@ -175,15 +179,17 @@ export default function ClientsPage() {
             Votre carnet clients et leurs encours.
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<Plus size={18} />}
-          onClick={openCreate}
-          disabled={!hasFarm}
-        >
-          Nouveau client
-        </Button>
+        {canWrite && (
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<Plus size={18} />}
+            onClick={openCreate}
+            disabled={!hasFarm}
+          >
+            Nouveau client
+          </Button>
+        )}
       </Stack>
 
       <Tabs
@@ -242,7 +248,7 @@ export default function ClientsPage() {
               ? "Tous vos clients sont à jour."
               : "Ajoutez votre premier client pour suivre ses commandes et son encours."}
           </Typography>
-          {tab === "all" && (
+          {tab === "all" && canWrite && (
             <Button variant="contained" color="primary" startIcon={<Plus size={18} />} onClick={openCreate}>
               Nouveau client
             </Button>
@@ -302,16 +308,18 @@ export default function ClientsPage() {
                     <CreditCell client={c} />
                   </TableCell>
                   <TableCell align="right" onClick={(e) => e.stopPropagation()}>
-                    <IconButton
-                      size="small"
-                      aria-label="Actions"
-                      onClick={(e) => {
-                        setMenuEl(e.currentTarget);
-                        setMenuClient(c);
-                      }}
-                    >
-                      <MoreVertical size={18} />
-                    </IconButton>
+                    {canWrite && (
+                      <IconButton
+                        size="small"
+                        aria-label="Actions"
+                        onClick={(e) => {
+                          setMenuEl(e.currentTarget);
+                          setMenuClient(c);
+                        }}
+                      >
+                        <MoreVertical size={18} />
+                      </IconButton>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

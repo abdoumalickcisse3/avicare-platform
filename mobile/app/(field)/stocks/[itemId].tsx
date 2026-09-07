@@ -49,8 +49,17 @@ export default function StockItemScreen() {
   const id = Number(itemId);
   const router = useRouter();
   const farmId = useSelector(selectSelectedFarmId);
-  const { can } = useFarmAccess();
+  const { can, farmRole, isAdmin } = useFarmAccess();
+  /**
+   * Deux gardes, parce que le backend en a deux.
+   *
+   * Enregistrer un mouvement de stock est un geste de terrain (`InventoryAccess.WRITE_FARMER`,
+   * donc la permission). Régler le seuil d'alerte et archiver l'article sont réservés au
+   * propriétaire et au gérant (`WRITE_MANAGER`, donc le rôle) — et le rôle n'est pas la
+   * permission dès qu'un propriétaire accorde `inventory:write` à la main.
+   */
   const canWrite = can('inventory:write');
+  const canManage = isAdmin || farmRole === 'OWNER' || farmRole === 'MANAGER';
 
   const [movementOpen, setMovementOpen] = useState(false);
   const [thresholdOpen, setThresholdOpen] = useState(false);
@@ -123,9 +132,9 @@ export default function StockItemScreen() {
 
             {/* 2. When to reorder. */}
             <Pressable
-              accessibilityRole={canWrite ? 'button' : undefined}
-              accessibilityLabel={canWrite ? "Modifier le seuil d'alerte" : undefined}
-              disabled={!canWrite}
+              accessibilityRole={canManage ? 'button' : undefined}
+              accessibilityLabel={canManage ? "Modifier le seuil d'alerte" : undefined}
+              disabled={!canManage}
               onPress={() => setThresholdOpen(true)}
               style={[styles.thresholdRow, low && styles.thresholdRowLow]}
             >
@@ -190,7 +199,7 @@ export default function StockItemScreen() {
               ))
             )}
 
-            {canWrite ? (
+            {canManage ? (
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Archiver cet article"

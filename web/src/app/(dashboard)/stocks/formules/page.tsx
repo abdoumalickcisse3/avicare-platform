@@ -22,6 +22,7 @@ import {
   useRecomputeFormulaCostMutation,
 } from "@/store/api/feedFormulasApi";
 import { useInventoryGating } from "@/hooks/useInventoryGating";
+import { canManageCatalog, useFarmRole } from "@/hooks/useFarmRole";
 import { FeedFormulaDialog } from "@/components/inventory/FeedFormulaDialog";
 import { FormulaCloneDialog } from "@/components/inventory/FormulaCloneDialog";
 import { useToast } from "@/components/feedback/ToastProvider";
@@ -35,6 +36,9 @@ const mono = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums
 
 export default function FeedFormulasPage() {
   const { farmId, hasFarm, hasInventory } = useInventoryGating();
+  // Toute écriture d'inventaire est OWNER/MANAGER côté serveur
+  // (`InventoryAccess.WRITE_MANAGER`) : on cache plutôt que de proposer un 403.
+  const canWrite = canManageCatalog(useFarmRole(farmId));
   const { showToast } = useToast();
   const { data, isLoading } = useGetAvailableFormulasQuery(
     { farmId: farmId as number },
@@ -84,18 +88,20 @@ export default function FeedFormulasPage() {
           <Button variant="outlined" startIcon={<Copy size={18} />} onClick={() => setCloneOpen(true)} disabled={!hasFarm}>
             Cloner un modèle
           </Button>
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<Plus size={18} />}
-            onClick={() => {
-              setEditing(null);
-              setFormulaOpen(true);
-            }}
-            disabled={!hasFarm}
-          >
-            Nouvelle formule
-          </Button>
+          {canWrite && (
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<Plus size={18} />}
+              onClick={() => {
+                setEditing(null);
+                setFormulaOpen(true);
+              }}
+              disabled={!hasFarm}
+            >
+              Nouvelle formule
+            </Button>
+          )}
         </Stack>
       </Stack>
 
@@ -160,16 +166,18 @@ export default function FeedFormulasPage() {
                     {f.ingredients.length} ingrédient{f.ingredients.length > 1 ? "s" : ""}
                     {f.totalPercentage != null ? ` · ${f.totalPercentage}%` : ""}
                   </Typography>
-                  <IconButton
-                    size="small"
-                    aria-label="Actions"
-                    onClick={(e) => {
-                      setMenuEl(e.currentTarget);
-                      setMenuFormula(f);
-                    }}
-                  >
-                    <MoreVertical size={18} />
-                  </IconButton>
+                  {canWrite && (
+                    <IconButton
+                      size="small"
+                      aria-label="Actions"
+                      onClick={(e) => {
+                        setMenuEl(e.currentTarget);
+                        setMenuFormula(f);
+                      }}
+                    >
+                      <MoreVertical size={18} />
+                    </IconButton>
+                  )}
                 </Stack>
               </CardContent>
             </Card>

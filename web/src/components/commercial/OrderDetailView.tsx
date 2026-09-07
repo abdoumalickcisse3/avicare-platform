@@ -38,6 +38,7 @@ import { useGetClientQuery } from "@/store/api/clientsApi";
 import { useGetCatalogQuery } from "@/store/api/catalogApi";
 import { channelLabel } from "@/lib/salesChannel";
 import { useCommercialGating } from "@/hooks/useCommercialGating";
+import { canManageCatalog, useFarmRole } from "@/hooks/useFarmRole";
 import { OrderStatusStepper } from "./OrderStatusStepper";
 import { DeliverOrderDialog } from "./DeliverOrderDialog";
 import { DocumentFlow } from "./DocumentFlow";
@@ -52,6 +53,9 @@ const mono = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums
 
 export function OrderDetailView({ orderId }: { orderId: number }) {
   const { farmId, hasFarm, hasCommercial } = useCommercialGating();
+  // Toute écriture commerciale est OWNER/MANAGER côté serveur
+  // (`CommercialAccess.WRITE_MANAGER`) : on cache plutôt que de proposer un 403.
+  const canWrite = canManageCatalog(useFarmRole(farmId));
   const { showToast } = useToast();
   const router = useRouter();
   const skip = !hasFarm || !hasCommercial;
@@ -216,7 +220,7 @@ export function OrderDetailView({ orderId }: { orderId: number }) {
               Bon de livraison (PDF)
             </Button>
           )}
-          {order.status !== "DELIVERED" && order.status !== "CANCELLED" && (
+          {canWrite && order.status !== "DELIVERED" && order.status !== "CANCELLED" && (
             <Button
               variant="outlined"
               color="inherit"

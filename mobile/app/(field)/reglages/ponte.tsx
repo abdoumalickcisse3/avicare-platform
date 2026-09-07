@@ -34,8 +34,10 @@ const digits = (s: string) => s.replace(/[^\d]/g, '');
 export default function LayerSettingsScreen() {
   const router = useRouter();
   const farmId = useSelector(selectSelectedFarmId);
-  const { can } = useFarmAccess();
-  const canWrite = can('settings:write');
+  const { can, farmRole, isAdmin } = useFarmAccess();
+  // Le backend garde sur le RÔLE, pas sur la permission : `settings:write` coïncide par défaut,
+  // mais devient faux dès qu'un propriétaire l'accorde à la main.
+  const canWrite = isAdmin || farmRole === 'OWNER' || farmRole === 'MANAGER';
 
   const arg = farmId === null ? skipToken : { farmId };
   const { data: timeslots = [] } = useListTimeslotsQuery(farmId ?? skipToken);

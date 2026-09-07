@@ -23,6 +23,7 @@ import { useGetClientsQuery } from "@/store/api/clientsApi";
 import { useGetCatalogQuery } from "@/store/api/catalogApi";
 import { channelLabel } from "@/lib/salesChannel";
 import { useCommercialGating } from "@/hooks/useCommercialGating";
+import { canManageCatalog, useFarmRole } from "@/hooks/useFarmRole";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { apiErrorMessage } from "@/lib/apiError";
 import { SALE_STATUS_META } from "@/lib/commercial";
@@ -43,6 +44,9 @@ function articlesSummary(sale: Sale): string {
 
 export default function VentesPage() {
   const { farmId, hasFarm, hasCommercial } = useCommercialGating();
+  // Toute écriture commerciale est OWNER/MANAGER côté serveur
+  // (`CommercialAccess.WRITE_MANAGER`) : on cache plutôt que de proposer un 403.
+  const canWrite = canManageCatalog(useFarmRole(farmId));
   const { showToast } = useToast();
   const skip = !hasFarm || !hasCommercial;
   const { data: sales, isLoading } = useGetSalesQuery({ farmId: farmId as number }, { skip });
@@ -141,7 +145,7 @@ export default function VentesPage() {
                       />
                     </TableCell>
                     <TableCell align="right">
-                      {s.status === "COMPLETED" && (
+                      {canWrite && s.status === "COMPLETED" && (
                         <IconButton
                           size="small"
                           aria-label="Actions"
