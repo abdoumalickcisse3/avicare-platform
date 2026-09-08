@@ -27,9 +27,9 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <h2>Cadence</h2>
  *
- * <p>The scan used to run once a day, at 06:00. A stock that ran out at 07:00 waited until the
- * next morning to say so — on the one problem farmers rank first. It now runs hourly during
- * working hours, which is the interval at which someone can still act on what they are told.
+ * <p>The scan used to run once a day, at 06:00. A stock that ran out at 07:00 waited until the next
+ * morning to say so — on the one problem farmers rank first. It now runs hourly during working
+ * hours, which is the interval at which someone can still act on what they are told.
  *
  * <h2>Why hourly needs a quiet period</h2>
  *

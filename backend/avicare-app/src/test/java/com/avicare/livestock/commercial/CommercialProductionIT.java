@@ -437,7 +437,17 @@ class CommercialProductionIT {
         .create(
             farmId,
             new ClientCommand(
-                ClientType.BUSINESS, "Client Test", null, null, null, null, null, null, null, null, false),
+                ClientType.BUSINESS,
+                "Client Test",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                false),
             userId)
         .getId();
   }

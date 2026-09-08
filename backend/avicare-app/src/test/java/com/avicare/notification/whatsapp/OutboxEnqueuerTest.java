@@ -115,10 +115,10 @@ class OutboxEnqueuerTest {
   /**
    * A field alert at WARNING now reaches WhatsApp with no override at all.
    *
-   * <p>This test used to assert the opposite, and that was the defect: a single CRITICAL floor
-   * made six of the eight categories unreachable — a negative stock reads CRITICAL, but running
-   * low on feed, the first-ranked problem of most farmers surveyed, is only a WARNING and never
-   * left the app.
+   * <p>This test used to assert the opposite, and that was the defect: a single CRITICAL floor made
+   * six of the eight categories unreachable — a negative stock reads CRITICAL, but running low on
+   * feed, the first-ranked problem of most farmers surveyed, is only a WARNING and never left the
+   * app.
    */
   @Test
   void enqueues_fieldWarningByDefault() {

@@ -121,7 +121,8 @@ public class LivestockFacadeImpl implements LivestockFacade {
     LocalDateTime since = today.minusDays(BASELINE_DAYS).atStartOfDay();
 
     List<MortalitySpike> spikes = new ArrayList<>();
-    for (ProductionUnit unit : productionUnitRepository.findByFarmIdAndStatus(farmId, UnitStatus.ACTIVE)) {
+    for (ProductionUnit unit :
+        productionUnitRepository.findByFarmIdAndStatus(farmId, UnitStatus.ACTIVE)) {
       long todayDeaths = 0;
       long previousTotal = 0;
       for (Object[] row : lifecycleEventRepository.dailyMortalitySince(unit.getId(), since)) {

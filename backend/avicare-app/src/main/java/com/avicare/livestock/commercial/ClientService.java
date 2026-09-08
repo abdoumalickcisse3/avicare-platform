@@ -122,7 +122,6 @@ public class ClientService {
      * plutôt que de garder un interrupteur allumé qui n'envoie nulle part — et qui se rallumerait
      * tout seul le jour où quelqu'un renseigne un numéro.
      */
-    client.setNotifyWhatsapp(
-        cmd.notifyWhatsapp() && cmd.phone() != null && !cmd.phone().isBlank());
+    client.setNotifyWhatsapp(cmd.notifyWhatsapp() && cmd.phone() != null && !cmd.phone().isBlank());
   }
 }
