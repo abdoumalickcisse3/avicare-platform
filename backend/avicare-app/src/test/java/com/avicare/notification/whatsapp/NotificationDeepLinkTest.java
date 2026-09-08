@@ -7,9 +7,9 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 /**
- * A WhatsApp message that says a lot is dying and leaves the reader to go find it stops being
- * acted on. The link must land where the bell lands — a link that disagrees with the app teaches
- * people that the two cannot both be right.
+ * A WhatsApp message that says a lot is dying and leaves the reader to go find it stops being acted
+ * on. The link must land where the bell lands — a link that disagrees with the app teaches people
+ * that the two cannot both be right.
  */
 class NotificationDeepLinkTest {
 
@@ -31,7 +31,8 @@ class NotificationDeepLinkTest {
   void mirrorsTheWebBellForEveryOtherRef() {
     assertThat(link.urlFor(withRef(Map.of("purchaseOrderId", 4L))))
         .isEqualTo("https://app.jawdi.app/stocks/achats");
-    assertThat(link.urlFor(withRef(Map.of("itemId", 9L)))).isEqualTo("https://app.jawdi.app/stocks");
+    assertThat(link.urlFor(withRef(Map.of("itemId", 9L))))
+        .isEqualTo("https://app.jawdi.app/stocks");
     assertThat(link.urlFor(withRef(Map.of("invoiceId", 2L))))
         .isEqualTo("https://app.jawdi.app/commercial/factures");
     assertThat(link.urlFor(withRef(Map.of("clientId", 8L))))
@@ -47,7 +48,9 @@ class NotificationDeepLinkTest {
 
   @Test
   void trailingSlashDoesNotDoubleUp() {
-    assertThat(new NotificationDeepLink("https://app.jawdi.app/").urlFor(withRef(Map.of("itemId", 1L))))
+    assertThat(
+            new NotificationDeepLink("https://app.jawdi.app/")
+                .urlFor(withRef(Map.of("itemId", 1L))))
         .isEqualTo("https://app.jawdi.app/stocks");
   }
 

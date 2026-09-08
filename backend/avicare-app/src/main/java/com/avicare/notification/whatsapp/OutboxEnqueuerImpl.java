@@ -80,9 +80,9 @@ public class OutboxEnqueuerImpl implements OutboxEnqueuer {
    * The message as it lands on a phone.
    *
    * <p>It opens with the farm, because it arrives among family messages hours after anyone looked
-   * at the app, and a farmer may run more than one. "Stock bas : Maïs" alone does not say where.
-   * It closes by naming the app, so the recipient knows who is writing and where to act — a
-   * message from an unknown number that tells you a lot is dying is a message people distrust.
+   * at the app, and a farmer may run more than one. "Stock bas : Maïs" alone does not say where. It
+   * closes by naming the app, so the recipient knows who is writing and where to act — a message
+   * from an unknown number that tells you a lot is dying is a message people distrust.
    */
   /** The farm's name, or {@code null} when it cannot be resolved — never an exception. */
   private String farmName(Long farmId) {

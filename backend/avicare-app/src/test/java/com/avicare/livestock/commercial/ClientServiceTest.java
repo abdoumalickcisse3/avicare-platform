@@ -43,7 +43,8 @@ class ClientServiceTest {
         "Dakar",
         500_000L,
         "30 jours",
-        "VIP", false);
+        "VIP",
+        false);
   }
 
   @Test

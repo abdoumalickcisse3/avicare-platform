@@ -234,11 +234,7 @@ public class InvoiceService {
      * ne part pas.
      */
     clientNotifier.invoiceIssued(
-        saved.getFarmId(),
-        saved.getClient(),
-        saved.getInvoiceNumber(),
-        total,
-        saved.getDueDate());
+        saved.getFarmId(), saved.getClient(), saved.getInvoiceNumber(), total, saved.getDueDate());
     return saved;
   }
 
