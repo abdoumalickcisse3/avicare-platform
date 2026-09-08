@@ -83,6 +83,9 @@ services:
       CONTINUITY_SILENCE_HOURS: ${CONTINUITY_SILENCE_HOURS:-72}
       # WhatsApp (Konekt). Required for the self-service password reset AND the partner alerts.
       # Disabled by default: with no key, the reset flow answers normally but no code goes out.
+      # Adresse publique du web : les messages WhatsApp y renvoient, directement sur l'écran
+      # concerné. Vide ici = le défaut de application-prod.yml (https://app.jawdi.app) s'applique.
+      NOTIF_APP_URL: ${NOTIF_APP_URL:-}
       NOTIF_WHATSAPP_ENABLED: ${NOTIF_WHATSAPP_ENABLED:-false}
       KONEKT_API_SECRET: ${KONEKT_API_SECRET:-}
       JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY:?export JWT_PRIVATE_KEY (deploy.sh does this)}

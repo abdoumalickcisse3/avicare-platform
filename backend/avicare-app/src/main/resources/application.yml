@@ -138,6 +138,9 @@ konekt:
 
 # Notification scan (daily materialization) and WhatsApp dispatch cadence.
 notifications:
+  # Adresse publique du web, pour que les messages WhatsApp portent un lien vers l'écran concerné.
+  # Vide = pas de lien (un chemin nu dans un message serait pire que rien).
+  app-url: ${NOTIF_APP_URL:}
   whatsapp:
     enabled: ${NOTIF_WHATSAPP_ENABLED:false}
     dispatch-cron: ${NOTIF_WHATSAPP_DISPATCH_CRON:0 */2 * * * *}
