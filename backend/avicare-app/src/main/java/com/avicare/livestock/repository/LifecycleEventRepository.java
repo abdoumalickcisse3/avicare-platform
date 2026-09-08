@@ -1,6 +1,7 @@
 package com.avicare.livestock.repository;
 
 import com.avicare.livestock.domain.LifecycleEvent;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -37,6 +38,24 @@ public interface LifecycleEventRepository extends JpaRepository<LifecycleEvent, 
           + "WHERE e.productionUnitId IN :unitIds AND e.eventType = 'MORTALITY' "
           + "GROUP BY e.productionUnitId")
   List<Object[]> sumMortalityDeltaByUnits(@Param("unitIds") Collection<Long> unitIds);
+
+  /**
+   * Deaths per day on one lot over a window, oldest first — the series an anomaly is judged
+   * against. Each row is {@code [LocalDate day, long deaths]}; a day without a death is absent
+   * rather than present with a zero, so the caller decides what a missing day means.
+   *
+   * <p>{@code quantityDelta} is negative on a MORTALITY event (it removes birds), so the sum is
+   * negated here: a detector reasons about a count of deaths, not about a stock movement.
+   */
+  @Query(
+      "SELECT CAST(e.occurredAt AS date), -COALESCE(SUM(e.quantityDelta), 0) "
+          + "FROM LifecycleEvent e "
+          + "WHERE e.productionUnitId = :unitId AND e.eventType = 'MORTALITY' "
+          + "AND e.occurredAt >= :since "
+          + "GROUP BY CAST(e.occurredAt AS date) "
+          + "ORDER BY CAST(e.occurredAt AS date)")
+  List<Object[]> dailyMortalitySince(
+      @Param("unitId") Long unitId, @Param("since") LocalDateTime since);
 
   /**
    * Mobile replay lookup (doc 08 §9): find the event already recorded for this client-generated

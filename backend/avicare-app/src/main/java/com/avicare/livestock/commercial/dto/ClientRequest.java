@@ -8,7 +8,12 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
-/** Create or update a client (Sprint B5-5). Same payload backs POST (create) and PUT (update). */
+/**
+ * Create or update a client (Sprint B5-5). Same payload backs POST (create) and PUT (update).
+ *
+ * <p>The PUT is a full replacement: {@code notifyWhatsapp} omitted reads as {@code false} and
+ * revokes the client's consent without anyone meaning to. Every form must send it explicitly.
+ */
 public record ClientRequest(
     @NotNull ClientType clientType,
     @NotBlank @Size(max = 150) String displayName,
@@ -19,7 +24,8 @@ public record ClientRequest(
     @Size(max = 100) String city,
     @PositiveOrZero Long creditLimitXof,
     @Size(max = 80) String defaultPaymentTerms,
-    @Size(max = 2000) String notes) {
+    @Size(max = 2000) String notes,
+    boolean notifyWhatsapp) {
 
   public ClientCommand toCommand() {
     return new ClientCommand(
@@ -32,6 +38,7 @@ public record ClientRequest(
         city,
         creditLimitXof,
         defaultPaymentTerms,
-        notes);
+        notes,
+        notifyWhatsapp);
   }
 }

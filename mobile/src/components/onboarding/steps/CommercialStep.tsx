@@ -56,6 +56,9 @@ export function CommercialStep() {
                   displayName: (v.displayName ?? '').trim(),
                   clientType: (v.clientType || 'INDIVIDUAL') as 'INDIVIDUAL' | 'BUSINESS' | 'WHOLESALER',
                   phone: v.phone?.trim() || undefined,
+                  // L'onboarding crée vite ; le consentement WhatsApp s'accorde depuis la fiche
+                  // client, délibérément et pas au détour d'une saisie rapide.
+                  notifyWhatsapp: false,
                 },
               }).unwrap();
             }}

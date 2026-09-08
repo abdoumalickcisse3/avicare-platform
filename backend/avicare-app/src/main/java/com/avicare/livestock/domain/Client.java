@@ -72,6 +72,16 @@ public class Client {
   @Column(nullable = false)
   private boolean active = true;
 
+  /**
+   * Standing consent to be written to on WhatsApp (V57), like a supplier's.
+   *
+   * <p>False by default and never inferred from a phone number being present: writing to a
+   * farmer's own clients engages the farmer's name with them. Each send carries a second,
+   * per-message guard on top of this one.
+   */
+  @Column(name = "notify_whatsapp", nullable = false)
+  private boolean notifyWhatsapp = false;
+
   @Column(name = "created_by")
   private Long createdBy;
 

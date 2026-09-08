@@ -43,7 +43,7 @@ class ClientServiceTest {
         "Dakar",
         500_000L,
         "30 jours",
-        "VIP");
+        "VIP", false);
   }
 
   @Test
@@ -64,7 +64,7 @@ class ClientServiceTest {
   void create_rejectsBlankDisplayName() {
     ClientCommand cmd =
         new ClientCommand(
-            ClientType.INDIVIDUAL, "  ", null, null, null, null, null, null, null, null);
+            ClientType.INDIVIDUAL, "  ", null, null, null, null, null, null, null, null, false);
 
     assertThatExceptionOfType(ValidationException.class)
         .isThrownBy(() -> service.create(7L, cmd, 42L));
@@ -73,7 +73,7 @@ class ClientServiceTest {
   @Test
   void create_rejectsNullClientType() {
     ClientCommand cmd =
-        new ClientCommand(null, "Sans type", null, null, null, null, null, null, null, null);
+        new ClientCommand(null, "Sans type", null, null, null, null, null, null, null, null, false);
 
     assertThatExceptionOfType(ValidationException.class)
         .isThrownBy(() -> service.create(7L, cmd, 42L));

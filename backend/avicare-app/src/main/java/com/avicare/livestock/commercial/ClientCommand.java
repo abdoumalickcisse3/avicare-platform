@@ -6,6 +6,10 @@ import com.avicare.livestock.domain.ClientType;
  * Input to create or update a {@link com.avicare.livestock.domain.Client} (Sprint B5-1). {@code
  * creditLimitXof} null means no limit (D26 — indicative, never blocks). The receivable balance is
  * NOT set here; it is owned by payment operations (B5-4).
+ *
+ * <p>{@code notifyWhatsapp} is a primitive, so an update that omits it reads as {@code false} and
+ * silently revokes the client's consent. Every caller must send it explicitly — the same trap the
+ * supplier form hit.
  */
 public record ClientCommand(
     ClientType clientType,
@@ -17,4 +21,5 @@ public record ClientCommand(
     String city,
     Long creditLimitXof,
     String defaultPaymentTerms,
-    String notes) {}
+    String notes,
+    boolean notifyWhatsapp) {}

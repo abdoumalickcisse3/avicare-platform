@@ -673,6 +673,8 @@ export interface Client {
   defaultPaymentTerms: string | null;
   active: boolean;
   notes: string | null;
+  /** Consentement permanent à recevoir des avis WhatsApp (facture, paiement). */
+  notifyWhatsapp: boolean;
 }
 
 /* --- Commercial write: sales, invoices, payments (mirrors the web) -------- */

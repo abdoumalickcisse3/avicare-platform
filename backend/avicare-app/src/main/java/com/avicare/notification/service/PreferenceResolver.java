@@ -9,11 +9,27 @@ import java.util.List;
 import org.springframework.stereotype.Component;
 
 /**
- * Resolves a user's delivery preference for a (category, channel), merging the conservative code
- * default with the user's stored overrides (Sprint C1). Default: IN_APP on (min INFO), WHATSAPP on
- * but floored at CRITICAL — so only CRITICAL alerts reach WhatsApp until a user opts a category
- * down (cost discipline); everyone can still disable it. Defaults live in code, never seeded in DB
- * (3-layer parameter rule).
+ * Resolves a user's delivery preference for a (category, channel), merging the code default with
+ * the user's stored overrides (Sprint C1). Defaults live in code, never seeded in DB (3-layer
+ * parameter rule), and a user can always override or switch a category off.
+ *
+ * <p><b>IN_APP</b> takes everything (min INFO): the bell is free, and the farmer opens it when he
+ * chooses.
+ *
+ * <p><b>WHATSAPP</b> costs money and interrupts someone, so the floor is set <em>per category</em>
+ * rather than globally. A single CRITICAL floor read as cost discipline but made six of the eight
+ * categories unreachable: low stock — the first-ranked problem of fourteen of the seventeen farmers
+ * surveyed — is a WARNING, so it never left the app. The line drawn here is not severity but
+ * <em>where the person is</em>:
+ *
+ * <ul>
+ *   <li><b>WARNING is enough</b> when the alert is about the flock or the feed, which are dealt
+ *       with in a barn, away from a screen — running out of feed, a withdrawal period still
+ *       running, a vaccine dose overdue.
+ *   <li><b>CRITICAL only</b> for the office side — an overdue invoice, a client over their credit
+ *       limit — where the manager is already looking at the dashboard, and a phone buzz adds
+ *       nothing but noise and cost.
+ * </ul>
  */
 @Component
 public class PreferenceResolver {
@@ -29,7 +45,7 @@ public class PreferenceResolver {
         .filter(p -> p.getCategory() == category && p.getChannel() == channel)
         .findFirst()
         .map(p -> new ResolvedPreference(p.isEnabled(), p.getMinSeverity()))
-        .orElseGet(() -> defaultFor(channel));
+        .orElseGet(() -> defaultFor(category, channel));
   }
 
   /** The full grid (every category x channel), overrides merged over defaults. */
@@ -44,10 +60,25 @@ public class PreferenceResolver {
     return cells;
   }
 
-  private static ResolvedPreference defaultFor(NotificationChannel channel) {
+  private static ResolvedPreference defaultFor(
+      NotificationCategory category, NotificationChannel channel) {
     return switch (channel) {
       case IN_APP -> new ResolvedPreference(true, NotificationSeverity.INFO);
-      case WHATSAPP -> new ResolvedPreference(true, NotificationSeverity.CRITICAL);
+      case WHATSAPP -> new ResolvedPreference(true, whatsappFloor(category));
+    };
+  }
+
+  /** See the class comment: the field gets WARNING, the desk gets CRITICAL only. */
+  private static NotificationSeverity whatsappFloor(NotificationCategory category) {
+    return switch (category) {
+      case MORTALITY_ANOMALY,
+              CRITICAL_OBSERVATION,
+              NEGATIVE_STOCK,
+              LOW_STOCK,
+              WITHDRAWAL_ENDING,
+              VACCINATION_LATE ->
+          NotificationSeverity.WARNING;
+      case PO_OVERDUE, INVOICE_OVERDUE, CREDIT_EXCEEDED -> NotificationSeverity.CRITICAL;
     };
   }
 

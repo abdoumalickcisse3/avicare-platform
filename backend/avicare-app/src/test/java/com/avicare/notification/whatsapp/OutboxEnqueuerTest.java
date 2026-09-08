@@ -16,6 +16,7 @@ import com.avicare.notification.domain.NotificationSeverity;
 import com.avicare.notification.repository.NotificationPreferenceRepository;
 import com.avicare.notification.service.PreferenceResolver;
 import com.avicare.tenancy.api.TenancyFacade;
+import com.avicare.tenancy.api.dto.FarmInfo;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -71,8 +72,14 @@ class OutboxEnqueuerTest {
     return p;
   }
 
+  /** Le message nomme la ferme : sans elle, un numéro inconnu envoie des chiffres. */
+  private void farmIsNamed() {
+    when(tenancyFacade.findById(1L)).thenReturn(new FarmInfo(1L, "Ferme Test", "XOF", "UTC", true));
+  }
+
   @Test
   void enqueues_whenMemberOptedInAndSeverityMet() {
+    farmIsNamed();
     when(tenancyFacade.listMemberUserIds(1L)).thenReturn(List.of(10L));
     when(preferences.findByFarmIdAndUserId(1L, 10L)).thenReturn(List.of(whatsappOn()));
     when(identityFacade.findById(10L)).thenReturn(userWithPhone());
@@ -84,13 +91,17 @@ class OutboxEnqueuerTest {
             org.mockito.ArgumentMatchers.argThat(
                 r ->
                     r.getPhone().equals("221770000000")
-                        && r.getMessage().contains("Stock négatif")));
+                        && r.getMessage().contains("Stock négatif")
+                        // La ferme d'abord : le message arrive des heures après, parmi des
+                        // messages de famille, et un éleveur peut en exploiter plusieurs.
+                        && r.getMessage().startsWith("*Ferme Test*")));
   }
 
   @Test
   void enqueues_criticalByDefault_withoutAnyOverride() {
-    // Default WhatsApp preference: on, floored at CRITICAL — a CRITICAL alert reaches WhatsApp
-    // even with no stored override, as long as the member has a phone.
+    // Default WhatsApp preference: on — a CRITICAL alert reaches WhatsApp even with no stored
+    // override, as long as the member has a phone.
+    farmIsNamed();
     when(tenancyFacade.listMemberUserIds(1L)).thenReturn(List.of(10L));
     when(preferences.findByFarmIdAndUserId(1L, 10L)).thenReturn(List.of());
     when(identityFacade.findById(10L)).thenReturn(userWithPhone());
@@ -100,12 +111,51 @@ class OutboxEnqueuerTest {
     verify(outbox).save(any());
   }
 
+  /**
+   * A field alert at WARNING now reaches WhatsApp with no override at all.
+   *
+   * <p>This test used to assert the opposite, and that was the defect: a single CRITICAL floor
+   * made six of the eight categories unreachable — a negative stock reads CRITICAL, but running
+   * low on feed, the first-ranked problem of most farmers surveyed, is only a WARNING and never
+   * left the app.
+   */
   @Test
-  void skips_warningByDefault_belowCriticalFloor() {
+  void enqueues_fieldWarningByDefault() {
+    farmIsNamed();
+    when(tenancyFacade.listMemberUserIds(1L)).thenReturn(List.of(10L));
+    when(preferences.findByFarmIdAndUserId(1L, 10L)).thenReturn(List.of());
+    when(identityFacade.findById(10L)).thenReturn(userWithPhone());
+
+    Notification lowStock = withSeverity(NotificationSeverity.WARNING);
+    lowStock.setCategory(NotificationCategory.LOW_STOCK);
+    enqueuer(true).enqueueFor(lowStock);
+
+    verify(outbox).save(any());
+  }
+
+  /** The desk side stays CRITICAL-only: an overdue invoice does not buzz a phone. */
+  @Test
+  void skips_deskWarningByDefault() {
+    when(tenancyFacade.findById(1L)).thenReturn(new FarmInfo(1L, "Ferme Test", "XOF", "UTC", true));
     when(tenancyFacade.listMemberUserIds(1L)).thenReturn(List.of(10L));
     when(preferences.findByFarmIdAndUserId(1L, 10L)).thenReturn(List.of());
 
-    enqueuer(true).enqueueFor(withSeverity(NotificationSeverity.WARNING));
+    Notification overdue = withSeverity(NotificationSeverity.WARNING);
+    overdue.setCategory(NotificationCategory.INVOICE_OVERDUE);
+    enqueuer(true).enqueueFor(overdue);
+
+    verify(outbox, never()).save(any());
+  }
+
+  /**
+   * A farm that cannot be named costs one silent message, never the whole scan: this runs inside
+   * the scanner's transaction.
+   */
+  @Test
+  void skips_whenFarmCannotBeNamed() {
+    when(tenancyFacade.findById(1L)).thenThrow(new IllegalStateException("gone"));
+
+    enqueuer(true).enqueueFor(critical());
 
     verify(outbox, never()).save(any());
   }

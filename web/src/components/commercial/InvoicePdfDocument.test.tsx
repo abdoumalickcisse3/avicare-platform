@@ -49,6 +49,7 @@ const client: Client = {
   defaultPaymentTerms: null,
   active: true,
   notes: null,
+  notifyWhatsapp: false,
 };
 
 describe("InvoicePdfDocument", () => {

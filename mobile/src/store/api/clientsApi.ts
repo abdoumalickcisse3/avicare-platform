@@ -24,6 +24,11 @@ export interface ClientInput {
   creditLimitXof?: number | null;
   defaultPaymentTerms?: string | null;
   notes?: string | null;
+  /**
+   * Le consentement WhatsApp du client. Primitif côté serveur : omis, il vaut `false` et révoque
+   * le consentement — exactement le piège que ce fichier décrit plus haut pour les autres champs.
+   */
+  notifyWhatsapp: boolean;
 }
 
 interface ApiEnvelope<T> {

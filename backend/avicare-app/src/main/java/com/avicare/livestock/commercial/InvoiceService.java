@@ -42,6 +42,7 @@ public class InvoiceService {
   private final SaleRepository saleRepository;
   private final DeliveryRepository deliveryRepository;
   private final ClientService clientService;
+  private final ClientNotifier clientNotifier;
 
   @Transactional
   public Invoice createFromSale(Long farmId, Long saleId, LocalDate dueDate, Long userId) {
@@ -224,6 +225,20 @@ public class InvoiceService {
     if (saved.getClient() != null && total != 0) {
       clientService.adjustBalance(saved.getFarmId(), saved.getClient().getId(), total);
     }
+    /*
+     * L'avis au client part d'ici plutôt que des deux appelants : une facture est une facture,
+     * qu'elle vienne d'une vente ou d'une livraison, et le client n'a pas à recevoir deux messages
+     * différents selon un détail qui ne le regarde pas.
+     *
+     * Après l'écriture, et sans jamais pouvoir la casser : la facture reste émise même si l'avis
+     * ne part pas.
+     */
+    clientNotifier.invoiceIssued(
+        saved.getFarmId(),
+        saved.getClient(),
+        saved.getInvoiceNumber(),
+        total,
+        saved.getDueDate());
     return saved;
   }
 

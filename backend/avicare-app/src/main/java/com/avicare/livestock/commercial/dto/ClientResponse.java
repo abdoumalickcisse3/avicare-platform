@@ -18,7 +18,8 @@ public record ClientResponse(
     long currentBalanceXof,
     String defaultPaymentTerms,
     boolean active,
-    String notes) {
+    String notes,
+    boolean notifyWhatsapp) {
 
   public static ClientResponse from(Client c) {
     return new ClientResponse(
@@ -35,6 +36,7 @@ public record ClientResponse(
         c.getCurrentBalanceXof(),
         c.getDefaultPaymentTerms(),
         c.isActive(),
-        c.getNotes());
+        c.getNotes(),
+        c.isNotifyWhatsapp());
   }
 }

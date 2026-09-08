@@ -29,6 +29,7 @@ public class PaymentService {
   private final PaymentRepository paymentRepository;
   private final InvoiceService invoiceService;
   private final ClientService clientService;
+  private final ClientNotifier clientNotifier;
 
   @Transactional
   public Payment record(Long farmId, PaymentCommand cmd, Long userId) {
@@ -58,7 +59,25 @@ public class PaymentService {
     payment.setNotes(cmd.notes());
     payment.setCreatedBy(userId);
     payment.setPaymentNumber(generatePaymentNumber(farmId, payment.getPaymentDate().getYear()));
-    return paymentRepository.save(payment);
+    Payment saved = paymentRepository.save(payment);
+
+    /*
+     * L'accusé de réception : on vient de recevoir de l'argent de quelqu'un, on le lui dit.
+     *
+     * Le reste dû est relu sur la facture APRÈS imputation — `registerPayment` l'a mise à jour
+     * plus haut. Recalculer ici « total − payé » à la main ferait un second calcul du même chiffre,
+     * et c'est ainsi que les deux finissent par diverger.
+     *
+     * Après l'écriture, et sans jamais pouvoir la casser : l'encaissement reste enregistré même si
+     * l'avis ne part pas.
+     */
+    clientNotifier.paymentReceived(
+        farmId,
+        invoice.getClient(),
+        cmd.amountXof(),
+        invoice.outstandingXof(),
+        saved.getPaymentDate());
+    return saved;
   }
 
   /** Void a payment: reverse it on the invoice and restore the client's receivable. */

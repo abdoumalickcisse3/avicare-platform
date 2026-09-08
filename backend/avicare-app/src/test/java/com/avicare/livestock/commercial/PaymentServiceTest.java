@@ -35,6 +35,7 @@ class PaymentServiceTest {
   private PaymentRepository paymentRepository;
   private InvoiceService invoiceService;
   private ClientService clientService;
+  private ClientNotifier clientNotifier;
   private PaymentService service;
 
   @BeforeEach
@@ -42,7 +43,8 @@ class PaymentServiceTest {
     paymentRepository = Mockito.mock(PaymentRepository.class);
     invoiceService = Mockito.mock(InvoiceService.class);
     clientService = Mockito.mock(ClientService.class);
-    service = new PaymentService(paymentRepository, invoiceService, clientService);
+    clientNotifier = Mockito.mock(ClientNotifier.class);
+    service = new PaymentService(paymentRepository, invoiceService, clientService, clientNotifier);
 
     when(paymentRepository.save(any(Payment.class))).thenAnswer(inv -> inv.getArgument(0));
     when(paymentRepository.findMaxSequence(eq(7L), any())).thenReturn(0);

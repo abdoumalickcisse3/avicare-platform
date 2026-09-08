@@ -108,7 +108,8 @@ class ActivityControllerIT {
                     null,
                     null,
                     null,
-                    null),
+                    null,
+                    false),
                 1L)
             .getId();
     saleService.create(
