@@ -55,6 +55,7 @@ logging:
 # Notifications in prod: WhatsApp on (requires KONEKT_API_SECRET in the env), and the
 # manual scan trigger disabled so /notifications/scan is not exposed in production.
 notifications:
+  app-url: ${NOTIF_APP_URL:https://app.jawdi.app}
   whatsapp:
     enabled: ${NOTIF_WHATSAPP_ENABLED:true}
   scan:

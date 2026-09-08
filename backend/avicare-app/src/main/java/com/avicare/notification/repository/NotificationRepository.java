@@ -22,6 +22,17 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
   List<Notification> findByFarmIdAndCategoryAndStatus(
       Long farmId, NotificationCategory category, NotificationStatus status);
 
+  /**
+   * The most recently resolved notification for a dedup key, if any — the quiet period's memory.
+   *
+   * <p>A condition sitting on its threshold (a stock item hovering at its alert level, a lot whose
+   * deaths cross and re-cross the baseline) resolves and re-fires on every pass. At one scan a day
+   * that was invisible; at one an hour it would be a phone buzzing all morning about the same bag
+   * of feed. The scanner reads this to decide whether a condition coming back is news or an echo.
+   */
+  Optional<Notification> findFirstByFarmIdAndDedupKeyAndStatusOrderByResolvedAtDesc(
+      Long farmId, String dedupKey, NotificationStatus status);
+
   /** Feed of a farm, newest first (all statuses). */
   Page<Notification> findByFarmIdOrderByCreatedAtDesc(Long farmId, Pageable pageable);
 

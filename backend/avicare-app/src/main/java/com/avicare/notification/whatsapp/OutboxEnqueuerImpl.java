@@ -32,6 +32,7 @@ public class OutboxEnqueuerImpl implements OutboxEnqueuer {
   private final NotificationPreferenceRepository preferences;
   private final PreferenceResolver preferenceResolver;
   private final PhoneNormalizer phoneNormalizer;
+  private final NotificationDeepLink deepLink;
   private final WhatsappOutboxRepository outbox;
 
   @Value("${notifications.whatsapp.enabled:false}")
@@ -70,7 +71,7 @@ public class OutboxEnqueuerImpl implements OutboxEnqueuer {
       WhatsappOutbox row = new WhatsappOutbox();
       row.setNotificationId(n.getId());
       row.setPhone(phone);
-      row.setMessage(render(n, farmName));
+      row.setMessage(render(n, farmName, deepLink.urlFor(n)));
       outbox.save(row);
     }
   }
@@ -93,12 +94,19 @@ public class OutboxEnqueuerImpl implements OutboxEnqueuer {
     }
   }
 
-  private static String render(Notification n, String farmName) {
+  private static String render(Notification n, String farmName, String url) {
     StringBuilder sb = new StringBuilder();
     sb.append("*").append(farmName).append("*\n\n").append(n.getTitle());
     if (n.getBody() != null && !n.getBody().isBlank()) {
       sb.append("\n").append(n.getBody());
     }
-    return sb.append("\n\n_Jawdi — ouvrez l'application pour agir._").toString();
+    /*
+     * Le lien direct vers l'écran concerné. « Ouvrez l'application » demandait à quelqu'un debout
+     * dans un poulailler de retenir ce qu'il a lu, d'ouvrir l'app et de naviguer — c'est là qu'une
+     * alerte cesse d'être suivie d'effet. Sans URL configurée, on nomme l'application : un chemin
+     * nu dans un message serait pire que rien.
+     */
+    return sb.append(url == null ? "\n\n_Jawdi — ouvrez l'application pour agir._" : "\n\n" + url)
+        .toString();
   }
 }

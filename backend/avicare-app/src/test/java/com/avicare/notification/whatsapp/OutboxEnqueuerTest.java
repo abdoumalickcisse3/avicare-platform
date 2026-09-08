@@ -40,6 +40,7 @@ class OutboxEnqueuerTest {
             preferences,
             new PreferenceResolver(),
             new PhoneNormalizer("221"),
+            new NotificationDeepLink("https://app.jawdi.app"),
             outbox);
     ReflectionTestUtils.setField(e, "whatsappEnabled", enabled);
     return e;

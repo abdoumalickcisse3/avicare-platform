@@ -16,6 +16,7 @@ import com.avicare.notification.domain.NotificationStatus;
 import com.avicare.notification.repository.NotificationRepository;
 import com.avicare.notification.whatsapp.OutboxEnqueuer;
 import com.avicare.tenancy.api.TenancyFacade;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -63,12 +64,30 @@ class NotificationScannerServiceTest {
     return n;
   }
 
+  /** No trace of this condition having just been resolved — a genuinely new alert. */
+  private void noRecentEcho() {
+    when(repo.findFirstByFarmIdAndDedupKeyAndStatusOrderByResolvedAtDesc(
+            1L, "LOW_STOCK:item:42", NotificationStatus.RESOLVED))
+        .thenReturn(Optional.empty());
+  }
+
+  /** The same condition, resolved {@code hoursAgo} hours ago. */
+  private void resolvedHoursAgo(int hoursAgo) {
+    Notification past = active("LOW_STOCK:item:42");
+    past.setStatus(NotificationStatus.RESOLVED);
+    past.setResolvedAt(LocalDateTime.now().minusHours(hoursAgo));
+    when(repo.findFirstByFarmIdAndDedupKeyAndStatusOrderByResolvedAtDesc(
+            1L, "LOW_STOCK:item:42", NotificationStatus.RESOLVED))
+        .thenReturn(Optional.of(past));
+  }
+
   @Test
   void createsNotification_forNewCondition_andEnqueues() {
     when(detector.categories()).thenReturn(Set.of(NotificationCategory.LOW_STOCK));
     when(detector.detect(1L)).thenReturn(List.of(cond("LOW_STOCK:item:42")));
     when(repo.findByFarmIdAndDedupKeyAndStatus(1L, "LOW_STOCK:item:42", NotificationStatus.ACTIVE))
         .thenReturn(Optional.empty());
+    noRecentEcho();
     when(repo.findByFarmIdAndCategoryAndStatus(
             1L, NotificationCategory.LOW_STOCK, NotificationStatus.ACTIVE))
         .thenReturn(List.of());
@@ -129,5 +148,49 @@ class NotificationScannerServiceTest {
     scanner.scanAll();
 
     verify(detector).detect(1L);
+  }
+
+  /**
+   * Hourly scanning made an old flaw visible: a stock level sitting on its threshold resolves and
+   * re-fires on every pass. Once a day that was invisible; once an hour it is a phone buzzing all
+   * morning about the same bag of feed, which is how people learn to ignore alerts.
+   *
+   * <p>The notification is still recreated — the app must show what is true now — but no second
+   * message goes out.
+   */
+  @Test
+  void quietPeriod_recreatesTheNotificationButDoesNotRingAgain() {
+    when(detector.categories()).thenReturn(Set.of(NotificationCategory.LOW_STOCK));
+    when(detector.detect(1L)).thenReturn(List.of(cond("LOW_STOCK:item:42")));
+    when(repo.findByFarmIdAndDedupKeyAndStatus(1L, "LOW_STOCK:item:42", NotificationStatus.ACTIVE))
+        .thenReturn(Optional.empty());
+    resolvedHoursAgo(1);
+    when(repo.findByFarmIdAndCategoryAndStatus(
+            1L, NotificationCategory.LOW_STOCK, NotificationStatus.ACTIVE))
+        .thenReturn(List.of());
+    when(repo.save(any(Notification.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    scanner.scanFarm(1L);
+
+    verify(repo).save(argThat(n -> n.getStatus() == NotificationStatus.ACTIVE));
+    verify(outboxEnqueuer, never()).enqueueFor(any());
+  }
+
+  /** Past the window it is news again: a problem still there hours later deserves saying so. */
+  @Test
+  void pastTheQuietPeriod_ringsAgain() {
+    when(detector.categories()).thenReturn(Set.of(NotificationCategory.LOW_STOCK));
+    when(detector.detect(1L)).thenReturn(List.of(cond("LOW_STOCK:item:42")));
+    when(repo.findByFarmIdAndDedupKeyAndStatus(1L, "LOW_STOCK:item:42", NotificationStatus.ACTIVE))
+        .thenReturn(Optional.empty());
+    resolvedHoursAgo(24);
+    when(repo.findByFarmIdAndCategoryAndStatus(
+            1L, NotificationCategory.LOW_STOCK, NotificationStatus.ACTIVE))
+        .thenReturn(List.of());
+    when(repo.save(any(Notification.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    scanner.scanFarm(1L);
+
+    verify(outboxEnqueuer).enqueueFor(any(Notification.class));
   }
 }
