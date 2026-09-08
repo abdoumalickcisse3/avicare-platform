@@ -59,8 +59,10 @@ class InvoiceServiceTest {
             invoiceRepository, saleRepository, deliveryRepository, clientService, clientNotifier);
 
     when(invoiceRepository.save(any(Invoice.class))).thenAnswer(inv -> inv.getArgument(0));
-    when(invoiceRepository.findByFarmIdAndSaleIdAndStatusNot(any(), any(), any())).thenReturn(Optional.empty());
-    when(invoiceRepository.findByFarmIdAndDeliveryIdAndStatusNot(any(), any(), any())).thenReturn(Optional.empty());
+    when(invoiceRepository.findByFarmIdAndSaleIdAndStatusNot(any(), any(), any()))
+        .thenReturn(Optional.empty());
+    when(invoiceRepository.findByFarmIdAndDeliveryIdAndStatusNot(any(), any(), any()))
+        .thenReturn(Optional.empty());
     when(invoiceRepository.findMaxSequence(eq(7L), any())).thenReturn(0);
   }
 
@@ -137,7 +139,8 @@ class InvoiceServiceTest {
     Sale sale = sale(20L, SaleStatus.COMPLETED, null);
     sale.addItem(saleItem("eggs_consumption", "1", 3000));
     when(saleRepository.findByFarmIdAndId(7L, 20L)).thenReturn(Optional.of(sale));
-    when(invoiceRepository.findByFarmIdAndSaleIdAndStatusNot(7L, 20L, InvoiceStatus.CANCELLED)).thenReturn(Optional.of(new Invoice()));
+    when(invoiceRepository.findByFarmIdAndSaleIdAndStatusNot(7L, 20L, InvoiceStatus.CANCELLED))
+        .thenReturn(Optional.of(new Invoice()));
 
     assertThatExceptionOfType(BusinessRuleException.class)
         .isThrownBy(() -> service.createFromSale(7L, 20L, null, 42L));

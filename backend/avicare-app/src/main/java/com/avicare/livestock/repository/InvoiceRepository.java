@@ -27,7 +27,8 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
    * re-issuing, left the sale permanently un-invoiceable. The cancelled number stays on file; the
    * source becomes billable again.
    */
-  Optional<Invoice> findByFarmIdAndSaleIdAndStatusNot(Long farmId, Long saleId, InvoiceStatus status);
+  Optional<Invoice> findByFarmIdAndSaleIdAndStatusNot(
+      Long farmId, Long saleId, InvoiceStatus status);
 
   Optional<Invoice> findByFarmIdAndDeliveryIdAndStatusNot(
       Long farmId, Long deliveryId, InvoiceStatus status);
