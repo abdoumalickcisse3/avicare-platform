@@ -68,7 +68,7 @@ class ClientServiceIT {
                 "Dakar",
                 500_000L,
                 "30 jours",
-                "VIP"),
+                "VIP", false),
             1L);
     assertThat(created.getId()).isNotNull();
     assertThat(created.getCurrentBalanceXof()).isZero();
@@ -89,7 +89,7 @@ class ClientServiceIT {
                 null,
                 1_000_000L,
                 null,
-                null));
+                null, false));
     assertThat(updated.getClientType()).isEqualTo(ClientType.WHOLESALER);
     assertThat(updated.getCreditLimitXof()).isEqualTo(1_000_000L);
 

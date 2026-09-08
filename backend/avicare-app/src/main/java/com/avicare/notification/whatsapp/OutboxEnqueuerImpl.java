@@ -8,6 +8,7 @@ import com.avicare.notification.repository.NotificationPreferenceRepository;
 import com.avicare.notification.service.PreferenceResolver;
 import com.avicare.notification.service.PreferenceResolver.ResolvedPreference;
 import com.avicare.tenancy.api.TenancyFacade;
+import com.avicare.tenancy.api.dto.FarmInfo;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +42,19 @@ public class OutboxEnqueuerImpl implements OutboxEnqueuer {
     if (!whatsappEnabled) {
       return;
     }
+    /*
+     * Read once, not per member: the farm name is the same for everyone on the message.
+     *
+     * Contained, because this runs inside the scanner's transaction: a farm that cannot be
+     * resolved must cost one silent message, never the whole scan. And a message that cannot say
+     * which farm it is about is worse than no message — an unknown number telling someone their
+     * birds are dying is a message people distrust.
+     */
+    String farmName = farmName(n.getFarmId());
+    if (farmName == null) {
+      log.warn("Skipping WhatsApp fan-out: farm {} could not be named", n.getFarmId());
+      return;
+    }
     for (Long userId : tenancyFacade.listMemberUserIds(n.getFarmId())) {
       List<NotificationPreference> overrides =
           preferences.findByFarmIdAndUserId(n.getFarmId(), userId);
@@ -56,14 +70,35 @@ public class OutboxEnqueuerImpl implements OutboxEnqueuer {
       WhatsappOutbox row = new WhatsappOutbox();
       row.setNotificationId(n.getId());
       row.setPhone(phone);
-      row.setMessage(render(n));
+      row.setMessage(render(n, farmName));
       outbox.save(row);
     }
   }
 
-  private static String render(Notification n) {
-    return n.getBody() == null || n.getBody().isBlank()
-        ? n.getTitle()
-        : n.getTitle() + "\n" + n.getBody();
+  /**
+   * The message as it lands on a phone.
+   *
+   * <p>It opens with the farm, because it arrives among family messages hours after anyone looked
+   * at the app, and a farmer may run more than one. "Stock bas : Maïs" alone does not say where.
+   * It closes by naming the app, so the recipient knows who is writing and where to act — a
+   * message from an unknown number that tells you a lot is dying is a message people distrust.
+   */
+  /** The farm's name, or {@code null} when it cannot be resolved — never an exception. */
+  private String farmName(Long farmId) {
+    try {
+      FarmInfo farm = tenancyFacade.findById(farmId);
+      return farm == null || farm.name() == null || farm.name().isBlank() ? null : farm.name();
+    } catch (RuntimeException e) {
+      return null;
+    }
+  }
+
+  private static String render(Notification n, String farmName) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("*").append(farmName).append("*\n\n").append(n.getTitle());
+    if (n.getBody() != null && !n.getBody().isBlank()) {
+      sb.append("\n").append(n.getBody());
+    }
+    return sb.append("\n\n_Jawdi — ouvrez l'application pour agir._").toString();
   }
 }

@@ -117,5 +117,12 @@ public class ClientService {
     client.setCreditLimitXof(cmd.creditLimitXof());
     client.setDefaultPaymentTerms(cmd.defaultPaymentTerms());
     client.setNotes(cmd.notes());
+    /*
+     * Un consentement ne se déduit pas d'un numéro de téléphone : sans numéro, on force à false
+     * plutôt que de garder un interrupteur allumé qui n'envoie nulle part — et qui se rallumerait
+     * tout seul le jour où quelqu'un renseigne un numéro.
+     */
+    client.setNotifyWhatsapp(
+        cmd.notifyWhatsapp() && cmd.phone() != null && !cmd.phone().isBlank());
   }
 }

@@ -61,7 +61,7 @@ describe("clientsApi", () => {
     await store.dispatch(
       clientsApi.endpoints.createClient.initiate({
         farmId: 7,
-        body: { clientType: "BUSINESS", displayName: "Ferme du Soleil" },
+        body: { clientType: "BUSINESS", displayName: "Ferme du Soleil" , notifyWhatsapp: false},
       }),
     );
     const c = called(fetchMock.mock.calls[0]?.[0]);

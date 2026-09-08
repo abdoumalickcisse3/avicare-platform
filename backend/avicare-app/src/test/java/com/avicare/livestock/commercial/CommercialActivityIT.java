@@ -73,7 +73,7 @@ class CommercialActivityIT {
                     null,
                     null,
                     null,
-                    null),
+                    null, false),
                 1L)
             .getId();
 

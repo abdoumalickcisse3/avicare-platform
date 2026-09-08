@@ -44,6 +44,7 @@ class InvoiceServiceTest {
   private SaleRepository saleRepository;
   private DeliveryRepository deliveryRepository;
   private ClientService clientService;
+  private ClientNotifier clientNotifier;
   private InvoiceService service;
 
   @BeforeEach
@@ -52,8 +53,10 @@ class InvoiceServiceTest {
     saleRepository = Mockito.mock(SaleRepository.class);
     deliveryRepository = Mockito.mock(DeliveryRepository.class);
     clientService = Mockito.mock(ClientService.class);
+    clientNotifier = Mockito.mock(ClientNotifier.class);
     service =
-        new InvoiceService(invoiceRepository, saleRepository, deliveryRepository, clientService);
+        new InvoiceService(
+            invoiceRepository, saleRepository, deliveryRepository, clientService, clientNotifier);
 
     when(invoiceRepository.save(any(Invoice.class))).thenAnswer(inv -> inv.getArgument(0));
     when(invoiceRepository.findByFarmIdAndSaleId(any(), any())).thenReturn(Optional.empty());

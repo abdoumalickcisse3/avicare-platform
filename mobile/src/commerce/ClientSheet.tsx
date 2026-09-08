@@ -11,7 +11,7 @@
  * entitled to know whether the app will stop them at it. It will not.
  */
 import { useEffect, useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { tokens } from '@/theme';
 import { FormField } from '@/components/field/FormField';
 import { Chip } from '@/team/Chip';
@@ -43,6 +43,7 @@ export function ClientSheet({
   const [phone, setPhone] = useState('');
   const [city, setCity] = useState('');
   const [creditLimit, setCreditLimit] = useState('');
+  const [notifyWhatsapp, setNotifyWhatsapp] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -51,10 +52,12 @@ export function ClientSheet({
     setPhone(client?.phone ?? '');
     setCity(client?.city ?? '');
     setCreditLimit(client?.creditLimitXof != null ? String(client.creditLimitXof) : '');
+    setNotifyWhatsapp(client?.notifyWhatsapp ?? false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, client?.id]);
 
   const canSubmit = displayName.trim().length > 0 && !saving;
+  const hasPhone = phone.trim().length > 0;
 
   const submit = () => {
     if (!canSubmit) return;
@@ -70,6 +73,9 @@ export function ClientSheet({
       address: client?.address ?? null,
       defaultPaymentTerms: client?.defaultPaymentTerms ?? null,
       notes: client?.notes ?? null,
+      // Toujours explicite : omis, le serveur le lit comme `false` et révoque le consentement.
+      // Et un consentement sans numéro n'a nulle part où aller.
+      notifyWhatsapp: hasPhone && notifyWhatsapp,
     });
   };
 
@@ -128,6 +134,26 @@ export function ClientSheet({
             helperText="Indicatif : l'application signale le dépassement, elle ne bloque pas la vente."
           />
 
+          {/* Écrire au client engage le nom de la ferme auprès de SES clients : cela s'accorde.
+              Sans numéro, il n'y a nulle part où écrire — l'interrupteur le dit. */}
+          <View style={styles.switchRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.switchLabel}>Prévenir par WhatsApp</Text>
+              <Text style={styles.switchHint}>
+                {hasPhone
+                  ? 'Facture émise et paiement reçu.'
+                  : 'Renseignez un téléphone pour activer les avis.'}
+              </Text>
+            </View>
+            <Switch
+              value={hasPhone && notifyWhatsapp}
+              onValueChange={setNotifyWhatsapp}
+              disabled={!hasPhone}
+              accessibilityLabel="Prévenir par WhatsApp"
+              trackColor={{ false: tokens.colors.neutral[300], true: tokens.colors.primary[400] }}
+            />
+          </View>
+
           {client && onDeactivate ? (
             <Pressable
               accessibilityRole="button"
@@ -176,6 +202,14 @@ export function ClientSheet({
 }
 
 const styles = StyleSheet.create({
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.spacing[3],
+    marginTop: tokens.spacing[2],
+  },
+  switchLabel: { ...tokens.typography.bodyMd, color: tokens.colors.field.text },
+  switchHint: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginTop: 2 },
   backdrop: { flex: 1, backgroundColor: 'rgba(28, 25, 23, 0.45)' },
   sheet: {
     backgroundColor: tokens.colors.field.background,

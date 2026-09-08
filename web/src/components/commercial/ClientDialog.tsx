@@ -2,15 +2,18 @@
 
 import { useState } from "react";
 import {
+  Box,
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
   IconButton,
   InputAdornment,
   MenuItem,
   Stack,
+  Switch,
   TextField,
   Typography,
 } from "@mui/material";
@@ -70,6 +73,8 @@ function ClientBody({
   );
   const [paymentTerms, setPaymentTerms] = useState(client?.defaultPaymentTerms ?? "");
   const [notes, setNotes] = useState(client?.notes ?? "");
+  const [notifyWhatsapp, setNotifyWhatsapp] = useState(client?.notifyWhatsapp ?? false);
+  const hasPhone = phone.trim().length > 0;
 
   const submit = async () => {
     const trimmedLimit = creditLimit.trim();
@@ -84,6 +89,10 @@ function ClientBody({
       creditLimitXof: trimmedLimit === "" ? null : Number(trimmedLimit),
       defaultPaymentTerms: paymentTerms || undefined,
       notes: notes || undefined,
+      // Toujours explicite : le PUT remplace, et omis ce champ vaut `false` — il révoquerait le
+      // consentement du client sans que personne l'ait voulu. Un consentement sans numéro n'a
+      // nulle part où aller, donc il ne s'enregistre pas non plus.
+      notifyWhatsapp: hasPhone && notifyWhatsapp,
     };
     try {
       if (isEdit && client) {
@@ -188,6 +197,32 @@ function ClientBody({
             fullWidth
             multiline
             minRows={2}
+          />
+          {/* Écrire au client d'un éleveur engage le nom de l'éleveur auprès de SES clients :
+              cela s'accorde, cela ne se suppose pas. Sans numéro, il n'y a nulle part où
+              écrire — la case est alors désactivée et dit pourquoi. */}
+          <FormControlLabel
+            control={
+              <Switch
+                checked={hasPhone && notifyWhatsapp}
+                onChange={(e) => setNotifyWhatsapp(e.target.checked)}
+                disabled={!hasPhone}
+                // Nommé explicitement : le libellé est un bloc de deux lignes, dont MUI ne tire
+                // aucun nom accessible — sans cela, un lecteur d'écran annonce une case sans
+                // objet. `slotProps.input` et non `inputProps`, déprécié en MUI v9.
+                slotProps={{ input: { "aria-label": "Prévenir par WhatsApp" } }}
+              />
+            }
+            label={
+              <Box>
+                <Typography variant="body2">Prévenir par WhatsApp</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {hasPhone
+                    ? "Facture émise et paiement reçu."
+                    : "Renseignez un téléphone pour activer les avis."}
+                </Typography>
+              </Box>
+            }
           />
         </Stack>
       </DialogContent>

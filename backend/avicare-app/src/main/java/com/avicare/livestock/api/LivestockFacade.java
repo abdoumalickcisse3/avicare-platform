@@ -3,6 +3,7 @@ package com.avicare.livestock.api;
 import com.avicare.common.api.dto.ActivityItem;
 import com.avicare.livestock.api.dto.BatchCycleInfo;
 import com.avicare.livestock.api.dto.LivestockStats;
+import com.avicare.livestock.api.dto.MortalitySpike;
 import com.avicare.livestock.api.dto.PoultryBreedLite;
 import com.avicare.livestock.api.dto.ProductionUnitInfo;
 import java.time.LocalDate;
@@ -41,6 +42,15 @@ public interface LivestockFacade {
    * assistant's server-side confirm path.
    */
   void recordMortality(Long farmId, Long unitId, int count, String reason, Long userId);
+
+  /**
+   * Lots whose deaths today broke their own recent pattern (notification context, Sprint C1).
+   *
+   * <p>Judged against each lot's own history rather than a farm-wide rate: two deaths a day is
+   * routine on a flock of five thousand and alarming on a flock of forty. Only ACTIVE lots are
+   * considered — a closed batch has no morning to worry about.
+   */
+  List<MortalitySpike> mortalitySpikes(Long farmId);
 
   /**
    * Aggregated livestock dashboard stats for {@code farmId}. Snapshot KPIs ({@code activeBatches},

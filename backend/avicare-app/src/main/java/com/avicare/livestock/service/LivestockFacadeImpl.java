@@ -8,6 +8,7 @@ import com.avicare.livestock.api.LivestockFacade;
 import com.avicare.livestock.api.ProductType;
 import com.avicare.livestock.api.dto.BatchCycleInfo;
 import com.avicare.livestock.api.dto.LivestockStats;
+import com.avicare.livestock.api.dto.MortalitySpike;
 import com.avicare.livestock.api.dto.PoultryBreedLite;
 import com.avicare.livestock.api.dto.ProductionUnitInfo;
 import com.avicare.livestock.domain.Breed;
@@ -35,6 +36,7 @@ import com.avicare.livestock.repository.VaccinationRepository;
 import com.avicare.livestock.repository.WeighingSampleRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -53,6 +55,15 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class LivestockFacadeImpl implements LivestockFacade {
+
+  /** A day is a spike at this multiple of the lot's recent daily average… */
+  private static final int SPIKE_FACTOR = 3;
+
+  /** …and never below this many birds, so a lot averaging near zero does not alert on noise. */
+  private static final int SPIKE_FLOOR = 3;
+
+  /** Days of history the average is taken over, today excluded. */
+  private static final int BASELINE_DAYS = 7;
 
   private final ProductionUnitRepository productionUnitRepository;
   private final LifecycleEventRepository lifecycleEventRepository;
@@ -86,6 +97,59 @@ public class LivestockFacadeImpl implements LivestockFacade {
     return productionUnitRepository.findByFarmId(farmId).stream()
         .map(LivestockFacadeImpl::toInfo)
         .toList();
+  }
+
+  /**
+   * Days that broke a lot's own pattern.
+   *
+   * <p>The rule, in one sentence: <b>today's deaths are at least {@value #SPIKE_FACTOR}× the lot's
+   * recent daily average, and at least {@value #SPIKE_FLOOR} birds</b>.
+   *
+   * <p>The floor is what keeps this usable. Without it, a lot averaging 0.2 deaths a day — which is
+   * most healthy lots — trips the alert the first morning two birds die, which is noise. The
+   * multiplier alone is a ratio, and ratios explode near zero.
+   *
+   * <p>The baseline reads the {@value #BASELINE_DAYS} days <em>before</em> today, so a spike never
+   * inflates the average it is judged against. A lot with no death at all in that window has a zero
+   * baseline: the floor then decides on its own, which is the intent — a lot that never loses birds
+   * and suddenly loses {@value #SPIKE_FLOOR} deserves the message.
+   */
+  @Override
+  @Transactional(readOnly = true)
+  public List<MortalitySpike> mortalitySpikes(Long farmId) {
+    LocalDate today = LocalDate.now();
+    LocalDateTime since = today.minusDays(BASELINE_DAYS).atStartOfDay();
+
+    List<MortalitySpike> spikes = new ArrayList<>();
+    for (ProductionUnit unit : productionUnitRepository.findByFarmIdAndStatus(farmId, UnitStatus.ACTIVE)) {
+      long todayDeaths = 0;
+      long previousTotal = 0;
+      for (Object[] row : lifecycleEventRepository.dailyMortalitySince(unit.getId(), since)) {
+        LocalDate day = toLocalDate(row[0]);
+        long deaths = ((Number) row[1]).longValue();
+        if (today.equals(day)) {
+          todayDeaths = deaths;
+        } else {
+          previousTotal += deaths;
+        }
+      }
+      if (todayDeaths < SPIKE_FLOOR) {
+        continue;
+      }
+      long baseline = Math.round((double) previousTotal / BASELINE_DAYS);
+      if (todayDeaths >= Math.max(SPIKE_FLOOR, baseline * SPIKE_FACTOR)) {
+        spikes.add(new MortalitySpike(unit.getId(), unit.getName(), todayDeaths, baseline));
+      }
+    }
+    return spikes;
+  }
+
+  /** Hibernate hands back a {@code java.sql.Date} for a CAST(... AS date). */
+  private static LocalDate toLocalDate(Object value) {
+    if (value instanceof java.sql.Date d) {
+      return d.toLocalDate();
+    }
+    return (LocalDate) value;
   }
 
   @Override

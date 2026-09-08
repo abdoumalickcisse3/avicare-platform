@@ -158,7 +158,14 @@ export function ClientQuickAdd({ farmId }: { farmId: number }) {
     try {
       await createClient({
         farmId,
-        body: { displayName: name.trim(), clientType: type, phone: phone.trim() || undefined },
+        body: {
+          displayName: name.trim(),
+          clientType: type,
+          phone: phone.trim() || undefined,
+          // L'onboarding crée vite ; le consentement WhatsApp s'accorde depuis la fiche client,
+          // délibérément et pas au détour d'une saisie rapide.
+          notifyWhatsapp: false,
+        },
       }).unwrap();
       setName("");
       setPhone("");

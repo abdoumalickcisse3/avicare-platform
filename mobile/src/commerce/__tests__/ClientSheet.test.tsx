@@ -29,6 +29,7 @@ const client: Client = {
   defaultPaymentTerms: '30 jours',
   active: true,
   notes: 'Paie le vendredi',
+  notifyWhatsapp: false,
 };
 
 function setup(over: Partial<React.ComponentProps<typeof ClientSheet>> = {}) {
@@ -98,5 +99,42 @@ describe('ClientSheet', () => {
     await render(<ClientSheet {...props} />);
 
     expect(screen.queryByLabelText('Retirer ce client')).toBeNull();
+  });
+
+  it("garde le consentement WhatsApp d'un client qui l'avait accordé", async () => {
+    // Même piège que les champs non affichés : primitif côté serveur, omis il vaut `false` et
+    // révoque le consentement sans que personne l'ait voulu.
+    const { onSubmit, props } = setup({ client: { ...client, notifyWhatsapp: true } });
+    await render(<ClientSheet {...props} />);
+    await press(screen.getByLabelText('Enregistrer le client'));
+
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ notifyWhatsapp: true }));
+  });
+
+  it("n'accorde rien sans numéro de téléphone", async () => {
+    // Un interrupteur sans numéro n'envoie nulle part — et se rallumerait tout seul le jour où
+    // quelqu'un renseigne un numéro.
+    const { onSubmit, props } = setup({
+      client: { ...client, phone: null, notifyWhatsapp: true },
+    });
+    await render(<ClientSheet {...props} />);
+
+    const toggle = screen.getByLabelText('Prévenir par WhatsApp');
+    expect(toggle.props.accessibilityState?.disabled ?? toggle.props.disabled).toBe(true);
+
+    await press(screen.getByLabelText('Enregistrer le client'));
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ notifyWhatsapp: false }));
+  });
+
+  it('accorde le consentement quand on bascule l\'interrupteur', async () => {
+    const { onSubmit, props } = setup({ client });
+    await render(<ClientSheet {...props} />);
+
+    await act(async () => {
+      fireEvent(screen.getByLabelText('Prévenir par WhatsApp'), 'valueChange', true);
+    });
+    await press(screen.getByLabelText('Enregistrer le client'));
+
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ notifyWhatsapp: true }));
   });
 });

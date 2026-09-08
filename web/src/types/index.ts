@@ -975,6 +975,8 @@ export interface Client {
   defaultPaymentTerms: string | null;
   active: boolean;
   notes: string | null;
+  /** Consentement permanent à recevoir des avis WhatsApp (facture, paiement). */
+  notifyWhatsapp: boolean;
 }
 
 /** Create/update payload (mirrors backend ClientRequest). */
@@ -989,6 +991,11 @@ export interface ClientInput {
   creditLimitXof?: number | null;
   defaultPaymentTerms?: string;
   notes?: string;
+  /**
+   * Le PUT est un remplacement complet : omis, il vaut `false` et révoque le consentement du
+   * client sans que personne l'ait voulu. Toujours l'envoyer explicitement.
+   */
+  notifyWhatsapp: boolean;
 }
 
 /** Indicative credit standing (mirrors backend ClientCreditInfo, Décision D26). */
