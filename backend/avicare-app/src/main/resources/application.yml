@@ -147,7 +147,12 @@ notifications:
     max-attempts: ${NOTIF_WHATSAPP_MAX_ATTEMPTS:5}
     default-country-code: ${NOTIF_WHATSAPP_DEFAULT_CC:221}
   scan:
-    cron: ${NOTIF_SCAN_CRON:0 0 6 * * *}
+    # Horaire pendant les heures ouvrables, pas une fois par jour : un stock épuisé à 7h ne doit
+    # pas attendre le lendemain matin pour le dire. Borné volontairement — rien ici ne vaut de
+    # réveiller un éleveur à 3h, et une condition trouvée la nuit est encore là à six heures.
+    # Cette valeur fait foi : le défaut porté par l'annotation @Scheduled n'est jamais lu, puisque
+    # la propriété est définie ici.
+    cron: ${NOTIF_SCAN_CRON:0 0 6-20 * * *}
     zone: ${NOTIF_SCAN_ZONE:Africa/Dakar}
     manual-trigger-enabled: ${NOTIF_SCAN_MANUAL_TRIGGER:true}
 
