@@ -847,6 +847,9 @@ export interface InvoiceItem {
   lineTotalXof: number;
 }
 
+/** Ce qui a engendré la facture (miroir de InvoiceSourceType côté backend). */
+export type InvoiceSourceType = 'SALE' | 'DELIVERY' | 'MANUAL';
+
 /** An invoice; `outstandingXof` is the remaining balance to collect. */
 export interface Invoice {
   id: number;
@@ -854,6 +857,8 @@ export interface Invoice {
   invoiceNumber: string;
   clientId: number | null;
   status: InvoiceStatus;
+  /** D'où vient la facture : une vente comptoir, une livraison, ou saisie à la main. */
+  sourceType?: InvoiceSourceType;
   saleId?: number | null;
   deliveryId?: number | null;
   issueDate: string;

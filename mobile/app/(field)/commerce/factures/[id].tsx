@@ -25,9 +25,14 @@ import { useCancelInvoiceMutation, useGetInvoiceQuery } from '@/store/api/invoic
 import { useListFarmsQuery } from '@/store/api/farmsApi';
 import { invoiceHtml } from '@/commerce/invoiceHtml';
 import { useGetClientsQuery } from '@/store/api/clientsApi';
+import { useGetPaymentsQuery } from '@/store/api/paymentsApi';
 import { PaymentSheet } from '@/commerce/PaymentSheet';
-import { INVOICE_STATUS_LABELS, invoiceStatusColor } from '@/lib/commercial';
-import { formatCurrency, formatNumber } from '@/lib/format';
+import {
+  INVOICE_STATUS_LABELS,
+  PAYMENT_METHOD_LABELS,
+  invoiceStatusColor,
+} from '@/lib/commercial';
+import { formatCurrency, formatDate, formatNumber } from '@/lib/format';
 
 export default function FactureDetailScreen() {
   const router = useRouter();
@@ -44,6 +49,13 @@ export default function FactureDetailScreen() {
   );
   const { data: clients } = useGetClientsQuery(
     selectedFarmId === null ? skipToken : { farmId: selectedFarmId },
+  );
+
+  // Ce qui a déjà été encaissé, ligne par ligne. Le total « Encaissé » disait combien ; il ne
+  // disait pas quand, par quel moyen, ni sous quelle référence — et c'est la référence d'un
+  // transfert mobile money qui tranche un désaccord avec un client qui affirme avoir payé.
+  const { data: payments } = useGetPaymentsQuery(
+    selectedFarmId === null ? skipToken : { farmId: selectedFarmId, invoiceId },
   );
 
   const { data: farms } = useListFarmsQuery();
@@ -63,6 +75,18 @@ export default function FactureDetailScreen() {
   const canPay = canCollect && !!invoice && invoice.outstandingXof > 0;
   const client = clients?.find((c) => c.id === invoice?.clientId) ?? null;
   const farmName = farms?.find((f) => f.id === selectedFarmId)?.name ?? 'Ma ferme';
+
+  /**
+   * D'où vient cette facture. Le web le montre dans un fil « source → facture → paiements » ; ici
+   * une seule ligne suffit, mais elle doit y être : sans elle, un éleveur devant un client qui
+   * conteste une ligne ne peut pas remonter à la vente qui l'a produite.
+   */
+  const source =
+    invoice?.sourceType === 'DELIVERY' && invoice.deliveryId
+      ? `Livraison n° ${invoice.deliveryId}`
+      : invoice?.sourceType === 'SALE' && invoice.saleId
+        ? `Vente n° ${invoice.saleId}`
+        : null;
 
   /**
    * Sort la facture en PDF, puis ouvre la feuille de partage du téléphone : imprimer, envoyer par
@@ -158,6 +182,7 @@ export default function FactureDetailScreen() {
         ) : (
           <>
             <Text style={styles.client}>{clientName}</Text>
+            {source && <Text style={styles.source}>{source}</Text>}
 
             <View style={styles.amountCard}>
               <Amount label="Total" value={invoice.totalXof} />
@@ -168,7 +193,12 @@ export default function FactureDetailScreen() {
                 color={invoice.outstandingXof > 0 ? tokens.colors.error : tokens.colors.success}
               />
             </View>
-            {invoice.dueDate && <Text style={styles.due}>Échéance : {invoice.dueDate}</Text>}
+            <View style={styles.dates}>
+              <Text style={styles.due}>Émise le {formatDate(invoice.issueDate)}</Text>
+              {invoice.dueDate && (
+                <Text style={styles.due}>Échéance : {formatDate(invoice.dueDate)}</Text>
+              )}
+            </View>
 
             <Text style={styles.sectionTitle}>Lignes</Text>
             <View style={styles.items}>
@@ -184,6 +214,34 @@ export default function FactureDetailScreen() {
                 </View>
               ))}
               {(invoice.items ?? []).length === 0 && <Text style={styles.muted}>—</Text>}
+            </View>
+
+            <Text style={styles.sectionTitle}>Paiements</Text>
+            <View style={styles.items}>
+              {(payments ?? []).length === 0 && (
+                <Text style={styles.muted}>Aucun paiement enregistré.</Text>
+              )}
+              {(payments ?? []).map((p) => {
+                // Un paiement annulé garde sa ligne : il est barré, jamais retiré. Un montant qui
+                // disparaît d'un relevé est un montant que le client conteste.
+                const cancelled = p.status === 'CANCELLED';
+                return (
+                  <View key={p.id} style={[styles.itemRow, cancelled && styles.paymentCancelled]}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.itemLabel, cancelled && styles.struck]}>
+                        {formatCurrency(p.amountXof)}
+                      </Text>
+                      <Text style={styles.itemMeta}>
+                        {p.paymentNumber} · {PAYMENT_METHOD_LABELS[p.method]} ·{' '}
+                        {formatDate(p.paymentDate)}
+                      </Text>
+                      {/* Le numéro de transaction d'un transfert mobile money est ce qui tranche
+                          un désaccord. Il était enregistré et jamais montré. */}
+                      {p.reference ? <Text style={styles.itemMeta}>Réf. {p.reference}</Text> : null}
+                    </View>
+                  </View>
+                );
+              })}
             </View>
 
             {canCancel && (
@@ -269,7 +327,13 @@ const styles = StyleSheet.create({
 
   content: { paddingHorizontal: tokens.layout.screenPadding, paddingTop: tokens.spacing[2], paddingBottom: tokens.spacing[8] },
   muted: { ...tokens.typography.bodyMd, color: tokens.colors.field.textMuted, textAlign: 'center', paddingVertical: tokens.spacing[6] },
-  client: { ...tokens.typography.headingMd, color: tokens.colors.field.text, marginBottom: tokens.spacing[3] },
+  client: { ...tokens.typography.headingMd, color: tokens.colors.field.text },
+  source: {
+    ...tokens.typography.bodySm,
+    color: tokens.colors.field.textMuted,
+    marginTop: 2,
+    marginBottom: tokens.spacing[3],
+  },
   amountCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -282,7 +346,10 @@ const styles = StyleSheet.create({
   amountBox: { gap: 2 },
   amountCaption: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted },
   amountVal: { ...tokens.typography.bodyMd, fontWeight: '700', color: tokens.colors.field.text, fontVariant: ['tabular-nums'] },
-  due: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginTop: tokens.spacing[2] },
+  dates: { marginTop: tokens.spacing[2], gap: 2 },
+  due: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted },
+  paymentCancelled: { opacity: 0.5 },
+  struck: { textDecorationLine: 'line-through' },
 
   sectionTitle: { ...tokens.typography.headingMd, color: tokens.colors.field.text, marginTop: tokens.spacing[5], marginBottom: tokens.spacing[2] },
   items: { gap: tokens.spacing[2] },
