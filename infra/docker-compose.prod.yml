@@ -84,9 +84,15 @@ services:
       # WhatsApp (Konekt). Required for the self-service password reset AND the partner alerts.
       # Disabled by default: with no key, the reset flow answers normally but no code goes out.
       # Adresse publique du web : les messages WhatsApp y renvoient, directement sur l'écran
-      # concerné. Vide ici = le défaut de application-prod.yml (https://app.jawdi.app) s'applique.
-      NOTIF_APP_URL: ${NOTIF_APP_URL:-}
-      NOTIF_WHATSAPP_ENABLED: ${NOTIF_WHATSAPP_ENABLED:-false}
+      # concerné. Le défaut est répété ici : une variable passée VIDE est une valeur résolue pour
+      # Spring, elle écrase donc `${NOTIF_APP_URL:https://app.jawdi.app}` de application-prod.yml
+      # au lieu de le laisser s'appliquer — et les messages partent alors sans lien.
+      NOTIF_APP_URL: ${NOTIF_APP_URL:-https://app.jawdi.app}
+      # Défaut `true` pour ne PAS écraser silencieusement application-prod.yml, qui active
+      # WhatsApp en production. L'ancien `:-false` gagnait sur lui : sans variable dans
+      # l'environnement du VPS, plus rien ne partait, sans le moindre message d'erreur.
+      # Pour couper l'envoi, poser explicitement NOTIF_WHATSAPP_ENABLED=false.
+      NOTIF_WHATSAPP_ENABLED: ${NOTIF_WHATSAPP_ENABLED:-true}
       KONEKT_API_SECRET: ${KONEKT_API_SECRET:-}
       JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY:?export JWT_PRIVATE_KEY (deploy.sh does this)}
       JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY:?export JWT_PUBLIC_KEY (deploy.sh does this)}
