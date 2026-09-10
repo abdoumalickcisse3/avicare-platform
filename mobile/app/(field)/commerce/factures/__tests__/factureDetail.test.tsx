@@ -57,8 +57,17 @@ jest.mock('@/store/api/clientsApi', () => ({
 }));
 jest.mock('@/store/api/paymentsApi', () => ({
   useRecordPaymentMutation: jest.fn(() => [jest.fn(), { isLoading: false }]),
+  useGetPaymentsQuery: jest.fn(() => ({ data: mockPayments })),
 }));
-const mockInvoice: { status: string; outstandingXof: number; amountPaidXof: number } = {
+let mockPayments: unknown[] = [];
+const mockInvoice: {
+  status: string;
+  outstandingXof: number;
+  amountPaidXof: number;
+  sourceType?: string;
+  saleId?: number | null;
+  deliveryId?: number | null;
+} = {
   status: 'ISSUED',
   outstandingXof: 12000,
   amountPaidXof: 0,
@@ -71,6 +80,7 @@ jest.mock('@/store/api/invoicesApi', () => ({
   useGetInvoiceQuery: jest.fn(() => ({
     data: {
       id: 9, farmId: 7, invoiceNumber: 'F-001', clientId: 3, status: mockInvoice.status, issueDate: '2026-08-01', dueDate: null,
+      sourceType: mockInvoice.sourceType, saleId: mockInvoice.saleId, deliveryId: mockInvoice.deliveryId,
       totalXof: 12000, amountPaidXof: mockInvoice.amountPaidXof, outstandingXof: mockInvoice.outstandingXof,
       items: [{ id: 1, articleKey: 'BROILER', articleSource: 'PRODUCTION', articleLabelSnapshot: 'Poulet', unit: 'tête', quantity: 6, unitPriceXof: 2000, lineTotalXof: 12000 }],
     },
@@ -92,6 +102,10 @@ afterEach(() => {
   mockInvoice.status = 'ISSUED';
   mockInvoice.outstandingXof = 12000;
   mockInvoice.amountPaidXof = 0;
+  mockInvoice.sourceType = undefined;
+  mockInvoice.saleId = null;
+  mockInvoice.deliveryId = null;
+  mockPayments = [];
   mockCancelInvoice.mockClear();
 });
 
@@ -142,6 +156,84 @@ describe('Facture detail', () => {
 
     expect(mockShare).not.toHaveBeenCalled();
     expect(mockPrintAsync).toHaveBeenCalled();
+  });
+
+  it('dit de quelle vente la facture provient', async () => {
+    // Sans la source, un éleveur devant un client qui conteste une ligne ne peut pas remonter à
+    // la vente qui l'a produite. Le web le montre dans son fil de document ; le mobile ne le
+    // montrait nulle part.
+    mockInvoice.sourceType = 'SALE';
+    mockInvoice.saleId = 42;
+    await render(<FactureDetailScreen />);
+
+    expect(screen.getByText('Vente n° 42')).toBeTruthy();
+  });
+
+  it('dit de quelle livraison la facture provient', async () => {
+    mockInvoice.sourceType = 'DELIVERY';
+    mockInvoice.deliveryId = 7;
+    await render(<FactureDetailScreen />);
+
+    expect(screen.getByText('Livraison n° 7')).toBeTruthy();
+  });
+
+  it('affiche les dates en clair, pas en ISO', async () => {
+    // « 2026-08-01 » sur un téléphone dans un poulailler ne se lit pas.
+    await render(<FactureDetailScreen />);
+
+    expect(screen.getByText('Émise le 01/08/2026')).toBeTruthy();
+  });
+
+  it('liste les paiements avec leur référence', async () => {
+    // Le total « Encaissé » disait combien, jamais quand ni sous quelle référence — et c'est la
+    // référence d'un transfert mobile money qui tranche un désaccord avec un client.
+    mockPayments = [
+      {
+        id: 1,
+        farmId: 7,
+        paymentNumber: 'P-004',
+        invoiceId: 9,
+        clientId: 3,
+        amountXof: 5000,
+        method: 'MOBILE_MONEY',
+        status: 'COMPLETED',
+        paymentDate: '2026-08-03',
+        reference: 'WV-8891',
+        notes: null,
+      },
+    ];
+    await render(<FactureDetailScreen />);
+
+    expect(screen.getByText('Réf. WV-8891')).toBeTruthy();
+    expect(screen.getByText(/P-004/)).toBeTruthy();
+  });
+
+  it('garde un paiement annulé à l\'écran plutôt que de le faire disparaître', async () => {
+    // Un montant qui disparaît d'un relevé est un montant que le client conteste.
+    mockPayments = [
+      {
+        id: 2,
+        farmId: 7,
+        paymentNumber: 'P-005',
+        invoiceId: 9,
+        clientId: 3,
+        amountXof: 3000,
+        method: 'CASH',
+        status: 'CANCELLED',
+        paymentDate: '2026-08-04',
+        reference: null,
+        notes: null,
+      },
+    ];
+    await render(<FactureDetailScreen />);
+
+    expect(screen.getByText(/P-005/)).toBeTruthy();
+  });
+
+  it('le dit quand rien n\'a encore été encaissé', async () => {
+    await render(<FactureDetailScreen />);
+
+    expect(screen.getByText('Aucun paiement enregistré.')).toBeTruthy();
   });
 
   it('offers no cancellation on a paid invoice', async () => {

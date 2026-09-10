@@ -32,3 +32,14 @@ export function formatRelative(iso: string): string {
   const d = new Date(iso);
   return `${d.getDate()}/${d.getMonth() + 1}`;
 }
+
+/**
+ * `2026-09-07` → `07/09/2026`. Une date de facture est un jour, pas un instant : on la découpe
+ * plutôt que de la passer par `Date`, qui la lirait en UTC et pourrait reculer d'un jour selon le
+ * fuseau du téléphone. Une échéance qui s'affiche la veille fait appeler un client trop tôt.
+ */
+export function formatDate(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : iso;
+}
