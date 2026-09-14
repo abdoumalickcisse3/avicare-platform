@@ -1,0 +1,821 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<title>Jawdi — Référentiel produit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+  /* Document imprimé A4, sur les tokens de docs/10-design-system.md — aucune valeur inventée.
+     Stack : Outfit (UI) + JetBrains Mono (chiffres et labels). Pas de serif : le système n'en a
+     pas. Neutres « stone » chauds, jamais de gris froid. Même langage visuel que la facture PDF
+     que le produit imprime déjà (filet orange, nom de ferme en primary-600). */
+  :root {
+    /* PRIMARY — vert élevage */
+    --primary-50:  #F0F7F0;
+    --primary-100: #DCEEDC;
+    --primary-400: #5EAA5E;
+    --primary-500: #3D8B3D;
+    --primary-600: #2E6B2E;
+    --primary-700: #245524;
+    --primary-800: #1B3F1B;
+
+    /* ACCENT — orange Sénégal */
+    --accent-50:  #FFF4E6;
+    --accent-100: #FFE1B8;
+    --accent-400: #F8961E;
+    --accent-600: #C46505;
+    --accent-700: #9C4F03;
+
+    /* NEUTRES — stone, chauds */
+    --neutral-0:   #FFFFFF;
+    --neutral-50:  #FAFAF9;
+    --neutral-100: #F5F5F4;
+    --neutral-200: #E7E5E4;
+    --neutral-300: #D6D3D1;
+    --neutral-400: #A8A29E;
+    --neutral-500: #78716C;
+    --neutral-600: #57534E;
+    --neutral-800: #292524;
+
+    --success-dark: #14532D;
+
+    --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', Consolas, monospace;
+
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  @page { size: A4; margin: 16mm 15mm 14mm; }
+
+  * { box-sizing: border-box; }
+  /* Les espacements sont en rem : c'est la racine qui commande la densité du document,
+     pas la taille du corps de texte. */
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 15px; }
+  body {
+    margin: 0; background: var(--neutral-0); color: var(--neutral-800);
+    font-family: var(--font-sans); font-size: 10.5pt; line-height: 1.5;
+    font-weight: 400;
+  }
+  p { margin: 0 0 .5rem; }
+  p:last-child { margin-bottom: 0; }
+  strong { font-weight: 600; }
+  em { font-style: italic; }
+
+  .page { page-break-after: always; }
+  .page:last-child { page-break-after: auto; }
+  h2, h3 { page-break-after: avoid; }
+  table, .card, .module, .note { page-break-inside: avoid; }
+
+  code {
+    font-family: var(--font-mono); font-size: .85em; font-weight: 500;
+    background: var(--neutral-100); border-radius: var(--radius-sm); padding: .05em .3em;
+  }
+
+  /* ── Couverture ─────────────────────────────────────── */
+  .cover { height: 254mm; display: flex; flex-direction: column; }
+  /* Le filet orange ouvre le document comme il ouvre la facture que Jawdi imprime. */
+  .cover-accent { height: 6px; background: var(--accent-400); border-radius: 3px; width: 100%; margin-bottom: 2rem; }
+  .wordmark {
+    font-size: 40pt; font-weight: 700; letter-spacing: -.035em;
+    color: var(--primary-600); line-height: 1;
+  }
+  .wordmark .dot { color: var(--accent-400); }
+  .cover-meaning {
+    font-family: var(--font-mono); font-size: 8pt; font-weight: 500; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--neutral-500); margin-top: .6rem;
+  }
+  .cover-mid { margin-top: auto; margin-bottom: auto; }
+  .cover h1 {
+    font-size: 28pt; font-weight: 700; line-height: 1.1; letter-spacing: -.025em;
+    margin: 0 0 1rem; max-width: 17.5cm; color: var(--neutral-800);
+  }
+  .cover-sub { font-size: 12.5pt; font-weight: 400; color: var(--neutral-600); max-width: 14.5cm; }
+  .cover-rule { height: 4px; background: var(--primary-600); border-radius: 2px; margin: 0 0 1.6rem; width: 3.6cm; }
+  .cover-foot {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    border-top: 1px solid var(--neutral-200); padding-top: .85rem;
+    font-family: var(--font-mono); font-size: 8pt; color: var(--neutral-500);
+  }
+  .cover-foot b { color: var(--neutral-800); font-weight: 500; }
+
+  /* ── Titres ─────────────────────────────────────────── */
+  .sec-kicker {
+    font-family: var(--font-mono); font-size: 8pt; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--accent-600); margin-bottom: .3rem;
+  }
+  h2 {
+    font-size: 19pt; font-weight: 600; line-height: 1.2; letter-spacing: -.02em;
+    margin: 0 0 .45rem; color: var(--neutral-800);
+  }
+  .sec-head { border-bottom: 2px solid var(--primary-600); padding-bottom: .5rem; margin-bottom: .9rem; }
+  h3 {
+    font-size: 12.5pt; font-weight: 600; letter-spacing: -.01em;
+    margin: 1.05rem 0 .3rem; line-height: 1.3; color: var(--neutral-800);
+  }
+  h4 {
+    font-family: var(--font-mono); font-size: 8pt; font-weight: 700; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--neutral-500); margin: 0 0 .4rem;
+  }
+  .lede { font-size: 11.5pt; color: var(--neutral-600); margin-bottom: .9rem; }
+
+  ul { margin: 0 0 .55rem; padding-left: 1.05rem; }
+  li { margin-bottom: .2rem; }
+  li::marker { color: var(--primary-500); }
+
+  /* ── Blocs ──────────────────────────────────────────── */
+  .card {
+    background: var(--neutral-50); border: 1px solid var(--neutral-200);
+    border-radius: var(--radius-lg); padding: .8rem .9rem; margin: .65rem 0;
+    box-shadow: var(--shadow-sm);
+  }
+  .note {
+    border-left: 3px solid var(--accent-400); background: var(--accent-50);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0; padding: .7rem .9rem; margin: .75rem 0;
+    font-size: 10pt; color: var(--neutral-600);
+  }
+  .note.green { border-left-color: var(--primary-500); background: var(--primary-50); }
+  .note b.tag {
+    display: block; font-family: var(--font-mono); font-size: 7.5pt; font-weight: 700;
+    letter-spacing: .08em; text-transform: uppercase; color: var(--accent-700);
+    margin-bottom: .2rem;
+  }
+  .note.green b.tag { color: var(--primary-700); }
+  .note b { color: var(--neutral-800); }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: .65rem; margin: .75rem 0; }
+
+  /* ── Modules ────────────────────────────────────────── */
+  .module { margin-bottom: 1.05rem; }
+  .module-head {
+    display: flex; align-items: center; gap: .5rem;
+    border-bottom: 1px solid var(--neutral-200); padding-bottom: .3rem; margin-bottom: .45rem;
+  }
+  .module-num {
+    font-family: var(--font-mono); font-size: 8pt; font-weight: 700; color: var(--neutral-0);
+    background: var(--primary-600); border-radius: var(--radius-sm); padding: .12rem .4rem;
+  }
+  .module-name { font-size: 13.5pt; font-weight: 600; letter-spacing: -.01em; }
+  .module-tag { font-size: 9.5pt; color: var(--neutral-500); margin-left: auto; }
+  .cap { margin-bottom: .38rem; }
+  .cap-t { font-weight: 600; font-size: 10.5pt; }
+  .cap-b { font-size: 10pt; color: var(--neutral-600); }
+
+  /* ── Tableaux ───────────────────────────────────────── */
+  table { border-collapse: collapse; width: 100%; font-size: 9.8pt; margin: .55rem 0; }
+  th, td { text-align: left; padding: .38rem .55rem; border-bottom: 1px solid var(--neutral-100); vertical-align: top; }
+  th {
+    font-family: var(--font-mono); font-size: 7.5pt; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--neutral-500);
+    border-bottom: 1px solid var(--neutral-200);
+  }
+  td { color: var(--neutral-600); }
+  td b, td strong { color: var(--neutral-800); }
+  td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  .toc { font-size: 10pt; display: grid; grid-template-columns: 1fr 1fr; gap: 0 1.4rem; }
+  .toc-row {
+    display: flex; align-items: baseline; gap: .5rem; padding: .22rem 0;
+    border-bottom: 1px solid var(--neutral-100);
+  }
+  .toc-n { font-family: var(--font-mono); font-size: 8.5pt; font-weight: 500; color: var(--primary-600); width: 1.4rem; }
+  .toc-t { font-weight: 500; }
+
+  .foot-note {
+    font-size: 8.8pt; color: var(--neutral-500);
+    border-top: 1px solid var(--neutral-200); padding-top: .5rem; margin-top: 1rem;
+  }
+</style></head>
+<body>
+
+<!-- ══════════ COUVERTURE ══════════ -->
+<section class="page cover">
+  <div>
+    <div class="cover-accent"></div>
+    <div class="wordmark">Jawdi<span class="dot">.</span></div>
+    <div class="cover-meaning">Jawdi — « richesse », « bétail » en pulaar</div>
+  </div>
+
+  <div class="cover-mid">
+    <div class="cover-rule"></div>
+    <h1>Le logiciel de gestion d'élevage qui vous dit ce que chaque bande vous a rapporté.</h1>
+    <p class="cover-sub">
+      Référentiel produit — modules, fonctionnalités, fonctionnement et conditions d'accès.
+      Conçu au Sénégal, pour l'aviculture sénégalaise.
+    </p>
+  </div>
+
+  <div class="cover-foot">
+    <div>
+      <b>jawdi.app</b><br>
+      WhatsApp +221 70 475 69 96<br>
+      malick.cisse@nlogicsolutions.com
+    </div>
+    <div style="text-align:right">
+      Version 1 — volaille<br>
+      Septembre 2026
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ SOMMAIRE + PROBLÈME ══════════ -->
+<section class="page">
+  <div class="sec-head">
+    <div class="sec-kicker">Sommaire</div>
+    <h2>Ce que contient ce document</h2>
+  </div>
+
+  <div class="toc">
+    <div class="toc-row"><span class="toc-n">1</span><span class="toc-t">Le problème que Jawdi résout</span></div>
+    <div class="toc-row"><span class="toc-n">2</span><span class="toc-t">Comment ça marche, en une page</span></div>
+    <div class="toc-row"><span class="toc-n">3</span><span class="toc-t">Les cinq modules, en détail</span></div>
+    <div class="toc-row"><span class="toc-n">4</span><span class="toc-t">Jawdi IA — le conseiller d'élevage</span></div>
+    <div class="toc-row"><span class="toc-n">5</span><span class="toc-t">Les alertes WhatsApp</span></div>
+    <div class="toc-row"><span class="toc-n">6</span><span class="toc-t">Votre équipe, et qui voit quoi</span></div>
+    <div class="toc-row"><span class="toc-n">7</span><span class="toc-t">Téléphone, ordinateur, et sans réseau</span></div>
+    <div class="toc-row"><span class="toc-n">8</span><span class="toc-t">Vos données</span></div>
+    <div class="toc-row"><span class="toc-n">9</span><span class="toc-t">Conditions d'accès</span></div>
+    <div class="toc-row"><span class="toc-n">10</span><span class="toc-t">Pour les coopératives et provendiers</span></div>
+    <div class="toc-row"><span class="toc-n">11</span><span class="toc-t">Questions fréquentes &amp; contact</span></div>
+  </div>
+
+  <h2 style="margin-top:1.3rem">1. Le problème que Jawdi résout</h2>
+
+  <p class="lede">
+    Un éleveur sait à peu près ce qu'il a vendu. Il sait rarement ce qu'il a
+    <em>gagné</em> — et presque jamais sur quelle bande.
+  </p>
+
+  <p>
+    L'aliment représente jusqu'à <strong>70 % du coût de production</strong>. Il part en sacs, jour
+    après jour, sans que personne ne le rapproche des kilos vendus à la fin. La mortalité se
+    constate au lieu de s'anticiper. Le client qui doit de l'argent est celui dont on se souvient,
+    pas celui qui doit le plus. Et le cahier, quand il existe, ne répond pas à la question qui
+    compte : <strong>cette bande, elle m'a rapporté combien ?</strong>
+  </p>
+
+  <p>
+    Jawdi ne demande pas de changer de métier. Il demande une saisie par jour — effectif,
+    mortalité, aliment — et se charge du reste : le stock qui baisse, la courbe de croissance,
+    l'encours des clients, les dépenses qui s'enregistrent toutes seules, et le compte de résultat
+    de la bande au moment où elle part.
+  </p>
+
+  <div class="note green">
+    <b class="tag">Le principe qui gouverne tout le produit</b>
+    Rien de ce que vous saisissez ne sert à une seule chose. Une saisie journalière nourrit
+    l'effectif, le stock d'aliment, l'indice de consommation, la marge du lot et l'alerte de stock
+    bas. <b>Vous notez ce que vous faites ; c'est la comptabilité qui suit.</b>
+  </div>
+
+  <h3>À qui Jawdi s'adresse</h3>
+  <table>
+    <thead><tr><th>Profil</th><th>Ce que Jawdi change pour lui</th></tr></thead>
+    <tbody>
+      <tr><td><b>Éleveur débutant</b><br>moins de 500 sujets</td><td>Ne plus perdre d'argent sans comprendre pourquoi. Savoir si la bande a été rentable.</td></tr>
+      <tr><td><b>Éleveur semi-professionnel</b><br>500 à 2 000 sujets</td><td>Savoir quelle bande a gagné et pourquoi. Suivre les clients qui doivent de l'argent.</td></tr>
+      <tr><td><b>Ferme structurée</b><br>plusieurs sites, salariés</td><td>Piloter plusieurs fermes, déléguer la saisie sans donner accès aux chiffres financiers.</td></tr>
+      <tr><td><b>Coopérative, provendier, couvoir</b></td><td>Équiper un réseau d'éleveurs et voir la demande venir. <em>Voir page 10.</em></td></tr>
+    </tbody>
+  </table>
+
+  <p class="foot-note">
+    Jawdi couvre aujourd'hui la <strong>volaille</strong> — poulet de chair et poules pondeuses. Le
+    produit est construit pour accueillir d'autres élevages (embouche ovine et caprine, bovins) sans
+    être réécrit ; ces extensions ne sont pas encore disponibles.
+  </p>
+</section>
+
+<!-- ══════════ COMMENT ÇA MARCHE ══════════ -->
+<section class="page">
+  <div class="sec-head">
+    <div class="sec-kicker">Section 2</div>
+    <h2>Comment ça marche, en une page</h2>
+  </div>
+
+  <p class="lede">Une journée type, et ce que Jawdi en fait.</p>
+
+  <h3>Ce que vous faites</h3>
+  <table>
+    <thead><tr><th style="width:26%">Quand</th><th>Ce que vous saisissez</th></tr></thead>
+    <tbody>
+      <tr><td><b>Au démarrage d'une bande</b></td><td>Effectif, date, souche, bâtiment. Une fois.</td></tr>
+      <tr><td><b>Chaque jour, 1 minute</b></td><td>Mortalité du jour, aliment distribué, eau, observations. Sur le téléphone, au poulailler.</td></tr>
+      <tr><td><b>Quand ça arrive</b></td><td>Une pesée, une vaccination, un achat d'aliment, une vente, un paiement reçu.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Ce que Jawdi en déduit, sans que vous le saisissiez</h3>
+  <div class="grid2">
+    <div class="card">
+      <h4>Sur la bande</h4>
+      <ul>
+        <li>Effectif actuel, à la tête près</li>
+        <li>Taux de mortalité cumulé</li>
+        <li>Indice de consommation</li>
+        <li>Écart à la courbe de croissance de la souche</li>
+        <li>Âge en jours, et ce qui reste avant l'abattage</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Sur la ferme</h4>
+      <ul>
+        <li>Stock d'aliment restant, et quand il tombera à zéro</li>
+        <li>Doses de vaccin restantes</li>
+        <li>Ce que chaque client vous doit, maintenant</li>
+        <li>Total des dépenses, par catégorie</li>
+        <li><b>La marge de la bande, à sa clôture</b></li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Ce qu'il vous dit sans qu'on le lui demande</h3>
+  <p>
+    Neuf situations déclenchent une alerte : mortalité anormale, observation critique, stock bas,
+    stock négatif, délai d'attente en cours, vaccination en retard, facture en retard, encours
+    dépassé, bon d'achat en retard. Elles apparaissent dans l'application, et celles qui se règlent
+    sur le terrain partent aussi <strong>par WhatsApp</strong>. <em>Voir page 7.</em>
+  </p>
+
+  <div class="note">
+    <b class="tag">Le moment qui compte</b>
+    Tout le produit vise un instant précis : <b>la fin de bande</b>. Effectif parti, mortalité
+    réelle, sacs consommés, recettes encaissées, dépenses engagées — et la marge, en francs. C'est
+    la première fois que beaucoup d'éleveurs voient ce chiffre pour une bande précise. C'est aussi
+    le moment où l'on sait quoi refaire, et quoi ne plus refaire.
+  </div>
+
+  <h3>Ce que Jawdi ne fait pas</h3>
+  <ul>
+    <li>Il ne vend pas vos poulets à votre place : ce n'est pas une place de marché.</li>
+    <li>Il ne remplace pas votre vétérinaire. Il tient le calendrier et l'historique ; le diagnostic reste un métier.</li>
+    <li>Il ne fait pas votre déclaration fiscale. Il tient vos recettes et vos dépenses, pas votre liasse comptable.</li>
+    <li>Il n'invente aucun chiffre. Tout ce qu'il affiche vient de ce que vous avez saisi.</li>
+  </ul>
+</section>
+
+<!-- ══════════ MODULES 1-2 ══════════ -->
+<section class="page">
+  <div class="sec-head">
+    <div class="sec-kicker">Section 3</div>
+    <h2>Les cinq modules, en détail</h2>
+  </div>
+  <p class="lede">
+    Les cinq modules fonctionnent ensemble : ce que vous saisissez dans l'un alimente les autres.
+  </p>
+
+  <div class="module">
+    <div class="module-head">
+      <span class="module-num">01</span>
+      <span class="module-name">Élevage</span>
+      <span class="module-tag">le cœur du produit</span>
+    </div>
+    <div class="cap">
+      <div class="cap-t">La saisie du jour, en une minute.</div>
+      <div class="cap-b">Effectif, mortalité, aliment consommé, eau, observations. C'est tout ce qu'on vous demande. À partir de là, Jawdi calcule l'effectif actuel, le taux de mortalité, l'indice de consommation et le stock restant.</div>
+    </div>
+    <div class="cap">
+      <div class="cap-t">La courbe de croissance ne ment pas.</div>
+      <div class="cap-b">Chaque pesée (échantillon, poids moyen, uniformité) se place sur la courbe de votre souche. Vous voyez l'écart au moment où il se creuse, pas trois semaines plus tard.</div>
+    </div>
+    <div class="cap">
+      <div class="cap-t">Chair et pondeuses : deux métiers, une application.</div>
+      <div class="cap-b">Les pondeuses ont leur propre suivi : collecte par créneau, œufs cassés, taux de ponte sur 7 jours, entrée en ponte détectée automatiquement.</div>
+    </div>
+    <div class="cap">
+      <div class="cap-t">La clôture de bande.</div>
+      <div class="cap-b">À la fin du cycle, la bande se clôture et livre son compte de résultat : effectif parti, mortalité finale, aliment consommé, recettes, dépenses, marge.</div>
+    </div>
+  </div>
+
+  <div class="module">
+    <div class="module-head">
+      <span class="module-num">02</span>
+      <span class="module-name">Sanitaire</span>
+      <span class="module-tag">vaccins, traitements, vétérinaire</span>
+    </div>
+    <div class="cap">
+      <div class="cap-t">Le calendrier vous rappelle, vous ne cherchez plus.</div>
+      <div class="cap-b">Assignez un programme vaccinal à la bande selon sa souche : chaque dose apparaît <b>faite</b>, <b>à venir</b> ou <b>en retard</b>. Une vaccination en retard déclenche une alerte.</div>
+    </div>
+    <div class="cap">
+      <div class="cap-t">Votre bibliothèque, vos produits.</div>
+      <div class="cap-b">Les vaccins et traitements de la plateforme, plus les vôtres : ajoutez vos propres produits, ils s'utilisent comme les autres.</div>
+    </div>
+    <div class="cap">
+      <div class="cap-t">Les délais d'attente, tenus.</div>
+      <div class="cap-b">Un traitement ouvre un délai avant commercialisation. Jawdi le suit et vous prévient quand il se termine — vendre pendant un délai est un risque sanitaire et commercial.</div>
+    </div>
+    <div class="cap">
+      <div class="cap-t">Le vétérinaire, et ce qu'il coûte.</div>
+      <div class="cap-b">Annuaire de vos vétérinaires, visites avec motif, diagnostic et recommandations. Renseignez le coût : la dépense part directement en comptabilité, sans ressaisie.</div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ══════════ MODULES 3-5 ══════════ -->
+<section class="page">
+  <div class="module">
+    <div class="module-head">
+      <span class="module-num">03</span>
+      <span class="module-name">Stocks</span>
+      <span class="module-tag">aliment, intrants, fournisseurs</span>
+    </div>
+    <div class="cap">
+      <div class="cap-t">Le stock se tient à jour parce que vous ne le saisissez pas.</div>
+      <div class="cap-b">Chaque saisie journalière déduit l'aliment. Chaque vaccination déduit la dose. Chaque vente déduit la marchandise. Vous notez ce que vous faites sur le terrain ; le stock suit tout seul.</div>
+    </div>
+    <div class="cap">
+      <div class="cap-t">Vos formules, ingrédient par ingrédient.</div>
+      <div class="cap-b">Composez votre formule en pourcentages (maïs, tourteau, prémix…), ou clonez un modèle. À la saisie journalière, 50 kg de cette formule déduisent chaque ingrédient à sa part.</div>
+    </div>
+    <div class="cap">
+      <div class="cap-t">Du bon d'achat au stock, sans ressaisie.</div>
+      <div class="cap-b">Brouillon, envoyé, reçu. À la réception, les quantités entrent en stock <b>et</b> la dépense part en comptabilité.</div>
+    </div>
+    <div class="cap">
+      <div class="cap-t">Le compte-courant fournisseur.</div>
+      <div class="cap-b">Ce que vous devez à votre provendier, tenu comme un compte-courant : ce qui a été reçu, ce qui a été payé, ce qui reste dû. Avec, si vous le souhaitez, un avis WhatsApp au fournisseur à chaque paiement.</div>
+    </div>
+  </div>
+
+  <div class="module">
+    <div class="module-head">
+      <span class="module-num">04</span>
+      <span class="module-name">Ventes &amp; clients</span>
+      <span class="module-tag">commandes, factures, encaissements</span>
+    </div>
+    <div class="cap">
+      <div class="cap-t">Chaque client est un compte-courant.</div>
+      <div class="cap-b">Fiche client, historique complet — commandes, ventes, factures, paiements — et surtout l'<b>encours actuel</b> : ce qu'il vous doit, maintenant. Un encours dépassé déclenche une alerte.</div>
+    </div>
+    <div class="cap">
+      <div class="cap-t">De la commande à la livraison, le stock suit.</div>
+      <div class="cap-b">Commande, confirmation, livraison. La marchandise ne quitte votre stock qu'à la livraison réelle — et si vous annulez, elle y revient. Vendre plus que ce que vous avez est refusé.</div>
+    </div>
+    <div class="cap">
+      <div class="cap-t">Factures et paiements, sans tableur.</div>
+      <div class="cap-b">La facture naît de la vente ou de la livraison, jamais d'une ressaisie. Encaissez en espèces, Wave, Orange Money ou virement, avec la référence de la transaction — c'est elle qui tranche un désaccord.</div>
+    </div>
+    <div class="cap">
+      <div class="cap-t">La facture, imprimée ou envoyée.</div>
+      <div class="cap-b">Depuis l'ordinateur comme depuis le téléphone, la facture sort en PDF : à imprimer, ou à envoyer au client par WhatsApp depuis la ferme.</div>
+    </div>
+  </div>
+
+  <div class="module">
+    <div class="module-head">
+      <span class="module-num">05</span>
+      <span class="module-name">Finance</span>
+      <span class="module-tag">dépenses, salaires, rentabilité</span>
+    </div>
+    <div class="cap">
+      <div class="cap-t">Vos dépenses arrivent toutes seules.</div>
+      <div class="cap-b">Recevez un bon d'achat : la dépense est là. Payez une visite vétérinaire : elle est là. Versez un salaire ou une avance : elle est là. Vous ajoutez à la main ce qui ne vient d'aucun module — carburant, réparation, transport.</div>
+    </div>
+    <div class="cap">
+      <div class="cap-t">Salaires et avances.</div>
+      <div class="cap-b">Fixez le salaire mensuel de chaque salarié, générez le mois, enregistrez les avances. Chacun consulte les siennes, sans voir celles des autres.</div>
+    </div>
+    <div class="cap">
+      <div class="cap-t">Le compte de résultat de la ferme.</div>
+      <div class="cap-b">Total revenus, total dépenses, <b>marge</b>. Le revenu se décompose entre ventes directes et commandes payées ; les dépenses, par catégorie.</div>
+    </div>
+    <div class="cap">
+      <div class="cap-t">Ce que rapporte chaque lot.</div>
+      <div class="cap-b">Le tableau « revenu par lot » vous dit quelle bande a produit quoi. Comparez, et sachez laquelle refaire.</div>
+    </div>
+  </div>
+
+  <div class="note green">
+    <b class="tag">Ce qui relie les cinq</b>
+    Un sac acheté au provendier entre en stock, crée une dépense, se consomme à la saisie
+    journalière, alimente l'indice de consommation, et se retrouve dans la marge à la clôture.
+    <b>Une seule saisie, cinq conséquences.</b> C'est ce qui rend le chiffre final juste — et ce
+    qu'aucun cahier ne peut faire.
+  </div>
+</section>
+
+<!-- ══════════ IA + ALERTES ══════════ -->
+<section class="page">
+  <div class="sec-head">
+    <div class="sec-kicker">Section 4</div>
+    <h2>Jawdi IA — le conseiller qui connaît votre ferme</h2>
+  </div>
+
+  <p class="lede">
+    Posez une question en français, par écrit ou à la voix : « Comment va mon lot A ? »,
+    « Qui me doit de l'argent ? »
+  </p>
+
+  <p>
+    Jawdi IA consulte <strong>vos vrais chiffres</strong> — effectif, mortalité, stock, ventes,
+    soldes — et répond par une analyse claire et un conseil actionnable. Il ne travaille jamais sur
+    des données générales : il lit votre ferme, celle du jour.
+  </p>
+
+  <p>
+    Il sait aussi <strong>préparer une action dictée à la voix</strong>. « J'ai perdu trois poulets
+    dans le lot A » prépare la saisie ; vous la confirmez d'un geste. Rien n'est jamais enregistré
+    sans votre confirmation, et l'assistant ne peut faire que ce que votre rôle vous autorise à
+    faire vous-même.
+  </p>
+
+  <div class="note">
+    <b class="tag">Une limite que nous assumons</b>
+    L'assistant ne pose pas de diagnostic vétérinaire. Il signale, il compare, il alerte — il ne
+    soigne pas. Un épisode sanitaire se traite avec un vétérinaire.
+  </div>
+
+  <div class="sec-head" style="margin-top:1.6rem">
+    <div class="sec-kicker">Section 5</div>
+    <h2>Les alertes WhatsApp</h2>
+  </div>
+
+  <p class="lede">
+    Un éleveur n'ouvre pas une application toute la journée. Il regarde WhatsApp.
+  </p>
+
+  <p>
+    Jawdi surveille votre ferme <strong>toutes les heures, de 6 h à 20 h</strong>. Quand une
+    situation le mérite, l'alerte apparaît dans l'application — et part sur votre WhatsApp si elle
+    se règle sur le terrain.
+  </p>
+
+  <table>
+    <thead><tr><th>Alerte</th><th style="width:30%">Canal</th></tr></thead>
+    <tbody>
+      <tr><td>Mortalité anormale <span style="color:var(--muted)">— écart net à la moyenne des jours précédents</span></td><td>App + WhatsApp</td></tr>
+      <tr><td>Observation sanitaire critique</td><td>App + WhatsApp</td></tr>
+      <tr><td>Stock bas / stock négatif</td><td>App + WhatsApp</td></tr>
+      <tr><td>Délai d'attente en cours de fin</td><td>App + WhatsApp</td></tr>
+      <tr><td>Vaccination en retard</td><td>App + WhatsApp</td></tr>
+      <tr><td>Facture en retard, encours dépassé, bon d'achat en retard</td><td>App, et WhatsApp si urgent</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    Chaque membre règle ou coupe chaque catégorie pour lui-même. Une même alerte n'est jamais
+    envoyée deux fois tant que la situation dure, et une situation qui va et vient autour de son
+    seuil ne fait pas sonner le téléphone toutes les heures.
+  </p>
+
+  <div class="note green">
+    <b class="tag">Vos clients et vos fournisseurs aussi, si vous le voulez</b>
+    Jawdi peut prévenir un client quand sa facture est émise ou son paiement reçu, et un
+    fournisseur quand vous le payez. <b>Désactivé par défaut, et uniquement avec leur accord</b> :
+    écrire à vos clients engage votre nom auprès d'eux, pas le nôtre.
+  </div>
+</section>
+
+<!-- ══════════ ÉQUIPE + TECHNIQUE ══════════ -->
+<section class="page">
+  <div class="sec-head">
+    <div class="sec-kicker">Section 6</div>
+    <h2>Votre équipe, et qui voit quoi</h2>
+  </div>
+
+  <p class="lede">
+    Déléguer la saisie ne doit pas obliger à ouvrir ses comptes. Chaque personne a un rôle, et ne
+    voit que ce que son rôle permet.
+  </p>
+
+  <table>
+    <thead><tr><th style="width:22%">Rôle</th><th>Ce qu'il peut faire</th></tr></thead>
+    <tbody>
+      <tr><td><b>Propriétaire</b></td><td>Tout. C'est lui qui crée la ferme, invite l'équipe et voit l'ensemble des chiffres financiers.</td></tr>
+      <tr><td><b>Gérant</b></td><td>Le fonctionnement quotidien sur tous les modules, y compris ventes et dépenses. Délégation complète de l'exploitation.</td></tr>
+      <tr><td><b>Ouvrier</b></td><td>La saisie de terrain : journalier, mortalité, pesées, vaccinations, observations. <b>Ne voit pas les chiffres financiers</b> — mais consulte ses propres avances sur salaire.</td></tr>
+      <tr><td><b>Vétérinaire</b></td><td>Le sanitaire, et la lecture des lots. Rien de commercial ni de financier.</td></tr>
+      <tr><td><b>Acheteur</b></td><td>Lecture de ce qui le concerne commercialement. Pour un client régulier ou un grossiste.</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    Au-delà du rôle, chaque autorisation se règle personne par personne. Un ouvrier de confiance
+    peut recevoir le droit d'enregistrer une vente sans pour autant voir la comptabilité de la
+    ferme.
+  </p>
+
+  <p>
+    <strong>Plusieurs fermes ?</strong> Un même compte peut en gérer plusieurs et basculer de
+    l'une à l'autre. Les données d'une ferme ne sont jamais visibles depuis une autre.
+  </p>
+
+  <div class="sec-head" style="margin-top:1.6rem">
+    <div class="sec-kicker">Section 7</div>
+    <h2>Téléphone, ordinateur, et sans réseau</h2>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h4>Application mobile</h4>
+      <p style="font-size:9.5pt">
+        Android et iPhone. C'est l'outil du terrain : saisie journalière, mortalité, pesées,
+        vaccinations, ventes, encaissements, factures en PDF. Tout ce qui se fait au poulailler se
+        fait au téléphone.
+      </p>
+    </div>
+    <div class="card">
+      <h4>Application web</h4>
+      <p style="font-size:9.5pt">
+        Sur ordinateur, pour ce qui se fait assis : analyses, comparaison de bandes, comptabilité,
+        gestion de l'équipe, réglages de la ferme, impression.
+      </p>
+    </div>
+  </div>
+
+  <h3>Le réseau qui manque</h3>
+  <p>
+    Une part importante des fermes n'a pas de connexion fiable. Jawdi en tient compte :
+    <strong>les saisies de terrain fonctionnent sans réseau</strong> et partent toutes seules quand
+    la connexion revient.
+  </p>
+  <p style="font-size:9.6pt;color:var(--ink-soft)">
+    Fonctionnent hors ligne : saisie journalière, mortalité, pesée, collecte d'œufs, vaccination,
+    observation sanitaire, traitement, ajustement de stock, dépense, création de client. Une file
+    d'attente visible vous indique ce qui reste à envoyer — vous n'avez rien à relancer.
+  </p>
+
+  <div class="note">
+    <b class="tag">Ce qui exige une connexion</b>
+    Les opérations qui touchent l'argent d'un tiers — facturer, encaisser, envoyer un bon d'achat —
+    se font en ligne. Un numéro de facture ou de paiement ne peut pas être attribué deux fois, et
+    cela se décide sur le serveur, pas sur le téléphone.
+  </div>
+</section>
+
+<!-- ══════════ DONNÉES + TARIFS ══════════ -->
+<section class="page">
+  <div class="sec-head">
+    <div class="sec-kicker">Section 8</div>
+    <h2>Vos données</h2>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h4>Elles sont à vous</h4>
+      <p style="font-size:9.5pt">Vos chiffres vous appartiennent. Nous ne les vendons pas et ne les communiquons à personne. Un autre éleveur ne voit jamais votre ferme.</p>
+    </div>
+    <div class="card">
+      <h4>Elles sont sauvegardées</h4>
+      <p style="font-size:9.5pt">Sauvegarde automatique chaque nuit, conservée sur un second site. Un téléphone perdu ne perd aucune donnée.</p>
+    </div>
+    <div class="card">
+      <h4>La connexion est chiffrée</h4>
+      <p style="font-size:9.5pt">Tout passe en HTTPS. Les mots de passe sont chiffrés à sens unique : même nous ne les lisons pas.</p>
+    </div>
+    <div class="card">
+      <h4>Vous pouvez partir</h4>
+      <p style="font-size:9.5pt">Vos données s'exportent. Si Jawdi ne vous convient pas, vous repartez avec ce que vous avez saisi.</p>
+    </div>
+  </div>
+
+  <div class="sec-head" style="margin-top:1.6rem">
+    <div class="sec-kicker">Section 9</div>
+    <h2>Conditions d'accès</h2>
+  </div>
+
+  <div class="note green" style="margin-top:0">
+    <b class="tag">Aujourd'hui</b>
+    <b style="font-size:11pt">Jawdi est gratuit, avec tous les modules actifs.</b><br>
+    Aucune carte bancaire, aucun engagement, aucune durée d'essai qui expire. Nous constituons un
+    premier groupe d'éleveurs qui utilisent Jawdi sur un cycle complet, avec un accompagnement
+    personnel à l'installation.
+  </div>
+
+  <h3>Pourquoi c'est gratuit, et ce que nous attendons en retour</h3>
+  <p>
+    La valeur d'un logiciel d'élevage ne se démontre pas en une démonstration : elle se démontre à
+    la fin d'une bande, quand la marge s'affiche. Tant que nous ne vous avons pas montré ce
+    chiffre, nous n'avons rien à vous facturer. En retour, nous demandons <strong>votre retour
+    honnête</strong> : ce qui vous bloque, et ce qui manque.
+  </p>
+
+  <h3>Et ensuite ?</h3>
+  <p>
+    Une facturation viendra, mais pas sous la forme habituelle. Un abonnement mensuel fixe ne
+    correspond pas à l'aviculture : votre argent n'arrive pas tous les mois, il arrive <strong>le
+    jour où la bande part</strong>. Le principe retenu est donc de <strong>facturer au cycle,
+    proportionnellement à la taille de la bande</strong>, à un niveau de l'ordre de <strong>2 à
+    3 % de la marge</strong> — une petite bande coûte peu, une grande n'est pas pénalisée. Le
+    paiement se fera par Wave ou Orange Money, jamais par carte bancaire.
+  </p>
+
+  <div class="note">
+    <b class="tag">Ce que nous nous engageons à tenir</b>
+    <b>Les éleveurs du premier groupe gardent un avantage définitif.</b> Ceux qui nous font
+    confiance avant que la valeur soit prouvée ne seront jamais moins bien traités que ceux qui
+    arriveront après.<br><br>
+    Et une part de Jawdi restera <b>gratuite en permanence</b> — une bande à la fois, la saisie
+    journalière, la mortalité et le compte de résultat de fin de bande. Un petit éleveur doit
+    pouvoir savoir s'il a gagné de l'argent sans payer pour l'apprendre.
+  </div>
+
+  <p class="foot-note">
+    Les modalités définitives seront arrêtées avec les éleveurs du premier groupe et communiquées
+    à l'avance. Aucun prélèvement sans votre accord explicite.
+  </p>
+</section>
+
+<!-- ══════════ PARTENAIRES + FAQ ══════════ -->
+<section class="page">
+  <div class="sec-head">
+    <div class="sec-kicker">Section 10</div>
+    <h2>Pour les coopératives, provendiers et couvoirs</h2>
+  </div>
+
+  <p class="lede">
+    Un éleveur qui gagne de l'argent avec Jawdi est un éleveur qui reste dans votre réseau.
+  </p>
+
+  <p>
+    Jawdi propose un dispositif destiné aux structures qui encadrent des éleveurs. Vous équipez vos
+    éleveurs, et vous disposez d'un espace qui vous montre — <strong>avec leur accord, et
+    uniquement ce qu'ils partagent</strong> — l'activité de votre réseau : fermes actives, bandes
+    en cours, et les éleveurs qui décrochent.
+  </p>
+
+  <div class="grid2">
+    <div class="card">
+      <h4>Ce que vous y gagnez</h4>
+      <ul style="font-size:9.5pt">
+        <li>Des éleveurs plus performants, donc plus fidèles</li>
+        <li>Une visibilité sur la demande à venir en aliment</li>
+        <li>Un signal quand une ferme cesse de saisir</li>
+        <li>Un outil à votre nom auprès de vos éleveurs</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>La limite que nous tenons</h4>
+      <p style="font-size:9.5pt">
+        Un partenaire ne voit <b>jamais</b> les chiffres qu'un éleveur n'a pas choisi de partager.
+        Ni ses marges, ni ses clients, ni ses prix de vente. La confiance de l'éleveur passe avant
+        le confort du partenaire — sans elle, personne ne saisit rien, et le dispositif ne vaut
+        plus rien pour personne.
+      </p>
+    </div>
+  </div>
+
+  <div class="sec-head" style="margin-top:1.4rem">
+    <div class="sec-kicker">Section 11</div>
+    <h2>Questions fréquentes</h2>
+  </div>
+
+  <h3>Faut-il savoir se servir d'un ordinateur ?</h3>
+  <p>Non. Tout se fait au téléphone, en français, et l'installation se fait avec vous — nous créons ensemble votre ferme, votre bande et votre première saisie.</p>
+
+  <h3>Combien de temps par jour ?</h3>
+  <p>Une minute pour la saisie journalière. C'est la seule habitude à prendre, et c'est d'elle que tout le reste découle.</p>
+
+  <h3>Et si je n'ai pas de réseau au poulailler ?</h3>
+  <p>Les saisies de terrain fonctionnent sans connexion et partent toutes seules quand le réseau revient.</p>
+
+  <h3>Est-ce que je peux essayer sans m'engager ?</h3>
+  <p>C'est exactement ce que nous proposons : gratuit, sans engagement, sans carte bancaire, sur un cycle complet.</p>
+
+  <h3>Mes données peuvent-elles être vues par un autre éleveur ?</h3>
+  <p>Jamais. Chaque ferme est étanche, y compris pour un compte qui gère plusieurs fermes.</p>
+
+  <h3>Et si j'arrête ?</h3>
+  <p>Vos données s'exportent et vous repartez avec. Aucune donnée n'est retenue en otage.</p>
+
+</section>
+
+<!-- ══════════ CONTACT ══════════ -->
+<section class="page">
+  <div class="sec-head">
+    <div class="sec-kicker">Pour aller plus loin</div>
+    <h2>Parlons de votre élevage</h2>
+  </div>
+
+  <div class="note green" style="margin-top:1.5rem">
+    <b class="tag">Le plus simple</b>
+    <b style="font-size:12pt">Écrivez-nous sur WhatsApp — +221 70 475 69 96</b><br>
+    Dites-nous votre localité, le type d'élevage et la taille de votre bande actuelle. Nous vous
+    rappelons, et si Jawdi vous convient, nous l'installons avec vous en trois quarts d'heure.
+  </div>
+
+  <table style="margin-top:1.2rem">
+    <tbody>
+      <tr><td style="width:30%"><b>Site</b></td><td>jawdi.app</td></tr>
+      <tr><td><b>WhatsApp</b></td><td>+221 70 475 69 96</td></tr>
+      <tr><td><b>Courriel</b></td><td>malick.cisse@nlogicsolutions.com</td></tr>
+      <tr><td><b>Application</b></td><td>app.jawdi.app — web, Android et iPhone</td></tr>
+    </tbody>
+  </table>
+
+  <p class="foot-note">
+    Document de référence Jawdi — version 1 (volaille), septembre 2026. Les fonctionnalités
+    décrites sont disponibles à la date de ce document. Les conditions tarifaires futures sont
+    présentées à titre indicatif et ne constituent pas un engagement contractuel ; elles seront
+    arrêtées et communiquées avant toute mise en application.
+    <strong>Jawdi</strong> signifie « richesse », « bétail », en pulaar.
+  </p>
+</section>
+
+</body></html>
