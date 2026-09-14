@@ -1,14 +1,18 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "Jawdi",
+    "slug": "jawdi",
     "version": "1.0.0",
-    "scheme": "avicare",
+    "scheme": "jawdi",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "bundleIdentifier": "app.jawdi.mobile",
+      "supportsTablet": false,
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -17,7 +21,8 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "app.jawdi.mobile"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -38,9 +43,6 @@
         }
       ],
       "expo-sharing"
-    ],
-    "extra": {
-      "apiUrl": "http://localhost:8080"
-    }
+    ]
   }
 }
