@@ -26,6 +26,7 @@ import { setCurrentUser } from "@/store/slices/authSlice";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { apiErrorMessage } from "@/lib/apiError";
 import { ChangePasswordForm } from "@/components/account/ChangePasswordForm";
+import { DeleteAccountPanel } from "@/components/account/DeleteAccountPanel";
 import { logout } from "@/store/authActions";
 import { colors } from "@/theme/tokens";
 
@@ -102,10 +103,15 @@ export function ProfileDialog({ open, onClose }: { open: boolean; onClose: () =>
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ px: 3 }}>
         <Tab label="Profil" />
         <Tab label="Mot de passe" />
+        <Tab label="Supprimer" />
       </Tabs>
       {/* Two panels rather than one form: a password form nested inside the profile form would be
           invalid HTML, and submitting one would carry the other. */}
-      {tab === 1 ? (
+      {tab === 2 ? (
+        <DialogContent>
+          <DeleteAccountPanel open={open && tab === 2} />
+        </DialogContent>
+      ) : tab === 1 ? (
         <DialogContent>
           <ChangePasswordForm onChanged={onPasswordChanged} />
         </DialogContent>

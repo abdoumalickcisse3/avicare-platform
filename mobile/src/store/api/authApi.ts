@@ -76,6 +76,28 @@ export const authApi = baseApi.injectEndpoints({
     changePassword: build.mutation<void, { currentPassword: string; newPassword: string }>({
       query: (body) => ({ url: '/api/v1/account/password', method: 'POST', body }),
     }),
+
+    /**
+     * Ce que la suppression du compte détruirait — demandé avant la confirmation, jamais après.
+     *
+     * Le nombre de fermes possédées fait toute la différence : perdre un identifiant, ou perdre
+     * l'historique complet d'une ferme.
+     */
+    getDeletionPreview: build.query<{ ownedFarmCount: number }, void>({
+      query: () => '/api/v1/account/deletion-preview',
+      transformResponse: (r: ApiEnvelope<{ ownedFarmCount: number }>) => r.data,
+    }),
+
+    /**
+     * Fermer son propre compte. **Irréversible.**
+     *
+     * Exigé par la règle 5.1.1(v) de l'App Store : une app qui permet de créer un compte doit
+     * permettre de le supprimer sans la quitter. Le mot de passe est redemandé — un jeton de
+     * session suffit à consulter, pas à détruire.
+     */
+    deleteAccount: build.mutation<void, { password: string }>({
+      query: (body) => ({ url: '/api/v1/account', method: 'DELETE', body }),
+    }),
   }),
 });
 
@@ -88,4 +110,6 @@ export const {
   useGetProfileQuery,
   useUpdateProfileMutation,
   useChangePasswordMutation,
+  useGetDeletionPreviewQuery,
+  useDeleteAccountMutation,
 } = authApi;

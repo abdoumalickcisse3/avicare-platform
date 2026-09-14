@@ -15,6 +15,7 @@ import {
   useUpdateProfileMutation,
 } from '@/store/api/authApi';
 import { signOut } from '@/auth/signOut';
+import { DeleteAccountSheet } from '@/auth/DeleteAccountSheet';
 
 export default function ProfilScreen() {
   const router = useRouter();
@@ -27,6 +28,7 @@ export default function ProfilScreen() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -160,7 +162,27 @@ export default function ProfilScreen() {
             {changingPassword ? 'Modification…' : 'Changer mon mot de passe'}
           </Text>
         </Pressable>
+
+        {/* La zone dangereuse, en bas et visuellement séparée : on ne la croise pas par hasard.
+            Exigée par la règle 5.1.1(v) de l'App Store — supprimer son compte doit se faire
+            depuis l'app, pas par courriel. */}
+        <View style={styles.danger}>
+          <Text style={styles.dangerTitle}>Supprimer mon compte</Text>
+          <Text style={styles.hint}>
+            Définitif. Vos fermes et tout leur historique sont effacés.
+          </Text>
+          <Pressable
+            onPress={() => setDeleteOpen(true)}
+            style={styles.dangerBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Supprimer mon compte"
+          >
+            <Text style={styles.dangerBtnText}>Supprimer mon compte</Text>
+          </Pressable>
+        </View>
       </ScrollView>
+
+      <DeleteAccountSheet open={deleteOpen} onClose={() => setDeleteOpen(false)} />
 
       <View style={styles.footer}>
         <Pressable
@@ -235,6 +257,23 @@ const styles = StyleSheet.create({
     paddingVertical: tokens.spacing[3],
   },
   hint: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginTop: tokens.spacing[1] },
+  danger: {
+    marginTop: tokens.spacing[10],
+    paddingTop: tokens.spacing[5],
+    borderTopWidth: 1,
+    borderTopColor: tokens.colors.neutral[200],
+  },
+  dangerTitle: { ...tokens.typography.headingMd, color: tokens.colors.field.text },
+  dangerBtn: {
+    minHeight: tokens.touch.primaryButton,
+    borderRadius: tokens.radii.lg,
+    borderWidth: 1,
+    borderColor: tokens.colors.error,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: tokens.spacing[3],
+  },
+  dangerBtnText: { ...tokens.typography.button, fontSize: 15, color: tokens.colors.error },
   footer: {
     padding: tokens.layout.screenPadding,
     borderTopWidth: 1,
