@@ -38,4 +38,23 @@ public interface TenancyFacade {
   boolean hasAccess(Long userId, Long farmId);
 
   Optional<UserFarmInfo> findMembership(Long userId, Long farmId);
+
+  /**
+   * The farms this user owns — the ones that disappear with their account.
+   *
+   * <p>Ownership, not access: a manager or a field worker losing their account leaves the farm
+   * untouched, because the farm was never theirs.
+   */
+  List<Long> listOwnedFarmIds(Long userId);
+
+  /**
+   * Erase a farm and everything that cascades from it. <b>Irreversible.</b>
+   *
+   * <p>Every one of the 28 columns referencing {@code farms(id)} is {@code ON DELETE CASCADE}, so
+   * this takes flocks, sales, invoices and expenses with it — and removes the other members' access
+   * along the way. The admin console guards the same operation behind a retention delay and a
+   * mandatory export ({@code ComplianceService.purgeFarm}); a farmer deleting their own account
+   * asks for it directly, so the warning has to be carried by the screen that offers it.
+   */
+  void purgeFarm(Long farmId);
 }
