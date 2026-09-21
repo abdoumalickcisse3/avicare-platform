@@ -1,0 +1,7 @@
+<!-- Source vectorielle de icon-1024.png (§13). Fond #1B3F1B : le même vert que l'icône PWA déjà
+     en place sur le web (web/src/app/icons/[size]/route.tsx, colors.primary[800]). Carré plein,
+     sans transparence, sans coins arrondis — iOS et Android les appliquent eux-mêmes. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" fill="#1B3F1B"/>
+  <path d="M 272 288 H 752 M 632 288 V 560 C 632 724 376 724 376 556" stroke="#FFFFFF" stroke-width="128" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

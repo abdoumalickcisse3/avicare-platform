@@ -65,7 +65,7 @@
 
   .icon-row { display: flex; flex-wrap: wrap; gap: 1.25rem; align-items: flex-end; }
   .icon-tile {
-    background: var(--primary); border-radius: 22%; display: flex; align-items: center;
+    background: #1B3F1B; border-radius: 22%; display: flex; align-items: center;
     justify-content: center; flex: none;
   }
   .icon-tile svg { width: 55%; height: 55%; }
@@ -145,9 +145,11 @@
   <section>
     <h2>Icône d'application — proposition</h2>
     <p class="lede" style="margin-bottom:1rem">
-      Fond vert primaire plein, symbole en blanc, sans texte — ce que §9 impose pour une icône
-      iOS/Android. Rendu ici avec des coins arrondis à titre d'aperçu ; le fichier livré
-      (<code>icon-1024.png</code>) reste un carré plein, iOS et Android arrondissent eux-mêmes.
+      Fond vert foncé plein (<code>#1B3F1B</code> — le même vert que l'icône PWA déjà en place sur
+      le web, <code>web/src/app/icons/[size]/route.tsx</code>), symbole en blanc, sans texte — ce
+      que §9 impose pour une icône iOS/Android. Rendu ici avec des coins arrondis à titre d'aperçu ;
+      le fichier livré (<code>icon-1024.png</code>) reste un carré plein, iOS et Android arrondissent
+      eux-mêmes.
     </p>
     <div class="icon-row">
       <div class="icon-tile i120"><svg viewBox="0 0 1024 1024"><path d="M 272 288 H 752 M 632 288 V 560 C 632 724 376 724 376 556" stroke="#fff" stroke-width="128" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
