@@ -1,0 +1,32 @@
+Jawdi vous dit ce que chaque bande vous a rapporté — pas ce que vous croyez avoir gagné.
+
+L'aliment représente jusqu'à 70 % du coût de production d'un élevage de volaille. Il part en sacs, jour après jour, sans que personne ne le rapproche des kilos vendus à la fin. Jawdi demande une saisie par jour — effectif, mortalité, aliment — et se charge du reste.
+
+UNE MINUTE PAR JOUR
+Effectif, mortalité, aliment consommé, eau, observations. À partir de cette seule saisie, Jawdi calcule l'effectif actuel, le taux de mortalité, l'indice de consommation, le stock d'aliment restant et l'écart à la courbe de croissance de la souche.
+
+CINQ MODULES, UNE SEULE SAISIE
+• Élevage — chair et pondeuses, courbe de croissance, clôture de bande avec compte de résultat
+• Sanitaire — calendrier vaccinal par souche, délais d'attente avant vente, suivi vétérinaire
+• Stocks — formules d'aliment ingrédient par ingrédient, bons d'achat, compte-courant fournisseur
+• Ventes & clients — commandes, factures PDF, encaissements Wave/Orange Money/espèces
+• Finance — dépenses automatiques, salaires et avances, marge par lot
+
+Un sac acheté au provendier entre en stock, crée une dépense, se consomme à la saisie journalière, alimente l'indice de consommation, et se retrouve dans la marge à la clôture de la bande. Une seule saisie, cinq conséquences.
+
+JAWDI IA, LE CONSEILLER QUI CONNAÎT VOTRE FERME
+Posez une question en français, à l'écrit ou à la voix : « Comment va mon lot A ? », « Qui me doit de l'argent ? ». Jawdi IA répond à partir de vos vrais chiffres, pas de données génériques. Il peut aussi préparer une saisie dictée à la voix — vous la confirmez d'un geste, rien ne s'enregistre sans vous.
+
+DES ALERTES SUR WHATSAPP, PAS UNE APPLICATION DE PLUS À OUVRIR
+Mortalité anormale, stock bas, vaccination en retard, facture en retard : Jawdi surveille votre ferme et vous prévient là où vous regardez déjà — WhatsApp.
+
+FONCTIONNE SANS RÉSEAU
+La saisie journalière, la mortalité, les pesées, les vaccinations et les observations s'enregistrent hors ligne et partent seules au retour de la connexion. Une file d'attente visible vous montre ce qui reste à envoyer.
+
+VOTRE ÉQUIPE, CHACUN SON RÔLE
+Propriétaire, gérant, ouvrier, vétérinaire, acheteur : chacun voit ce que son rôle autorise. Un ouvrier peut saisir sans jamais voir vos comptes.
+
+VOS DONNÉES VOUS APPARTIENNENT
+Sauvegarde automatique chaque nuit sur un second site, connexion chiffrée, aucune revente à un tiers. Vos données s'exportent : si Jawdi ne vous convient pas, vous repartez avec.
+
+Jawdi est gratuit aujourd'hui, avec tous les modules actifs — sans carte bancaire, sans durée d'essai. Conçu au Sénégal, pour l'aviculture sénégalaise.
