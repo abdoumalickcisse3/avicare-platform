@@ -43,6 +43,13 @@
         }
       ],
       "expo-sharing"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "a1469a78-7236-453e-9174-434cb8e43c68"
+      }
+    },
+    "owner": "malick01"
   }
 }
