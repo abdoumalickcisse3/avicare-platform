@@ -104,8 +104,8 @@ comportement normal et documenté, pas une fonctionnalité cassée si rien n'app
 elle-même pour ces cas.
 
 Identifiants de démonstration :
-  Courriel : [à créer]
-  Mot de passe : [à créer]
+  Courriel : demo.appstore@jawdi.app
+  Mot de passe : AppleReview#2026
 
 Contact en cas de blocage : +221 70 475 69 96 (WhatsApp) ou malick.cisse@nlogicsolutions.com.
 ```
@@ -114,8 +114,15 @@ Contact en cas de blocage : +221 70 475 69 96 (WhatsApp) ou malick.cisse@nlogics
 
 1. **Captures d'écran iPhone 6,9″ (1320×2868)** — irréalisables sans build TestFlight sur un
    appareil réel (Phase 6). Pas d'iPad (`supportsTablet: false`).
-2. **Compte de démonstration** avec données réalistes (bandes, ventes, dépenses) pour le
-   relecteur — Jawdi exige une connexion, une ferme vide se rapproche d'un rejet. Identifiants à
-   compléter ci-dessus une fois le compte créé en production.
-3. **Icône définitive** — la fiche peut se préparer sans, mais rien ne se soumet avec le gabarit
+2. **Icône définitive** — la fiche peut se préparer sans, mais rien ne se soumet avec le gabarit
    Expo par défaut actuellement dans `mobile/assets/icon.png`.
+
+## Compte de démonstration — fait
+
+Créé en production le 21/09/2026 via `scripts/seed-app-store-demo.py` (rejoue de vrais appels API,
+pas d'écriture SQL directe) : ferme #21 « Ferme Démo Jawdi », une bande close avec marge positive
+(777 000 XOF sur 3 % de mortalité), une bande en cours, un client avec facture payée, une visite
+vétérinaire, un compte-courant fournisseur avec un versement. Identifiants ci-dessus.
+
+Le script est ré-exécutable pour un autre compte de démo (`--email`/`--password` différents) mais
+**pas contre le même e-mail** : l'inscription n'est pas idempotente.
