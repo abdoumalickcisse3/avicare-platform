@@ -52,8 +52,8 @@ pas de violence ni de contenu réservé aux adultes.
 
 | Champ | Valeur |
 |---|---|
-| Confidentialité | `https://jawdi.app/confidentialite/` (en ligne) |
-| Assistance | `https://jawdi.app/contact` ou WhatsApp `+221 70 475 69 96` — à trancher : Apple exige une URL, pas un numéro seul |
+| Confidentialité | `https://jawdi.app/confidentialite/` (en ligne, vérifié 200) |
+| Assistance | `https://jawdi.app/contact` (en ligne, vérifié 200 — le formulaire redirige déjà vers WhatsApp) |
 | Marketing (optionnelle) | `https://jawdi.app` |
 
 ## Étiquettes de confidentialité (« App Privacy »)
@@ -84,13 +84,38 @@ Première version de Jawdi : suivi journalier des bandes, sanitaire, stocks, ven
 avec alertes WhatsApp et fonctionnement hors ligne au poulailler.
 ```
 
+## Notes de relecture (App Review Information)
+
+À coller dans le champ « Notes » d'App Store Connect, pour le relecteur Apple — pas visible au
+public :
+
+```
+Jawdi est un logiciel de gestion pour les élevages de volaille (poulet de chair et poules
+pondeuses), utilisé au Sénégal. Un compte existe déjà pour la relecture (identifiants ci-dessous),
+avec une ferme contenant des données réelles : bandes en cours et clôturées, ventes, dépenses.
+
+Fonctionnement hors ligne : les écrans de saisie de terrain (saisie journalière, mortalité, pesée,
+vaccination, observation) s'utilisent aussi en mode avion — activez-le avant de saisir, les
+données partent seules au retour du réseau. La file d'attente est visible sous Réglages.
+
+Alertes WhatsApp : l'application envoie certaines alertes (stock bas, mortalité anormale,
+vaccination en retard) par WhatsApp, en dehors de l'app, vers le numéro du compte. C'est un
+comportement normal et documenté, pas une fonctionnalité cassée si rien n'apparaît dans l'app
+elle-même pour ces cas.
+
+Identifiants de démonstration :
+  Courriel : [à créer]
+  Mot de passe : [à créer]
+
+Contact en cas de blocage : +221 70 475 69 96 (WhatsApp) ou malick.cisse@nlogicsolutions.com.
+```
+
 ## Ce qui reste bloqué avant de pouvoir soumettre la fiche
 
 1. **Captures d'écran iPhone 6,9″ (1320×2868)** — irréalisables sans build TestFlight sur un
    appareil réel (Phase 6). Pas d'iPad (`supportsTablet: false`).
 2. **Compte de démonstration** avec données réalistes (bandes, ventes, dépenses) pour le
-   relecteur — Jawdi exige une connexion, une ferme vide se rapproche d'un rejet.
+   relecteur — Jawdi exige une connexion, une ferme vide se rapproche d'un rejet. Identifiants à
+   compléter ci-dessus une fois le compte créé en production.
 3. **Icône définitive** — la fiche peut se préparer sans, mais rien ne se soumet avec le gabarit
    Expo par défaut actuellement dans `mobile/assets/icon.png`.
-4. **Décision sur l'URL d'assistance** : une page dédiée sur `jawdi.app` plutôt qu'un simple lien
-   `wa.me`, pour rester conforme au champ attendu par Apple.
