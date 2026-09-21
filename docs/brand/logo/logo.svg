@@ -1,0 +1,7 @@
+<!-- Provisoire (étape 2) : wordmark en <text>, pas encore vectorisé (voir wordmark.svg). -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 160">
+  <svg x="0" y="10" width="140" height="140" viewBox="0 0 1024 1024">
+    <path d="M 272 288 H 752 M 632 288 V 560 C 632 724 376 724 376 556" stroke="#2E6B2E" stroke-width="128" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <text x="168" y="112" font-family="Outfit, sans-serif" font-weight="700" font-size="88" letter-spacing="-3" fill="#2E6B2E">Jawdi<tspan fill="#F8961E">.</tspan></text>
+</svg>

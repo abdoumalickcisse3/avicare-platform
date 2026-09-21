@@ -1,0 +1,5 @@
+<!-- Provisoire (étape 2) : texte via <text font-family="Outfit">, pas encore vectorisé en tracés.
+     La vectorisation (§14, étape 4) attend que la piste soit définitivement validée. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 100">
+  <text x="0" y="78" font-family="Outfit, sans-serif" font-weight="700" font-size="88" letter-spacing="-3" fill="#2E6B2E">Jawdi<tspan fill="#F8961E">.</tspan></text>
+</svg>

@@ -1,0 +1,164 @@
+<title>Jawdi — Étape 2 du logo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --bg: #FAFAF9; --surface: #FFFFFF; --border: #E7E5E4; --border-soft: #F0EEED;
+    --ink: #292524; --ink-soft: #57534E; --muted: #A8A29E;
+    --accent: #C46505; --primary: #2E6B2E;
+    --dark-surface: #1C1917;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17150F; --surface: #221F19; --border: #35312A; --border-soft: #2A271F;
+      --ink: #F2EFEA; --ink-soft: #C9C3B9; --muted: #8A8377;
+      --accent: #F8961E; --primary: #6FBE6F; --dark-surface: #0C0B08;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #17150F; --surface: #221F19; --border: #35312A; --border-soft: #2A271F;
+    --ink: #F2EFEA; --ink-soft: #C9C3B9; --muted: #8A8377;
+    --accent: #F8961E; --primary: #6FBE6F; --dark-surface: #0C0B08;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--ink); margin: 0; padding: 2.75rem 1.25rem 4rem;
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.55;
+  }
+  main { max-width: 46rem; margin: 0 auto; }
+  .eyebrow {
+    font-family: ui-monospace, 'JetBrains Mono', Consolas, monospace; font-size: .72rem;
+    font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--accent);
+    margin: 0 0 .5rem;
+  }
+  h1 { font-size: 1.7rem; font-weight: 700; letter-spacing: -.01em; margin: 0 0 .5rem; text-wrap: balance; }
+  .lede { color: var(--ink-soft); max-width: 38rem; margin: 0 0 2rem; }
+
+  section { margin-bottom: 2rem; }
+  h2 {
+    font-size: .95rem; font-weight: 600; margin: 0 0 .9rem; padding-bottom: .55rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .grid { display: flex; flex-wrap: wrap; gap: 1rem; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 1.1rem; display: flex; flex-direction: column; align-items: center; gap: .7rem;
+    flex: 1 1 9rem; min-width: 9rem;
+  }
+  .card.on-dark { background: var(--dark-surface); border-color: var(--dark-surface); }
+  .swatch { width: 64px; height: 64px; }
+  .swatch svg { display: block; width: 100%; height: 100%; }
+  .card span {
+    font-family: ui-monospace, 'JetBrains Mono', Consolas, monospace; font-size: .68rem;
+    color: var(--muted); text-align: center;
+  }
+  .card.on-dark span { color: #C9C3B9; }
+
+  .lockup-row { display: flex; flex-wrap: wrap; gap: 1rem; }
+  .lockup {
+    flex: 1 1 16rem; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.6rem; display: flex; align-items: center; justify-content: center;
+  }
+  .lockup.on-dark { background: var(--dark-surface); border-color: var(--dark-surface); }
+  .lockup svg { height: 48px; width: auto; }
+
+  .icon-row { display: flex; flex-wrap: wrap; gap: 1.25rem; align-items: flex-end; }
+  .icon-tile {
+    background: var(--primary); border-radius: 22%; display: flex; align-items: center;
+    justify-content: center; flex: none;
+  }
+  .icon-tile svg { width: 55%; height: 55%; }
+  .icon-tile.i120 { width: 120px; height: 120px; }
+  .icon-tile.i60 { width: 60px; height: 60px; border-radius: 24%; }
+  .icon-tile.i29 { width: 29px; height: 29px; border-radius: 26%; }
+
+  .note {
+    background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+    border-radius: 0 12px 12px 0; padding: .9rem 1.1rem; font-size: .9rem; color: var(--ink-soft);
+    margin-top: .5rem;
+  }
+  .foot { margin-top: 2.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border); color: var(--muted); font-size: .82rem; }
+</style>
+
+<main>
+  <p class="eyebrow">Cahier des charges logo · Étape 2 sur 4</p>
+  <h1>Le fer, en couleur et avec le mot-symbole</h1>
+  <p class="lede">
+    Piste retenue : <strong>la marque au fer</strong>. Premier passage en couleur (vert primaire
+    #2E6B2E, point d'accent orange #F8961E — les teintes déjà en usage sur la facture et le site) et
+    premier essai du mot-symbole. Le concept ne bouge pas ; ce qui se discute ici, c'est le dessin.
+  </p>
+
+  <section>
+    <h2>Le symbole seul</h2>
+    <div class="grid">
+      <div class="card">
+        <div class="swatch"><svg viewBox="0 0 1024 1024"><path d="M 272 288 H 752 M 632 288 V 560 C 632 724 376 724 376 556" stroke="#2E6B2E" stroke-width="128" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span>mark.svg — couleur</span>
+      </div>
+      <div class="card">
+        <div class="swatch"><svg viewBox="0 0 1024 1024"><path d="M 272 288 H 752 M 632 288 V 560 C 632 724 376 724 376 556" stroke="#000" stroke-width="128" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span>mark-mono-black.svg</span>
+      </div>
+      <div class="card on-dark">
+        <div class="swatch"><svg viewBox="0 0 1024 1024"><path d="M 272 288 H 752 M 632 288 V 560 C 632 724 376 724 376 556" stroke="#fff" stroke-width="128" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span>mark-mono-white.svg</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Le verrouillage horizontal</h2>
+    <div class="lockup-row">
+      <div class="lockup">
+        <svg viewBox="0 0 640 160">
+          <svg x="0" y="10" width="140" height="140" viewBox="0 0 1024 1024"><path d="M 272 288 H 752 M 632 288 V 560 C 632 724 376 724 376 556" stroke="#2E6B2E" stroke-width="128" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <text x="168" y="112" font-family="Outfit, sans-serif" font-weight="700" font-size="88" letter-spacing="-3" fill="#2E6B2E">Jawdi<tspan fill="#F8961E">.</tspan></text>
+        </svg>
+        <span style="display:none">logo.svg</span>
+      </div>
+      <div class="lockup on-dark">
+        <svg viewBox="0 0 640 160">
+          <svg x="0" y="10" width="140" height="140" viewBox="0 0 1024 1024"><path d="M 272 288 H 752 M 632 288 V 560 C 632 724 376 724 376 556" stroke="#fff" stroke-width="128" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <text x="168" y="112" font-family="Outfit, sans-serif" font-weight="700" font-size="88" letter-spacing="-3" fill="#fff">Jawdi<tspan fill="#F8961E">.</tspan></text>
+        </svg>
+      </div>
+    </div>
+    <p class="note">
+      Le mot-symbole est encore en <code>&lt;text&gt;</code> (police Outfit), pas en tracés
+      vectorisés — la vectorisation est une exigence de l'étape 4 (§14), une fois la piste
+      définitivement validée, pas de l'étape 2.
+    </p>
+  </section>
+
+  <section>
+    <h2>Le verrouillage vertical</h2>
+    <div class="lockup" style="max-width:14rem">
+      <svg viewBox="0 0 300 260" style="height:130px">
+        <svg x="80" y="0" width="140" height="140" viewBox="0 0 1024 1024"><path d="M 272 288 H 752 M 632 288 V 560 C 632 724 376 724 376 556" stroke="#2E6B2E" stroke-width="128" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <text x="150" y="230" text-anchor="middle" font-family="Outfit, sans-serif" font-weight="700" font-size="72" letter-spacing="-2" fill="#2E6B2E">Jawdi<tspan fill="#F8961E">.</tspan></text>
+      </svg>
+    </div>
+  </section>
+
+  <section>
+    <h2>Icône d'application — proposition</h2>
+    <p class="lede" style="margin-bottom:1rem">
+      Fond vert primaire plein, symbole en blanc, sans texte — ce que §9 impose pour une icône
+      iOS/Android. Rendu ici avec des coins arrondis à titre d'aperçu ; le fichier livré
+      (<code>icon-1024.png</code>) reste un carré plein, iOS et Android arrondissent eux-mêmes.
+    </p>
+    <div class="icon-row">
+      <div class="icon-tile i120"><svg viewBox="0 0 1024 1024"><path d="M 272 288 H 752 M 632 288 V 560 C 632 724 376 724 376 556" stroke="#fff" stroke-width="128" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="icon-tile i60"><svg viewBox="0 0 1024 1024"><path d="M 272 288 H 752 M 632 288 V 560 C 632 724 376 724 376 556" stroke="#fff" stroke-width="128" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="icon-tile i29"><svg viewBox="0 0 1024 1024"><path d="M 272 288 H 752 M 632 288 V 560 C 632 724 376 724 376 556" stroke="#fff" stroke-width="128" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    </div>
+  </section>
+
+  <p class="foot">
+    Un ou deux allers-retours prévus à cette étape (§15) — les modifications portent sur le dessin
+    (proportions du fer, poids du trait, couleur exacte), pas sur le concept. Une fois validée,
+    étape 3 : mises en situation réelles (icône mobile, en-tête du logiciel, facture imprimée).
+  </p>
+</main>
