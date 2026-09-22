@@ -63,6 +63,11 @@ rejette les deux, et arrondit lui-même). Le cahier des charges existe déjà da
 `docs/brand/cahier-des-charges-logo.html` — le logo, lui, n'est pas encore dessiné. C'est un
 prérequis, pas un détail.
 
+> **Fait (2026-09-22)** : piste « la marque au fer » retenue et validée (`docs/brand/logo/`),
+> icône posée sur le vert déjà en place côté web (`#1B3F1B`) — `mobile/assets/icon.png` (1024×1024,
+> sans alpha) et le jeu d'icônes adaptatives Android sont à jour. Détail dans
+> `docs/mobile/fiche-app-store.md`.
+
 ### L'URL d'API — le point le plus dangereux
 
 Aujourd'hui l'URL vit en dur dans `app.json`. Un build de production irait parler à `localhost`, ce

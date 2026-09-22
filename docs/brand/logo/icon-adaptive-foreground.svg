@@ -1,0 +1,6 @@
+<!-- Source de icon-adaptive-foreground.png (§13) : symbole seul, transparent, dans la zone de
+     sécurité Android (le contenu doit tenir dans le cercle central ~66% du canevas). Même tracé
+     et mêmes proportions que icon-1024.svg, sans le fond. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <path d="M 272 288 H 752 M 632 288 V 560 C 632 724 376 724 376 556" stroke="#FFFFFF" stroke-width="128" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
