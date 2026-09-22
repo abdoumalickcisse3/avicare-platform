@@ -94,6 +94,9 @@ services:
       # Pour couper l'envoi, poser explicitement NOTIF_WHATSAPP_ENABLED=false.
       NOTIF_WHATSAPP_ENABLED: ${NOTIF_WHATSAPP_ENABLED:-true}
       KONEKT_API_SECRET: ${KONEKT_API_SECRET:-}
+      # Off by default (see application-prod.yml) — flip to true only for a one-off farm-scoped
+      # test of the notification pipeline, then unset it again.
+      NOTIF_SCAN_MANUAL_TRIGGER: ${NOTIF_SCAN_MANUAL_TRIGGER:-false}
       JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY:?export JWT_PRIVATE_KEY (deploy.sh does this)}
       JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY:?export JWT_PUBLIC_KEY (deploy.sh does this)}
       # Jawdi IA — set ANTHROPIC_ENABLED=true and ANTHROPIC_API_KEY in .env to use the
