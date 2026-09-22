@@ -49,7 +49,7 @@ class HealthCatalogServiceIT {
   void listsTheV1Library() {
     assertThat(service.listVaccines(FARM_ID)).hasSize(10);
     assertThat(service.listTreatments(FARM_ID)).hasSize(6);
-    assertThat(service.listVaccinationPrograms()).hasSize(4);
+    assertThat(service.listVaccinationPrograms(FARM_ID)).hasSize(4);
   }
 
   @Test
@@ -76,22 +76,22 @@ class HealthCatalogServiceIT {
 
   @Test
   void filtersProgramsByBreed() {
-    List<VaccinationProgramDto> broiler = service.getVaccinationProgramsForBreed("cobb_500");
+    List<VaccinationProgramDto> broiler = service.getVaccinationProgramsForBreed(FARM_ID, "cobb_500");
     assertThat(broiler)
         .extracting(VaccinationProgramDto::key)
         .containsExactly("broiler_standard_cobb500");
 
-    List<VaccinationProgramDto> layer = service.getVaccinationProgramsForBreed("isa_brown");
+    List<VaccinationProgramDto> layer = service.getVaccinationProgramsForBreed(FARM_ID, "isa_brown");
     assertThat(layer)
         .extracting(VaccinationProgramDto::key)
         .containsExactly("layer_standard_isabrown");
 
-    assertThat(service.getVaccinationProgramsForBreed("unknown_breed")).isEmpty();
+    assertThat(service.getVaccinationProgramsForBreed(FARM_ID, "unknown_breed")).isEmpty();
   }
 
   @Test
   void resolvesProgramWithDeserializedSchedule() {
-    VaccinationProgramDto p = service.resolveProgramByKey("layer_standard_isabrown");
+    VaccinationProgramDto p = service.resolveProgramByKey(FARM_ID, "layer_standard_isabrown");
     assertThat(p.species()).isEqualTo("POULTRY");
     assertThat(p.breedKeys()).containsExactly("isa_brown");
     assertThat(p.schedule()).hasSize(7);
@@ -107,7 +107,7 @@ class HealthCatalogServiceIT {
     assertThat(last.ageUnit()).isEqualTo("WEEK");
     assertThat(last.vaccineKey()).isEqualTo("newcastle_la_sota");
 
-    assertThatThrownBy(() -> service.resolveProgramByKey("nope"))
+    assertThatThrownBy(() -> service.resolveProgramByKey(FARM_ID, "nope"))
         .isInstanceOf(NotFoundException.class);
   }
 }

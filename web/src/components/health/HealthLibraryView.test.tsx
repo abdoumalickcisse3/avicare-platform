@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "@/test/render";
 import { setTokens } from "@/store/slices/authSlice";
 import { HealthLibraryView } from "./HealthLibraryView";
@@ -27,6 +28,21 @@ const VACCINES = [
   { key: "newcastle", label: "Newcastle", disease: "newcastle", route: "", activeStrain: true, usage: "", wave: "", custom: false },
   { key: "nc-fermier", label: "NC fermier", disease: "newcastle", route: "drinking_water", activeStrain: false, usage: "", wave: "", custom: true },
 ];
+// Regression (production crash): a custom treatment saved without the optional
+// "molecule" field comes back as `molecule: null` — humanizeKey must not throw on it.
+const TREATMENTS = [
+  {
+    key: "sans-molecule",
+    label: "Traitement sans molécule",
+    molecule: null,
+    drugClass: null,
+    withdrawalDaysMeat: null,
+    withdrawalDaysEggs: null,
+    routes: [],
+    wave: "",
+    custom: true,
+  },
+];
 
 function ok(data: unknown) {
   return Promise.resolve(
@@ -39,6 +55,7 @@ beforeEach(() => {
     vi.fn(async (input: Request) => {
       const url = input.url;
       if (url.includes("/catalog/vaccines")) return ok(VACCINES);
+      if (url.includes("/catalog/treatments")) return ok(TREATMENTS);
       if (url.includes("/subscription")) return ok(SUBSCRIPTION);
       if (url.endsWith("/api/v1/farms")) return ok([{ id: 1, name: "Ferme" }]);
       return ok([]);
@@ -64,5 +81,18 @@ describe("HealthLibraryView", () => {
     expect(within(platformRow).queryByText(/perso/i)).not.toBeInTheDocument();
     // create button visible for OWNER
     expect(screen.getByRole("button", { name: /nouveau vaccin/i })).toBeInTheDocument();
+  });
+
+  it("renders a treatment with no molecule instead of crashing", async () => {
+    const user = userEvent.setup();
+    const { store } = renderWithProviders(<HealthLibraryView />);
+    store.dispatch(setTokens({ accessToken: ownerToken(), refreshToken: "r", expiresIn: 3600 }));
+    // Wait for the farm role to resolve before switching tabs: clicking while
+    // useFarmRole/useHealthGating are still settling races the tab's own state.
+    await screen.findByRole("button", { name: /nouveau vaccin/i });
+    await user.click(screen.getByRole("tab", { name: /traitements/i }));
+    expect(await screen.findByText("Traitement sans molécule")).toBeInTheDocument();
+    const row = screen.getByText("Traitement sans molécule").closest("tr")!;
+    expect(within(row).getByText("—")).toBeInTheDocument();
   });
 });

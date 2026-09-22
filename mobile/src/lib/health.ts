@@ -109,7 +109,8 @@ export function severityChip(severity: ObservationSeverity): {
 }
 
 /** Title-case a catalog key, e.g. `newcastle_vh` → `Newcastle Vh`. */
-export function humanizeKey(key: string): string {
+export function humanizeKey(key: string | null | undefined): string {
+  if (!key) return '—';
   return key
     .split(/[_\s]+/)
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))

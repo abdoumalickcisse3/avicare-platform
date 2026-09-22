@@ -11,4 +11,5 @@ public record VaccinationProgramDto(
     String label,
     String species,
     List<String> breedKeys,
-    List<VaccinationScheduleEntryDto> schedule) {}
+    List<VaccinationScheduleEntryDto> schedule,
+    boolean custom) {}

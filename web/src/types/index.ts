@@ -393,7 +393,7 @@ export type ScheduleStatus = "DONE" | "LATE" | "UPCOMING";
 export interface Vaccine {
   key: string;
   label: string;
-  disease: string;
+  disease: string | null;
   route: string;
   activeStrain: boolean;
   usage: string;
@@ -405,8 +405,8 @@ export interface Vaccine {
 export interface Treatment {
   key: string;
   label: string;
-  molecule: string;
-  drugClass: string;
+  molecule: string | null;
+  drugClass: string | null;
   withdrawalDaysMeat: number | null;
   withdrawalDaysEggs: number | null;
   routes: string[];
@@ -421,6 +421,7 @@ export interface VaccinationProgram {
   species: string;
   breedKeys: string[];
   schedule: VaccinationScheduleEntry[];
+  custom: boolean;
 }
 
 export interface VaccinationScheduleEntry {

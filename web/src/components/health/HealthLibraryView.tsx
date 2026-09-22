@@ -3,7 +3,6 @@
 import { useState } from "react";
 import NextLink from "next/link";
 import {
-  Alert,
   Box,
   Breadcrumbs,
   Button,
@@ -22,12 +21,13 @@ import {
   Tabs,
   Typography,
 } from "@mui/material";
-import { Pencil, Plus, Power, Stethoscope } from "lucide-react";
+import { Copy, Pencil, Plus, Power, Stethoscope } from "lucide-react";
 import { useHealthGating } from "@/hooks/useHealthGating";
 import {
   useDeactivateVeterinarianMutation,
   useDeleteVaccineMutation,
   useDeleteTreatmentCatalogMutation,
+  useDeleteProgramMutation,
   useGetProgramsQuery,
   useGetTreatmentCatalogQuery,
   useGetVaccinesQuery,
@@ -41,13 +41,11 @@ import { useFarmRole, canManageCatalog } from "@/hooks/useFarmRole";
 import { AdvancedLockCard } from "./AdvancedLockCard";
 import { VaccineLibraryDialog } from "./VaccineLibraryDialog";
 import { TreatmentLibraryDialog } from "./TreatmentLibraryDialog";
+import { ProgramDialog } from "./ProgramDialog";
 import { VeterinarianDialog } from "./VeterinarianDialog";
-import type { Veterinarian, Vaccine, Treatment } from "@/types";
+import type { Veterinarian, Vaccine, Treatment, VaccinationProgram } from "@/types";
 
 type TabKey = "vaccines" | "treatments" | "programs" | "vets";
-
-const READ_ONLY_NOTE =
-  "Bibliothèque plateforme en lecture seule. L'édition de votre bibliothèque personnalisée arrivera prochainement.";
 
 const headCellSx = { fontWeight: 600 } as const;
 
@@ -107,7 +105,9 @@ export function HealthLibraryView() {
                   description="Le catalogue des traitements nécessite health.advanced."
                 />
               ))}
-            {tab === "programs" && <ProgramsTab farmId={farmId} enabled={hasFarm} />}
+            {tab === "programs" && (
+              <ProgramsTab farmId={farmId} enabled={hasFarm} canManage={canManage && hasBasic} />
+            )}
             {tab === "vets" &&
               (hasAdvanced ? (
                 <VetsTab farmId={farmId} enabled={hasFarm} />
@@ -152,10 +152,17 @@ function VaccinesTab({
   const [deleteVaccine] = useDeleteVaccineMutation();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Vaccine | null>(null);
+  const [cloneSource, setCloneSource] = useState<Vaccine | null>(null);
   const existingKeys = data.map((v) => v.key);
 
   const openCreate = () => {
     setEditing(null);
+    setCloneSource(null);
+    setDialogOpen(true);
+  };
+  const openClone = (v: Vaccine) => {
+    setEditing(null);
+    setCloneSource(v);
     setDialogOpen(true);
   };
   const onDelete = async (key: string) => {
@@ -203,23 +210,28 @@ function VaccinesTab({
                   {v.route && <Chip size="small" label={routeLabel(v.route)} sx={{ bgcolor: colors.neutral[100] }} />}
                 </TableCell>
                 <TableCell align="right">
-                  {v.custom && canManage && (
-                    <>
-                      <IconButton
-                        size="small"
-                        aria-label="Modifier"
-                        onClick={() => {
-                          setEditing(v);
-                          setDialogOpen(true);
-                        }}
-                      >
-                        <Pencil size={16} />
+                  {canManage &&
+                    (v.custom ? (
+                      <>
+                        <IconButton
+                          size="small"
+                          aria-label="Modifier"
+                          onClick={() => {
+                            setEditing(v);
+                            setDialogOpen(true);
+                          }}
+                        >
+                          <Pencil size={16} />
+                        </IconButton>
+                        <IconButton size="small" aria-label="Supprimer" onClick={() => onDelete(v.key)}>
+                          <Power size={16} />
+                        </IconButton>
+                      </>
+                    ) : (
+                      <IconButton size="small" aria-label="Cloner" onClick={() => openClone(v)}>
+                        <Copy size={16} />
                       </IconButton>
-                      <IconButton size="small" aria-label="Supprimer" onClick={() => onDelete(v.key)}>
-                        <Power size={16} />
-                      </IconButton>
-                    </>
-                  )}
+                    ))}
                 </TableCell>
               </TableRow>
             ))}
@@ -231,6 +243,7 @@ function VaccinesTab({
         onClose={() => setDialogOpen(false)}
         farmId={farmId as number}
         vaccine={editing ?? undefined}
+        cloneFrom={cloneSource ?? undefined}
         existingKeys={existingKeys}
       />
     </>
@@ -254,10 +267,17 @@ function TreatmentsTab({
   const [deleteTreatment] = useDeleteTreatmentCatalogMutation();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Treatment | null>(null);
+  const [cloneSource, setCloneSource] = useState<Treatment | null>(null);
   const existingKeys = data.map((t) => t.key);
 
   const openCreate = () => {
     setEditing(null);
+    setCloneSource(null);
+    setDialogOpen(true);
+  };
+  const openClone = (t: Treatment) => {
+    setEditing(null);
+    setCloneSource(t);
     setDialogOpen(true);
   };
   const onDelete = async (key: string) => {
@@ -307,23 +327,28 @@ function TreatmentsTab({
                   {t.withdrawalDaysEggs ?? "?"} j / {t.withdrawalDaysMeat ?? "?"} j
                 </TableCell>
                 <TableCell align="right">
-                  {t.custom && canManage && (
-                    <>
-                      <IconButton
-                        size="small"
-                        aria-label="Modifier"
-                        onClick={() => {
-                          setEditing(t);
-                          setDialogOpen(true);
-                        }}
-                      >
-                        <Pencil size={16} />
+                  {canManage &&
+                    (t.custom ? (
+                      <>
+                        <IconButton
+                          size="small"
+                          aria-label="Modifier"
+                          onClick={() => {
+                            setEditing(t);
+                            setDialogOpen(true);
+                          }}
+                        >
+                          <Pencil size={16} />
+                        </IconButton>
+                        <IconButton size="small" aria-label="Supprimer" onClick={() => onDelete(t.key)}>
+                          <Power size={16} />
+                        </IconButton>
+                      </>
+                    ) : (
+                      <IconButton size="small" aria-label="Cloner" onClick={() => openClone(t)}>
+                        <Copy size={16} />
                       </IconButton>
-                      <IconButton size="small" aria-label="Supprimer" onClick={() => onDelete(t.key)}>
-                        <Power size={16} />
-                      </IconButton>
-                    </>
-                  )}
+                    ))}
                 </TableCell>
               </TableRow>
             ))}
@@ -334,6 +359,7 @@ function TreatmentsTab({
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
         farmId={farmId as number}
+        cloneFrom={cloneSource ?? undefined}
         treatment={editing ?? undefined}
         existingKeys={existingKeys}
       />
@@ -341,25 +367,94 @@ function TreatmentsTab({
   );
 }
 
-function ProgramsTab({ farmId, enabled }: { farmId?: number; enabled: boolean }) {
+function ProgramsTab({
+  farmId,
+  enabled,
+  canManage,
+}: {
+  farmId?: number;
+  enabled: boolean;
+  canManage: boolean;
+}) {
+  const { showToast } = useToast();
   const { data = [], isLoading } = useGetProgramsQuery(
     { farmId: farmId as number },
     { skip: !enabled || !farmId },
   );
+  const { data: vaccines = [] } = useGetVaccinesQuery(
+    { farmId: farmId as number },
+    { skip: !enabled || !farmId },
+  );
+  const [deleteProgram] = useDeleteProgramMutation();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<VaccinationProgram | null>(null);
+  const [cloneSource, setCloneSource] = useState<VaccinationProgram | null>(null);
+  const existingKeys = data.map((p) => p.key);
+
+  const openCreate = () => {
+    setEditing(null);
+    setCloneSource(null);
+    setDialogOpen(true);
+  };
+  const openClone = (p: VaccinationProgram) => {
+    setEditing(null);
+    setCloneSource(p);
+    setDialogOpen(true);
+  };
+  const onDelete = async (key: string) => {
+    try {
+      await deleteProgram({ farmId: farmId as number, key }).unwrap();
+      showToast("Programme supprimé.", "success");
+    } catch (err) {
+      showToast(apiErrorMessage(err), "error");
+    }
+  };
+
   if (isLoading) return <LoadingRows />;
   return (
     <>
-      <Alert severity="info" sx={{ mb: 2 }}>
-        {READ_ONLY_NOTE}
-      </Alert>
+      {canManage && (
+        <Stack direction="row" sx={{ justifyContent: "flex-end", mb: 2 }}>
+          <Button variant="contained" color="secondary" startIcon={<Plus size={16} />} onClick={openCreate}>
+            Nouveau programme
+          </Button>
+        </Stack>
+      )}
       <Stack spacing={2}>
         {data.map((p) => (
           <Box key={p.key} sx={{ border: `1px solid ${colors.neutral[200]}`, borderRadius: 2, p: 2 }}>
-            <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 1, flexWrap: "wrap" }}>
-              <Typography sx={{ fontWeight: 700 }}>{p.label}</Typography>
-              {p.breedKeys.map((b) => (
-                <Chip key={b} size="small" label={humanizeKey(b)} sx={{ bgcolor: colors.primary[50], color: colors.primary[700] }} />
-              ))}
+            <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-start" }}>
+              <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 1, flexWrap: "wrap" }}>
+                <Typography sx={{ fontWeight: 700 }}>{p.label}</Typography>
+                {p.custom && (
+                  <Chip size="small" label="Perso" sx={{ bgcolor: colors.primary[50], color: colors.primary[700] }} />
+                )}
+                {p.breedKeys.map((b) => (
+                  <Chip key={b} size="small" label={humanizeKey(b)} sx={{ bgcolor: colors.primary[50], color: colors.primary[700] }} />
+                ))}
+              </Stack>
+              {canManage &&
+                (p.custom ? (
+                  <Stack direction="row">
+                    <IconButton
+                      size="small"
+                      aria-label="Modifier"
+                      onClick={() => {
+                        setEditing(p);
+                        setDialogOpen(true);
+                      }}
+                    >
+                      <Pencil size={16} />
+                    </IconButton>
+                    <IconButton size="small" aria-label="Supprimer" onClick={() => onDelete(p.key)}>
+                      <Power size={16} />
+                    </IconButton>
+                  </Stack>
+                ) : (
+                  <IconButton size="small" aria-label="Cloner" onClick={() => openClone(p)}>
+                    <Copy size={16} />
+                  </IconButton>
+                ))}
             </Stack>
             <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1 }}>
               {p.schedule.map((s, i) => (
@@ -374,6 +469,17 @@ function ProgramsTab({ farmId, enabled }: { farmId?: number; enabled: boolean })
           </Box>
         ))}
       </Stack>
+      {farmId && (
+        <ProgramDialog
+          open={dialogOpen}
+          onClose={() => setDialogOpen(false)}
+          farmId={farmId}
+          program={editing ?? undefined}
+          cloneFrom={cloneSource ?? undefined}
+          existingKeys={existingKeys}
+          vaccines={vaccines}
+        />
+      )}
     </>
   );
 }

@@ -41,6 +41,8 @@ interface Props {
   onClose: () => void;
   farmId: number;
   treatment?: Treatment;
+  /** When set (and `treatment` is not), pre-fills the form from a platform treatment to clone. */
+  cloneFrom?: Treatment;
   existingKeys?: string[];
 }
 
@@ -49,12 +51,14 @@ export function TreatmentLibraryDialog({
   onClose,
   farmId,
   treatment,
+  cloneFrom,
   existingKeys = [],
 }: Props) {
   const { showToast } = useToast();
   const [createTreatment, { isLoading: creating }] = useCreateTreatmentCatalogMutation();
   const [updateTreatment, { isLoading: updating }] = useUpdateTreatmentCatalogMutation();
   const isEdit = treatment != null;
+  const source = treatment ?? cloneFrom;
 
   const { control, handleSubmit, reset, setError } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -65,17 +69,17 @@ export function TreatmentLibraryDialog({
   useEffect(() => {
     if (open && !wasOpen.current) {
       reset({
-        label: treatment?.label ?? "",
-        molecule: treatment?.molecule ?? "",
-        routes: treatment?.routes ?? [],
+        label: source?.label ?? "",
+        molecule: source?.molecule ?? "",
+        routes: source?.routes ?? [],
         withdrawalMeat:
-          treatment?.withdrawalDaysMeat != null ? String(treatment.withdrawalDaysMeat) : "",
+          source?.withdrawalDaysMeat != null ? String(source.withdrawalDaysMeat) : "",
         withdrawalEggs:
-          treatment?.withdrawalDaysEggs != null ? String(treatment.withdrawalDaysEggs) : "",
+          source?.withdrawalDaysEggs != null ? String(source.withdrawalDaysEggs) : "",
       });
     }
     wasOpen.current = open;
-  }, [open, treatment, reset]);
+  }, [open, source, reset]);
 
   const onSubmit = async (values: FormValues) => {
     const value: Record<string, unknown> = { label: values.label };
@@ -100,7 +104,9 @@ export function TreatmentLibraryDialog({
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>{isEdit ? "Modifier le traitement" : "Nouveau traitement"}</DialogTitle>
+      <DialogTitle>
+        {isEdit ? "Modifier le traitement" : cloneFrom ? "Cloner le traitement" : "Nouveau traitement"}
+      </DialogTitle>
       <form onSubmit={handleSubmit(onSubmit)}>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>

@@ -126,10 +126,10 @@ class HealthCatalogServiceTest {
 
   @Test
   void parsesProgramScheduleWithGenericAge() {
-    when(facade.listPlatform("vaccination_programs"))
+    when(facade.listForFarm(FARM, "vaccination_programs"))
         .thenReturn(List.of(entry("layer_standard_isabrown", layerProgramValue())));
 
-    VaccinationProgramDto p = service.resolveProgramByKey("layer_standard_isabrown");
+    VaccinationProgramDto p = service.resolveProgramByKey(FARM, "layer_standard_isabrown");
     assertThat(p.breedKeys()).containsExactly("isa_brown");
     assertThat(p.schedule()).hasSize(2);
 
@@ -147,18 +147,37 @@ class HealthCatalogServiceTest {
 
   @Test
   void filtersProgramsByBreed() {
-    when(facade.listPlatform("vaccination_programs"))
+    when(facade.listForFarm(FARM, "vaccination_programs"))
         .thenReturn(List.of(entry("layer_standard_isabrown", layerProgramValue())));
 
-    assertThat(service.getVaccinationProgramsForBreed("isa_brown")).hasSize(1);
-    assertThat(service.getVaccinationProgramsForBreed("cobb_500")).isEmpty();
+    assertThat(service.getVaccinationProgramsForBreed(FARM, "isa_brown")).hasSize(1);
+    assertThat(service.getVaccinationProgramsForBreed(FARM, "cobb_500")).isEmpty();
   }
 
   @Test
   void unknownProgram_throwsNotFound() {
-    when(facade.listPlatform("vaccination_programs")).thenReturn(List.of());
-    assertThatThrownBy(() -> service.resolveProgramByKey("nope"))
+    when(facade.listForFarm(FARM, "vaccination_programs")).thenReturn(List.of());
+    assertThatThrownBy(() -> service.resolveProgramByKey(FARM, "nope"))
         .isInstanceOf(NotFoundException.class);
+  }
+
+  @Test
+  void saveProgramDelegatesToFacadeAndRemaps() {
+    Map<String, Object> value = Map.of("label", "Programme perso", "breed_keys", List.of("cobb_500"));
+    when(facade.override(FARM, "vaccination_programs", "perso-cobb", value))
+        .thenReturn(new CatalogEntryInfo("vaccination_programs", "perso-cobb", value, true));
+
+    VaccinationProgramDto out = service.saveProgram(FARM, "perso-cobb", value);
+
+    assertThat(out.key()).isEqualTo("perso-cobb");
+    assertThat(out.label()).isEqualTo("Programme perso");
+    assertThat(out.custom()).isTrue();
+  }
+
+  @Test
+  void deleteProgramDelegates() {
+    service.deleteProgram(FARM, "perso-cobb");
+    verify(facade).delete(FARM, "vaccination_programs", "perso-cobb");
   }
 
   private static Map<String, Object> layerProgramValue() {

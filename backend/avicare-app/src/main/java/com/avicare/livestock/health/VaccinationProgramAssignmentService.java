@@ -43,7 +43,7 @@ public class VaccinationProgramAssignmentService {
   @Transactional
   public VaccinationProgramLot assignProgram(Long unitId, String programKey, Long userId) {
     ProductionUnit unit = livestockService.getUnit(unitId); // 404 if missing
-    healthCatalogService.resolveProgramByKey(programKey); // 404 if unknown program
+    healthCatalogService.resolveProgramByKey(unit.getFarmId(), programKey); // 404 if unknown program
 
     VaccinationProgramLot lot =
         programLotRepository.findByProductionUnitId(unitId).orElseGet(VaccinationProgramLot::new);
@@ -88,7 +88,7 @@ public class VaccinationProgramAssignmentService {
     }
     ProductionUnit unit = livestockService.getUnit(unitId);
     VaccinationProgramDto program =
-        healthCatalogService.resolveProgramByKey(assigned.get().getProgramKey());
+        healthCatalogService.resolveProgramByKey(unit.getFarmId(), assigned.get().getProgramKey());
 
     Set<String> done =
         vaccinationRepository.findByProductionUnitIdOrderByAdministeredDateDesc(unitId).stream()

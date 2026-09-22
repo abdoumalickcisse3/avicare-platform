@@ -59,27 +59,37 @@ public class HealthCatalogService {
     parametersFacade.delete(farmId, CAT_TREATMENTS, key);
   }
 
-  public List<VaccinationProgramDto> listVaccinationPrograms() {
-    return parametersFacade.listPlatform(CAT_PROGRAMS).stream()
+  public List<VaccinationProgramDto> listVaccinationPrograms(Long farmId) {
+    return parametersFacade.listForFarm(farmId, CAT_PROGRAMS).stream()
         .map(HealthCatalogService::toProgram)
         .toList();
   }
 
   /** Standard programs applicable to a breed (its {@code breed_keys} contains {@code breedKey}). */
-  public List<VaccinationProgramDto> getVaccinationProgramsForBreed(String breedKey) {
-    return listVaccinationPrograms().stream()
+  public List<VaccinationProgramDto> getVaccinationProgramsForBreed(Long farmId, String breedKey) {
+    return listVaccinationPrograms(farmId).stream()
         .filter(p -> p.breedKeys().contains(breedKey))
         .toList();
   }
 
   /** A single program by key (404 if unknown), with its schedule deserialized. */
-  public VaccinationProgramDto resolveProgramByKey(String key) {
-    return parametersFacade.listPlatform(CAT_PROGRAMS).stream()
+  public VaccinationProgramDto resolveProgramByKey(Long farmId, String key) {
+    return parametersFacade.listForFarm(farmId, CAT_PROGRAMS).stream()
         .filter(e -> e.key().equals(key))
         .map(HealthCatalogService::toProgram)
         .findFirst()
         .orElseThrow(
             () -> new NotFoundException("VACCINATION_PROGRAM_NOT_FOUND", "Unknown program " + key));
+  }
+
+  @Transactional
+  public VaccinationProgramDto saveProgram(Long farmId, String key, Map<String, Object> value) {
+    return toProgram(parametersFacade.override(farmId, CAT_PROGRAMS, key, value));
+  }
+
+  @Transactional
+  public void deleteProgram(Long farmId, String key) {
+    parametersFacade.delete(farmId, CAT_PROGRAMS, key);
   }
 
   // --- mappers (catalog JSON -> DTO) ----------------------------------
@@ -137,7 +147,7 @@ public class HealthCatalogService {
       }
     }
     return new VaccinationProgramDto(
-        e.key(), str(v, "label"), str(v, "species"), strList(v, "breed_keys"), schedule);
+        e.key(), str(v, "label"), str(v, "species"), strList(v, "breed_keys"), schedule, e.custom());
   }
 
   // --- value coercions (JSONB -> Java) --------------------------------

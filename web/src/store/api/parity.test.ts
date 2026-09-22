@@ -178,6 +178,16 @@ const HOOKS_WITH_NO_SCREEN: { hook: string; side: "web" | "mobile"; why: string 
     side: "mobile",
     why: "Même chose : l'observation part par la file hors-ligne.",
   },
+  {
+    hook: "useUpsertProgramMutation",
+    side: "mobile",
+    why: "À trier : le web sait désormais cloner/éditer un programme (copie perso) ; l'écran Réglages > Sanitaire du mobile reste en lecture seule sur les programmes, l'éditeur de calendrier n'a pas encore d'équivalent terrain.",
+  },
+  {
+    hook: "useDeleteProgramMutation",
+    side: "mobile",
+    why: "Même écart que useUpsertProgramMutation ci-dessus.",
+  },
 ];
 
 /** Replaces `${...}` interpolations (brace-aware) with a single placeholder. */
