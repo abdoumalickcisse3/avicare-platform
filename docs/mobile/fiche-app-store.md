@@ -154,3 +154,73 @@ vétérinaire, un compte-courant fournisseur avec un versement. Identifiants ci-
 
 Le script est ré-exécutable pour un autre compte de démo (`--email`/`--password` différents) mais
 **pas contre le même e-mail** : l'inscription n'est pas idempotente.
+
+## Gérer les builds dans App Store Connect
+
+Fiche pratique pour la partie qui se passe dans l'UI Apple, une fois qu'`eas submit` a livré un
+build — la partie EAS (build + submit) est documentée dans `docs/mobile/app-store.md`.
+
+### 1. Où voir un build
+
+App Store Connect → l'app « Jawdi : gestion d'élevage » → onglet **TestFlight**. Chaque build
+soumis par `eas submit` y apparaît, identifié par son numéro (`CFBundleVersion`, ex. build 3) sous
+la version marketing (`1.0.0`).
+
+### 2. Statuts d'un build fraîchement soumis
+
+| Statut affiché | Ce que ça veut dire | Combien de temps |
+|---|---|---|
+| **Processing** | Apple scanne le binaire (permissions, symboles, malware). Rien à faire. | 5–15 min en général |
+| **Ready to Submit** / **Ready to Test** | Le scan est passé. Le build peut être ajouté à une version ou à un groupe de test interne. | — |
+| **Missing Compliance** | Apple demande de répondre à la question chiffrement export. Cliquer sur le build → répondre. `usesNonExemptEncryption: false` dans `app.json` répond généralement automatiquement « Non » à cette question. | bloquant tant que non répondu |
+| **Invalid Binary** (email reçu) | Rejet automatique avant même la revue humaine — un point technique précis (permission manquante, entitlement, symbole interdit). Le mail liste le(s) code(s) ITMS-xxxxx. | corriger et repartir à l'étape build |
+
+C'est ce dernier cas qui s'est produit sur le build 2 : **ITMS-90683** (`NSPhotoLibraryUsageDescription`
+manquante) — corrigé dans `mobile/app.json`, rebuild (build 3), resoumis.
+
+### 3. Lire un rejet ITMS-xxxxx
+
+Le mail Apple nomme toujours : le code ITMS, l'app, la version, **le numéro de build concerné**, et
+la clé Info.plist ou l'entitlement en cause. Réflexe :
+1. Chercher la clé (`NSXxxUsageDescription`, `NSAppTransportSecurity`, etc.) dans `mobile/app.json`
+   sous `expo.ios.infoPlist`, ou dans les options du plugin Expo concerné (`app.json` → `plugins`).
+2. L'ajouter/corriger avec un texte utilisateur clair en français.
+3. `eas build -p ios --profile production --non-interactive` (le numéro de build s'auto-incrémente,
+   `autoIncrement: true` dans `eas.json`).
+4. `eas submit -p ios --profile production --non-interactive --latest`.
+5. Le nouveau build remplace l'ancien dans TestFlight ; l'ancien reste visible mais inutilisable.
+
+### 4. TestFlight interne (avant la revue publique)
+
+Pas besoin d'attendre l'App Review pour tester sur un vrai iPhone :
+1. TestFlight → **App Store Connect Users** (testeurs internes = comptes ayant un rôle sur l'app,
+   pas de revue Apple nécessaire) ou créer un groupe **External Testing** (jusqu'à 10 000 testeurs,
+   nécessite une première revue « beta »).
+2. Ajouter le build « Ready to Test » au groupe.
+3. Le testeur installe l'app TestFlight, reçoit une invitation, installe Jawdi depuis là.
+
+### 5. Soumettre un build pour la revue App Store (publication réelle)
+
+1. App Store Connect → l'app → onglet **App Store** (pas TestFlight) → la version en préparation
+   (`1.0.0`).
+2. Section **Build** → **+** → choisir le build « Ready to Submit ».
+3. Vérifier que toute la fiche est remplie : nom, sous-titre, mots-clés, description, captures
+   d'écran (`docs/mobile/app-store-screenshots/`), catégorie, classification d'âge, étiquettes de
+   confidentialité, notes de version, notes de relecture, compte de démo — voir les sections
+   ci-dessus, toutes marquées « fait ».
+4. **Save** puis **Add for Review** (bouton en haut à droite).
+5. Répondre aux questions de conformité si Apple les repose (chiffrement, publicité).
+6. **Submit**.
+
+### 6. Suivre la revue
+
+| Statut | Signification |
+|---|---|
+| Waiting for Review | En file d'attente, pas encore regardé par un humain |
+| In Review | Un relecteur Apple teste l'app maintenant |
+| Pending Developer Release / Ready for Sale | Approuvé — publié automatiquement ou après clic selon la configuration de sortie |
+| Rejected | Refus avec motif détaillé dans **Resolution Center** (distinct des rejets ITMS automatiques ci-dessus, qui arrivent avant même d'atteindre la revue) |
+
+Un rejet en revue humaine se répond directement dans le **Resolution Center** de la fiche (fil de
+discussion avec le relecteur), pas par un nouveau build systématiquement — lire le motif avant
+de rebuilder.
