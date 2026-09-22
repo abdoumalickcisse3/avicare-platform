@@ -1,0 +1,280 @@
+<title>Jawdi — Étape 3 du logo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --bg: #FAFAF9; --surface: #FFFFFF; --border: #E7E5E4; --border-soft: #F0EEED;
+    --ink: #292524; --ink-soft: #57534E; --muted: #A8A29E; --accent: #C46505;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17150F; --surface: #221F19; --border: #35312A; --border-soft: #2A271F;
+      --ink: #F2EFEA; --ink-soft: #C9C3B9; --muted: #8A8377; --accent: #F8961E;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #17150F; --surface: #221F19; --border: #35312A; --border-soft: #2A271F;
+    --ink: #F2EFEA; --ink-soft: #C9C3B9; --muted: #8A8377; --accent: #F8961E;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--ink); margin: 0; padding: 2.75rem 1.25rem 4rem;
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.55;
+  }
+  main { max-width: 52rem; margin: 0 auto; }
+  .eyebrow {
+    font-family: ui-monospace, 'JetBrains Mono', Consolas, monospace; font-size: .72rem;
+    font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--accent);
+    margin: 0 0 .5rem;
+  }
+  h1 { font-size: 1.7rem; font-weight: 700; letter-spacing: -.01em; margin: 0 0 .5rem; text-wrap: balance; }
+  .lede { color: var(--ink-soft); max-width: 40rem; margin: 0 0 2.25rem; }
+  section { margin-bottom: 2.75rem; }
+  h2 { font-size: 1.05rem; font-weight: 600; margin: 0 0 .3rem; }
+  .sub { color: var(--ink-soft); font-size: .88rem; margin: 0 0 1.1rem; max-width: 38rem; }
+
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; }
+  @media (max-width: 640px) { .compare { grid-template-columns: 1fr; } }
+  .pane {
+    border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: var(--surface);
+  }
+  .pane-tag {
+    font-family: ui-monospace, 'JetBrains Mono', Consolas, monospace; font-size: .68rem;
+    font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: .5rem .85rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .pane.before .pane-tag { color: #B45309; background: #FFFBEB; }
+  .pane.after .pane-tag { color: #166534; background: #F0FDF4; }
+  :root:not([data-theme="light"]) .pane.before .pane-tag,
+  :root[data-theme="dark"] .pane.before .pane-tag { color: #FBBF24; background: #3F2D0F; }
+  :root:not([data-theme="light"]) .pane.after .pane-tag,
+  :root[data-theme="dark"] .pane.after .pane-tag { color: #4ADE80; background: #0F2F1C; }
+
+  /* ---- sidebar mockup ---- */
+  .sidebar-frame { display: flex; height: 300px; }
+  .sidebar-col {
+    width: 44%; background: #FFFFFF; border-right: 1px solid #E7E5E4;
+    display: flex; flex-direction: column; flex: none;
+  }
+  .sidebar-logo { padding: .9rem .85rem; }
+  .sidebar-logo img { height: 26px; width: auto; display: block; }
+  .sidebar-logo.after { display: flex; align-items: center; gap: .5rem; }
+  .sidebar-logo.after svg { height: 24px; width: 24px; }
+  .sidebar-logo.after span { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.05rem; color: #2E6B2E; letter-spacing: -.02em; }
+  .sidebar-logo.after .dot { color: #F8961E; }
+  .sidebar-nav { padding: 0 .6rem; display: flex; flex-direction: column; gap: .3rem; }
+  .sidebar-nav .item {
+    height: 26px; border-radius: 7px; background: #F5F5F4; display: flex; align-items: center;
+    padding: 0 .6rem; font-size: .62rem; color: #78716C;
+  }
+  .sidebar-nav .item.active { background: #F0F7F0; color: #2E6B2E; font-weight: 600; }
+  .sidebar-canvas { flex: 1; background: #FAFAF9; }
+
+  /* ---- login mockup ---- */
+  .login-frame { height: 300px; display: flex; }
+  .login-panel {
+    width: 50%; flex: none; display: flex; flex-direction: column; justify-content: space-between;
+    padding: 1.1rem; color: #fff;
+    background: linear-gradient(157deg, #122B12 0%, #245524 45%, #3D8B3D 72%, #F8961Ecc 100%);
+  }
+  .login-panel img { height: 20px; width: auto; align-self: flex-start; }
+  .login-panel.after .brand { display: flex; align-items: center; gap: .4rem; }
+  .login-panel.after svg { height: 22px; width: 22px; }
+  .login-panel.after .word { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: .95rem; letter-spacing: -.02em; }
+  .login-panel.after .dot { color: #F8961E; }
+  .login-tagline { font-size: .68rem; font-weight: 600; line-height: 1.35; max-width: 12rem; }
+  .login-caption { font-size: .56rem; opacity: .55; }
+  .login-form { flex: 1; background: #FAFAF9; }
+
+  /* ---- invoice mockup ---- */
+  .invoice-frame { padding: 1.1rem 1.2rem; background: #fff; position: relative; }
+  .invoice-frame::before {
+    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: #F8961E;
+  }
+  .invoice-head { display: flex; align-items: center; justify-content: space-between; }
+  .invoice-farm.after { display: flex; align-items: center; gap: .4rem; }
+  .invoice-farm.after svg { height: 20px; width: 20px; }
+  .invoice-farm-name { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: .95rem; color: #2E6B2E; }
+  .invoice-label { font-size: .55rem; letter-spacing: .07em; text-transform: uppercase; color: #A8A29E; margin-top: .1rem; }
+  .invoice-num { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: .8rem; color: #292524; text-align: right; }
+  .invoice-rule { border-bottom: 1px solid #E7E5E4; margin: .9rem 0; }
+  .invoice-rows div { height: 8px; background: #F5F5F4; border-radius: 4px; margin-bottom: .45rem; }
+  .invoice-rows div:nth-child(1) { width: 100%; }
+  .invoice-rows div:nth-child(2) { width: 85%; }
+  .invoice-rows div:nth-child(3) { width: 92%; }
+
+  /* ---- home screen mockup ---- */
+  .home-row { display: flex; gap: 1.1rem; flex-wrap: wrap; }
+  .home {
+    flex: 1 1 14rem; border-radius: 20px; padding: 1.4rem 1.1rem; display: grid;
+    grid-template-columns: repeat(4, 1fr); gap: .85rem 0; justify-items: center;
+  }
+  .home.light { background: linear-gradient(180deg, #DCEEDC 0%, #F5F5F4 100%); }
+  .home.dark { background: linear-gradient(180deg, #0C0A09 0%, #1C1917 100%); }
+  .app-icon { width: 44px; height: 44px; border-radius: 22%; }
+  .app-icon svg { width: 100%; height: 100%; display: block; }
+  .home-label { font-size: .8rem; margin-top: 1rem; text-align: center; color: var(--ink-soft); }
+
+  .foot { margin-top: 2.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border); color: var(--muted); font-size: .82rem; }
+</style>
+
+<main>
+  <p class="eyebrow">Cahier des charges logo · Étape 3 sur 4</p>
+  <h1>Mises en situation réelles</h1>
+  <p class="lede">
+    Piste validée : la marque au fer. Avant de figer (étape 4 : vectorisation, livraison complète),
+    on vérifie les cinq tests <strong>en conditions réelles</strong> — pas sur un fond blanc isolé,
+    mais dans les trois endroits où la marque vit vraiment.
+  </p>
+
+  <section>
+    <h2>1 · L'icône, sur un écran d'accueil</h2>
+    <p class="sub">Entourée de vraies icônes (formes et couleurs génériques), sur fond clair et sur fond sombre.</p>
+    <div class="home-row">
+      <div class="home light">
+        <div class="app-icon" style="background:#1B3F1B"><svg viewBox="0 0 1024 1024"><path d="M 272 288 H 752 M 632 288 V 560 C 632 724 376 724 376 556" stroke="#fff" stroke-width="128" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="app-icon" style="background:#2563EB"></div>
+        <div class="app-icon" style="background:#DC2626"></div>
+        <div class="app-icon" style="background:#7C3AED"></div>
+        <div class="app-icon" style="background:#0EA5E9"></div>
+        <div class="app-icon" style="background:#F59E0B"></div>
+        <div class="app-icon" style="background:#059669"></div>
+        <div class="app-icon" style="background:#DB2777"></div>
+      </div>
+      <div class="home dark">
+        <div class="app-icon" style="background:#1B3F1B"><svg viewBox="0 0 1024 1024"><path d="M 272 288 H 752 M 632 288 V 560 C 632 724 376 724 376 556" stroke="#fff" stroke-width="128" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="app-icon" style="background:#2563EB"></div>
+        <div class="app-icon" style="background:#DC2626"></div>
+        <div class="app-icon" style="background:#7C3AED"></div>
+        <div class="app-icon" style="background:#0EA5E9"></div>
+        <div class="app-icon" style="background:#F59E0B"></div>
+        <div class="app-icon" style="background:#059669"></div>
+        <div class="app-icon" style="background:#DB2777"></div>
+      </div>
+    </div>
+    <p class="home-label">Test 1 (16 px) déjà passé à l'étape 1 ; ici, c'est le test 4 (WhatsApp / vignette) qu'on rejoue dans un vrai décor.</p>
+  </section>
+
+  <section>
+    <h2>2 · L'en-tête du logiciel</h2>
+    <p class="sub">Barre latérale du web (état réel, capturé dans le code) — et ce qu'elle deviendrait.</p>
+    <div class="compare">
+      <div class="pane before">
+        <div class="pane-tag">avant — en production</div>
+        <div class="sidebar-frame">
+          <div class="sidebar-col">
+            <div class="sidebar-logo"><img src="before-logo.png" alt="logo actuel"></div>
+            <div class="sidebar-nav">
+              <div class="item active">Tableau de bord</div>
+              <div class="item">Jawdi IA</div>
+              <div class="item">Fermes</div>
+            </div>
+          </div>
+          <div class="sidebar-canvas"></div>
+        </div>
+      </div>
+      <div class="pane after">
+        <div class="pane-tag">après — la marque au fer</div>
+        <div class="sidebar-frame">
+          <div class="sidebar-col">
+            <div class="sidebar-logo after">
+              <svg viewBox="0 0 1024 1024"><path d="M 272 288 H 752 M 632 288 V 560 C 632 724 376 724 376 556" stroke="#2E6B2E" stroke-width="128" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span>Jawdi<span class="dot">.</span></span>
+            </div>
+            <div class="sidebar-nav">
+              <div class="item active">Tableau de bord</div>
+              <div class="item">Jawdi IA</div>
+              <div class="item">Fermes</div>
+            </div>
+          </div>
+          <div class="sidebar-canvas"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>3 · L'écran de connexion</h2>
+    <p class="sub">Panneau de marque du login (dégradé vert Sénégal, doc 10 §2) — même dégradé, mot-symbole différent.</p>
+    <div class="compare">
+      <div class="pane before">
+        <div class="pane-tag">avant — en production</div>
+        <div class="login-frame">
+          <div class="login-panel">
+            <img src="before-logo-dark.png" alt="logo actuel">
+            <div>
+              <div class="login-tagline">L'élevage avicole maîtrisé, du Sénégal au monde.</div>
+              <div class="login-caption" style="margin-top:.3rem">© 2026 Jawdi Platform</div>
+            </div>
+          </div>
+          <div class="login-form"></div>
+        </div>
+      </div>
+      <div class="pane after">
+        <div class="pane-tag">après — la marque au fer</div>
+        <div class="login-frame">
+          <div class="login-panel after">
+            <div class="brand">
+              <svg viewBox="0 0 1024 1024"><path d="M 272 288 H 752 M 632 288 V 560 C 632 724 376 724 376 556" stroke="#fff" stroke-width="128" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span class="word">Jawdi<span class="dot">.</span></span>
+            </div>
+            <div>
+              <div class="login-tagline">L'élevage avicole maîtrisé, du Sénégal au monde.</div>
+              <div class="login-caption" style="margin-top:.3rem">© 2026 Jawdi</div>
+            </div>
+          </div>
+          <div class="login-form"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>4 · La facture imprimée</h2>
+    <p class="sub">
+      L'en-tête actuel n'a jamais porté de logo — seulement le nom de ferme (§ InvoicePdfDocument.tsx).
+      Test de la photocopie (test 2) : le mark tient-il à côté, en petit, sur une page qu'on va imprimer ?
+    </p>
+    <div class="compare">
+      <div class="pane before">
+        <div class="pane-tag">avant — en production</div>
+        <div class="invoice-frame">
+          <div class="invoice-head">
+            <div>
+              <div class="invoice-farm-name">Ferme Mbaye &amp; Fils</div>
+              <div class="invoice-label">Facture</div>
+            </div>
+            <div class="invoice-num">F-2026-0142</div>
+          </div>
+          <div class="invoice-rule"></div>
+          <div class="invoice-rows"><div></div><div></div><div></div></div>
+        </div>
+      </div>
+      <div class="pane after">
+        <div class="pane-tag">après — la marque au fer</div>
+        <div class="invoice-frame">
+          <div class="invoice-head">
+            <div class="invoice-farm">
+              <div class="invoice-farm after">
+                <svg viewBox="0 0 1024 1024"><path d="M 272 288 H 752 M 632 288 V 560 C 632 724 376 724 376 556" stroke="#2E6B2E" stroke-width="128" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span class="invoice-farm-name">Ferme Mbaye &amp; Fils</span>
+              </div>
+              <div class="invoice-label">Facture</div>
+            </div>
+            <div class="invoice-num">F-2026-0142</div>
+          </div>
+          <div class="invoice-rule"></div>
+          <div class="invoice-rows"><div></div><div></div><div></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <p class="foot">
+    Les cinq tests tiennent dans les quatre décors ci-dessus. Une fois cette étape validée, l'étape 4
+    vectorise le mot-symbole en tracés et livre le jeu complet du §13 (SVG + PNG, toutes tailles) —
+    à ce moment-là, et pas avant, <code>logo.png</code>/<code>logo-dark.png</code> et l'en-tête
+    d'<code>InvoicePdfDocument.tsx</code> sont remplacés pour de vrai dans le produit.
+  </p>
+</main>

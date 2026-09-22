@@ -1,0 +1,226 @@
+<title>Captures App Store — Jawdi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+  :root {
+    --bg: #FAFAF9; --surface: #FFFFFF; --border: #E7E5E4;
+    --ink: #292524; --ink-soft: #57534E; --muted: #A8A29E; --accent: #C46505;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17150F; --surface: #221F19; --border: #35312A;
+      --ink: #F2EFEA; --ink-soft: #C9C3B9; --muted: #8A8377; --accent: #F8961E;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #17150F; --surface: #221F19; --border: #35312A;
+    --ink: #F2EFEA; --ink-soft: #C9C3B9; --muted: #8A8377; --accent: #F8961E;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--ink); margin: 0; padding: 2.75rem 1.25rem 4rem;
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.55;
+  }
+  main { max-width: 68rem; margin: 0 auto; }
+  .eyebrow {
+    font-family: ui-monospace, 'JetBrains Mono', Consolas, monospace; font-size: .72rem;
+    font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--accent);
+    margin: 0 0 .5rem;
+  }
+  h1 { font-size: 1.7rem; font-weight: 700; letter-spacing: -.01em; margin: 0 0 .5rem; text-wrap: balance; }
+  .lede { color: var(--ink-soft); max-width: 42rem; margin: 0 0 2.5rem; }
+
+  .gallery { display: flex; flex-wrap: wrap; gap: 1.75rem; align-items: flex-start; }
+  .slot { width: 300px; flex: none; }
+  .frame-wrap {
+    width: 300px; height: 652px; overflow: hidden; border-radius: 28px; border: 1px solid var(--border);
+    box-shadow: 0 12px 32px -12px rgba(0,0,0,.28);
+  }
+  .frame {
+    width: 1320px; height: 2868px; transform: scale(0.22727); transform-origin: top left;
+    position: relative; font-family: 'Outfit', sans-serif;
+  }
+  .caption { font-size: .82rem; color: var(--ink-soft); margin-top: .8rem; text-align: center; }
+  .caption b { color: var(--ink); font-family: ui-monospace, monospace; font-size: .72rem; display: block; margin-bottom: .15rem; }
+
+  /* ===== shared frame chrome ===== */
+  .band {
+    position: absolute; top: 0; left: 0; right: 0; height: 700px; background: #1B3F1B;
+    display: flex; flex-direction: column; justify-content: center; padding: 0 84px;
+  }
+  .band .dot-rule { width: 64px; height: 8px; background: #F8961E; border-radius: 4px; margin-bottom: 28px; }
+  .band h2 { color: #fff; font-size: 92px; font-weight: 800; line-height: 1.08; letter-spacing: -.02em; margin: 0; max-width: 1050px; }
+  .band p { color: #DCEEDC; font-size: 38px; font-weight: 500; margin: 26px 0 0; max-width: 980px; }
+  .screen {
+    position: absolute; top: 700px; left: 0; right: 0; bottom: 0; background: #FAFAF9;
+    padding: 56px 64px 0;
+  }
+  .statusbar { display: flex; justify-content: space-between; align-items: center; padding: 0 4px 30px; }
+  .statusbar .time { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 34px; color: #292524; }
+  .statusbar .icons { display: flex; gap: 10px; align-items: center; }
+  .pillbar { width: 46px; height: 24px; border: 3px solid #292524; border-radius: 6px; position: relative; }
+  .pillbar::after { content: ""; position: absolute; top: 3px; left: 3px; bottom: 3px; width: 30px; background: #292524; border-radius: 2px; }
+
+  .app-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px; }
+  .farmrow { display: flex; align-items: center; gap: 18px; }
+  .avatar { width: 68px; height: 68px; border-radius: 50%; background: #DCEEDC; display: flex; align-items: center; justify-content: center; }
+  .avatar svg { width: 34px; height: 34px; }
+  .farmname { font-size: 40px; font-weight: 600; color: #245524; }
+  .bell { width: 60px; height: 60px; border-radius: 50%; background: #F5F5F4; display: flex; align-items: center; justify-content: center; }
+
+  /* ===== screen 1: dashboard ===== */
+  .lotline { font-family: 'JetBrains Mono', monospace; font-size: 30px; color: #78716C; margin-bottom: 26px; letter-spacing: .01em; }
+  .kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .kpi { background: #fff; border: 1px solid #E7E5E4; border-radius: 24px; padding: 34px 30px; }
+  .kpi .label { font-size: 26px; color: #78716C; font-weight: 600; margin-bottom: 14px; }
+  .kpi .value { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 64px; color: #292524; letter-spacing: -.02em; }
+  .kpi.margin { grid-column: 1 / -1; background: #F0F7F0; border-color: #DCEEDC; display: flex; align-items: center; justify-content: space-between; }
+  .kpi.margin .value { color: #245524; font-size: 76px; }
+  .kpi.margin .label { color: #2E6B2E; }
+  .kpi .value.warn { color: #C46505; }
+
+  /* ===== screen 2: saisie ===== */
+  .entry-title { font-size: 34px; font-weight: 600; color: #292524; text-align: center; margin-bottom: 8px; }
+  .entry-sub { font-size: 26px; color: #78716C; text-align: center; margin-bottom: 50px; }
+  .counter-wrap { display: flex; align-items: center; justify-content: center; gap: 46px; margin-bottom: 64px; }
+  .counter-btn {
+    width: 132px; height: 132px; border-radius: 50%; background: #F0F7F0; border: 3px solid #DCEEDC;
+    display: flex; align-items: center; justify-content: center; font-size: 64px; color: #2E6B2E; font-weight: 300;
+  }
+  .counter-value { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 168px; color: #292524; min-width: 340px; text-align: center; }
+  .field-list { display: flex; flex-direction: column; gap: 20px; margin-bottom: 56px; }
+  .field-row { background: #fff; border: 1px solid #E7E5E4; border-radius: 20px; padding: 26px 30px; display: flex; justify-content: space-between; align-items: center; }
+  .field-row .l { font-size: 30px; color: #57534E; }
+  .field-row .v { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 34px; color: #292524; }
+  .commit-btn {
+    background: #F8961E; border: 3px solid #122B12; border-radius: 22px; height: 128px;
+    display: flex; align-items: center; justify-content: center; font-size: 42px; font-weight: 700; color: #122B12;
+  }
+
+  /* ===== screen 3: alerts ===== */
+  .lock-time { text-align: center; margin: 40px 0 90px; }
+  .lock-time .h { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 190px; color: #1C1917; letter-spacing: -.03em; line-height: 1; }
+  .lock-time .d { font-size: 34px; color: #57534E; margin-top: 12px; }
+  .notif {
+    background: rgba(255,255,255,.92); border-radius: 32px; padding: 34px 32px; margin-bottom: 24px;
+    box-shadow: 0 14px 26px -14px rgba(0,0,0,.25); display: flex; gap: 26px;
+  }
+  .notif .icn { width: 84px; height: 84px; border-radius: 22px; background: #1B3F1B; flex: none; display: flex; align-items: center; justify-content: center; }
+  .notif .icn svg { width: 44px; height: 44px; }
+  .notif .body { flex: 1; }
+  .notif .top { display: flex; justify-content: space-between; margin-bottom: 8px; }
+  .notif .app { font-size: 26px; font-weight: 700; color: #292524; }
+  .notif .when { font-size: 24px; color: #A8A29E; }
+  .notif .via { display: inline-block; font-size: 20px; font-weight: 700; color: #25D366; background: #E9FBF0; padding: 4px 12px; border-radius: 8px; margin-bottom: 10px; }
+  .notif .msg { font-size: 28px; color: #44403C; line-height: 1.4; }
+  .lockbg { position: absolute; inset: 700px 0 0 0; background: linear-gradient(180deg, #E7EFE7 0%, #F5F5F4 60%); }
+</style>
+
+<main>
+  <p class="eyebrow">Fiche App Store · Captures d'écran</p>
+  <h1>Trois captures, prêtes pour la fiche</h1>
+  <p class="lede">
+    Dessinées à la résolution réelle exigée par Apple pour l'iPhone 6,9″ (1320 × 2868 — voir
+    <code>docs/mobile/fiche-app-store.md</code>), affichées ici à l'échelle. Le contenu d'écran
+    reprend les tokens du design system mobile (<code>mobile/src/theme/tokens.ts</code>) : même
+    vert, même orange, même paire Outfit / JetBrains&nbsp;Mono que l'app réelle — la mise en page
+    est fidèle, les données sont des exemples.
+  </p>
+
+  <div class="gallery">
+
+    <div class="slot">
+      <div class="frame-wrap"><div class="frame">
+        <div class="band">
+          <div class="dot-rule"></div>
+          <h2>La marge de chaque bande, en un clic.</h2>
+          <p>Effectif, mortalité, indice de consommation — et le chiffre qui compte, à la fin.</p>
+        </div>
+        <div class="screen">
+          <div class="statusbar"><span class="time">9:41</span><div class="icons"><div class="pillbar"></div></div></div>
+          <div class="app-header">
+            <div class="farmrow">
+              <div class="avatar"><svg viewBox="0 0 1024 1024" fill="none"><circle cx="512" cy="380" r="180" fill="#2E6B2E"/><path d="M232 860c0-180 130-300 280-300s280 120 280 300" stroke="#2E6B2E" stroke-width="70" stroke-linecap="round"/></svg></div>
+              <div class="farmname">Ferme Ndiaye</div>
+            </div>
+            <div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="#57534E" stroke-width="2"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg></div>
+          </div>
+          <div class="lotline">BANDE A · JOUR 24 / 42</div>
+          <div class="kpis">
+            <div class="kpi"><div class="label">Effectif</div><div class="value">1 842</div></div>
+            <div class="kpi"><div class="label">Mortalité</div><div class="value warn">3,1 %</div></div>
+            <div class="kpi"><div class="label">Indice conso.</div><div class="value">1,79</div></div>
+            <div class="kpi"><div class="label">Poids moyen</div><div class="value">1 340g</div></div>
+            <div class="kpi margin"><div><div class="label">Marge à ce jour</div><div class="value">+612 000&nbsp;F</div></div></div>
+          </div>
+        </div>
+      </div></div>
+      <p class="caption"><b>1320 × 2868</b>Tableau de bord de la bande</p>
+    </div>
+
+    <div class="slot">
+      <div class="frame-wrap"><div class="frame">
+        <div class="band">
+          <div class="dot-rule"></div>
+          <h2>Une saisie par jour, au poulailler.</h2>
+          <p>Effectif, mortalité, aliment. Une minute, et Jawdi se charge du reste.</p>
+        </div>
+        <div class="screen">
+          <div class="statusbar"><span class="time">9:41</span><div class="icons"><div class="pillbar"></div></div></div>
+          <div class="entry-title">Mortalité du jour</div>
+          <div class="entry-sub">Bande A · vendredi 18 septembre</div>
+          <div class="counter-wrap">
+            <div class="counter-btn">–</div>
+            <div class="counter-value">03</div>
+            <div class="counter-btn">+</div>
+          </div>
+          <div class="field-list">
+            <div class="field-row"><span class="l">Aliment distribué</span><span class="v">42,0 kg</span></div>
+            <div class="field-row"><span class="l">Eau</span><span class="v">78,0 L</span></div>
+            <div class="field-row"><span class="l">Observations</span><span class="v">—</span></div>
+          </div>
+          <div class="commit-btn">Enregistrer</div>
+        </div>
+      </div></div>
+      <p class="caption"><b>1320 × 2868</b>Saisie journalière, sur le terrain</p>
+    </div>
+
+    <div class="slot">
+      <div class="frame-wrap"><div class="frame">
+        <div class="band">
+          <div class="dot-rule"></div>
+          <h2>Les alertes arrivent sur WhatsApp.</h2>
+          <p>Là où vous regardez déjà — pas une application de plus à ouvrir.</p>
+        </div>
+        <div class="lockbg"></div>
+        <div class="screen" style="background:transparent">
+          <div class="lock-time"><div class="h">9:41</div><div class="d">Vendredi 18 septembre</div></div>
+          <div class="notif">
+            <div class="icn"><svg viewBox="0 0 1024 1024"><path d="M 272 288 H 752 M 632 288 V 560 C 632 724 376 724 376 556" stroke="#fff" stroke-width="128" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <div class="body">
+              <div class="top"><span class="app">Jawdi</span><span class="when">il y a 2 min</span></div>
+              <div class="via">via WhatsApp</div>
+              <div class="msg">Stock d'aliment bas — Bande B : il reste environ 2 jours.</div>
+            </div>
+          </div>
+          <div class="notif">
+            <div class="icn"><svg viewBox="0 0 1024 1024"><path d="M 272 288 H 752 M 632 288 V 560 C 632 724 376 724 376 556" stroke="#fff" stroke-width="128" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <div class="body">
+              <div class="top"><span class="app">Jawdi</span><span class="when">il y a 1 h</span></div>
+              <div class="via">via WhatsApp</div>
+              <div class="msg">Vaccination Newcastle en retard sur la Bande A.</div>
+            </div>
+          </div>
+        </div>
+      </div></div>
+      <p class="caption"><b>1320 × 2868</b>Alertes, même hors de l'app</p>
+    </div>
+
+  </div>
+
+  <p style="margin-top:2.75rem; padding-top:1.25rem; border-top:1px solid var(--border); color:var(--muted); font-size:.82rem; max-width:42rem">
+    Export final en PNG à la résolution exacte dès qu'un pipeline de capture est disponible (build
+    TestFlight, Phase 6) — la direction créative et le contenu de chaque capture sont arrêtés ici.
+  </p>
+</main>
