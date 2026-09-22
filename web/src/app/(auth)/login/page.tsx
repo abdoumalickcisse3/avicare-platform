@@ -129,17 +129,6 @@ export default function LoginPage() {
           </Button>
         </Stack>
       </Box>
-
-      <Typography
-        variant="body2"
-        color="text.secondary"
-        sx={{ textAlign: "center" }}
-      >
-        Pas encore de compte ?{" "}
-        <Link href="/signup" style={{ fontWeight: 600 }}>
-          Créer un compte
-        </Link>
-      </Typography>
     </Stack>
   );
 }
