@@ -6,7 +6,8 @@
  *
  * Hidden on the farm selector (before entering the tabs).
  */
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useSegments } from 'expo-router';
 import { tokens } from '@/theme';
@@ -41,7 +42,7 @@ export function BottomNavBar() {
   const bottom = Math.max(insets.bottom, 8);
 
   return (
-    <View style={[styles.bar, { paddingBottom: bottom }]}>
+    <BlurView intensity={88} tint="systemChromeMaterialLight" style={[styles.bar, { paddingBottom: bottom }]}>
       {tabs.map((tab) => {
         const isActive = tab.id === active;
         const Icon = tab.icon;
@@ -56,24 +57,26 @@ export function BottomNavBar() {
             accessibilityLabel={tab.label}
             accessibilityState={{ selected: isActive }}
           >
-            <Icon size={24} color={color} />
+            {/* Lucide has no separate filled glyph — the heavier stroke on the active tab is
+                the closest analogue to iOS's outline→filled SF Symbol swap. */}
+            <Icon size={24} color={color} strokeWidth={isActive ? 2.5 : 2} />
             <Text style={[styles.label, { color }]} numberOfLines={1}>
               {tab.label}
             </Text>
           </TouchableOpacity>
         );
       })}
-    </View>
+    </BlurView>
   );
 }
 
 const styles = StyleSheet.create({
   bar: {
     flexDirection: 'row',
-    backgroundColor: tokens.colors.neutral[0],
-    borderTopWidth: 1,
-    borderTopColor: tokens.colors.neutral[200],
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(60,60,67,0.29)',
     paddingTop: tokens.spacing[2],
+    overflow: 'hidden',
   },
   item: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3 },
   label: { ...tokens.typography.bodySm, fontSize: 11, fontWeight: '600' },
