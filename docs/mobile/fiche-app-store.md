@@ -110,10 +110,30 @@ Identifiants de démonstration :
 Contact en cas de blocage : +221 70 475 69 96 (WhatsApp) ou malick.cisse@nlogicsolutions.com.
 ```
 
-## Ce qui reste bloqué avant de pouvoir soumettre la fiche
+## Captures d'écran — fait
 
-1. **Captures d'écran iPhone 6,9″ (1320×2868)** — irréalisables sans build TestFlight sur un
-   appareil réel (Phase 6). Pas d'iPad (`supportsTablet: false`). Seul point encore ouvert.
+Taille réelle exigée par App Store Connect pour la catégorie « iPhone 6,5 pouces » (confirmée dans
+l'UI live, pas dans la doc Apple générique) : une image parmi 1242×2688, 2688×1242, 1284×2778 ou
+2778×1284. La note précédente (6,9″, 1320×2868) était erronée — corrigée ici.
+
+13 captures réelles prises sur appareil (`docs/brand/screen/IMG_6446.PNG`–`IMG_6458.PNG`,
+1170×2532, même ratio 19,5:9 que 1284×2778) ont servi de source. 8 compositions finales à
+1284×2778 — habillage vert de marque (`tokens.primary[800]`/`[700]`), typographie Outfit,
+accroche + sous-titre par écran, cadre de téléphone avec ombre — sont dans
+`docs/mobile/app-store-screenshots/01-…` à `08-…`, prêtes à téléverser telles quelles :
+
+1. Accueil — vue d'ensemble de la ferme
+2. Élevage — liste des lots
+3. Élevage — détail d'un lot (courbe de croissance)
+4. Saisie journalière (mortalité, aliment, eau)
+5. Suivi sanitaire (vaccins, traitements)
+6. Œufs / ponte
+7. Finance (dépenses)
+8. Commerce — vente directe
+
+Note : les écrans de démarrage et de connexion (IMG_6446/6447) portent encore l'ancien logo
+clipart et n'ont pas été retenus pour éviter une incohérence de marque avec la nouvelle icône
+« marque au fer » déjà en place.
 
 ## Icône — fait
 
