@@ -147,7 +147,12 @@ public class HealthCatalogService {
       }
     }
     return new VaccinationProgramDto(
-        e.key(), str(v, "label"), str(v, "species"), strList(v, "breed_keys"), schedule, e.custom());
+        e.key(),
+        str(v, "label"),
+        str(v, "species"),
+        strList(v, "breed_keys"),
+        schedule,
+        e.custom());
   }
 
   // --- value coercions (JSONB -> Java) --------------------------------

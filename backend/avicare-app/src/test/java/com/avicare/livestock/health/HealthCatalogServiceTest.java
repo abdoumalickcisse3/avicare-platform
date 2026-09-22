@@ -163,7 +163,8 @@ class HealthCatalogServiceTest {
 
   @Test
   void saveProgramDelegatesToFacadeAndRemaps() {
-    Map<String, Object> value = Map.of("label", "Programme perso", "breed_keys", List.of("cobb_500"));
+    Map<String, Object> value =
+        Map.of("label", "Programme perso", "breed_keys", List.of("cobb_500"));
     when(facade.override(FARM, "vaccination_programs", "perso-cobb", value))
         .thenReturn(new CatalogEntryInfo("vaccination_programs", "perso-cobb", value, true));
 

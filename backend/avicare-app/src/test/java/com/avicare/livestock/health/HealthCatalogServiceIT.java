@@ -76,12 +76,14 @@ class HealthCatalogServiceIT {
 
   @Test
   void filtersProgramsByBreed() {
-    List<VaccinationProgramDto> broiler = service.getVaccinationProgramsForBreed(FARM_ID, "cobb_500");
+    List<VaccinationProgramDto> broiler =
+        service.getVaccinationProgramsForBreed(FARM_ID, "cobb_500");
     assertThat(broiler)
         .extracting(VaccinationProgramDto::key)
         .containsExactly("broiler_standard_cobb500");
 
-    List<VaccinationProgramDto> layer = service.getVaccinationProgramsForBreed(FARM_ID, "isa_brown");
+    List<VaccinationProgramDto> layer =
+        service.getVaccinationProgramsForBreed(FARM_ID, "isa_brown");
     assertThat(layer)
         .extracting(VaccinationProgramDto::key)
         .containsExactly("layer_standard_isabrown");
