@@ -113,9 +113,17 @@ Contact en cas de blocage : +221 70 475 69 96 (WhatsApp) ou malick.cisse@nlogics
 ## Ce qui reste bloqué avant de pouvoir soumettre la fiche
 
 1. **Captures d'écran iPhone 6,9″ (1320×2868)** — irréalisables sans build TestFlight sur un
-   appareil réel (Phase 6). Pas d'iPad (`supportsTablet: false`).
-2. **Icône définitive** — la fiche peut se préparer sans, mais rien ne se soumet avec le gabarit
-   Expo par défaut actuellement dans `mobile/assets/icon.png`.
+   appareil réel (Phase 6). Pas d'iPad (`supportsTablet: false`). Seul point encore ouvert.
+
+## Icône — fait
+
+Piste « la marque au fer » validée (`docs/brand/logo/`, étapes 1 et 2 du cahier des charges).
+`mobile/assets/icon.png` refait : 1024×1024, sans canal alpha, fond `#1B3F1B` (le vert déjà utilisé
+par l'icône PWA du web) et symbole blanc. Le jeu d'icônes adaptatives Android
+(`android-icon-foreground.png`, `android-icon-background.png`, `android-icon-monochrome.png`) et le
+favicon Expo-web sont à jour aussi. Sources vectorielles sous `docs/brand/logo/` (§13 du cahier des
+charges) ; le mot-symbole y reste en `<text>`, pas encore vectorisé — exigence de l'étape 4, une
+fois la piste définitivement figée par les mises en situation réelles de l'étape 3.
 
 ## Compte de démonstration — fait
 

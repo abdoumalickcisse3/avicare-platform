@@ -1,0 +1,6 @@
+<!-- Source de android-icon-monochrome.png : couche "thème" Android 13+. Le système applique
+     son propre ton (clair/sombre/coloré selon le fond d'écran) sur la silhouette ; le tracé
+     source n'a besoin que d'un alpha correct, sa couleur importe peu. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <path d="M 272 288 H 752 M 632 288 V 560 C 632 724 376 724 376 556" stroke="#FFFFFF" stroke-width="128" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
