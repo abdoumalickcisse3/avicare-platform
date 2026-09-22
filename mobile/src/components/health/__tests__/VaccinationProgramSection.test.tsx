@@ -18,6 +18,7 @@ const PROGRAMS: VaccinationProgram[] = [
       { ageValue: 1, ageUnit: 'DAY', vaccineKey: 'marek', route: 'injectable', mandatory: true },
       { ageValue: 7, ageUnit: 'DAY', vaccineKey: 'newcastle_b1', route: 'ocular', mandatory: true },
     ],
+    custom: false,
   },
 ];
 

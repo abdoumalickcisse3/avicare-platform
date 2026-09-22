@@ -59,6 +59,7 @@ class VaccinationProgramAssignmentServiceTest {
     long unitId = 9L;
     // Unit started 28 days ago → J28 falls exactly today.
     ProductionUnit unit = new ProductionUnit();
+    unit.setFarmId(1L);
     unit.setStartDate(LocalDate.now().minusDays(28));
     when(livestockService.getUnit(unitId)).thenReturn(unit);
 
@@ -66,7 +67,7 @@ class VaccinationProgramAssignmentServiceTest {
     lot.setProgramKey("broiler_standard_cobb500");
     when(programLotRepository.findByProductionUnitId(unitId)).thenReturn(Optional.of(lot));
 
-    when(healthCatalogService.resolveProgramByKey("broiler_standard_cobb500"))
+    when(healthCatalogService.resolveProgramByKey(1L, "broiler_standard_cobb500"))
         .thenReturn(
             new VaccinationProgramDto(
                 "broiler_standard_cobb500",
@@ -78,7 +79,8 @@ class VaccinationProgramAssignmentServiceTest {
                     entry(7, "newcastle_la_sota"),
                     entry(14, "gumboro_d78"),
                     entry(21, "newcastle_clone30"),
-                    entry(28, "gumboro_228e"))));
+                    entry(28, "gumboro_228e")),
+                false));
 
     // J7 and J14 administered.
     when(vaccinationRepository.findByProductionUnitIdOrderByAdministeredDateDesc(unitId))

@@ -34,15 +34,25 @@ interface Props {
   farmId: number;
   /** When set, edits this custom vaccine (key is fixed). */
   vaccine?: Vaccine;
+  /** When set (and `vaccine` is not), pre-fills the form from a platform vaccine to clone. */
+  cloneFrom?: Vaccine;
   /** All farm-visible vaccine keys — used to reject duplicate creates. */
   existingKeys?: string[];
 }
 
-export function VaccineLibraryDialog({ open, onClose, farmId, vaccine, existingKeys = [] }: Props) {
+export function VaccineLibraryDialog({
+  open,
+  onClose,
+  farmId,
+  vaccine,
+  cloneFrom,
+  existingKeys = [],
+}: Props) {
   const { showToast } = useToast();
   const [createVaccine, { isLoading: creating }] = useCreateVaccineMutation();
   const [updateVaccine, { isLoading: updating }] = useUpdateVaccineMutation();
   const isEdit = vaccine != null;
+  const source = vaccine ?? cloneFrom;
 
   const { control, handleSubmit, reset, setError } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -53,13 +63,13 @@ export function VaccineLibraryDialog({ open, onClose, farmId, vaccine, existingK
   useEffect(() => {
     if (open && !wasOpen.current) {
       reset({
-        label: vaccine?.label ?? "",
-        disease: vaccine?.disease ?? "",
-        route: vaccine?.route ?? "",
+        label: source?.label ?? "",
+        disease: source?.disease ?? "",
+        route: source?.route ?? "",
       });
     }
     wasOpen.current = open;
-  }, [open, vaccine, reset]);
+  }, [open, source, reset]);
 
   const onSubmit = async (values: FormValues) => {
     const value: Record<string, unknown> = { label: values.label };
@@ -82,7 +92,9 @@ export function VaccineLibraryDialog({ open, onClose, farmId, vaccine, existingK
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>{isEdit ? "Modifier le vaccin" : "Nouveau vaccin"}</DialogTitle>
+      <DialogTitle>
+        {isEdit ? "Modifier le vaccin" : cloneFrom ? "Cloner le vaccin" : "Nouveau vaccin"}
+      </DialogTitle>
       <form onSubmit={handleSubmit(onSubmit)}>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>

@@ -21,8 +21,10 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Read-only health library endpoints (Sprint B3-4). Vaccines and vaccination programs are part of
- * {@code module.health.basic}; treatments require {@code module.health.advanced}.
+ * Health library endpoints (Sprint B3-4). Vaccines, treatments and vaccination programs are
+ * platform catalogs; a farm may clone a platform entry into its own custom (editable) copy via the
+ * same upsert endpoint. Vaccines and vaccination programs are part of {@code module.health.basic};
+ * treatments require {@code module.health.advanced}.
  */
 @RestController
 @RequestMapping("/api/v1/farms/{farmId}/health/catalog")
@@ -77,13 +79,28 @@ public class HealthCatalogController {
   @GetMapping("/programs")
   @PreAuthorize(HealthAccess.READ_BASIC)
   public ApiResponse<List<VaccinationProgramDto>> programs(@PathVariable Long farmId) {
-    return ApiResponse.of(healthCatalogService.listVaccinationPrograms());
+    return ApiResponse.of(healthCatalogService.listVaccinationPrograms(farmId));
   }
 
   @GetMapping("/programs/by-breed/{breedKey}")
   @PreAuthorize(HealthAccess.READ_BASIC)
   public ApiResponse<List<VaccinationProgramDto>> programsByBreed(
       @PathVariable Long farmId, @PathVariable String breedKey) {
-    return ApiResponse.of(healthCatalogService.getVaccinationProgramsForBreed(breedKey));
+    return ApiResponse.of(healthCatalogService.getVaccinationProgramsForBreed(farmId, breedKey));
+  }
+
+  @PostMapping("/programs")
+  @ResponseStatus(HttpStatus.CREATED)
+  @PreAuthorize(HealthAccess.WRITE_BASIC_MANAGER)
+  public ApiResponse<VaccinationProgramDto> createProgram(
+      @PathVariable Long farmId, @RequestBody @Valid HealthCatalogWriteRequest request) {
+    return ApiResponse.of(healthCatalogService.saveProgram(farmId, request.key(), request.value()));
+  }
+
+  @DeleteMapping("/programs/{key}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @PreAuthorize(HealthAccess.WRITE_BASIC_MANAGER)
+  public void deleteProgram(@PathVariable Long farmId, @PathVariable String key) {
+    healthCatalogService.deleteProgram(farmId, key);
   }
 }

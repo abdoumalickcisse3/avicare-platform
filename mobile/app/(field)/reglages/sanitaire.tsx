@@ -9,8 +9,9 @@
  * mean four horizontally-scrolling tables, so the sections are chip-selected and each is a list
  * of rows rather than a grid of columns.
  *
- * Programmes are read-only everywhere, web included: custom programmes are explicitly out of
- * scope, and a section that offered an edit that does not exist would be a lie.
+ * Programmes are read-only here: the web settings page now supports cloning a platform program
+ * into an editable farm copy (and editing vaccins/traitements the same way), but the matching
+ * phone UI (schedule editor, clone action) has not been built yet — tracked, not silently done.
  */
 import { useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';

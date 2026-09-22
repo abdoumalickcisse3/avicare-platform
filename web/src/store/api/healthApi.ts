@@ -125,6 +125,37 @@ export const healthApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [{ type: "HealthCatalog", id: "treatments" }],
     }),
+    createProgram: build.mutation<
+      VaccinationProgram,
+      { farmId: number; key: string; value: Record<string, unknown> }
+    >({
+      query: ({ farmId, key, value }) => ({
+        url: `${base(farmId)}/catalog/programs`,
+        method: "POST",
+        body: { key, value },
+      }),
+      transformResponse: (r: ApiEnvelope<VaccinationProgram>) => r.data,
+      invalidatesTags: [{ type: "HealthCatalog", id: "programs" }],
+    }),
+    updateProgram: build.mutation<
+      VaccinationProgram,
+      { farmId: number; key: string; value: Record<string, unknown> }
+    >({
+      query: ({ farmId, key, value }) => ({
+        url: `${base(farmId)}/catalog/programs`,
+        method: "POST",
+        body: { key, value },
+      }),
+      transformResponse: (r: ApiEnvelope<VaccinationProgram>) => r.data,
+      invalidatesTags: [{ type: "HealthCatalog", id: "programs" }],
+    }),
+    deleteProgram: build.mutation<void, { farmId: number; key: string }>({
+      query: ({ farmId, key }) => ({
+        url: `${base(farmId)}/catalog/programs/${key}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: [{ type: "HealthCatalog", id: "programs" }],
+    }),
 
     /* --- Vaccinations -------------------------------------------------- */
     getVaccinations: build.query<
@@ -417,6 +448,9 @@ export const {
   useCreateTreatmentCatalogMutation,
   useUpdateTreatmentCatalogMutation,
   useDeleteTreatmentCatalogMutation,
+  useCreateProgramMutation,
+  useUpdateProgramMutation,
+  useDeleteProgramMutation,
   useGetVaccinationsQuery,
   useRecordVaccinationMutation,
   useDeleteVaccinationMutation,
