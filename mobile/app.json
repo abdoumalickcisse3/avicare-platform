@@ -12,6 +12,9 @@
       "supportsTablet": false,
       "config": {
         "usesNonExemptEncryption": false
+      },
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Jawdi peut utiliser vos photos pour illustrer une observation sanitaire ou un document lié à votre ferme."
       }
     },
     "android": {
