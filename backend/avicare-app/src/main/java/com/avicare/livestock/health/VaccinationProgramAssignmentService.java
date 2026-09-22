@@ -43,7 +43,8 @@ public class VaccinationProgramAssignmentService {
   @Transactional
   public VaccinationProgramLot assignProgram(Long unitId, String programKey, Long userId) {
     ProductionUnit unit = livestockService.getUnit(unitId); // 404 if missing
-    healthCatalogService.resolveProgramByKey(unit.getFarmId(), programKey); // 404 if unknown program
+    healthCatalogService.resolveProgramByKey(
+        unit.getFarmId(), programKey); // 404 if unknown program
 
     VaccinationProgramLot lot =
         programLotRepository.findByProductionUnitId(unitId).orElseGet(VaccinationProgramLot::new);
