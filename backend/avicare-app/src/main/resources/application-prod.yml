@@ -52,11 +52,12 @@ logging:
     org.springframework.web: WARN
     org.hibernate.SQL: WARN
 
-# Notifications in prod: WhatsApp on (requires KONEKT_API_SECRET in the env), and the
-# manual scan trigger disabled so /notifications/scan is not exposed in production.
+# Notifications in prod: WhatsApp on (requires KONEKT_API_SECRET in the env), and the manual
+# scan trigger off by default so /notifications/scan is not exposed in production — flip
+# NOTIF_SCAN_MANUAL_TRIGGER=true only for a one-off test, then unset it again.
 notifications:
   app-url: ${NOTIF_APP_URL:https://app.jawdi.app}
   whatsapp:
     enabled: ${NOTIF_WHATSAPP_ENABLED:true}
   scan:
-    manual-trigger-enabled: false
+    manual-trigger-enabled: ${NOTIF_SCAN_MANUAL_TRIGGER:false}
