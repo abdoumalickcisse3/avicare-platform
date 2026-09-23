@@ -93,7 +93,7 @@ class FarmPurgeCascadeIT {
 
     Sale sale = new Sale();
     sale.setFarmId(f.getId());
-    sale.setSaleNumber("V-PURGE-001");
+    sale.setSaleNumber("V-2026-001");
     sale.setClient(client);
     sale.setStatus(SaleStatus.COMPLETED);
     sale.setSaleDate(LocalDate.now());
