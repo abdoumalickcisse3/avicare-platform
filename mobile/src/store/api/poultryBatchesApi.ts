@@ -63,6 +63,7 @@ export const {
   useGetBatchesQuery,
   useGetBatchQuery,
   useGetPerformanceQuery,
+  useLazyGetPerformanceQuery,
   useGetWeighingsQuery,
   useGetDailyRecordsQuery,
 } = poultryBatchesApi;
