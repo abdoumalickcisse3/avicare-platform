@@ -39,6 +39,25 @@ jest.mock('@/store/api/salesApi', () => ({
   useCreateSaleMutation: jest.fn(() => [mockCreateSale, { isLoading: false }]),
 }));
 
+const mockFetchPerformance = jest.fn(() => ({
+  unwrap: () =>
+    Promise.resolve({
+      poultryBatchId: 5,
+      snapshotDate: '2026-09-20',
+      currentWeightG: 1800,
+      ageDays: 30,
+      gmqGPerDay: 60,
+      feedConversionRatio: 1.8,
+      cumulativeMortalityPercent: 2,
+      cumulativeFeedKg: 90,
+      forecastedTargetDate: null,
+      performanceScore: 'ON_TARGET',
+    }),
+}));
+jest.mock('@/store/api/poultryBatchesApi', () => ({
+  useLazyGetPerformanceQuery: jest.fn(() => [mockFetchPerformance]),
+}));
+
 import VenteScreen from '../vente';
 
 describe('Vente directe', () => {
@@ -62,6 +81,24 @@ describe('Vente directe', () => {
             quantity: 1,
           }),
         ],
+      }),
+    });
+  });
+
+  it('bascule en mode au poids, pré-remplit le poids et envoie weightKg', async () => {
+    await render(<VenteScreen />);
+    await press(screen.getByLabelText('Ajouter Lot A à la vente'));
+    await press(screen.getByLabelText('Au poids — Lot A'));
+
+    const weightInput = await screen.findByLabelText('Poids total (kg) — Lot A');
+    await fireEvent.changeText(weightInput, '30.5');
+
+    await press(screen.getByLabelText('Valider la vente'));
+
+    expect(mockCreateSale).toHaveBeenCalledWith({
+      farmId: 7,
+      body: expect.objectContaining({
+        lines: [expect.objectContaining({ weightKg: 30.5, quantity: 1 })],
       }),
     });
   });
