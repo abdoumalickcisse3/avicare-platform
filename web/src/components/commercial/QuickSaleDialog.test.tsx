@@ -60,6 +60,20 @@ const SALES_CHANNELS = [
   { category: "sales_channels", key: "retail", value: { label: "Détail" }, custom: false },
 ];
 
+const PERFORMANCE = {
+  poultryBatchId: 42,
+  snapshotDate: "2026-09-20",
+  ageDays: 30,
+  currentWeightG: 1800,
+  gmqGPerDay: 60,
+  feedConversionRatio: 1.8,
+  cumulativeMortalityPercent: 2,
+  cumulativeFeedKg: 90,
+  cumulativeWaterL: 144,
+  forecastedTargetDate: null,
+  performanceScore: "ON_TARGET",
+};
+
 const CREATED_SALE = {
   id: 1,
   farmId: 1,
@@ -103,6 +117,7 @@ function setupFetch() {
       } else if (init?.body) {
         lastBody = JSON.parse(init.body as string);
       }
+      if (url.includes("/performance")) return respond(PERFORMANCE);
       if (url.includes("poultry-batches")) return respond([BATCH, LAYER_BATCH]);
       if (url.includes("/breeds")) return respond(BREEDS);
       if (url.includes("tray-stock")) return respond(TRAY_STOCK);
@@ -185,6 +200,41 @@ describe("QuickSaleDialog — production availability", () => {
     // …but the layer lot (breed type "layer") is not shown as a meat lot.
     expect(screen.queryByText("Lot Pondeuse")).not.toBeInTheDocument();
     expect(screen.queryByText("30 têtes restantes")).not.toBeInTheDocument();
+  });
+
+  it("bascule une ligne chair en mode au poids et pré-remplit le poids suggéré", async () => {
+    const user = userEvent.setup();
+    setup();
+
+    const lotCard = await screen.findByText("50 têtes restantes");
+    await user.click(lotCard.closest("[role='button']") as HTMLElement);
+
+    await user.click(await screen.findByRole("button", { name: "Au poids" }));
+
+    // 1 tête (quantité par défaut) × 1800 g / 1000 = 1.8 kg suggéré.
+    const weightInput = await screen.findByLabelText("Poids total (kg)");
+    expect(weightInput).toHaveValue(1.8);
+    expect(screen.getByLabelText(/Prix au kg/)).toBeInTheDocument();
+  });
+
+  it("envoie weightKg et un prix au kilo, pas le calcul à la tête", async () => {
+    const user = userEvent.setup();
+    setup();
+
+    const lotCard = await screen.findByText("50 têtes restantes");
+    await user.click(lotCard.closest("[role='button']") as HTMLElement);
+    await user.click(await screen.findByRole("button", { name: "Au poids" }));
+
+    const weightInput = await screen.findByLabelText("Poids total (kg)");
+    fireEvent.change(weightInput, { target: { value: "30.5" } });
+    fireEvent.change(screen.getByLabelText(/Prix au kg/), { target: { value: "1500" } });
+
+    await user.click(screen.getByRole("button", { name: /Valider la vente/i }));
+
+    await waitFor(() => expect(lastMethod).toBe("POST"));
+    expect(lastBody?.lines).toEqual([
+      expect.objectContaining({ quantity: 1, unitPriceXof: 1500, weightKg: 30.5 }),
+    ]);
   });
 });
 
