@@ -342,6 +342,7 @@ export type PerformanceScore = 'AHEAD' | 'ON_TARGET' | 'BEHIND';
 
 export interface GrowthPerformance {
   poultryBatchId: number;
+  snapshotDate: string;
   ageDays: number;
   currentWeightG: number | null;
   gmqGPerDay: number | null;
@@ -699,6 +700,7 @@ export interface SaleLineInput {
   productType?: ProductType;
   productionUnitId?: number;
   notes?: string;
+  weightKg?: number;
 }
 
 export interface SaleItem {
@@ -711,6 +713,7 @@ export interface SaleItem {
   unitPriceXof: number;
   lineTotalXof: number;
   notes: string | null;
+  weightKg: number | null;
 }
 
 export interface SaleInput {
