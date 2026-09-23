@@ -18,6 +18,7 @@ import com.avicare.livestock.repository.DeliveryRepository;
 import com.avicare.livestock.repository.InvoiceRepository;
 import com.avicare.livestock.repository.SaleRepository;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -66,13 +67,25 @@ public class InvoiceService {
     invoice.setSaleId(saleId);
     long total = 0;
     for (SaleItem line : sale.getItems()) {
+      /*
+       * Ligne vendue au poids : sur la vente, `quantity` reste le nombre de têtes (c'est lui qui
+       * décrémente le stock) alors que `unit` vaut déjà "kg". La facture, elle, imprime
+       * `quantity` et `unit` côte à côte : recopier les têtes donnerait « 20 kg × 1 500 F =
+       * 45 750 F », faux et incohérent. On facture donc le poids (quantity = weightKg, unit =
+       * "kg", l'arithmétique retombe juste) et on replie le nombre de têtes dans le libellé pour
+       * ne pas le perdre du document.
+       */
+      boolean weightPriced = line.getWeightKg() != null;
       addLine(
           invoice,
           line.getArticleKey(),
           line.getArticleSource(),
-          line.getArticleLabelSnapshot(),
+          weightPriced
+              ? labelWithHeadCount(
+                  line.getArticleLabelSnapshot(), line.getArticleKey(), line.getQuantity())
+              : line.getArticleLabelSnapshot(),
           line.getUnit(),
-          line.getQuantity(),
+          weightPriced ? line.getWeightKg() : line.getQuantity(),
           line.getUnitPriceXof(),
           line.getLineTotalXof());
       total += line.getLineTotalXof();
@@ -240,6 +253,23 @@ public class InvoiceService {
     clientNotifier.invoiceIssued(
         saved.getFarmId(), saved.getClient(), saved.getInvoiceNumber(), total, saved.getDueDate());
     return saved;
+  }
+
+  /**
+   * Fold the head count of a weight-priced line into its label snapshot — « Poulet de chair » → «
+   * Poulet de chair (20 sujets) » — so the number of birds sold stays on the invoice even though
+   * the billed quantity is now the weight in kg. Falls back on the article key when the sale line
+   * carries no label (what every renderer displays in that case anyway).
+   */
+  private static String labelWithHeadCount(
+      String labelSnapshot, String articleKey, BigDecimal heads) {
+    String base = labelSnapshot != null ? labelSnapshot : articleKey;
+    if (heads == null) {
+      return base;
+    }
+    BigDecimal whole = heads.setScale(0, RoundingMode.HALF_UP);
+    String noun = whole.compareTo(BigDecimal.ONE) <= 0 ? " sujet)" : " sujets)";
+    return base + " (" + whole.toPlainString() + noun;
   }
 
   private static void addLine(

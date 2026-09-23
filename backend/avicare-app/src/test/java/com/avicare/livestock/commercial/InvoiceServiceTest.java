@@ -17,6 +17,7 @@ import com.avicare.livestock.domain.Delivery;
 import com.avicare.livestock.domain.DeliveryItem;
 import com.avicare.livestock.domain.DeliveryStatus;
 import com.avicare.livestock.domain.Invoice;
+import com.avicare.livestock.domain.InvoiceItem;
 import com.avicare.livestock.domain.InvoiceSourceType;
 import com.avicare.livestock.domain.InvoiceStatus;
 import com.avicare.livestock.domain.Sale;
@@ -89,6 +90,40 @@ class InvoiceServiceTest {
 
     // D26: issuing raises the client's receivable by the invoice total.
     verify(clientService).adjustBalance(7L, 3L, 42_500L);
+  }
+
+  @Test
+  void createFromSale_weightPricedLine_billsTheWeightAndKeepsHeadCountInTheLabel() {
+    Sale sale = sale(20L, SaleStatus.COMPLETED, client(3L));
+    sale.addItem(weightPricedSaleItem("chicken_meat", "20", new BigDecimal("30.5"), 1500));
+    when(saleRepository.findByFarmIdAndId(7L, 20L)).thenReturn(Optional.of(sale));
+
+    Invoice invoice = service.createFromSale(7L, 20L, null, 42L);
+
+    InvoiceItem item = invoice.getItems().get(0);
+    // La facture est libellée en kg : quantity = le poids pesé, PAS le nombre de têtes.
+    assertThat(item.getQuantity()).isEqualByComparingTo(new BigDecimal("30.5"));
+    assertThat(item.getUnit()).isEqualTo("kg");
+    // 30,5 kg × 1 500 F = 45 750 F : l'arithmétique imprimée retombe juste.
+    assertThat(item.getQuantity().multiply(BigDecimal.valueOf(item.getUnitPriceXof())))
+        .isEqualByComparingTo(BigDecimal.valueOf(item.getLineTotalXof()));
+    // Le nombre de têtes n'est pas perdu : il est replié dans le libellé.
+    assertThat(item.getArticleLabelSnapshot()).isEqualTo("Poulet (20 sujets)");
+    assertThat(invoice.getTotalXof()).isEqualTo(45_750L);
+  }
+
+  @Test
+  void createFromSale_headPricedLine_keepsQuantityAndLabelUntouched() {
+    Sale sale = sale(20L, SaleStatus.COMPLETED, client(3L));
+    sale.addItem(saleItem("chicken_meat", "5", 2500));
+    when(saleRepository.findByFarmIdAndId(7L, 20L)).thenReturn(Optional.of(sale));
+
+    Invoice invoice = service.createFromSale(7L, 20L, null, 42L);
+
+    InvoiceItem item = invoice.getItems().get(0);
+    assertThat(item.getQuantity()).isEqualByComparingTo(new BigDecimal("5"));
+    assertThat(item.getUnit()).isEqualTo("u");
+    assertThat(item.getArticleLabelSnapshot()).isEqualTo("Poulet");
   }
 
   @Test
@@ -346,6 +381,21 @@ class InvoiceServiceTest {
     i.setQuantity(new BigDecimal(qty));
     i.setUnitPriceXof(unitPriceXof);
     i.setLineTotalXof((long) Integer.parseInt(qty) * unitPriceXof);
+    return i;
+  }
+
+  /** Ligne de poulets de chair vendue au poids : têtes dans quantity, poids pesé dans weightKg. */
+  private static SaleItem weightPricedSaleItem(
+      String articleKey, String heads, BigDecimal weightKg, int pricePerKgXof) {
+    SaleItem i = new SaleItem();
+    i.setArticleKey(articleKey);
+    i.setArticleSource(ArticleSource.PRODUCTION);
+    i.setArticleLabelSnapshot("Poulet");
+    i.setUnit("kg");
+    i.setQuantity(new BigDecimal(heads));
+    i.setWeightKg(weightKg);
+    i.setUnitPriceXof(pricePerKgXof);
+    i.setLineTotalXof(weightKg.multiply(BigDecimal.valueOf(pricePerKgXof)).longValue());
     return i;
   }
 
