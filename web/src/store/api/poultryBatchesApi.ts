@@ -117,4 +117,5 @@ export const {
   useGetWeighingsQuery,
   useCreateWeighingMutation,
   useGetPerformanceQuery,
+  useLazyGetPerformanceQuery,
 } = poultryBatchesApi;
