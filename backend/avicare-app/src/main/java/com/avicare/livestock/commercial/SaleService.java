@@ -193,6 +193,7 @@ public class SaleService {
         item.setProductType(line.productType());
         item.setWeightKg(line.weightKg());
       } else {
+        rejectWeightKgOnNonProductionLine(line);
         InventoryCatalogItemDto article = catalog.get(line.articleKey());
         if (article == null) {
           throw new NotFoundException("ARTICLE_NOT_FOUND", "Unknown article " + line.articleKey());
@@ -238,14 +239,23 @@ public class SaleService {
     }
     if (line.weightKg() != null) {
       if (line.productType() != ProductType.BROILER) {
-        throw new BusinessRuleException(
-            "PRODUCTION_LINE_WEIGHT_NOT_ALLOWED",
-            "weightKg is only allowed for BROILER lines");
+        throwWeightKgNotAllowed();
       }
       if (line.weightKg().signum() <= 0) {
         throw new ValidationException("SALE_LINE_WEIGHT", "weightKg must be greater than 0");
       }
     }
+  }
+
+  private static void rejectWeightKgOnNonProductionLine(SaleCommand.Line line) {
+    if (line.weightKg() != null) {
+      throwWeightKgNotAllowed();
+    }
+  }
+
+  private static void throwWeightKgNotAllowed() {
+    throw new BusinessRuleException(
+        "PRODUCTION_LINE_WEIGHT_NOT_ALLOWED", "weightKg is only allowed for BROILER lines");
   }
 
   private static String productionUnitFor(ProductType type) {

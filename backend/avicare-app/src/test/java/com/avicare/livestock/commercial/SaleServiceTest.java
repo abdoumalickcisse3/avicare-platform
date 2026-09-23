@@ -288,6 +288,24 @@ class SaleServiceTest {
         .isThrownBy(() -> service.create(7L, cmd, 42L));
   }
 
+  @Test
+  void create_weightKgOnInventoryLineThrowsBusinessRule() {
+    SaleCommand.Line inventoryWithWeight =
+        new SaleCommand.Line(
+            "chicken_meat",
+            ArticleSource.INVENTORY,
+            new BigDecimal("5"),
+            2500,
+            null,
+            null,
+            null,
+            new BigDecimal("1.5"));
+    SaleCommand cmd = new SaleCommand(null, null, null, null, null, List.of(inventoryWithWeight));
+
+    assertThatExceptionOfType(BusinessRuleException.class)
+        .isThrownBy(() -> service.create(7L, cmd, 42L));
+  }
+
   // --- cancel ---------------------------------------------------------
 
   @Test
