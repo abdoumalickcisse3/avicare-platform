@@ -56,6 +56,15 @@ public class SaleItem {
   @Column(nullable = false)
   private BigDecimal quantity;
 
+  /**
+   * Total live weight sold, in kg — set only for a BROILER line priced by weight (poids pesé du
+   * lot vendu, pas un poids par tête). NULL = ligne à la tête, prix = quantity × unitPriceXof.
+   * When set, {@code lineTotalXof = weightKg × unitPriceXof} and {@code quantity} still tracks
+   * the number of heads sold (used to decrement stock), never the weight.
+   */
+  @Column(name = "weight_kg")
+  private BigDecimal weightKg;
+
   @Column(name = "unit_price_xof", nullable = false)
   private Integer unitPriceXof;
 
