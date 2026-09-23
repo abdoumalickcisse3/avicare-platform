@@ -32,11 +32,19 @@ public record SaleRequest(
       @NotNull @PositiveOrZero Integer unitPriceXof,
       @Size(max = 500) String notes,
       Long productionUnitId,
-      ProductType productType) {
+      ProductType productType,
+      @Positive BigDecimal weightKg) {
 
     SaleCommand.Line toCommandLine() {
       return new SaleCommand.Line(
-          articleKey, articleSource, quantity, unitPriceXof, notes, productionUnitId, productType);
+          articleKey,
+          articleSource,
+          quantity,
+          unitPriceXof,
+          notes,
+          productionUnitId,
+          productType,
+          weightKg);
     }
   }
 

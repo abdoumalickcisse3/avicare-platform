@@ -28,5 +28,27 @@ public record SaleCommand(
       Integer unitPriceXof,
       String notes,
       Long productionUnitId,
-      ProductType productType) {}
+      ProductType productType,
+      BigDecimal weightKg) {
+
+    /** Compatibilité : tous les appels existants (à la tête) omettent le poids. */
+    public Line(
+        String articleKey,
+        ArticleSource articleSource,
+        BigDecimal quantity,
+        Integer unitPriceXof,
+        String notes,
+        Long productionUnitId,
+        ProductType productType) {
+      this(
+          articleKey,
+          articleSource,
+          quantity,
+          unitPriceXof,
+          notes,
+          productionUnitId,
+          productType,
+          null);
+    }
+  }
 }
