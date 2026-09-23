@@ -18,6 +18,7 @@ import { useTheme } from "@mui/material/styles";
 import { Egg, Drumstick, Minus, Plus, Trash2, X } from "lucide-react";
 import { useGetCatalogQuery } from "@/store/api/catalogApi";
 import { useGetClientsQuery } from "@/store/api/clientsApi";
+import { useLazyGetPerformanceQuery } from "@/store/api/poultryBatchesApi";
 import { useCreateSaleMutation } from "@/store/api/salesApi";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -43,6 +44,9 @@ interface Line {
   unitPriceXof: number;
   /** Front-side guard (soft): the backend is the real guard. */
   max?: number;
+  /** Ligne chair uniquement : bascule le calcul du prix sur le poids plutôt que sur les têtes. */
+  pricingMode?: "HEAD" | "WEIGHT";
+  weightKg?: number;
 }
 
 export function QuickSaleDialog({
@@ -78,7 +82,17 @@ function QuickSaleBody({ onClose, farmId }: { onClose: () => void; farmId: numbe
   const [method, setMethod] = useState<PaymentMethod>("CASH");
   const [channel, setChannel] = useState<string>("");
 
-  const total = lines.reduce((s, l) => s + l.quantity * l.unitPriceXof, 0);
+  const [fetchPerformance] = useLazyGetPerformanceQuery();
+  const [weighingHintByUnitId, setWeighingHintByUnitId] = useState<
+    Record<number, { currentWeightG: number | null; snapshotDate: string | null }>
+  >({});
+
+  const lineAmount = (l: Line) =>
+    l.pricingMode === "WEIGHT" && l.weightKg != null
+      ? l.weightKg * l.unitPriceXof
+      : l.quantity * l.unitPriceXof;
+
+  const total = lines.reduce((s, l) => s + lineAmount(l), 0);
   const hasOverMax = lines.some((l) => l.max != null && l.quantity > l.max);
 
   const addBroilerLot = (unitId: number, label: string, heads: number) => {
@@ -144,6 +158,38 @@ function QuickSaleBody({ onClose, farmId }: { onClose: () => void; farmId: numbe
   const setPrice = (lineKey: string, price: number) =>
     setLines((cur) => cur.map((l) => (l.key === lineKey ? { ...l, unitPriceXof: price } : l)));
 
+  const setPricingMode = async (lineKey: string, mode: "HEAD" | "WEIGHT", unitId?: number) => {
+    if (mode === "HEAD") {
+      setLines((cur) =>
+        cur.map((l) => (l.key === lineKey ? { ...l, pricingMode: "HEAD", weightKg: undefined } : l)),
+      );
+      return;
+    }
+    let hint = unitId != null ? weighingHintByUnitId[unitId] : undefined;
+    if (unitId != null && !hint) {
+      try {
+        const perf = await fetchPerformance({ farmId, batchId: unitId }).unwrap();
+        hint = { currentWeightG: perf.currentWeightG, snapshotDate: perf.snapshotDate };
+      } catch {
+        hint = { currentWeightG: null, snapshotDate: null };
+      }
+      setWeighingHintByUnitId((cur) => ({ ...cur, [unitId]: hint! }));
+    }
+    setLines((cur) =>
+      cur.map((l) => {
+        if (l.key !== lineKey) return l;
+        const suggested =
+          hint?.currentWeightG != null
+            ? Math.round((l.quantity * hint.currentWeightG) / 10) / 100
+            : undefined;
+        return { ...l, pricingMode: "WEIGHT", weightKg: l.weightKg ?? suggested };
+      }),
+    );
+  };
+
+  const setWeight = (lineKey: string, weightKg: number) =>
+    setLines((cur) => cur.map((l) => (l.key === lineKey ? { ...l, weightKg } : l)));
+
   const submit = async () => {
     if (lines.length === 0) return;
     try {
@@ -158,6 +204,7 @@ function QuickSaleBody({ onClose, farmId }: { onClose: () => void; farmId: numbe
             articleSource: l.articleSource,
             quantity: l.quantity,
             unitPriceXof: l.unitPriceXof,
+            ...(l.pricingMode === "WEIGHT" && l.weightKg != null ? { weightKg: l.weightKg } : {}),
             ...(l.articleSource === "PRODUCTION"
               ? { productType: l.productType, productionUnitId: l.productionUnitId }
               : {}),
@@ -337,18 +384,58 @@ function QuickSaleBody({ onClose, farmId }: { onClose: () => void; farmId: numbe
                       <Plus size={16} />
                     </IconButton>
                   </Stack>
+                  {l.productType === "BROILER" && (
+                    <Stack direction="row" spacing={0.5}>
+                      <Button
+                        size="small"
+                        variant={l.pricingMode !== "WEIGHT" ? "contained" : "outlined"}
+                        onClick={() => setPricingMode(l.key, "HEAD")}
+                      >
+                        À la tête
+                      </Button>
+                      <Button
+                        size="small"
+                        variant={l.pricingMode === "WEIGHT" ? "contained" : "outlined"}
+                        onClick={() => setPricingMode(l.key, "WEIGHT", l.productionUnitId)}
+                      >
+                        Au poids
+                      </Button>
+                    </Stack>
+                  )}
+                  {l.pricingMode === "WEIGHT" && (
+                    <Box>
+                      <TextField
+                        label="Poids total (kg)"
+                        type="number"
+                        value={l.weightKg ?? ""}
+                        onChange={(e) => setWeight(l.key, Number(e.target.value) || 0)}
+                        size="small"
+                        sx={{ width: 120 }}
+                      />
+                      {weighingHintByUnitId[l.productionUnitId ?? -1]?.currentWeightG != null ? (
+                        <Typography variant="caption" sx={{ color: colors.neutral[500], display: "block" }}>
+                          Estimé d&apos;après la pesée du{" "}
+                          {weighingHintByUnitId[l.productionUnitId ?? -1]?.snapshotDate}
+                        </Typography>
+                      ) : (
+                        <Typography variant="caption" sx={{ color: colors.neutral[500], display: "block" }}>
+                          Aucune pesée enregistrée — saisissez le poids réel.
+                        </Typography>
+                      )}
+                    </Box>
+                  )}
                   <TextField
                     value={l.unitPriceXof}
                     onChange={(e) =>
                       setPrice(l.key, Number(e.target.value.replace(/[^0-9]/g, "")) || 0)
                     }
                     size="small"
-                    label="PU"
+                    label={l.pricingMode === "WEIGHT" ? "Prix au kg" : "PU"}
                     sx={{ width: 96, "& input": { ...mono } }}
                     inputMode="numeric"
                   />
                   <Typography sx={{ ...mono, width: 96, textAlign: "right", fontWeight: 600 }}>
-                    {formatCurrency(l.quantity * l.unitPriceXof)}
+                    {formatCurrency(lineAmount(l))}
                   </Typography>
                   <IconButton
                     size="small"
