@@ -1033,6 +1033,7 @@ export interface SaleItem {
   unitPriceXof: number;
   lineTotalXof: number;
   notes: string | null;
+  weightKg: number | null;
 }
 
 /** A direct (cash) sale (mirrors backend SaleResponse). */
@@ -1058,6 +1059,8 @@ export interface SaleLineInput {
   productType?: ProductType;
   productionUnitId?: number;
   notes?: string;
+  /** Poulet de chair vendu au poids (lot pesé) plutôt qu'à la tête à prix fixe. */
+  weightKg?: number;
 }
 
 /** Create payload (mirrors backend SaleRequest). clientId optional (walk-in). */
