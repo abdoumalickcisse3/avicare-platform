@@ -123,6 +123,9 @@ public class LivestockFarmExporter implements FarmDataExporter {
                   line.put("article", i.getArticleLabelSnapshot());
                   line.put("quantity", i.getQuantity());
                   line.put("unit", i.getUnit());
+                  // Ligne vendue au poids : `quantity` reste les têtes et `unit` vaut "kg" —
+                  // sans le poids, l'export ne permettrait pas de refaire le calcul du total.
+                  line.put("weightKg", i.getWeightKg());
                   line.put("unitPriceXof", i.getUnitPriceXof());
                   line.put("lineTotalXof", i.getLineTotalXof());
                   return line;

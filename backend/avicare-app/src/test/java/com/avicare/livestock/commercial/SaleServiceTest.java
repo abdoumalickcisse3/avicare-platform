@@ -243,15 +243,15 @@ class SaleServiceTest {
     assertThat(item.getUnit()).isEqualTo("kg");
     // 30.50 * 1500 = 45 750 (pas 20 * 1500 = 30 000)
     assertThat(item.getLineTotalXof()).isEqualTo(45_750L);
-    verify(livestockFacade).consumeProduction(7L, com.avicare.livestock.api.ProductType.BROILER, 9L, 20L);
+    verify(livestockFacade)
+        .consumeProduction(7L, com.avicare.livestock.api.ProductType.BROILER, 9L, 20L);
   }
 
   @Test
   void create_broilerLineWithoutWeightKg_stillPricesByHeads() {
     when(saleRepository.findMaxSequence(eq(7L), any())).thenReturn(0);
     SaleCommand cmd =
-        new SaleCommand(
-            null, null, "CASH", null, null, List.of(broilerLine(9L, "20", 1500, null)));
+        new SaleCommand(null, null, "CASH", null, null, List.of(broilerLine(9L, "20", 1500, null)));
 
     Sale sale = service.create(7L, cmd, 42L);
 
