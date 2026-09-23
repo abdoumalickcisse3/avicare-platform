@@ -100,6 +100,36 @@ class CommercialProductionIT {
         .isEqualTo(80);
   }
 
+  // ── Case 1b: direct BROILER sale by weight — prices by weight, decrements heads only,
+  //    and the weight persists through a real Postgres round-trip ────────
+  @Test
+  void saleDirectBroilerByWeight_pricesByWeightAndDecrementsHeadsOnly() throws Exception {
+    FarmContext ctx = createFarm("broilerweight." + System.nanoTime() + "@prod.io");
+    Long unitId = createBatch(ctx.farmId(), ctx.userId(), 100);
+
+    Sale sale =
+        saleService.create(
+            ctx.farmId(),
+            new SaleCommand(
+                null,
+                null,
+                "CASH",
+                null,
+                null,
+                List.of(broilerLineByWeight(unitId, 20, 1500, new BigDecimal("30.50")))),
+            ctx.userId());
+
+    // Têtes décomptées, jamais le poids.
+    assertThat(productionUnitRepository.findById(unitId).orElseThrow().getCurrentCount())
+        .isEqualTo(80);
+    // Prix = poids × PU, pas têtes × PU.
+    assertThat(sale.getTotalXof()).isEqualTo(45_750L);
+
+    // Le poids a bien été persisté (pas seulement calculé en mémoire).
+    Sale reloaded = saleService.getById(ctx.farmId(), sale.getId());
+    assertThat(reloaded.getItems().get(0).getWeightKg()).isEqualByComparingTo("30.50");
+  }
+
   // ── Régression V27: facturer une vente de PRODUCTION persiste bien un
   //    invoice_item article_source=PRODUCTION (avant V27, viole le CHECK → 500).
   @Test
@@ -477,5 +507,18 @@ class CommercialProductionIT {
         null,
         null,
         ProductType.EGGS);
+  }
+
+  private static SaleCommand.Line broilerLineByWeight(
+      Long unitId, int heads, int price, BigDecimal weightKg) {
+    return new SaleCommand.Line(
+        "BROILER",
+        ArticleSource.PRODUCTION,
+        BigDecimal.valueOf(heads),
+        price,
+        null,
+        unitId,
+        ProductType.BROILER,
+        weightKg);
   }
 }
