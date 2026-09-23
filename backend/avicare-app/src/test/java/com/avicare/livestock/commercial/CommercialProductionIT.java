@@ -35,6 +35,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -103,6 +104,7 @@ class CommercialProductionIT {
   // ── Case 1b: direct BROILER sale by weight — prices by weight, decrements heads only,
   //    and the weight persists through a real Postgres round-trip ────────
   @Test
+  @Transactional
   void saleDirectBroilerByWeight_pricesByWeightAndDecrementsHeadsOnly() throws Exception {
     FarmContext ctx = createFarm("broilerweight." + System.nanoTime() + "@prod.io");
     Long unitId = createBatch(ctx.farmId(), ctx.userId(), 100);
