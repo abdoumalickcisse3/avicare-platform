@@ -22,6 +22,7 @@ import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { useProductionAvailability } from '@/commerce/useProductionAvailability';
 import { useCreateSaleMutation } from '@/store/api/salesApi';
 import { useCreateInvoiceFromSaleMutation } from '@/store/api/invoicesApi';
+import { useLazyGetPerformanceQuery } from '@/store/api/poultryBatchesApi';
 import { useGetClientsQuery } from '@/store/api/clientsApi';
 import { useGetCatalogQuery } from '@/store/api/catalogApi';
 import { PAYMENT_METHOD_LABELS, PAYMENT_METHOD_OPTIONS } from '@/lib/commercial';
@@ -43,6 +44,8 @@ interface Line {
   unitPriceXof: number;
   /** Soft front guard (the backend is the real oversell guard, D27). */
   max?: number;
+  pricingMode?: 'HEAD' | 'WEIGHT';
+  weightKg?: number;
 }
 
 /** Map the cart to the backend `SaleInput` (exported for the unit test). */
@@ -61,6 +64,7 @@ export function buildSaleInput(
       articleSource: l.articleSource,
       quantity: l.quantity,
       unitPriceXof: l.unitPriceXof,
+      ...(l.pricingMode === 'WEIGHT' && l.weightKg != null ? { weightKg: l.weightKg } : {}),
       ...(l.articleSource === 'PRODUCTION'
         ? { productType: l.productType, productionUnitId: l.productionUnitId }
         : {}),
@@ -82,19 +86,25 @@ export default function VenteScreen() {
   );
   const [createSale, { isLoading: saving }] = useCreateSaleMutation();
   const [createInvoiceFromSale] = useCreateInvoiceFromSaleMutation();
+  const [fetchPerformance] = useLazyGetPerformanceQuery();
 
   const [lines, setLines] = useState<Line[]>([]);
   const [clientId, setClientId] = useState<string>(WALK_IN);
   const [clientPickerOpen, setClientPickerOpen] = useState(false);
   const [method, setMethod] = useState<PaymentMethod>('CASH');
   const [channel, setChannel] = useState<string>('');
+  const [weighingHintByUnitId, setWeighingHintByUnitId] = useState<
+    Record<number, { currentWeightG: number | null; snapshotDate: string | null }>
+  >({});
 
   const selectedClientLabel =
     clientId === WALK_IN
       ? 'Client de passage'
       : (clients?.find((c) => String(c.id) === clientId)?.displayName ?? 'Client');
 
-  const total = lines.reduce((s, l) => s + l.quantity * l.unitPriceXof, 0);
+  const lineAmount = (l: Line) =>
+    l.pricingMode === 'WEIGHT' && l.weightKg != null ? l.weightKg * l.unitPriceXof : l.quantity * l.unitPriceXof;
+  const total = lines.reduce((s, l) => s + lineAmount(l), 0);
   const hasOverMax = lines.some((l) => l.max != null && l.quantity > l.max);
   const hasProduction = broilerLots.length > 0 || eggsAvailable > 0;
 
@@ -159,6 +169,34 @@ export default function VenteScreen() {
     );
   const setPrice = (key: string, price: number) =>
     setLines((cur) => cur.map((l) => (l.key === key ? { ...l, unitPriceXof: price } : l)));
+
+  const setPricingMode = async (key: string, mode: 'HEAD' | 'WEIGHT', unitId?: number) => {
+    if (mode === 'HEAD') {
+      setLines((cur) => cur.map((l) => (l.key === key ? { ...l, pricingMode: 'HEAD', weightKg: undefined } : l)));
+      return;
+    }
+    let hint = unitId != null ? weighingHintByUnitId[unitId] : undefined;
+    if (unitId != null && selectedFarmId != null && !hint) {
+      try {
+        const perf = await fetchPerformance({ farmId: selectedFarmId, batchId: unitId }).unwrap();
+        hint = { currentWeightG: perf.currentWeightG, snapshotDate: perf.snapshotDate };
+      } catch {
+        hint = { currentWeightG: null, snapshotDate: null };
+      }
+      setWeighingHintByUnitId((cur) => ({ ...cur, [unitId]: hint! }));
+    }
+    setLines((cur) =>
+      cur.map((l) => {
+        if (l.key !== key) return l;
+        const suggested =
+          hint?.currentWeightG != null ? Math.round((l.quantity * hint.currentWeightG) / 10) / 100 : undefined;
+        return { ...l, pricingMode: 'WEIGHT', weightKg: l.weightKg ?? suggested };
+      }),
+    );
+  };
+
+  const setWeight = (key: string, weightKg: number) =>
+    setLines((cur) => cur.map((l) => (l.key === key ? { ...l, weightKg } : l)));
 
   const submit = async () => {
     if (selectedFarmId === null || lines.length === 0) return;
@@ -321,6 +359,39 @@ export default function VenteScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.cartLabel}>{l.label}</Text>
                   <Text style={styles.cartUnit}>{l.unit}</Text>
+                  {l.productType === 'BROILER' && (
+                    <View style={{ flexDirection: 'row', gap: 6 }}>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`À la tête — ${l.label}`}
+                        onPress={() => setPricingMode(l.key, 'HEAD')}
+                        style={[styles.chip, l.pricingMode !== 'WEIGHT' && styles.chipActive]}
+                      >
+                        <Text style={[styles.chipLabel, l.pricingMode !== 'WEIGHT' && styles.chipLabelActive]}>
+                          À la tête
+                        </Text>
+                      </Pressable>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`Au poids — ${l.label}`}
+                        onPress={() => setPricingMode(l.key, 'WEIGHT', l.productionUnitId)}
+                        style={[styles.chip, l.pricingMode === 'WEIGHT' && styles.chipActive]}
+                      >
+                        <Text style={[styles.chipLabel, l.pricingMode === 'WEIGHT' && styles.chipLabelActive]}>
+                          Au poids
+                        </Text>
+                      </Pressable>
+                    </View>
+                  )}
+                  {l.pricingMode === 'WEIGHT' && (
+                    <TextInput
+                      value={l.weightKg != null ? String(l.weightKg) : ''}
+                      onChangeText={(t) => setWeight(l.key, Number(t.replace(/[^0-9.]/g, '')) || 0)}
+                      keyboardType="decimal-pad"
+                      accessibilityLabel={`Poids total (kg) — ${l.label}`}
+                      style={styles.priceInput}
+                    />
+                  )}
                   {l.max != null && l.quantity > l.max && (
                     <Text style={styles.overMax}>Dépasse le disponible ({l.max})</Text>
                   )}
@@ -355,7 +426,9 @@ export default function VenteScreen() {
                   onChangeText={(t) => setPrice(l.key, Number(t.replace(/[^0-9]/g, '')) || 0)}
                   keyboardType="number-pad"
                   inputMode="numeric"
-                  accessibilityLabel={`Prix unitaire ${l.label}`}
+                  accessibilityLabel={
+                    l.pricingMode === 'WEIGHT' ? `Prix au kg — ${l.label}` : `Prix unitaire ${l.label}`
+                  }
                   style={styles.priceInput}
                 />
                 <Pressable
