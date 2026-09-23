@@ -33,7 +33,8 @@ public record SaleResponse(
       BigDecimal quantity,
       Integer unitPriceXof,
       Long lineTotalXof,
-      String notes) {
+      String notes,
+      BigDecimal weightKg) {
 
     static Line from(SaleItem i) {
       return new Line(
@@ -45,7 +46,8 @@ public record SaleResponse(
           i.getQuantity(),
           i.getUnitPriceXof(),
           i.getLineTotalXof(),
-          i.getNotes());
+          i.getNotes(),
+          i.getWeightKg());
     }
   }
 
