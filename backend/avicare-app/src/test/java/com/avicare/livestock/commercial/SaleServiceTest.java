@@ -223,6 +223,71 @@ class SaleServiceTest {
         .isThrownBy(() -> service.create(7L, cmd, 42L));
   }
 
+  @Test
+  void create_broilerLineWithWeightKg_pricesByWeightNotHeads() {
+    when(saleRepository.findMaxSequence(eq(7L), any())).thenReturn(0);
+    SaleCommand cmd =
+        new SaleCommand(
+            null,
+            null,
+            "CASH",
+            null,
+            null,
+            List.of(broilerLine(9L, "20", 1500, new BigDecimal("30.50"))));
+
+    Sale sale = service.create(7L, cmd, 42L);
+
+    SaleItem item = sale.getItems().get(0);
+    assertThat(item.getQuantity()).isEqualByComparingTo("20");
+    assertThat(item.getWeightKg()).isEqualByComparingTo("30.50");
+    assertThat(item.getUnit()).isEqualTo("kg");
+    // 30.50 * 1500 = 45 750 (pas 20 * 1500 = 30 000)
+    assertThat(item.getLineTotalXof()).isEqualTo(45_750L);
+    verify(livestockFacade).consumeProduction(7L, com.avicare.livestock.api.ProductType.BROILER, 9L, 20L);
+  }
+
+  @Test
+  void create_broilerLineWithoutWeightKg_stillPricesByHeads() {
+    when(saleRepository.findMaxSequence(eq(7L), any())).thenReturn(0);
+    SaleCommand cmd =
+        new SaleCommand(
+            null, null, "CASH", null, null, List.of(broilerLine(9L, "20", 1500, null)));
+
+    Sale sale = service.create(7L, cmd, 42L);
+
+    SaleItem item = sale.getItems().get(0);
+    assertThat(item.getUnit()).isEqualTo("tête");
+    assertThat(item.getLineTotalXof()).isEqualTo(30_000L);
+  }
+
+  @Test
+  void create_weightKgOnEggsLineThrowsBusinessRule() {
+    SaleCommand.Line eggsWithWeight =
+        new SaleCommand.Line(
+            "EGGS",
+            ArticleSource.PRODUCTION,
+            BigDecimal.ONE,
+            2000,
+            null,
+            null,
+            com.avicare.livestock.api.ProductType.EGGS,
+            new BigDecimal("1.5"));
+    SaleCommand cmd = new SaleCommand(null, null, null, null, null, List.of(eggsWithWeight));
+
+    assertThatExceptionOfType(BusinessRuleException.class)
+        .isThrownBy(() -> service.create(7L, cmd, 42L));
+  }
+
+  @Test
+  void create_nonPositiveWeightKgThrowsValidation() {
+    SaleCommand cmd =
+        new SaleCommand(
+            null, null, null, null, null, List.of(broilerLine(9L, "20", 1500, BigDecimal.ZERO)));
+
+    assertThatExceptionOfType(ValidationException.class)
+        .isThrownBy(() -> service.create(7L, cmd, 42L));
+  }
+
   // --- cancel ---------------------------------------------------------
 
   @Test
@@ -291,5 +356,18 @@ class SaleServiceTest {
   private static SaleCommand.Line line(String articleKey, String qty, int unitPriceXof) {
     return new SaleCommand.Line(
         articleKey, ArticleSource.INVENTORY, new BigDecimal(qty), unitPriceXof, null, null, null);
+  }
+
+  private static SaleCommand.Line broilerLine(
+      Long unitId, String heads, int unitPriceXof, BigDecimal weightKg) {
+    return new SaleCommand.Line(
+        "BROILER",
+        ArticleSource.PRODUCTION,
+        new BigDecimal(heads),
+        unitPriceXof,
+        null,
+        unitId,
+        com.avicare.livestock.api.ProductType.BROILER,
+        weightKg);
   }
 }

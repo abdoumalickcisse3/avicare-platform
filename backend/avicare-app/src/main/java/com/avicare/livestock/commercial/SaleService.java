@@ -188,9 +188,10 @@ public class SaleService {
         item.setArticleKey(line.articleKey());
         item.setArticleSource(ArticleSource.PRODUCTION);
         item.setArticleLabelSnapshot(productionLabelFor(line.productType()));
-        item.setUnit(productionUnitFor(line.productType()));
+        item.setUnit(line.weightKg() != null ? "kg" : productionUnitFor(line.productType()));
         item.setProductionUnitId(line.productionUnitId());
         item.setProductType(line.productType());
+        item.setWeightKg(line.weightKg());
       } else {
         InventoryCatalogItemDto article = catalog.get(line.articleKey());
         if (article == null) {
@@ -208,7 +209,7 @@ public class SaleService {
       }
       item.setQuantity(line.quantity());
       item.setUnitPriceXof(line.unitPriceXof());
-      long lineTotal = lineTotal(line.quantity(), line.unitPriceXof());
+      long lineTotal = lineTotal(line.quantity(), line.unitPriceXof(), line.weightKg());
       item.setLineTotalXof(lineTotal);
       item.setNotes(line.notes());
       sale.addItem(item);
@@ -234,6 +235,16 @@ public class SaleService {
       throw new BusinessRuleException(
           "PRODUCTION_LINE_QUANTITY_INTEGER",
           "Quantity must be a whole number for PRODUCTION lines");
+    }
+    if (line.weightKg() != null) {
+      if (line.productType() != ProductType.BROILER) {
+        throw new BusinessRuleException(
+            "PRODUCTION_LINE_WEIGHT_NOT_ALLOWED",
+            "weightKg is only allowed for BROILER lines");
+      }
+      if (line.weightKg().signum() <= 0) {
+        throw new ValidationException("SALE_LINE_WEIGHT", "weightKg must be greater than 0");
+      }
     }
   }
 
@@ -283,9 +294,9 @@ public class SaleService {
     return String.format("V-%d-%03d", year, next);
   }
 
-  private static long lineTotal(BigDecimal quantity, Integer unitPriceXof) {
-    return quantity
-        .multiply(BigDecimal.valueOf(unitPriceXof))
+  private static long lineTotal(BigDecimal quantity, Integer unitPriceXof, BigDecimal weightKg) {
+    BigDecimal base = weightKg != null ? weightKg : quantity;
+    return base.multiply(BigDecimal.valueOf(unitPriceXof))
         .setScale(0, RoundingMode.HALF_UP)
         .longValueExact();
   }
