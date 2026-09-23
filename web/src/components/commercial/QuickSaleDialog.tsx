@@ -46,7 +46,40 @@ interface Line {
   max?: number;
   /** Ligne chair uniquement : bascule le calcul du prix sur le poids plutôt que sur les têtes. */
   pricingMode?: "HEAD" | "WEIGHT";
-  weightKg?: number;
+  /**
+   * Saisie brute du poids, gardée en texte : « 30. » est un état intermédiaire légitime au
+   * clavier. Convertie en nombre au dernier moment (affichage du montant et envoi du payload).
+   */
+  weightKg?: string;
+  /**
+   * Dernière valeur proposée par la pesée — sert à savoir si `weightKg` est encore la suggestion
+   * de la machine (donc recalculable quand le nombre de têtes change) ou une saisie de l'éleveur.
+   */
+  suggestedWeightKg?: string;
+}
+
+/** Digits + un seul point : laisse passer « 30. » sans le casser. */
+function sanitizeDecimal(raw: string): string {
+  const cleaned = raw.replace(/[^0-9.]/g, "");
+  const firstDot = cleaned.indexOf(".");
+  if (firstDot < 0) return cleaned;
+  return cleaned.slice(0, firstDot + 1) + cleaned.slice(firstDot + 1).replace(/\./g, "");
+}
+
+/** Le poids saisi, en nombre — NaN tant que la saisie n'est pas exploitable. */
+function parseWeight(weightKg?: string): number {
+  return Number.parseFloat(weightKg ?? "");
+}
+
+function hasUsableWeight(l: Line): boolean {
+  const n = parseWeight(l.weightKg);
+  return Number.isFinite(n) && n > 0;
+}
+
+/** Poids suggéré (kg) pour `quantity` têtes d'après la dernière pesée du lot. */
+function suggestWeight(quantity: number, currentWeightG?: number | null): string | undefined {
+  if (currentWeightG == null) return undefined;
+  return String(Math.round((quantity * currentWeightG) / 10) / 100);
 }
 
 export function QuickSaleDialog({
@@ -87,13 +120,19 @@ function QuickSaleBody({ onClose, farmId }: { onClose: () => void; farmId: numbe
     Record<number, { currentWeightG: number | null; snapshotDate: string | null }>
   >({});
 
-  const lineAmount = (l: Line) =>
-    l.pricingMode === "WEIGHT" && l.weightKg != null
-      ? l.weightKg * l.unitPriceXof
-      : l.quantity * l.unitPriceXof;
+  const lineAmount = (l: Line) => {
+    if (l.pricingMode !== "WEIGHT") return l.quantity * l.unitPriceXof;
+    /*
+     * En mode poids, `unitPriceXof` est un prix AU KILO : retomber sur les têtes donnerait un
+     * montant plausible mais faux (80 têtes × 1 500 F/kg). Tant que le poids n'est pas saisi, on
+     * n'affiche rien et le bouton Valider reste bloqué (voir hasInvalidWeight).
+     */
+    return hasUsableWeight(l) ? parseWeight(l.weightKg) * l.unitPriceXof : 0;
+  };
 
   const total = lines.reduce((s, l) => s + lineAmount(l), 0);
   const hasOverMax = lines.some((l) => l.max != null && l.quantity > l.max);
+  const hasInvalidWeight = lines.some((l) => l.pricingMode === "WEIGHT" && !hasUsableWeight(l));
 
   const addBroilerLot = (unitId: number, label: string, heads: number) => {
     const lineKey = `prod:BROILER:${unitId}`;
@@ -153,7 +192,20 @@ function QuickSaleBody({ onClose, farmId }: { onClose: () => void; farmId: numbe
     setLines((cur) =>
       qty <= 0
         ? cur.filter((l) => l.key !== lineKey)
-        : cur.map((l) => (l.key === lineKey ? { ...l, quantity: qty } : l)),
+        : cur.map((l) => {
+            if (l.key !== lineKey) return l;
+            const next = { ...l, quantity: qty };
+            /*
+             * Le poids suggéré vaut pour un nombre de têtes donné : si l'éleveur change les têtes
+             * après avoir basculé au poids, la suggestion doit suivre. On ne recalcule que tant
+             * qu'elle n'a pas été retouchée — une vraie pesée saisie n'est jamais écrasée.
+             */
+            if (l.pricingMode !== "WEIGHT" || l.weightKg !== l.suggestedWeightKg) return next;
+            const hint =
+              l.productionUnitId != null ? weighingHintByUnitId[l.productionUnitId] : undefined;
+            const suggested = suggestWeight(qty, hint?.currentWeightG);
+            return { ...next, weightKg: suggested, suggestedWeightKg: suggested };
+          }),
     );
   const setPrice = (lineKey: string, price: number) =>
     setLines((cur) => cur.map((l) => (l.key === lineKey ? { ...l, unitPriceXof: price } : l)));
@@ -161,7 +213,11 @@ function QuickSaleBody({ onClose, farmId }: { onClose: () => void; farmId: numbe
   const setPricingMode = async (lineKey: string, mode: "HEAD" | "WEIGHT", unitId?: number) => {
     if (mode === "HEAD") {
       setLines((cur) =>
-        cur.map((l) => (l.key === lineKey ? { ...l, pricingMode: "HEAD", weightKg: undefined } : l)),
+        cur.map((l) =>
+          l.key === lineKey
+            ? { ...l, pricingMode: "HEAD", weightKg: undefined, suggestedWeightKg: undefined }
+            : l,
+        ),
       );
       return;
     }
@@ -178,17 +234,21 @@ function QuickSaleBody({ onClose, farmId }: { onClose: () => void; farmId: numbe
     setLines((cur) =>
       cur.map((l) => {
         if (l.key !== lineKey) return l;
-        const suggested =
-          hint?.currentWeightG != null
-            ? Math.round((l.quantity * hint.currentWeightG) / 10) / 100
-            : undefined;
-        return { ...l, pricingMode: "WEIGHT", weightKg: l.weightKg ?? suggested };
+        const suggested = suggestWeight(l.quantity, hint?.currentWeightG);
+        return {
+          ...l,
+          pricingMode: "WEIGHT",
+          weightKg: l.weightKg ? l.weightKg : suggested,
+          suggestedWeightKg: suggested,
+        };
       }),
     );
   };
 
-  const setWeight = (lineKey: string, weightKg: number) =>
-    setLines((cur) => cur.map((l) => (l.key === lineKey ? { ...l, weightKg } : l)));
+  const setWeight = (lineKey: string, weightKg: string) =>
+    setLines((cur) =>
+      cur.map((l) => (l.key === lineKey ? { ...l, weightKg: sanitizeDecimal(weightKg) } : l)),
+    );
 
   const submit = async () => {
     if (lines.length === 0) return;
@@ -204,7 +264,9 @@ function QuickSaleBody({ onClose, farmId }: { onClose: () => void; farmId: numbe
             articleSource: l.articleSource,
             quantity: l.quantity,
             unitPriceXof: l.unitPriceXof,
-            ...(l.pricingMode === "WEIGHT" && l.weightKg != null ? { weightKg: l.weightKg } : {}),
+            ...(l.pricingMode === "WEIGHT" && hasUsableWeight(l)
+              ? { weightKg: parseWeight(l.weightKg) }
+              : {}),
             ...(l.articleSource === "PRODUCTION"
               ? { productType: l.productType, productionUnitId: l.productionUnitId }
               : {}),
@@ -406,11 +468,12 @@ function QuickSaleBody({ onClose, farmId }: { onClose: () => void; farmId: numbe
                     <Box>
                       <TextField
                         label="Poids total (kg)"
-                        type="number"
+                        type="text"
                         value={l.weightKg ?? ""}
-                        onChange={(e) => setWeight(l.key, Number(e.target.value) || 0)}
+                        onChange={(e) => setWeight(l.key, e.target.value)}
                         size="small"
                         sx={{ width: 120 }}
+                        slotProps={{ htmlInput: { inputMode: "decimal", min: 0, step: "0.01" } }}
                       />
                       {weighingHintByUnitId[l.productionUnitId ?? -1]?.currentWeightG != null ? (
                         <Typography variant="caption" sx={{ color: colors.neutral[500], display: "block" }}>
@@ -452,6 +515,14 @@ function QuickSaleBody({ onClose, farmId }: { onClose: () => void; farmId: numbe
                     sx={{ color: colors.error.main, display: "block", pb: 0.5 }}
                   >
                     Dépasse le disponible ({l.max})
+                  </Typography>
+                )}
+                {l.pricingMode === "WEIGHT" && !hasUsableWeight(l) && (
+                  <Typography
+                    variant="caption"
+                    sx={{ color: colors.error.main, display: "block", pb: 0.5 }}
+                  >
+                    Poids requis — le prix saisi est au kilo.
                   </Typography>
                 )}
               </Box>
@@ -503,7 +574,7 @@ function QuickSaleBody({ onClose, farmId }: { onClose: () => void; farmId: numbe
             variant="contained"
             size="large"
             onClick={submit}
-            disabled={lines.length === 0 || saving || hasOverMax}
+            disabled={lines.length === 0 || saving || hasOverMax || hasInvalidWeight}
             sx={{ px: 4, py: 1.5 }}
           >
             Valider la vente

@@ -213,8 +213,96 @@ describe("QuickSaleDialog — production availability", () => {
 
     // 1 tête (quantité par défaut) × 1800 g / 1000 = 1.8 kg suggéré.
     const weightInput = await screen.findByLabelText("Poids total (kg)");
-    expect(weightInput).toHaveValue(1.8);
+    expect(weightInput).toHaveValue("1.8");
     expect(screen.getByLabelText(/Prix au kg/)).toBeInTheDocument();
+  });
+
+  it("accepte une saisie décimale frappe par frappe : 3 → 30 → 30. → 30.5, et envoie 30.5", async () => {
+    const user = userEvent.setup();
+    setup();
+
+    const lotCard = await screen.findByText("50 têtes restantes");
+    await user.click(lotCard.closest("[role='button']") as HTMLElement);
+    await user.click(await screen.findByRole("button", { name: "Au poids" }));
+
+    const weightInput = await screen.findByLabelText("Poids total (kg)");
+    await user.clear(weightInput);
+
+    // Chaque frappe est un événement distinct : c'est le vrai chemin de l'éleveur.
+    await user.type(weightInput, "3");
+    expect(weightInput).toHaveValue("3");
+    await user.type(weightInput, "0");
+    expect(weightInput).toHaveValue("30");
+    // L'état intermédiaire « 30. » doit survivre : c'est lui que type="number" écrasait à 0.
+    await user.type(weightInput, ".");
+    expect(weightInput).toHaveValue("30.");
+    await user.type(weightInput, "5");
+    expect(weightInput).toHaveValue("30.5");
+
+    fireEvent.change(screen.getByLabelText(/Prix au kg/), { target: { value: "1500" } });
+    await user.click(screen.getByRole("button", { name: /Valider la vente/i }));
+
+    await waitFor(() => expect(lastMethod).toBe("POST"));
+    // Ni 305 (le point avalé), ni NaN, ni 0.
+    expect(lastBody?.lines).toEqual([
+      expect.objectContaining({ quantity: 1, unitPriceXof: 1500, weightKg: 30.5 }),
+    ]);
+  });
+
+  it("bloque la validation tant que le poids est vide en mode au poids (le prix est au kilo)", async () => {
+    const user = userEvent.setup();
+    setup();
+
+    const lotCard = await screen.findByText("50 têtes restantes");
+    await user.click(lotCard.closest("[role='button']") as HTMLElement);
+    await user.click(await screen.findByRole("button", { name: "Au poids" }));
+
+    const weightInput = await screen.findByLabelText("Poids total (kg)");
+    await user.clear(weightInput);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Valider la vente/i })).toBeDisabled();
+    });
+    expect(screen.getByText(/Poids requis/)).toBeInTheDocument();
+
+    // Un poids valide rouvre la validation.
+    await user.type(weightInput, "30.5");
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Valider la vente/i })).not.toBeDisabled();
+    });
+  });
+
+  it("recalcule le poids suggéré quand le nombre de têtes change après la bascule", async () => {
+    const user = userEvent.setup();
+    setup();
+
+    const lotCard = await screen.findByText("50 têtes restantes");
+    await user.click(lotCard.closest("[role='button']") as HTMLElement);
+    await user.click(await screen.findByRole("button", { name: "Au poids" }));
+
+    const weightInput = await screen.findByLabelText("Poids total (kg)");
+    expect(weightInput).toHaveValue("1.8");
+
+    // L'éleveur monte ensuite à 10 têtes : la suggestion doit suivre (10 × 1800 g = 18 kg).
+    fireEvent.change(screen.getByDisplayValue("1"), { target: { value: "10" } });
+    await waitFor(() => expect(screen.getByLabelText("Poids total (kg)")).toHaveValue("18"));
+  });
+
+  it("n'écrase jamais un poids saisi par l'éleveur quand la quantité change", async () => {
+    const user = userEvent.setup();
+    setup();
+
+    const lotCard = await screen.findByText("50 têtes restantes");
+    await user.click(lotCard.closest("[role='button']") as HTMLElement);
+    await user.click(await screen.findByRole("button", { name: "Au poids" }));
+
+    const weightInput = await screen.findByLabelText("Poids total (kg)");
+    await user.clear(weightInput);
+    await user.type(weightInput, "42.5");
+
+    fireEvent.change(screen.getByDisplayValue("1"), { target: { value: "10" } });
+    // Une vraie pesée saisie reste la vérité.
+    expect(screen.getByLabelText("Poids total (kg)")).toHaveValue("42.5");
   });
 
   it("envoie weightKg et un prix au kilo, pas le calcul à la tête", async () => {

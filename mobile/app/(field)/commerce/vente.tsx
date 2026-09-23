@@ -45,7 +45,37 @@ interface Line {
   /** Soft front guard (the backend is the real oversell guard, D27). */
   max?: number;
   pricingMode?: 'HEAD' | 'WEIGHT';
-  weightKg?: number;
+  /**
+   * Saisie brute du poids, gardée en texte : « 30. » est un état intermédiaire légitime au
+   * clavier. Convertie en nombre au dernier moment (montant affiché et payload).
+   */
+  weightKg?: string;
+  /** Dernière valeur proposée par la pesée — dit si `weightKg` est encore la suggestion. */
+  suggestedWeightKg?: string;
+}
+
+/** Digits + un seul point : laisse passer « 30. » sans le casser. */
+function sanitizeDecimal(raw: string): string {
+  const cleaned = raw.replace(/[^0-9.]/g, '');
+  const firstDot = cleaned.indexOf('.');
+  if (firstDot < 0) return cleaned;
+  return cleaned.slice(0, firstDot + 1) + cleaned.slice(firstDot + 1).replace(/\./g, '');
+}
+
+/** Le poids saisi, en nombre — NaN tant que la saisie n'est pas exploitable. */
+function parseWeight(weightKg?: string): number {
+  return Number.parseFloat(weightKg ?? '');
+}
+
+function hasUsableWeight(l: Line): boolean {
+  const n = parseWeight(l.weightKg);
+  return Number.isFinite(n) && n > 0;
+}
+
+/** Poids suggéré (kg) pour `quantity` têtes d'après la dernière pesée du lot. */
+function suggestWeight(quantity: number, currentWeightG?: number | null): string | undefined {
+  if (currentWeightG == null) return undefined;
+  return String(Math.round((quantity * currentWeightG) / 10) / 100);
 }
 
 /** Map the cart to the backend `SaleInput` (exported for the unit test). */
@@ -64,7 +94,7 @@ export function buildSaleInput(
       articleSource: l.articleSource,
       quantity: l.quantity,
       unitPriceXof: l.unitPriceXof,
-      ...(l.pricingMode === 'WEIGHT' && l.weightKg != null ? { weightKg: l.weightKg } : {}),
+      ...(l.pricingMode === 'WEIGHT' && hasUsableWeight(l) ? { weightKg: parseWeight(l.weightKg) } : {}),
       ...(l.articleSource === 'PRODUCTION'
         ? { productType: l.productType, productionUnitId: l.productionUnitId }
         : {}),
@@ -102,10 +132,19 @@ export default function VenteScreen() {
       ? 'Client de passage'
       : (clients?.find((c) => String(c.id) === clientId)?.displayName ?? 'Client');
 
-  const lineAmount = (l: Line) =>
-    l.pricingMode === 'WEIGHT' && l.weightKg != null ? l.weightKg * l.unitPriceXof : l.quantity * l.unitPriceXof;
+  const lineAmount = (l: Line) => {
+    if (l.pricingMode !== 'WEIGHT') return l.quantity * l.unitPriceXof;
+    /*
+     * En mode poids, `unitPriceXof` est un prix AU KILO : retomber sur les têtes donnerait un
+     * montant plausible mais faux (80 têtes × 1 500 F/kg). Tant que le poids n'est pas saisi on
+     * n'affiche rien, et le bouton Valider reste bloqué (hasInvalidWeight).
+     */
+    return hasUsableWeight(l) ? parseWeight(l.weightKg) * l.unitPriceXof : 0;
+  };
   const total = lines.reduce((s, l) => s + lineAmount(l), 0);
   const hasOverMax = lines.some((l) => l.max != null && l.quantity > l.max);
+  const hasInvalidWeight = lines.some((l) => l.pricingMode === 'WEIGHT' && !hasUsableWeight(l));
+  const blocked = lines.length === 0 || saving || hasOverMax || hasInvalidWeight;
   const hasProduction = broilerLots.length > 0 || eggsAvailable > 0;
 
   const addBroilerLot = (unitId: number, label: string, heads: number) => {
@@ -165,14 +204,32 @@ export default function VenteScreen() {
 
   const setQty = (key: string, qty: number) =>
     setLines((cur) =>
-      qty <= 0 ? cur.filter((l) => l.key !== key) : cur.map((l) => (l.key === key ? { ...l, quantity: qty } : l)),
+      qty <= 0
+        ? cur.filter((l) => l.key !== key)
+        : cur.map((l) => {
+            if (l.key !== key) return l;
+            const next = { ...l, quantity: qty };
+            /*
+             * Le poids suggéré vaut pour un nombre de têtes donné : si l'éleveur change les têtes
+             * après la bascule, la suggestion suit. On ne recalcule que tant qu'elle n'a pas été
+             * retouchée — une vraie pesée saisie n'est jamais écrasée.
+             */
+            if (l.pricingMode !== 'WEIGHT' || l.weightKg !== l.suggestedWeightKg) return next;
+            const hint = l.productionUnitId != null ? weighingHintByUnitId[l.productionUnitId] : undefined;
+            const suggested = suggestWeight(qty, hint?.currentWeightG);
+            return { ...next, weightKg: suggested, suggestedWeightKg: suggested };
+          }),
     );
   const setPrice = (key: string, price: number) =>
     setLines((cur) => cur.map((l) => (l.key === key ? { ...l, unitPriceXof: price } : l)));
 
   const setPricingMode = async (key: string, mode: 'HEAD' | 'WEIGHT', unitId?: number) => {
     if (mode === 'HEAD') {
-      setLines((cur) => cur.map((l) => (l.key === key ? { ...l, pricingMode: 'HEAD', weightKg: undefined } : l)));
+      setLines((cur) =>
+        cur.map((l) =>
+          l.key === key ? { ...l, pricingMode: 'HEAD', weightKg: undefined, suggestedWeightKg: undefined } : l,
+        ),
+      );
       return;
     }
     let hint = unitId != null ? weighingHintByUnitId[unitId] : undefined;
@@ -188,15 +245,19 @@ export default function VenteScreen() {
     setLines((cur) =>
       cur.map((l) => {
         if (l.key !== key) return l;
-        const suggested =
-          hint?.currentWeightG != null ? Math.round((l.quantity * hint.currentWeightG) / 10) / 100 : undefined;
-        return { ...l, pricingMode: 'WEIGHT', weightKg: l.weightKg ?? suggested };
+        const suggested = suggestWeight(l.quantity, hint?.currentWeightG);
+        return {
+          ...l,
+          pricingMode: 'WEIGHT',
+          weightKg: l.weightKg ? l.weightKg : suggested,
+          suggestedWeightKg: suggested,
+        };
       }),
     );
   };
 
-  const setWeight = (key: string, weightKg: number) =>
-    setLines((cur) => cur.map((l) => (l.key === key ? { ...l, weightKg } : l)));
+  const setWeight = (key: string, weightKg: string) =>
+    setLines((cur) => cur.map((l) => (l.key === key ? { ...l, weightKg: sanitizeDecimal(weightKg) } : l)));
 
   const submit = async () => {
     if (selectedFarmId === null || lines.length === 0) return;
@@ -384,16 +445,24 @@ export default function VenteScreen() {
                     </View>
                   )}
                   {l.pricingMode === 'WEIGHT' && (
-                    <TextInput
-                      value={l.weightKg != null ? String(l.weightKg) : ''}
-                      onChangeText={(t) => setWeight(l.key, Number(t.replace(/[^0-9.]/g, '')) || 0)}
-                      keyboardType="decimal-pad"
-                      accessibilityLabel={`Poids total (kg) — ${l.label}`}
-                      style={styles.priceInput}
-                    />
+                    <View style={styles.weightField}>
+                      {/* Sans ce libellé visible, la case est le sosie de celle du prix. */}
+                      <Text style={styles.weightLabel}>Poids (kg)</Text>
+                      <TextInput
+                        value={l.weightKg ?? ''}
+                        onChangeText={(t) => setWeight(l.key, t)}
+                        keyboardType="decimal-pad"
+                        inputMode="decimal"
+                        accessibilityLabel={`Poids total (kg) — ${l.label}`}
+                        style={styles.priceInput}
+                      />
+                    </View>
                   )}
                   {l.max != null && l.quantity > l.max && (
                     <Text style={styles.overMax}>Dépasse le disponible ({l.max})</Text>
+                  )}
+                  {l.pricingMode === 'WEIGHT' && !hasUsableWeight(l) && (
+                    <Text style={styles.overMax}>Poids requis — le prix saisi est au kilo.</Text>
                   )}
                 </View>
                 <View style={styles.stepper}>
@@ -474,8 +543,8 @@ export default function VenteScreen() {
             accessibilityRole="button"
             accessibilityLabel="Valider la vente"
             onPress={submit}
-            disabled={lines.length === 0 || saving || hasOverMax}
-            style={[styles.commit, (lines.length === 0 || saving || hasOverMax) && styles.commitDisabled]}
+            disabled={blocked}
+            style={[styles.commit, blocked && styles.commitDisabled]}
           >
             <LinearGradient
               colors={[tokens.colors.accent[300], tokens.colors.accent[500]]}
@@ -646,6 +715,9 @@ const styles = StyleSheet.create({
   cartLabel: { ...tokens.typography.bodyMd, fontWeight: '600', color: tokens.colors.field.text },
   cartUnit: { ...tokens.typography.bodySm, color: tokens.colors.neutral[500] },
   overMax: { ...tokens.typography.bodySm, color: tokens.colors.error },
+  weightField: { gap: tokens.spacing[1], marginTop: tokens.spacing[1] },
+  // Même libellé que FormField (entrées journalier/pesée) : lisible, pas seulement pour le lecteur d'écran.
+  weightLabel: { ...tokens.typography.bodySm, fontWeight: '600', color: tokens.colors.field.text },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   stepBtn: {
     width: 32,
