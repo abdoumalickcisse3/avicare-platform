@@ -34,7 +34,12 @@ class PurchaseOrderLedgerTest {
           "PurchaseOrderService.java",
           // Enregistre la dépense d'une entrée de stock directe (garde V25). Antérieur à ce
           // chantier, sans rapport avec le compte-courant.
-          "StockMovementService.java");
+          "StockMovementService.java",
+          // Résout et enregistre le coût d'achat des poussins (lecture + écriture via
+          // FinanceFacade.chickPurchaseCostForUnit/recordChickPurchaseExpense). Sans rapport avec
+          // le bon d'achat ou le compte-courant fournisseur : une bande de poulets de chair, pas
+          // un mouvement de stock aliment.
+          "PoultryBatchController.java");
 
   /**
    * The ledger's own files, not the whole {@code com.avicare.livestock} bounded context: {@code
