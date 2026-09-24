@@ -1,6 +1,7 @@
 package com.avicare.livestock.poultry;
 
 import com.avicare.common.api.exception.BusinessRuleException;
+import com.avicare.common.api.exception.ConflictException;
 import com.avicare.common.api.exception.NotFoundException;
 import com.avicare.finance.api.FinanceFacade;
 import com.avicare.livestock.domain.Breed;
@@ -93,6 +94,22 @@ public class PoultryBatchService {
     }
 
     return saved;
+  }
+
+  @Transactional
+  public PoultryBatch setChickCost(Long farmId, Long batchId, long chickUnitPriceXof, Long userId) {
+    PoultryBatch batch = get(batchId);
+    if (!batch.getFarmId().equals(farmId)) {
+      throw NotFoundException.of("PoultryBatch", batchId);
+    }
+    if (batch.getStatus() == UnitStatus.CLOSED) {
+      throw new ConflictException(
+          "BATCH_ALREADY_CLOSED", "Batch " + batchId + " is already closed");
+    }
+    long amountXof = chickUnitPriceXof * batch.getInitialCount();
+    financeFacade.recordChickPurchaseExpense(
+        farmId, batchId, amountXof, batch.getStartDate(), userId);
+    return batch;
   }
 
   @Transactional(readOnly = true)

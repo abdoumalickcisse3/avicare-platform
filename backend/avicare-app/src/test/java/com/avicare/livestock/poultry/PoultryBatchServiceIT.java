@@ -170,4 +170,34 @@ class PoultryBatchServiceIT {
 
     assertThat(financeFacade.chickPurchaseCostForUnit(farmId, batch.getId())).isEmpty();
   }
+
+  @Test
+  void setChickCost_recordsTheExpense_andIsCallableAgainToCorrectIt() {
+    long farmId = seedFarm();
+    PoultryBatch batch =
+        poultryBatchService.create(
+            new PoultryBatchCreate(farmId, cobbBreedId(), "Lot E", LocalDate.now(), null, null, 200),
+            userId);
+    em.flush();
+
+    poultryBatchService.setChickCost(farmId, batch.getId(), 250L, userId);
+    assertThat(financeFacade.chickPurchaseCostForUnit(farmId, batch.getId())).contains(50_000L);
+
+    // Correction: same unit, different price — replaces, does not add a second expense.
+    poultryBatchService.setChickCost(farmId, batch.getId(), 300L, userId);
+    assertThat(financeFacade.chickPurchaseCostForUnit(farmId, batch.getId())).contains(60_000L);
+  }
+
+  @Test
+  void setChickCost_refusesAUnitOfAnotherFarm() {
+    long farmId = seedFarm();
+    PoultryBatch batch =
+        poultryBatchService.create(
+            new PoultryBatchCreate(farmId, cobbBreedId(), "Lot F", LocalDate.now(), null, null, 100),
+            userId);
+    em.flush();
+
+    assertThatThrownBy(() -> poultryBatchService.setChickCost(999_999L, batch.getId(), 250L, userId))
+        .isInstanceOf(NotFoundException.class);
+  }
 }

@@ -6,6 +6,7 @@ import com.avicare.finance.api.FinanceFacade;
 import com.avicare.livestock.domain.PoultryBatch;
 import com.avicare.livestock.domain.UnitStatus;
 import com.avicare.livestock.dto.request.CreatePoultryBatchRequest;
+import com.avicare.livestock.dto.request.SetChickCostRequest;
 import com.avicare.livestock.dto.response.PoultryBatchResponse;
 import com.avicare.livestock.poultry.PoultryBatchCreate;
 import com.avicare.livestock.poultry.PoultryBatchService;
@@ -84,6 +85,20 @@ public class PoultryBatchController {
   public ApiResponse<PoultryBatchResponse> get(
       @PathVariable Long farmId, @PathVariable Long batchId) {
     PoultryBatch batch = poultryBatchService.get(batchId);
+    Long chickCost = financeFacade.chickPurchaseCostForUnit(farmId, batchId).orElse(null);
+    return ApiResponse.of(
+        toResponse(batch, -lifecycleEventRepository.sumMortalityDelta(batchId), chickCost));
+  }
+
+  @PostMapping("/{batchId}/chick-cost")
+  @PreAuthorize(WRITE)
+  public ApiResponse<PoultryBatchResponse> setChickCost(
+      @PathVariable Long farmId,
+      @PathVariable Long batchId,
+      @RequestBody @Valid SetChickCostRequest request) {
+    PoultryBatch batch =
+        poultryBatchService.setChickCost(
+            farmId, batchId, request.chickUnitPriceXof(), TenancyContext.currentUserId());
     Long chickCost = financeFacade.chickPurchaseCostForUnit(farmId, batchId).orElse(null);
     return ApiResponse.of(
         toResponse(batch, -lifecycleEventRepository.sumMortalityDelta(batchId), chickCost));
