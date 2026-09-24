@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -71,7 +72,7 @@ public class UnitClosureService {
 
     long revenueXof = commercialFacade.revenueByProductionUnit(farmId, unitId);
     UnitCostService.FeedCost feed = unitCostService.feedCost(unitId);
-    long chickCost = chickCostXof != null ? chickCostXof : 0L;
+    long chickCost = resolveChickCost(farmId, unitId, chickCostXof, today, userId);
     long otherExpenseXof = financeFacade.directExpensesForUnit(farmId, unitId);
     long totalCostXof = feed.costXof() + chickCost + otherExpenseXof;
 
@@ -112,6 +113,25 @@ public class UnitClosureService {
 
     livestockService.closeUnit(unitId);
     return unitClosureRepository.save(closure);
+  }
+
+  /**
+   * Resolves the chick-purchase cost for the closure bilan: a {@code CHICK_PURCHASE} expense
+   * already recorded (at reception or corrected since) always wins. Only when none exists does the
+   * manual closure-form fallback apply — and when it does, it is itself recorded as a real expense
+   * via the facade, so it stops being invisible outside this one frozen bilan.
+   */
+  private long resolveChickCost(
+      Long farmId, Long unitId, Long manualChickCostXof, LocalDate today, Long userId) {
+    Optional<Long> recorded = financeFacade.chickPurchaseCostForUnit(farmId, unitId);
+    if (recorded.isPresent()) {
+      return recorded.get();
+    }
+    long fallback = manualChickCostXof != null ? manualChickCostXof : 0L;
+    if (fallback > 0) {
+      financeFacade.recordChickPurchaseExpense(farmId, unitId, fallback, today, userId);
+    }
+    return fallback;
   }
 
   /**

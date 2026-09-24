@@ -51,6 +51,9 @@ class UnitClosureServiceTest {
     livestockService = Mockito.mock(LivestockService.class);
     commercialFacade = Mockito.mock(CommercialFacade.class);
     financeFacade = Mockito.mock(FinanceFacade.class);
+    lenient()
+        .when(financeFacade.chickPurchaseCostForUnit(7L, 42L))
+        .thenReturn(Optional.empty());
     service =
         new UnitClosureService(
             unitClosureRepository,
@@ -108,6 +111,10 @@ class UnitClosureServiceTest {
     assertThat(closure.getRemainingCount()).isEqualTo(180);
     assertThat(closure.getMortalityPercent()).isEqualByComparingTo("2.00");
     assertThat(closure.getCostPerKgXof()).isEqualTo(633);
+    // Fallback path (no CHICK_PURCHASE expense recorded yet): the manual value is recorded via
+    // the facade too, so it becomes visible in the farm-wide P&L, not just this frozen bilan.
+    verify(financeFacade)
+        .recordChickPurchaseExpense(7L, 42L, 250_000L, LocalDate.now(), 3L);
   }
 
   @Test
@@ -151,6 +158,30 @@ class UnitClosureServiceTest {
 
     assertThat(closure.getChickCostXof()).isZero();
     assertThat(closure.getTotalCostXof()).isEqualTo(990_000L);
+  }
+
+  @Test
+  void close_usesTheRecordedChickPurchaseExpense_ignoringTheManualFallback() {
+    when(financeFacade.chickPurchaseCostForUnit(7L, 42L)).thenReturn(Optional.of(300_000L));
+
+    // A manual value is still passed (as if the farmer typed one out of habit) — it must be
+    // ignored: the already-recorded expense wins, and it must not be recorded a second time.
+    UnitClosure closure = service.close(7L, 42L, 999_999L, null, 3L);
+
+    assertThat(closure.getChickCostXof()).isEqualTo(300_000L);
+    // 900 000 feed + 300 000 chicks + 90 000 other = 1 290 000.
+    assertThat(closure.getTotalCostXof()).isEqualTo(1_290_000L);
+    verify(financeFacade, never())
+        .recordChickPurchaseExpense(anyLong(), anyLong(), anyLong(), any(), anyLong());
+  }
+
+  @Test
+  void close_withoutChickCostAndNoManualFallback_recordsNothing() {
+    UnitClosure closure = service.close(7L, 42L, null, null, 3L);
+
+    assertThat(closure.getChickCostXof()).isZero();
+    verify(financeFacade, never())
+        .recordChickPurchaseExpense(anyLong(), anyLong(), anyLong(), any(), anyLong());
   }
 
   @Test
