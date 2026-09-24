@@ -10,6 +10,7 @@ import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -117,6 +118,37 @@ public class FinanceFacadeImpl implements FinanceFacade {
     expenseRepository
         .findByFarmIdAndVetVisitId(farmId, vetVisitId)
         .ifPresent(expenseRepository::delete);
+  }
+
+  @Override
+  @Transactional
+  public void recordChickPurchaseExpense(
+      Long farmId, Long productionUnitId, long amountXof, LocalDate date, Long userId) {
+    if (amountXof <= 0) return;
+
+    Expense expense =
+        expenseRepository
+            .findByFarmIdAndProductionUnitIdAndSource(
+                farmId, productionUnitId, ExpenseSource.CHICK_PURCHASE)
+            .orElseGet(Expense::new);
+    expense.setFarmId(farmId);
+    expense.setCategoryKey("chicks");
+    expense.setAmountXof(amountXof);
+    expense.setExpenseDate(date);
+    expense.setLabel("Achat de poussins");
+    expense.setSource(ExpenseSource.CHICK_PURCHASE);
+    expense.setProductionUnitId(productionUnitId);
+    expense.setCreatedBy(userId);
+    expenseRepository.save(expense);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Optional<Long> chickPurchaseCostForUnit(Long farmId, Long productionUnitId) {
+    return expenseRepository
+        .findByFarmIdAndProductionUnitIdAndSource(
+            farmId, productionUnitId, ExpenseSource.CHICK_PURCHASE)
+        .map(Expense::getAmountXof);
   }
 
   @Override
