@@ -29,6 +29,7 @@ import { tokens } from '@/theme';
 import { FormField } from '@/components/field/FormField';
 import { ActionBar } from '@/components/field/ActionBar';
 import { useListProductionUnitsQuery } from '@/store/api/productionUnitsApi';
+import { useGetBatchQuery } from '@/store/api/poultryBatchesApi';
 import { useCloseUnitMutation } from '@/store/api/closureApi';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { useFarmAccess } from '@/auth/useSession';
@@ -45,6 +46,10 @@ export default function CloseBatchScreen() {
 
   const { data: units } = useListProductionUnitsQuery(selectedFarmId ?? skipToken);
   const unit = units?.find((u) => u.id === unitId);
+  const { data: batch } = useGetBatchQuery(
+    selectedFarmId === null || Number.isNaN(unitId) ? skipToken : { farmId: selectedFarmId, batchId: unitId },
+  );
+  const chickPurchaseCostXof = batch?.chickPurchaseCostXof ?? null;
 
   const [closeUnit, { isLoading }] = useCloseUnitMutation();
   const [chickCost, setChickCost] = useState('');
@@ -66,7 +71,9 @@ export default function CloseBatchScreen() {
         farmId: selectedFarmId,
         unitId,
         body: {
-          chickCostXof: chickCost ? Number(chickCost) : undefined,
+          ...(chickPurchaseCostXof == null
+            ? { chickCostXof: chickCost ? Number(chickCost) : undefined }
+            : {}),
           notes: notes.trim() || undefined,
         },
       }).unwrap();
@@ -128,16 +135,25 @@ export default function CloseBatchScreen() {
           </View>
         )}
 
-        <FormField
-          label="Coût des poussins (facultatif)"
-          value={chickCost}
-          onChangeText={setChickCost}
-          placeholder="0"
-          keyboardType="number-pad"
-          maxLength={12}
-          error={digitsOnly ? undefined : 'Nombre entier requis'}
-          helperText="Non enregistré ailleurs. Sans lui, le coût du lot est sous-estimé."
-        />
+        {chickPurchaseCostXof != null ? (
+          <View style={[styles.notice]}>
+            <Text style={styles.noticeText}>
+              Coût des poussins (déjà enregistré) :{' '}
+              <Text style={styles.noticeStrong}>{formatNumber(chickPurchaseCostXof)} FCFA</Text>
+            </Text>
+          </View>
+        ) : (
+          <FormField
+            label="Coût des poussins (facultatif)"
+            value={chickCost}
+            onChangeText={setChickCost}
+            placeholder="0"
+            keyboardType="number-pad"
+            maxLength={12}
+            error={digitsOnly ? undefined : 'Nombre entier requis'}
+            helperText="Non enregistré ailleurs. Sans lui, le coût du lot est sous-estimé."
+          />
+        )}
 
         <FormField
           label="Note (facultatif)"
