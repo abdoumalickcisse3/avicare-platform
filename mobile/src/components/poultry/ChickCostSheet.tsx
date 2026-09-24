@@ -53,8 +53,14 @@ export function ChickCostSheet({
       }).unwrap();
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       onClose();
-    } catch {
-      setError('Enregistrement impossible. Vérifiez votre connexion et réessayez.');
+    } catch (err) {
+      // Show what the backend actually said (403 permission, 409 closed batch, 400
+      // validation) — falling back to the connectivity wording only when it said nothing.
+      setError(
+        (err as { data?: { detail?: string; message?: string } })?.data?.detail ??
+          (err as { data?: { message?: string } })?.data?.message ??
+          'Enregistrement impossible. Vérifiez votre connexion et réessayez.',
+      );
     }
   }
 
