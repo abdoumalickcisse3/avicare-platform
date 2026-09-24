@@ -1,6 +1,7 @@
 package com.avicare.finance.repository;
 
 import com.avicare.finance.domain.Expense;
+import com.avicare.finance.domain.ExpenseSource;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -45,24 +46,30 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
       @Param("unitId") Long unitId);
 
   /**
-   * Sums expenses by category over a date range for a farm (Expenses page analytics).
-   *
-   * @param farmId the farm id
-   * @param from optional start date (inclusive)
-   * @param to optional end date (inclusive)
-   * @return list of [categoryKey, sum] pairs
-   */
-  /**
-   * Σ of the expenses attributed to a production unit, source {@code STOCK_ENTRY} excluded: that
-   * one is already counted when the stock came in (V25 double-count guard), so counting it again
-   * against the batch would double the feed. Soft-deleted rows are filtered by the entity's
-   * {@code @SQLRestriction}.
+   * Σ of the expenses attributed to a production unit, sources {@code STOCK_ENTRY} and {@code
+   * CHICK_PURCHASE} excluded: the first is already counted when the stock came in (V25
+   * double-count guard), the second is surfaced as its own explicit line by the closure bilan
+   * (`UnitClosureService`) rather than folded into "other expenses". Soft-deleted rows are
+   * filtered by the entity's {@code @SQLRestriction}.
    */
   @Query(
       "SELECT COALESCE(SUM(e.amountXof), 0) FROM Expense e "
           + "WHERE e.farmId = :farmId AND e.productionUnitId = :unitId "
-          + "AND e.source <> com.avicare.finance.domain.ExpenseSource.STOCK_ENTRY")
+          + "AND e.source NOT IN (com.avicare.finance.domain.ExpenseSource.STOCK_ENTRY, "
+          + "com.avicare.finance.domain.ExpenseSource.CHICK_PURCHASE)")
   long sumDirectForUnit(@Param("farmId") Long farmId, @Param("unitId") Long unitId);
+
+  /**
+   * Dépense d'achat des poussins d'une unité (idempotence de l'upsert, et lecture pour le bilan de
+   * clôture).
+   *
+   * @param farmId the farm id
+   * @param productionUnitId the production unit id
+   * @param source the expense source to match
+   * @return the matching expense, or empty if none exists
+   */
+  Optional<Expense> findByFarmIdAndProductionUnitIdAndSource(
+      Long farmId, Long productionUnitId, ExpenseSource source);
 
   @Query(
       "SELECT e.categoryKey, SUM(e.amountXof) FROM Expense e "
