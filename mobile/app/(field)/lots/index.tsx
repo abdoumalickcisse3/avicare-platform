@@ -17,13 +17,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
+import { Plus } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { useListProductionUnitsQuery, type ProductionUnit } from '@/store/api/productionUnitsApi';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
+import { useFarmAccess } from '@/auth/useSession';
 
 export default function BatchListScreen() {
   const router = useRouter();
   const selectedFarmId = useSelector(selectSelectedFarmId);
+  const { can } = useFarmAccess();
+  const canWrite = can('poultry:write');
   const {
     data: units,
     isLoading,
@@ -41,8 +45,20 @@ export default function BatchListScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Lots</Text>
-        {stale ? <Text style={styles.staleHint}>Hors ligne — données en cache</Text> : null}
+        <View style={{ flex: 1 }}>
+          <Text style={styles.title}>Lots</Text>
+          {stale ? <Text style={styles.staleHint}>Hors ligne — données en cache</Text> : null}
+        </View>
+        {canWrite && (
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => router.push('/(field)/lots/nouveau')}
+            accessibilityRole="button"
+            accessibilityLabel="Nouveau lot"
+          >
+            <Plus size={22} color={tokens.colors.primary[700]} />
+          </TouchableOpacity>
+        )}
       </View>
 
       <View style={styles.rule} />
@@ -92,9 +108,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: tokens.layout.screenPadding,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: tokens.layout.screenPadding,
     paddingTop: tokens.spacing[6],
     paddingBottom: tokens.spacing[4],
+  },
+  addButton: {
+    width: 40,
+    height: 40,
+    borderRadius: tokens.radii.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: tokens.colors.neutral[0],
+    borderWidth: 1,
+    borderColor: tokens.colors.neutral[200],
   },
   title: {
     ...tokens.typography.displayMd,
