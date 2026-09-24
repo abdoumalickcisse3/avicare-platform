@@ -49,6 +49,7 @@ export function CreateLotSheet({
   const [name, setName] = useState('');
   const [count, setCount] = useState('');
   const [date, setDate] = useState(today());
+  const [chickUnitPrice, setChickUnitPrice] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -57,6 +58,7 @@ export function CreateLotSheet({
       setName('');
       setCount('');
       setDate(today());
+      setChickUnitPrice('');
       setError(null);
     }
   }, [visible]);
@@ -72,6 +74,7 @@ export function CreateLotSheet({
       name: name.trim() || undefined,
       startDate: date,
       initialCount: Number(count),
+      ...(kind === 'broiler' && chickUnitPrice ? { chickUnitPriceXof: Number(chickUnitPrice) } : {}),
     };
     try {
       if (kind === 'broiler') {
@@ -132,6 +135,15 @@ export function CreateLotSheet({
             placeholder="Ex. 500"
             keyboardType="number-pad"
           />
+          {kind === 'broiler' && (
+            <FormField
+              label="Prix par poussin (FCFA, optionnel)"
+              value={chickUnitPrice}
+              onChangeText={(t) => setChickUnitPrice(t.replace(/[^0-9]/g, ''))}
+              placeholder="Ex. 300"
+              keyboardType="number-pad"
+            />
+          )}
           <FormField label="Date d'arrivée" value={date} onChangeText={setDate} placeholder="AAAA-MM-JJ" />
 
           {error ? <Text style={styles.error}>{error}</Text> : null}

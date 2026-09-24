@@ -18,6 +18,7 @@ export interface CreateBatchInput {
   name?: string;
   startDate?: string;
   initialCount: number;
+  chickUnitPriceXof?: number;
 }
 
 export const poultryBatchesApi = baseApi.injectEndpoints({

@@ -43,6 +43,8 @@ export interface PoultryBatch {
   deaths: number;
   targetWeightG: number | null;
   targetAgeDays: number | null;
+  /** Resolved from the farm's expense ledger, not stored on the batch. `null` = not recorded yet. */
+  chickPurchaseCostXof: number | null;
 }
 
 /** A weighing sample point (mirrors the web `WeighingSample`). */
