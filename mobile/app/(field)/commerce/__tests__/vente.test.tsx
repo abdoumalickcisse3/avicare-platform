@@ -133,6 +133,28 @@ describe('Vente directe', () => {
     });
   });
 
+  it('accepte la virgule décimale (clavier fr-SN) sans la faire disparaître : 30,5 → 30.5', async () => {
+    await render(<VenteScreen />);
+    await press(screen.getByLabelText('Ajouter Lot A à la vente'));
+    await press(screen.getByLabelText('Au poids — Lot A'));
+
+    const weightInput = await screen.findByLabelText('Poids total (kg) — Lot A');
+
+    // Le clavier décimal fr-SN produit une virgule, pas un point : elle ne doit
+    // jamais être avalée par le filtre — sinon "30,5" devient silencieusement "305".
+    await act(async () => fireEvent.changeText(weightInput, '30,5'));
+    expect(screen.getByLabelText('Poids total (kg) — Lot A').props.value).toBe('30.5');
+
+    await press(screen.getByLabelText('Valider la vente'));
+
+    expect(mockCreateSale).toHaveBeenCalledWith({
+      farmId: 7,
+      body: expect.objectContaining({
+        lines: [expect.objectContaining({ weightKg: 30.5, quantity: 1 })],
+      }),
+    });
+  });
+
   it('bloque la validation tant que le poids est vide en mode au poids', async () => {
     await render(<VenteScreen />);
     await press(screen.getByLabelText('Ajouter Lot A à la vente'));

@@ -249,6 +249,31 @@ describe("QuickSaleDialog — production availability", () => {
     ]);
   });
 
+  it("accepte la virgule décimale (clavier fr-SN) sans la faire disparaître : 30,5 → 30.5", async () => {
+    const user = userEvent.setup();
+    setup();
+
+    const lotCard = await screen.findByText("50 têtes restantes");
+    await user.click(lotCard.closest("[role='button']") as HTMLElement);
+    await user.click(await screen.findByRole("button", { name: "Au poids" }));
+
+    const weightInput = await screen.findByLabelText("Poids total (kg)");
+    await user.clear(weightInput);
+
+    // Le clavier décimal fr-SN produit une virgule, pas un point : elle ne doit
+    // jamais être avalée par le filtre — sinon "30,5" devient silencieusement "305".
+    await user.type(weightInput, "30,5");
+    expect(weightInput).toHaveValue("30.5");
+
+    fireEvent.change(screen.getByLabelText(/Prix au kg/), { target: { value: "1500" } });
+    await user.click(screen.getByRole("button", { name: /Valider la vente/i }));
+
+    await waitFor(() => expect(lastMethod).toBe("POST"));
+    expect(lastBody?.lines).toEqual([
+      expect.objectContaining({ quantity: 1, unitPriceXof: 1500, weightKg: 30.5 }),
+    ]);
+  });
+
   it("bloque la validation tant que le poids est vide en mode au poids (le prix est au kilo)", async () => {
     const user = userEvent.setup();
     setup();
