@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Jawdi — Réponses aux retours de Maurice</title>
+<style>
+  @page { size: A4; margin: 22mm 18mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+    color: #1c2b1e;
+    line-height: 1.55;
+    font-size: 12.5px;
+    margin: 0;
+  }
+  .cover {
+    padding-top: 18mm;
+    padding-bottom: 10mm;
+    border-bottom: 3px solid #2e7d32;
+    margin-bottom: 10mm;
+  }
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #2e7d32;
+    margin-bottom: 6px;
+  }
+  h1 {
+    font-size: 27px;
+    margin: 0 0 8px 0;
+    color: #14361a;
+    letter-spacing: -0.3px;
+  }
+  .subtitle { font-size: 14px; color: #4c5c4e; margin: 0 0 14px 0; }
+  .meta { font-size: 11px; color: #7a8a7c; }
+  .context {
+    background: #f2f7f1;
+    border: 1px solid #d8e6d6;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 10px 0 16px 0;
+    font-size: 11.8px;
+  }
+  .context p { margin: 0 0 6px 0; }
+  .context p:last-child { margin-bottom: 0; }
+  .quote {
+    font-style: italic;
+    color: #3a4a3c;
+    border-left: 3px solid #a8cfa0;
+    padding-left: 10px;
+    margin: 8px 0;
+  }
+  section.feature { margin-bottom: 16mm; page-break-inside: avoid; }
+  .feature-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    border-bottom: 1.5px solid #2e7d32;
+    padding-bottom: 6px;
+    margin-bottom: 10px;
+  }
+  .feature-num {
+    font-size: 13px;
+    font-weight: 800;
+    color: #ffffff;
+    background: #2e7d32;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+  }
+  h2 { font-size: 17px; margin: 0; color: #14361a; }
+  .cols { display: flex; gap: 14px; margin: 10px 0 12px 0; }
+  .col {
+    flex: 1;
+    border-radius: 8px;
+    padding: 11px 13px;
+    font-size: 11.6px;
+  }
+  .col.before { background: #fbf3ea; border: 1px solid #ecd9be; }
+  .col.after { background: #eef7ee; border: 1px solid #c9e5c5; }
+  .col h3 {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin: 0 0 6px 0;
+  }
+  .col.before h3 { color: #9a5b1f; }
+  .col.after h3 { color: #256029; }
+  .col p { margin: 0; }
+  h3.section-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #3a4a3c;
+    margin: 12px 0 6px 0;
+  }
+  ol.steps, ul.plain { margin: 4px 0 4px 0; padding-left: 20px; }
+  ol.steps li, ul.plain li { margin-bottom: 5px; }
+  .note {
+    font-size: 11px;
+    color: #5a6a5c;
+    background: #f7f7f5;
+    border-left: 3px solid #c9c9c0;
+    padding: 8px 11px;
+    margin-top: 8px;
+    border-radius: 0 6px 6px 0;
+  }
+  .status-row { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: #2e7d32;
+    color: #fff;
+  }
+  footer {
+    margin-top: 14mm;
+    padding-top: 8px;
+    border-top: 1px solid #d8e6d6;
+    font-size: 10px;
+    color: #8a9a8c;
+    display: flex;
+    justify-content: space-between;
+  }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="eyebrow">Jawdi · Phase pilote</div>
+  <h1>Réponses aux retours de Maurice</h1>
+  <p class="subtitle">Deux problèmes remontés lors du pilotage — voici ce qui a changé dans l'application.</p>
+  <p class="meta">Document préparé le 24 septembre 2026</p>
+</div>
+
+<div class="context">
+  <p><strong>Le contexte.</strong> Pendant l'accompagnement d'un éleveur pilote, deux limites concrètes de l'application ont été remontées, toutes les deux liées à la manière dont l'argent est suivi dans un cycle de production de poulets de chair.</p>
+  <p class="quote">« On ne vend pas les poulets de chair à l'unité — un client achète par exemple 80 sujets, on les pèse ensemble, ça donne 110&nbsp;kg, et on facture au prix du kilo. »</p>
+  <p class="quote">« Je ne peux saisir le prix payé pour les poussins qu'à la clôture de la bande, des mois plus tard — je voudrais pouvoir le renseigner dès la réception. »</p>
+</div>
+
+<section class="feature">
+  <div class="feature-head">
+    <span class="feature-num">1</span>
+    <h2>Vente des poulets de chair au poids</h2>
+  </div>
+
+  <div class="cols">
+    <div class="col before">
+      <h3>Avant</h3>
+      <p>Une vente ne pouvait se faire qu'à la tête, à un prix fixe par sujet — impossible de facturer selon le poids réellement pesé au moment de la vente, ce qui ne correspond pas à la pratique du terrain.</p>
+    </div>
+    <div class="col after">
+      <h3>Maintenant</h3>
+      <p>Chaque ligne de vente d'un lot de poulets de chair peut se faire <strong>à la tête</strong> (comme avant) ou <strong>au poids</strong> — au choix, ligne par ligne, dans le même panier.</p>
+    </div>
+  </div>
+
+  <h3 class="section-label">Comment ça marche, en pratique</h3>
+  <ol class="steps">
+    <li>Sur l'écran de vente directe, on ajoute le lot comme avant et on choisit le nombre de têtes vendues.</li>
+    <li>Un interrupteur « À la tête » / « Au poids » apparaît sur la ligne. En choisissant « Au poids » :
+      <ul class="plain">
+        <li>Un poids total est <strong>suggéré automatiquement</strong>, calculé à partir de la dernière pesée du lot (têtes vendues × poids moyen) ;</li>
+        <li>Ce poids reste <strong>toujours modifiable</strong> — l'éleveur peut saisir le poids réellement pesé sur sa balance ;</li>
+        <li>Le prix affiché devient « Prix au kg » au lieu de « Prix par tête ».</li>
+      </ul>
+    </li>
+    <li>Le total se recalcule en direct : <em>poids × prix au kilo</em>.</li>
+    <li>La facture imprimée reste cohérente : elle affiche le poids facturé (pas le nombre de têtes) tout en gardant le nombre de sujets dans le libellé, par exemple <em>« Poulet de chair (80 sujets) »</em>.</li>
+  </ol>
+
+  <div class="note">Le nombre de têtes continue toujours de faire baisser le stock du lot, quel que soit le mode choisi — seul le calcul du prix change. Rien ne change pour les ventes déjà saisies à la tête.</div>
+
+  <div class="status-row"><span class="badge">Disponible</span></div>
+</section>
+
+<section class="feature">
+  <div class="feature-head">
+    <span class="feature-num">2</span>
+    <h2>Coût d'achat des poussins, dès la réception</h2>
+  </div>
+
+  <div class="cols">
+    <div class="col before">
+      <h3>Avant</h3>
+      <p>Le prix payé pour les poussins ne pouvait être saisi qu'à la <strong>clôture</strong> de la bande — souvent 6 à 8 semaines plus tard — et n'apparaissait nulle part ailleurs dans l'application tant que la bande n'était pas fermée.</p>
+    </div>
+    <div class="col after">
+      <h3>Maintenant</h3>
+      <p>Le prix des poussins peut être saisi <strong>dès la création de la bande</strong>, ou renseigné/corrigé plus tard depuis la fiche du lot, à tout moment tant que la bande reste active.</p>
+    </div>
+  </div>
+
+  <h3 class="section-label">Comment ça marche, en pratique</h3>
+  <ol class="steps">
+    <li>À la création d'une nouvelle bande, un champ optionnel <strong>« Prix par poussin (FCFA) »</strong> est proposé. Le montant total se calcule automatiquement (prix × nombre de têtes).</li>
+    <li>Si le prix n'est pas encore connu à la réception, le champ peut rester vide — aucun blocage.</li>
+    <li>Sur la fiche du lot, un bouton <strong>« Renseigner »</strong> (ou <strong>« Modifier »</strong> si déjà saisi) permet de l'ajouter ou de le corriger à tout moment, tant que la bande n'est pas clôturée.</li>
+    <li>À la clôture, ce coût est repris automatiquement dans le bilan — plus besoin de le ressaisir.</li>
+  </ol>
+
+  <div class="note">Effet positif supplémentaire : ce coût est désormais visible dans le tableau de bord financier global de la ferme dès qu'il est saisi, et non plus seulement dans le bilan d'une bande une fois close.</div>
+
+  <div class="status-row"><span class="badge">Disponible</span></div>
+</section>
+
+<footer>
+  <span>Jawdi — Plateforme de gestion pour élevages avicoles</span>
+  <span>Phase pilote · Document interne</span>
+</footer>
+
+</body>
+</html>
