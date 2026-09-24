@@ -12,7 +12,8 @@ const type = (el: Parameters<typeof fireEvent.changeText>[0], text: string): Pro
     fireEvent.changeText(el, text);
   });
 
-const mockClose = jest.fn(() => ({ unwrap: () => Promise.resolve({}) }));
+type CloseUnitArgs = { farmId: number; unitId: number; body: Record<string, unknown> };
+const mockClose = jest.fn((_args: CloseUnitArgs) => ({ unwrap: () => Promise.resolve({}) }));
 const mockBack = jest.fn();
 let mockRole = 'OWNER';
 
@@ -42,6 +43,16 @@ jest.mock('@/store/api/closureApi', () => ({
   useCloseUnitMutation: jest.fn(() => [mockClose, { isLoading: false }]),
 }));
 
+let mockChickPurchaseCostXof: number | null = null;
+
+jest.mock('@/store/api/poultryBatchesApi', () => ({
+  useGetBatchQuery: jest.fn(() => ({
+    data: { chickPurchaseCostXof: mockChickPurchaseCostXof },
+    isLoading: false,
+    isError: false,
+  })),
+}));
+
 jest.mock('@/auth/useSession', () => ({
   useFarmAccess: jest.fn(() => ({ farmRole: mockRole, isAdmin: false, session: null, can: () => true })),
 }));
@@ -54,6 +65,7 @@ describe('CloseBatchScreen', () => {
     mockClose.mockClear();
     mockBack.mockClear();
     mockRole = 'OWNER';
+    mockChickPurchaseCostXof = null;
   });
 
   it('warns that the report will be frozen', async () => {
@@ -98,5 +110,26 @@ describe('CloseBatchScreen', () => {
     expect(screen.getByText(/Seul un propriétaire ou un gestionnaire/)).toBeTruthy();
     await press(screen.getByLabelText('Clôturer la bande'));
     expect(mockClose).not.toHaveBeenCalled();
+  });
+
+  it('shows a read-only summary — no re-entry — when a chick cost is already recorded', async () => {
+    mockChickPurchaseCostXof = 150_000;
+    await render(<CloseBatchScreen />);
+
+    expect(screen.getByText(/déjà enregistré/)).toBeTruthy();
+    expect(screen.getByText('150 000 FCFA')).toBeTruthy();
+    expect(screen.queryByPlaceholderText('0')).toBeNull();
+  });
+
+  it('omits chickCostXof from the payload when a cost is already recorded', async () => {
+    mockChickPurchaseCostXof = 150_000;
+    await render(<CloseBatchScreen />);
+
+    await press(screen.getByLabelText('Clôturer la bande'));
+
+    expect(mockClose).toHaveBeenCalledTimes(1);
+    const body = mockClose.mock.calls[0]![0].body;
+    expect(body).not.toHaveProperty('chickCostXof');
+    expect(body).toEqual({ notes: undefined });
   });
 });

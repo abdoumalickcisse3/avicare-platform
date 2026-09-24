@@ -14,6 +14,7 @@ import { skipToken } from '@reduxjs/toolkit/query/react';
 import { ArrowLeft, ClipboardList, Lock, Plus, Scale } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { BatchClosureCard } from '@/components/poultry/BatchClosureCard';
+import { ChickCostSheet } from '@/components/poultry/ChickCostSheet';
 import { GrowthChart, type GrowthPoint } from '@/components/charts/GrowthChart';
 import { MortalityChart } from '@/components/charts/MortalityChart';
 import { FeedConsumptionChart } from '@/components/charts/FeedConsumptionChart';
@@ -72,6 +73,7 @@ export default function LotDetailScreen() {
   // Closing is structuring, like creating a unit — OWNER/MANAGER only, same as the backend.
   const canClose = farmRole === 'OWNER' || farmRole === 'MANAGER';
   const [tab, setTab] = useState<Tab>('overview');
+  const [chickCostOpen, setChickCostOpen] = useState(false);
 
   const skip = selectedFarmId === null || Number.isNaN(batchId);
   const arg = skip ? skipToken : { farmId: selectedFarmId as number, batchId };
@@ -122,6 +124,34 @@ export default function LotDetailScreen() {
           <Kpi label="Mortalité" value={`${mortalityPct.toFixed(1)}%`} unit="cumulée" tone={deaths > 0 ? tokens.colors.error : undefined} />
           <Kpi label="Poids moyen" value={avgKg != null ? avgKg.toFixed(2) : '—'} unit="kg" tone={tokens.colors.primary[600]} />
         </View>
+
+        {/* Chick purchase cost — recorded at reception, or here if not yet known. */}
+        {batch && (
+          <View style={styles.card}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View>
+                <Text style={styles.cardSub}>Coût des poussins</Text>
+                <Text style={styles.cardTitle}>
+                  {batch.chickPurchaseCostXof != null
+                    ? `${formatNumber(batch.chickPurchaseCostXof)} FCFA`
+                    : 'Non renseigné'}
+                </Text>
+              </View>
+              {canWrite && (
+                <Pressable
+                  onPress={() => setChickCostOpen(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel={batch.chickPurchaseCostXof != null ? 'Modifier le coût des poussins' : 'Renseigner le coût des poussins'}
+                  style={styles.actionBtn}
+                >
+                  <Text style={styles.actionBtnText}>
+                    {batch.chickPurchaseCostXof != null ? 'Modifier' : 'Renseigner'}
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+          </View>
+        )}
 
         {/* Tabs */}
         <View style={styles.tabs}>
@@ -278,6 +308,16 @@ export default function LotDetailScreen() {
         <Pressable style={styles.fab} onPress={() => router.push(`/(field)/lots/${batchId}/mortalite`)} accessibilityRole="button" accessibilityLabel="Nouvelle saisie">
           <Plus size={30} color={tokens.colors.earth} />
         </Pressable>
+      )}
+      {batch && (
+        <ChickCostSheet
+          visible={chickCostOpen}
+          onClose={() => setChickCostOpen(false)}
+          farmId={selectedFarmId as number}
+          batchId={batchId}
+          initialCount={batch.initialCount}
+          currentValueXof={batch.chickPurchaseCostXof}
+        />
       )}
     </SafeAreaView>
   );

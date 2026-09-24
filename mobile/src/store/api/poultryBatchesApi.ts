@@ -31,6 +31,18 @@ export const poultryBatchesApi = baseApi.injectEndpoints({
         { type: 'ProductionUnit' as const, id: `LIST-${farmId}` },
       ],
     }),
+    setChickCost: build.mutation<
+      PoultryBatch,
+      { farmId: number; batchId: number; body: { chickUnitPriceXof: number } }
+    >({
+      query: ({ farmId, batchId, body }) => ({
+        url: `${base(farmId)}/${batchId}/chick-cost`,
+        method: 'POST',
+        body,
+      }),
+      transformResponse: (r: ApiEnvelope<PoultryBatch>) => r.data,
+      invalidatesTags: (_r, _e, { batchId }) => [{ type: 'PoultryBatch', id: batchId }],
+    }),
     getBatches: build.query<PoultryBatch[], { farmId: number; status?: BatchStatus }>({
       query: ({ farmId, status }) => (status ? `${base(farmId)}?status=${status}` : base(farmId)),
       transformResponse: (r: ApiEnvelope<PoultryBatch[]>) => r.data,
@@ -61,6 +73,7 @@ export const poultryBatchesApi = baseApi.injectEndpoints({
 
 export const {
   useCreateBatchMutation,
+  useSetChickCostMutation,
   useGetBatchesQuery,
   useGetBatchQuery,
   useGetPerformanceQuery,
