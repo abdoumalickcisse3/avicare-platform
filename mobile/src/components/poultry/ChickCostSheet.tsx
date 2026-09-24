@@ -41,6 +41,7 @@ export function ChickCostSheet({
   }, [visible, currentValueXof, initialCount]);
 
   const valid = /^\d+$/.test(unitPrice) && Number(unitPrice) > 0;
+  const total = valid ? Number(unitPrice) * initialCount : null;
 
   async function submit() {
     if (!valid) return;
@@ -83,6 +84,7 @@ export function ChickCostSheet({
           onChangeText={(t) => setUnitPrice(t.replace(/[^0-9]/g, ''))}
           placeholder="Ex. 300"
           keyboardType="number-pad"
+          helperText={total != null ? `Total : ${total.toLocaleString('fr-FR')} FCFA` : undefined}
         />
 
         {error ? <Text style={styles.error}>{error}</Text> : null}

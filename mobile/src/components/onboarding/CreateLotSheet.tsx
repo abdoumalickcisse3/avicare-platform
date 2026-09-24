@@ -65,6 +65,10 @@ export function CreateLotSheet({
 
   const valid = breedId != null && Number(count) > 0;
   const busy = creatingBatch || creatingUnit;
+  const chickTotal =
+    kind === 'broiler' && Number(chickUnitPrice) > 0 && Number(count) > 0
+      ? Number(chickUnitPrice) * Number(count)
+      : null;
 
   async function submit() {
     if (!valid || breedId == null) return;
@@ -74,7 +78,9 @@ export function CreateLotSheet({
       name: name.trim() || undefined,
       startDate: date,
       initialCount: Number(count),
-      ...(kind === 'broiler' && chickUnitPrice ? { chickUnitPriceXof: Number(chickUnitPrice) } : {}),
+      ...(kind === 'broiler' && Number(chickUnitPrice) > 0
+        ? { chickUnitPriceXof: Number(chickUnitPrice) }
+        : {}),
     };
     try {
       if (kind === 'broiler') {
@@ -142,6 +148,7 @@ export function CreateLotSheet({
               onChangeText={(t) => setChickUnitPrice(t.replace(/[^0-9]/g, ''))}
               placeholder="Ex. 300"
               keyboardType="number-pad"
+              helperText={chickTotal != null ? `Total : ${chickTotal.toLocaleString('fr-FR')} FCFA` : undefined}
             />
           )}
           <FormField label="Date d'arrivée" value={date} onChangeText={setDate} placeholder="AAAA-MM-JJ" />

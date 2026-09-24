@@ -16,6 +16,7 @@ import { ActionBar } from '@/components/field/ActionBar';
 import { useListBreedsQuery } from '@/store/api/breedsApi';
 import { useCreateBatchMutation } from '@/store/api/poultryBatchesApi';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
+import { targetsForBreed } from '@/constants/breedDefaults';
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
@@ -35,19 +36,37 @@ export default function CreerBandeScreen() {
   const [count, setCount] = useState('');
   const [date, setDate] = useState(today());
   const [chickUnitPrice, setChickUnitPrice] = useState('');
+  const [targetWeightG, setTargetWeightG] = useState('2000');
+  const [targetAgeDays, setTargetAgeDays] = useState('42');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (broilerBreeds.length > 0 && breedId == null) {
-      setBreedId(broilerBreeds[0]!.id);
+      const first = broilerBreeds[0]!;
+      setBreedId(first.id);
+      const targets = targetsForBreed(first.code);
+      setTargetWeightG(String(targets.targetWeightG));
+      setTargetAgeDays(String(targets.targetAgeDays));
     }
   }, [broilerBreeds, breedId]);
+
+  function selectBreed(id: number) {
+    setBreedId(id);
+    const breed = broilerBreeds.find((b) => b.id === id);
+    const targets = targetsForBreed(breed?.code);
+    setTargetWeightG(String(targets.targetWeightG));
+    setTargetAgeDays(String(targets.targetAgeDays));
+  }
 
   if (selectedFarmId === null) {
     return <Redirect href="/(field)" />;
   }
 
   const valid = breedId != null && Number(count) > 0;
+  const chickTotal =
+    Number(chickUnitPrice) > 0 && Number(count) > 0
+      ? Number(chickUnitPrice) * Number(count)
+      : null;
 
   async function submit() {
     if (!valid || breedId == null || selectedFarmId === null) return;
@@ -60,7 +79,9 @@ export default function CreerBandeScreen() {
           name: name.trim() || undefined,
           startDate: date,
           initialCount: Number(count),
-          ...(chickUnitPrice ? { chickUnitPriceXof: Number(chickUnitPrice) } : {}),
+          targetWeightG: Number(targetWeightG) || undefined,
+          targetAgeDays: Number(targetAgeDays) || undefined,
+          ...(Number(chickUnitPrice) > 0 ? { chickUnitPriceXof: Number(chickUnitPrice) } : {}),
         },
       }).unwrap();
       router.back();
@@ -90,7 +111,7 @@ export default function CreerBandeScreen() {
               return (
                 <TouchableOpacity
                   key={b.id}
-                  onPress={() => setBreedId(b.id)}
+                  onPress={() => selectBreed(b.id)}
                   accessibilityRole="radio"
                   accessibilityState={{ selected: on }}
                   accessibilityLabel={b.name}
@@ -114,12 +135,30 @@ export default function CreerBandeScreen() {
         />
         <FormField label="Date d'arrivée" value={date} onChangeText={setDate} placeholder="AAAA-MM-JJ" />
         <FormField
+          label="Poids cible (g)"
+          value={targetWeightG}
+          onChangeText={(t) => setTargetWeightG(t.replace(/[^0-9]/g, ''))}
+          placeholder="Ex. 2000"
+          keyboardType="number-pad"
+        />
+        <FormField
+          label="Âge cible (jours)"
+          value={targetAgeDays}
+          onChangeText={(t) => setTargetAgeDays(t.replace(/[^0-9]/g, ''))}
+          placeholder="Ex. 42"
+          keyboardType="number-pad"
+        />
+        <FormField
           label="Prix par poussin (FCFA, optionnel)"
           value={chickUnitPrice}
           onChangeText={(t) => setChickUnitPrice(t.replace(/[^0-9]/g, ''))}
           placeholder="Ex. 300"
           keyboardType="number-pad"
-          helperText="Modifiable plus tard depuis la fiche du lot."
+          helperText={
+            chickTotal != null
+              ? `Total : ${chickTotal.toLocaleString('fr-FR')} FCFA`
+              : 'Modifiable plus tard depuis la fiche du lot.'
+          }
         />
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
