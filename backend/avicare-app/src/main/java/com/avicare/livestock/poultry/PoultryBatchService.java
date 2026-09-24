@@ -2,6 +2,7 @@ package com.avicare.livestock.poultry;
 
 import com.avicare.common.api.exception.BusinessRuleException;
 import com.avicare.common.api.exception.NotFoundException;
+import com.avicare.finance.api.FinanceFacade;
 import com.avicare.livestock.domain.Breed;
 import com.avicare.livestock.domain.LifecycleEvent;
 import com.avicare.livestock.domain.PoultryBatch;
@@ -14,7 +15,7 @@ import com.avicare.livestock.repository.PoultryBatchRepository;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
-import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,7 +26,6 @@ import org.springframework.transaction.annotation.Transactional;
  * and the {@code @farmAccess} guard land in B1-3.
  */
 @Service
-@RequiredArgsConstructor
 public class PoultryBatchService {
 
   public static final String EVENT_CREATED = "CREATED";
@@ -33,6 +33,18 @@ public class PoultryBatchService {
   private final PoultryBatchRepository poultryBatchRepository;
   private final BreedRepository breedRepository;
   private final LifecycleEventRepository lifecycleEventRepository;
+  private final FinanceFacade financeFacade;
+
+  public PoultryBatchService(
+      PoultryBatchRepository poultryBatchRepository,
+      BreedRepository breedRepository,
+      LifecycleEventRepository lifecycleEventRepository,
+      @Lazy FinanceFacade financeFacade) {
+    this.poultryBatchRepository = poultryBatchRepository;
+    this.breedRepository = breedRepository;
+    this.lifecycleEventRepository = lifecycleEventRepository;
+    this.financeFacade = financeFacade;
+  }
 
   @Transactional
   public PoultryBatch create(PoultryBatchCreate cmd, Long currentUserId) {
@@ -73,6 +85,12 @@ public class PoultryBatchService {
             "breed_code", breed.getCode()));
     created.setCreatedBy(currentUserId);
     lifecycleEventRepository.save(created);
+
+    if (cmd.chickUnitPriceXof() != null && cmd.chickUnitPriceXof() > 0) {
+      long amountXof = cmd.chickUnitPriceXof() * cmd.initialCount();
+      financeFacade.recordChickPurchaseExpense(
+          cmd.farmId(), saved.getId(), amountXof, batch.getStartDate(), currentUserId);
+    }
 
     return saved;
   }
