@@ -2,6 +2,7 @@ package com.avicare.livestock.controller;
 
 import com.avicare.common.api.response.ApiResponse;
 import com.avicare.common.tenancy.context.TenancyContext;
+import com.avicare.finance.api.FinanceFacade;
 import com.avicare.livestock.domain.PoultryBatch;
 import com.avicare.livestock.domain.UnitStatus;
 import com.avicare.livestock.dto.request.CreatePoultryBatchRequest;
@@ -43,6 +44,7 @@ public class PoultryBatchController {
 
   private final PoultryBatchService poultryBatchService;
   private final LifecycleEventRepository lifecycleEventRepository;
+  private final FinanceFacade financeFacade;
 
   @GetMapping
   @PreAuthorize(READ)
@@ -52,7 +54,7 @@ public class PoultryBatchController {
     Map<Long, Long> deathsByUnit = deathsFor(batches.stream().map(PoultryBatch::getId).toList());
     return ApiResponse.of(
         batches.stream()
-            .map(b -> toResponse(b, deathsByUnit.getOrDefault(b.getId(), 0L)))
+            .map(b -> toResponse(b, deathsByUnit.getOrDefault(b.getId(), 0L), null))
             .toList());
   }
 
@@ -70,9 +72,11 @@ public class PoultryBatchController {
                 request.startDate(),
                 request.targetWeightG(),
                 request.targetAgeDays(),
-                request.initialCount()),
+                request.initialCount(),
+                request.chickUnitPriceXof()),
             TenancyContext.currentUserId());
-    return ApiResponse.of(toResponse(batch, 0L)); // a batch is born with no losses
+    Long chickCost = financeFacade.chickPurchaseCostForUnit(farmId, batch.getId()).orElse(null);
+    return ApiResponse.of(toResponse(batch, 0L, chickCost)); // a batch is born with no losses
   }
 
   @GetMapping("/{batchId}")
@@ -80,7 +84,9 @@ public class PoultryBatchController {
   public ApiResponse<PoultryBatchResponse> get(
       @PathVariable Long farmId, @PathVariable Long batchId) {
     PoultryBatch batch = poultryBatchService.get(batchId);
-    return ApiResponse.of(toResponse(batch, -lifecycleEventRepository.sumMortalityDelta(batchId)));
+    Long chickCost = financeFacade.chickPurchaseCostForUnit(farmId, batchId).orElse(null);
+    return ApiResponse.of(
+        toResponse(batch, -lifecycleEventRepository.sumMortalityDelta(batchId), chickCost));
   }
 
   /**
@@ -97,7 +103,7 @@ public class PoultryBatchController {
                 row -> ((Number) row[0]).longValue(), row -> -((Number) row[1]).longValue()));
   }
 
-  static PoultryBatchResponse toResponse(PoultryBatch b, long deaths) {
+  static PoultryBatchResponse toResponse(PoultryBatch b, long deaths, Long chickPurchaseCostXof) {
     return new PoultryBatchResponse(
         b.getId(),
         b.getFarmId(),
@@ -109,6 +115,7 @@ public class PoultryBatchController {
         b.getInitialCount(),
         (int) deaths,
         b.getTargetWeightG(),
-        b.getTargetAgeDays());
+        b.getTargetAgeDays(),
+        chickPurchaseCostXof);
   }
 }

@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.avicare.common.api.exception.NotFoundException;
 import com.avicare.common.security.principal.UserRole;
+import com.avicare.finance.api.FinanceFacade;
 import com.avicare.identity.domain.User;
 import com.avicare.livestock.domain.PoultryBatch;
 import com.avicare.livestock.domain.Species;
@@ -52,6 +53,7 @@ class PoultryBatchServiceIT {
   @Autowired private BreedRepository breedRepository;
   @Autowired private LifecycleEventRepository lifecycleEventRepository;
   @Autowired private EntityManager em;
+  @Autowired private FinanceFacade financeFacade;
 
   private long userId;
 
@@ -138,5 +140,34 @@ class PoultryBatchServiceIT {
                     new PoultryBatchCreate(farmId, ovineId, "Lot", LocalDate.now(), null, null, 10),
                     userId))
         .hasMessageContaining("POULTRY");
+  }
+
+  @Test
+  void create_withChickUnitPrice_recordsTheChickPurchaseExpense() {
+    long farmId = seedFarm();
+
+    PoultryBatch batch =
+        poultryBatchService.create(
+            new PoultryBatchCreate(
+                farmId, cobbBreedId(), "Lot C", LocalDate.now(), 2200, 42, 500, 300L),
+            userId);
+    em.flush();
+
+    // 500 head x 300 XOF/head = 150 000 XOF.
+    assertThat(financeFacade.chickPurchaseCostForUnit(farmId, batch.getId()))
+        .contains(150_000L);
+  }
+
+  @Test
+  void create_withoutChickUnitPrice_recordsNoExpense() {
+    long farmId = seedFarm();
+
+    PoultryBatch batch =
+        poultryBatchService.create(
+            new PoultryBatchCreate(farmId, cobbBreedId(), "Lot D", LocalDate.now(), null, null, 500),
+            userId);
+    em.flush();
+
+    assertThat(financeFacade.chickPurchaseCostForUnit(farmId, batch.getId())).isEmpty();
   }
 }
