@@ -54,9 +54,9 @@ interface Line {
   suggestedWeightKg?: string;
 }
 
-/** Digits + un seul point : laisse passer « 30. » sans le casser. */
+/** Digits + un seul point : laisse passer « 30. » sans le casser. Virgule (clavier fr-SN) traitée comme point. */
 function sanitizeDecimal(raw: string): string {
-  const cleaned = raw.replace(/[^0-9.]/g, '');
+  const cleaned = raw.replace(',', '.').replace(/[^0-9.]/g, '');
   const firstDot = cleaned.indexOf('.');
   if (firstDot < 0) return cleaned;
   return cleaned.slice(0, firstDot + 1) + cleaned.slice(firstDot + 1).replace(/\./g, '');
