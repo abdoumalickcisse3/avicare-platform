@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
@@ -38,6 +38,7 @@ const schema = z.object({
     .refine((v) => Number(v) > 0, "Effectif requis"),
   targetWeightG: z.string().regex(/^\d+$/, "Nombre invalide"),
   targetAgeDays: z.string().regex(/^\d+$/, "Nombre invalide"),
+  chickUnitPriceXof: z.string().regex(/^\d*$/, "Nombre entier requis").optional().or(z.literal("")),
 });
 
 type BatchForm = z.infer<typeof schema>;
@@ -49,6 +50,7 @@ const DEFAULTS: BatchForm = {
   initialCount: "",
   targetWeightG: "2000",
   targetAgeDays: "42",
+  chickUnitPriceXof: "",
 };
 
 function SectionLabel({ color, children }: { color: string; children: string }) {
@@ -82,6 +84,13 @@ export function CreateBatchDialog({
     if (open) reset(DEFAULTS);
   }, [open, reset]);
 
+  const chickUnitPriceXof = useWatch({ control, name: "chickUnitPriceXof" });
+  const initialCountWatched = useWatch({ control, name: "initialCount" });
+  const chickTotal =
+    chickUnitPriceXof && initialCountWatched
+      ? Number(chickUnitPriceXof) * Number(initialCountWatched)
+      : null;
+
   const poultryBreeds = (breeds ?? []).filter((b) => b.species === "POULTRY" && b.active);
 
   const onBreedChange = (breedId: number) => {
@@ -102,6 +111,9 @@ export function CreateBatchDialog({
           initialCount: Number(values.initialCount),
           targetWeightG: Number(values.targetWeightG),
           targetAgeDays: Number(values.targetAgeDays),
+          ...(values.chickUnitPriceXof
+            ? { chickUnitPriceXof: Number(values.chickUnitPriceXof) }
+            : {}),
         },
       }).unwrap();
       showToast("Lot créé avec succès.", "success");
@@ -212,6 +224,27 @@ export function CreateBatchDialog({
                 )}
               />
             </Box>
+
+            <Controller
+              name="chickUnitPriceXof"
+              control={control}
+              render={({ field, fieldState }) => (
+                <TextField
+                  {...field}
+                  label="Prix par poussin (FCFA)"
+                  placeholder="Optionnel"
+                  fullWidth
+                  slotProps={{ htmlInput: { inputMode: "numeric" } }}
+                  error={!!fieldState.error}
+                  helperText={
+                    fieldState.error?.message ??
+                    (chickTotal != null
+                      ? `Total : ${chickTotal.toLocaleString("fr-FR")} FCFA`
+                      : "Optionnel — modifiable plus tard depuis la fiche du lot.")
+                  }
+                />
+              )}
+            />
 
             <SectionLabel color={colors.accent[400]}>Objectifs de sortie</SectionLabel>
             <Box
