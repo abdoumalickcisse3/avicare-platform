@@ -53,6 +53,21 @@ public interface FinanceFacade {
   void reverseVetVisitExpense(Long farmId, Long vetVisitId);
 
   /**
+   * Enregistre (ou corrige) la dépense d'achat des poussins d'une unité, catégorie {@code chicks},
+   * source {@code CHICK_PURCHASE}. Upsert idempotent : une seule ligne par unité de production —
+   * une correction met à jour la ligne existante plutôt que d'en créer une seconde. No-op si
+   * {@code amountXof <= 0}.
+   */
+  void recordChickPurchaseExpense(
+      Long farmId, Long productionUnitId, long amountXof, LocalDate date, Long userId);
+
+  /**
+   * Montant de la dépense d'achat des poussins déjà enregistrée pour cette unité, ou vide si
+   * aucune n'existe encore.
+   */
+  java.util.Optional<Long> chickPurchaseCostForUnit(Long farmId, Long productionUnitId);
+
+  /**
    * Σ des dépenses directement rattachées à une unité de production, hors source {@code
    * STOCK_ENTRY} — celle-ci est déjà comptée à l'entrée en stock, la recompter au titre du lot
    * doublerait l'aliment. Sert le bilan de fin de bande.
