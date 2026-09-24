@@ -125,8 +125,11 @@ export default function LotDetailScreen() {
           <Kpi label="Poids moyen" value={avgKg != null ? avgKg.toFixed(2) : '—'} unit="kg" tone={tokens.colors.primary[600]} />
         </View>
 
-        {/* Chick purchase cost — recorded at reception, or here if not yet known. */}
-        {batch && (
+        {/* Chick purchase cost — recorded at reception, or here if not yet known.
+            Hidden once the batch is closed: the backend refuses the correction with a
+            409, and the web reaches the same place by swapping the whole overview tab
+            for the frozen "Bilan". */}
+        {batch && !closed && (
           <View style={styles.card}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <View>

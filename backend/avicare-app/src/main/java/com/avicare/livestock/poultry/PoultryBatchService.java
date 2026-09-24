@@ -36,6 +36,14 @@ public class PoultryBatchService {
   private final LifecycleEventRepository lifecycleEventRepository;
   private final FinanceFacade financeFacade;
 
+  /**
+   * Hand-written on purpose — {@code @RequiredArgsConstructor} cannot come back here. Wiring {@link
+   * FinanceFacade} eagerly closes the bean cycle {@code LivestockFacadeImpl → PoultryBatchService →
+   * FinanceFacadeImpl → FinanceAnalyticsService → LivestockFacade}, and the context fails to start
+   * with a {@code BeanCurrentlyInCreationException} that names none of it. {@code @Lazy} breaks the
+   * cycle; removing it requires decoupling {@code FinanceAnalyticsService} from {@code
+   * LivestockFacade} first.
+   */
   public PoultryBatchService(
       PoultryBatchRepository poultryBatchRepository,
       BreedRepository breedRepository,
