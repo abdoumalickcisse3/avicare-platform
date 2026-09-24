@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import {
   Box,
+  Button,
   Card,
   CardContent,
   Skeleton,
@@ -22,6 +24,7 @@ import { colors } from "@/theme/tokens";
 import { GrowthChart } from "./charts/GrowthChart";
 import { MortalityChart } from "./charts/MortalityChart";
 import { FeedConsumptionChart } from "./charts/FeedConsumptionChart";
+import { ChickCostDialog } from "./ChickCostDialog";
 import type { PoultryBatch } from "@/types";
 
 const DASH = "—";
@@ -97,6 +100,7 @@ export function BatchOverviewTab({
   farmId: number;
   batch: PoultryBatch;
 }) {
+  const [chickCostOpen, setChickCostOpen] = useState(false);
   const { data: perf } = useGetPerformanceQuery(
     { farmId, batchId: batch.id },
     { skip: batch.status === "PLANNED" },
@@ -154,6 +158,47 @@ export function BatchOverviewTab({
           tint={colors.accent[400]}
         />
       </Box>
+
+      {/* Chick purchase cost — recorded at reception, or here if not yet known. */}
+      <Card>
+        <CardContent>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1.5}
+            sx={{ justifyContent: "space-between", alignItems: { sm: "center" } }}
+          >
+            <Box>
+              <Typography variant="body2" color="text.secondary">
+                Coût des poussins
+              </Typography>
+              {batch.chickPurchaseCostXof != null ? (
+                <Typography sx={{ ...monoSx, fontSize: "1.25rem" }}>
+                  {batch.chickPurchaseCostXof.toLocaleString("fr-FR")} FCFA
+                  <Typography component="span" variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                    ({Math.round(batch.chickPurchaseCostXof / batch.initialCount).toLocaleString("fr-FR")} FCFA/poussin)
+                  </Typography>
+                </Typography>
+              ) : (
+                <Typography variant="body2" color="text.secondary">
+                  Non renseigné
+                </Typography>
+              )}
+            </Box>
+            <Button variant="outlined" size="small" onClick={() => setChickCostOpen(true)}>
+              {batch.chickPurchaseCostXof != null ? "Modifier" : "Renseigner"}
+            </Button>
+          </Stack>
+        </CardContent>
+      </Card>
+
+      <ChickCostDialog
+        open={chickCostOpen}
+        onClose={() => setChickCostOpen(false)}
+        farmId={farmId}
+        batchId={batch.id}
+        initialCount={batch.initialCount}
+        currentValueXof={batch.chickPurchaseCostXof}
+      />
 
       {/* Growth + maturity */}
       <Box
