@@ -50,6 +50,7 @@ export function CloseBatchDialog({
   unitId,
   batchName,
   remainingCount,
+  chickPurchaseCostXof,
 }: {
   open: boolean;
   onClose: () => void;
@@ -57,6 +58,7 @@ export function CloseBatchDialog({
   unitId: number;
   batchName: string;
   remainingCount: number;
+  chickPurchaseCostXof: number | null;
 }) {
   const [closeUnit, { isLoading }] = useCloseUnitMutation();
   const { showToast } = useToast();
@@ -77,7 +79,9 @@ export function CloseBatchDialog({
         farmId,
         unitId,
         body: {
-          chickCostXof: values.chickCostXof ? Number(values.chickCostXof) : undefined,
+          ...(chickPurchaseCostXof == null
+            ? { chickCostXof: values.chickCostXof ? Number(values.chickCostXof) : undefined }
+            : {}),
           notes: values.notes || undefined,
         },
       }).unwrap();
@@ -129,28 +133,45 @@ export function CloseBatchDialog({
               </Alert>
             )}
 
-            <Controller
-              name="chickCostXof"
-              control={control}
-              render={({ field, fieldState }) => (
-                <TextField
-                  {...field}
-                  label="Coût des poussins"
-                  placeholder="Optionnel"
-                  fullWidth
-                  error={!!fieldState.error}
-                  helperText={
-                    fieldState.error?.message ??
-                    "Non enregistré ailleurs dans l'application. Sans lui, le coût est sous-estimé."
-                  }
-                  slotProps={{
-                    input: {
-                      endAdornment: <InputAdornment position="end">F CFA</InputAdornment>,
-                    },
-                  }}
-                />
-              )}
-            />
+            {chickPurchaseCostXof != null ? (
+              <Box
+                sx={{
+                  p: 2,
+                  borderRadius: 1,
+                  bgcolor: (t) => t.palette.action.hover,
+                }}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  Coût des poussins (déjà enregistré)
+                </Typography>
+                <Typography sx={{ fontWeight: 700 }}>
+                  {chickPurchaseCostXof.toLocaleString("fr-FR")} FCFA
+                </Typography>
+              </Box>
+            ) : (
+              <Controller
+                name="chickCostXof"
+                control={control}
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    label="Coût des poussins"
+                    placeholder="Optionnel"
+                    fullWidth
+                    error={!!fieldState.error}
+                    helperText={
+                      fieldState.error?.message ??
+                      "Non enregistré ailleurs dans l'application. Sans lui, le coût est sous-estimé."
+                    }
+                    slotProps={{
+                      input: {
+                        endAdornment: <InputAdornment position="end">F CFA</InputAdornment>,
+                      },
+                    }}
+                  />
+                )}
+              />
+            )}
 
             <Controller
               name="notes"

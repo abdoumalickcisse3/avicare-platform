@@ -43,6 +43,18 @@ export const poultryBatchesApi = baseApi.injectEndpoints({
       transformResponse: (r: ApiEnvelope<PoultryBatch>) => r.data,
       invalidatesTags: [{ type: "PoultryBatch", id: "LIST" }],
     }),
+    setChickCost: build.mutation<
+      PoultryBatch,
+      { farmId: number; batchId: number; body: { chickUnitPriceXof: number } }
+    >({
+      query: ({ farmId, batchId, body }) => ({
+        url: `${base(farmId)}/${batchId}/chick-cost`,
+        method: "POST",
+        body,
+      }),
+      transformResponse: (r: ApiEnvelope<PoultryBatch>) => r.data,
+      invalidatesTags: (_r, _e, { batchId }) => [{ type: "PoultryBatch", id: batchId }],
+    }),
 
     getDailyRecords: build.query<
       PoultryDailyRecord[],
@@ -112,6 +124,7 @@ export const {
   useGetBatchesQuery,
   useGetBatchQuery,
   useCreateBatchMutation,
+  useSetChickCostMutation,
   useGetDailyRecordsQuery,
   useCreateDailyRecordMutation,
   useGetWeighingsQuery,

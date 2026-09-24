@@ -10,7 +10,7 @@ vi.mock("@/store/api/closureApi", () => ({
   useCloseUnitMutation: () => [closeUnit, { isLoading: false }],
 }));
 
-function setup(remainingCount = 0) {
+function setup(remainingCount = 0, chickPurchaseCostXof: number | null = null) {
   return renderWithProviders(
     <CloseBatchDialog
       open
@@ -19,6 +19,7 @@ function setup(remainingCount = 0) {
       unitId={42}
       batchName="Bande A"
       remainingCount={remainingCount}
+      chickPurchaseCostXof={chickPurchaseCostXof}
     />,
   );
 }
@@ -64,5 +65,29 @@ describe("CloseBatchDialog", () => {
       unitId: 42,
       body: { chickCostXof: 250000, notes: undefined },
     });
+  });
+
+  it("shows a read-only summary and hides the manual field when a cost is already recorded", async () => {
+    const user = userEvent.setup();
+    setup(0, 150_000);
+
+    expect(screen.queryByLabelText(/coût des poussins/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/déjà enregistré/i)).toBeInTheDocument();
+    expect(screen.getByText("150 000 FCFA")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /^clôturer$/i }));
+
+    expect(closeUnit).toHaveBeenCalledWith({
+      farmId: 7,
+      unitId: 42,
+      body: { notes: undefined },
+    });
+  });
+
+  it("keeps the editable field when no cost is recorded yet", () => {
+    setup(0, null);
+
+    expect(screen.getByLabelText(/coût des poussins/i)).toBeInTheDocument();
+    expect(screen.queryByText(/déjà enregistré/i)).not.toBeInTheDocument();
   });
 });

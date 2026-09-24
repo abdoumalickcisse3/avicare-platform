@@ -239,6 +239,7 @@ export function PoultryBatchDetailView({ batchId }: { batchId: number }) {
         unitId={batch.id}
         batchName={title}
         remainingCount={batch.currentCount}
+        chickPurchaseCostXof={batch.chickPurchaseCostXof}
       />
     </Box>
   );
