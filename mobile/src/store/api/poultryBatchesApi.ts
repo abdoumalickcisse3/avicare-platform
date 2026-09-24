@@ -18,6 +18,8 @@ export interface CreateBatchInput {
   name?: string;
   startDate?: string;
   initialCount: number;
+  targetWeightG?: number;
+  targetAgeDays?: number;
   chickUnitPriceXof?: number;
 }
 

@@ -111,7 +111,7 @@ export function CreateBatchDialog({
           initialCount: Number(values.initialCount),
           targetWeightG: Number(values.targetWeightG),
           targetAgeDays: Number(values.targetAgeDays),
-          ...(values.chickUnitPriceXof
+          ...(Number(values.chickUnitPriceXof) > 0
             ? { chickUnitPriceXof: Number(values.chickUnitPriceXof) }
             : {}),
         },
