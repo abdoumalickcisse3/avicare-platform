@@ -44,7 +44,7 @@ class SeedDataIT {
     assertThat(catalogItemRepository.findByCategory("bundles")).hasSize(5);
     assertThat(catalogItemRepository.findByCategory("breeds")).hasSize(5);
     assertThat(catalogItemRepository.findByCategory("vaccines")).hasSize(10);
-    assertThat(catalogItemRepository.findByCategory("expense_categories")).hasSize(7);
+    assertThat(catalogItemRepository.findByCategory("expense_categories")).hasSize(8);
   }
 
   @Test
