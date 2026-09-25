@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
-  Box,
   Button,
   CircularProgress,
   Dialog,
@@ -39,19 +38,45 @@ export function ChickCostDialog({
   initialCount: number;
   currentValueXof: number | null;
 }) {
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
+      {open && (
+        <ChickCostDialogBody
+          onClose={onClose}
+          farmId={farmId}
+          batchId={batchId}
+          initialCount={initialCount}
+          currentValueXof={currentValueXof}
+        />
+      )}
+    </Dialog>
+  );
+}
+
+/**
+ * Mounted only while `open` (see `ChickCostDialog`) — a fresh mount on every open is how the form
+ * resets to the current price rather than resetting via an effect.
+ */
+function ChickCostDialogBody({
+  onClose,
+  farmId,
+  batchId,
+  initialCount,
+  currentValueXof,
+}: {
+  onClose: () => void;
+  farmId: number;
+  batchId: number;
+  initialCount: number;
+  currentValueXof: number | null;
+}) {
   const { showToast } = useToast();
   const [setChickCost, { isLoading }] = useSetChickCostMutation();
-  const [unitPrice, setUnitPrice] = useState("");
-
-  useEffect(() => {
-    if (open) {
-      setUnitPrice(
-        currentValueXof != null && initialCount > 0
-          ? String(Math.round(currentValueXof / initialCount))
-          : "",
-      );
-    }
-  }, [open, currentValueXof, initialCount]);
+  const [unitPrice, setUnitPrice] = useState(
+    currentValueXof != null && initialCount > 0
+      ? String(Math.round(currentValueXof / initialCount))
+      : "",
+  );
 
   const valid = /^\d+$/.test(unitPrice) && Number(unitPrice) > 0;
   const total = valid ? Number(unitPrice) * initialCount : null;
@@ -72,7 +97,7 @@ export function ChickCostDialog({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
+    <>
       <DialogTitle component="div" sx={{ pr: 6 }}>
         <Typography variant="h6" sx={{ fontWeight: 700 }}>
           {currentValueXof != null ? "Modifier le coût des poussins" : "Renseigner le coût des poussins"}
@@ -112,6 +137,6 @@ export function ChickCostDialog({
           Enregistrer
         </Button>
       </DialogActions>
-    </Dialog>
+    </>
   );
 }
