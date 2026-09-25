@@ -55,15 +55,15 @@ public interface FinanceFacade {
   /**
    * Enregistre (ou corrige) la dépense d'achat des poussins d'une unité, catégorie {@code chicks},
    * source {@code CHICK_PURCHASE}. Upsert idempotent : une seule ligne par unité de production —
-   * une correction met à jour la ligne existante plutôt que d'en créer une seconde. No-op si
-   * {@code amountXof <= 0}.
+   * une correction met à jour la ligne existante plutôt que d'en créer une seconde. No-op si {@code
+   * amountXof <= 0}.
    */
   void recordChickPurchaseExpense(
       Long farmId, Long productionUnitId, long amountXof, LocalDate date, Long userId);
 
   /**
-   * Montant de la dépense d'achat des poussins déjà enregistrée pour cette unité, ou vide si
-   * aucune n'existe encore.
+   * Montant de la dépense d'achat des poussins déjà enregistrée pour cette unité, ou vide si aucune
+   * n'existe encore.
    */
   java.util.Optional<Long> chickPurchaseCostForUnit(Long farmId, Long productionUnitId);
 

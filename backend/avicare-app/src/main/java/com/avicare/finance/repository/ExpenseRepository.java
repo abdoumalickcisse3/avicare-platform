@@ -47,10 +47,10 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
   /**
    * Σ of the expenses attributed to a production unit, sources {@code STOCK_ENTRY} and {@code
-   * CHICK_PURCHASE} excluded: the first is already counted when the stock came in (V25
-   * double-count guard), the second is surfaced as its own explicit line by the closure bilan
-   * (`UnitClosureService`) rather than folded into "other expenses". Soft-deleted rows are
-   * filtered by the entity's {@code @SQLRestriction}.
+   * CHICK_PURCHASE} excluded: the first is already counted when the stock came in (V25 double-count
+   * guard), the second is surfaced as its own explicit line by the closure bilan
+   * (`UnitClosureService`) rather than folded into "other expenses". Soft-deleted rows are filtered
+   * by the entity's {@code @SQLRestriction}.
    */
   @Query(
       "SELECT COALESCE(SUM(e.amountXof), 0) FROM Expense e "

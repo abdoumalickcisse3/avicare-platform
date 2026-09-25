@@ -51,9 +51,7 @@ class UnitClosureServiceTest {
     livestockService = Mockito.mock(LivestockService.class);
     commercialFacade = Mockito.mock(CommercialFacade.class);
     financeFacade = Mockito.mock(FinanceFacade.class);
-    lenient()
-        .when(financeFacade.chickPurchaseCostForUnit(7L, 42L))
-        .thenReturn(Optional.empty());
+    lenient().when(financeFacade.chickPurchaseCostForUnit(7L, 42L)).thenReturn(Optional.empty());
     service =
         new UnitClosureService(
             unitClosureRepository,
@@ -113,8 +111,7 @@ class UnitClosureServiceTest {
     assertThat(closure.getCostPerKgXof()).isEqualTo(633);
     // Fallback path (no CHICK_PURCHASE expense recorded yet): the manual value is recorded via
     // the facade too, so it becomes visible in the farm-wide P&L, not just this frozen bilan.
-    verify(financeFacade)
-        .recordChickPurchaseExpense(7L, 42L, 250_000L, LocalDate.now(), 3L);
+    verify(financeFacade).recordChickPurchaseExpense(7L, 42L, 250_000L, LocalDate.now(), 3L);
   }
 
   @Test

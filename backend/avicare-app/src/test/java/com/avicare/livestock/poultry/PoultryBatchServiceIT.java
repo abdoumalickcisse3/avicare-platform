@@ -154,8 +154,7 @@ class PoultryBatchServiceIT {
     em.flush();
 
     // 500 head x 300 XOF/head = 150 000 XOF.
-    assertThat(financeFacade.chickPurchaseCostForUnit(farmId, batch.getId()))
-        .contains(150_000L);
+    assertThat(financeFacade.chickPurchaseCostForUnit(farmId, batch.getId())).contains(150_000L);
   }
 
   @Test
@@ -164,7 +163,8 @@ class PoultryBatchServiceIT {
 
     PoultryBatch batch =
         poultryBatchService.create(
-            new PoultryBatchCreate(farmId, cobbBreedId(), "Lot D", LocalDate.now(), null, null, 500),
+            new PoultryBatchCreate(
+                farmId, cobbBreedId(), "Lot D", LocalDate.now(), null, null, 500),
             userId);
     em.flush();
 
@@ -176,7 +176,8 @@ class PoultryBatchServiceIT {
     long farmId = seedFarm();
     PoultryBatch batch =
         poultryBatchService.create(
-            new PoultryBatchCreate(farmId, cobbBreedId(), "Lot E", LocalDate.now(), null, null, 200),
+            new PoultryBatchCreate(
+                farmId, cobbBreedId(), "Lot E", LocalDate.now(), null, null, 200),
             userId);
     em.flush();
 
@@ -193,11 +194,13 @@ class PoultryBatchServiceIT {
     long farmId = seedFarm();
     PoultryBatch batch =
         poultryBatchService.create(
-            new PoultryBatchCreate(farmId, cobbBreedId(), "Lot F", LocalDate.now(), null, null, 100),
+            new PoultryBatchCreate(
+                farmId, cobbBreedId(), "Lot F", LocalDate.now(), null, null, 100),
             userId);
     em.flush();
 
-    assertThatThrownBy(() -> poultryBatchService.setChickCost(999_999L, batch.getId(), 250L, userId))
+    assertThatThrownBy(
+            () -> poultryBatchService.setChickCost(999_999L, batch.getId(), 250L, userId))
         .isInstanceOf(NotFoundException.class);
   }
 }
