@@ -1,5 +1,5 @@
 -- =====================================================================
--- V59 — Extend expense sources to cover chick purchases (recorded at
+-- V60 — Extend expense sources to cover chick purchases (recorded at
 -- batch reception or corrected later), plus the matching catalog category.
 -- =====================================================================
 
