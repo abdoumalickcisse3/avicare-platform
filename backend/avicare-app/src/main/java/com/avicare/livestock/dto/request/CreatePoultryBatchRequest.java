@@ -9,8 +9,8 @@ import java.time.LocalDate;
  * Create a broiler batch on a farm.
  *
  * <p>{@code chickUnitPriceXof} is optional — the price paid per chick. When present, the service
- * records a {@code CHICK_PURCHASE} expense of {@code chickUnitPriceXof * initialCount}. {@code
- * @Positive} on a nullable field only validates when a value is actually supplied.
+ * records a {@code CHICK_PURCHASE} expense of {@code chickUnitPriceXof * initialCount}.
+ * {@code @Positive} on a nullable field only validates when a value is actually supplied.
  */
 public record CreatePoultryBatchRequest(
     @NotNull Long breedId,
