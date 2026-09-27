@@ -14,7 +14,6 @@ import { Redirect } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
 import {
-  BookOpen,
   CalendarClock,
   CalendarRange,
   Eye,
@@ -27,6 +26,7 @@ import {
 import type { LucideIcon } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { AppHeader } from '@/components/AppHeader';
+import { TicketRow } from '@/components/ui';
 import {
   useGetHealthAlertsQuery,
   useGetProgramsQuery,
@@ -171,22 +171,18 @@ export default function SanitaireScreen() {
           </View>
         ) : (
           <>
-            {/* KPI tiles */}
-            <View style={styles.kpiGrid}>
-              {tiles.map((t) => (
-                <View key={t.label} style={[styles.kpiTile, { borderLeftColor: t.color }]}>
-                  <View style={styles.kpiTop}>
-                    <Text style={styles.kpiLabel}>{t.label}</Text>
-                    <View style={[styles.kpiIcon, { backgroundColor: `${t.color}1A` }]}><t.icon size={16} color={t.color} /></View>
-                  </View>
-                  <Text style={[styles.kpiVal, { color: t.color }]}>{isLoading ? '—' : t.value}</Text>
-                  <Text style={styles.kpiHint}>{t.hint}</Text>
-                </View>
-              ))}
-            </View>
+            {/* KPI ticket row */}
+            <TicketRow
+              items={tiles.map((t) => ({
+                key: t.label,
+                value: isLoading ? '—' : t.value,
+                label: t.label,
+                tint: t.color,
+              }))}
+            />
 
             {/* Timeline */}
-            <View style={styles.card}>
+            <View style={styles.section}>
               <Text style={styles.cardTitle}>Événements récents</Text>
               <View style={styles.filters}>
                 {(['all', 'vaccination', 'treatment', 'observation', 'vet-visit'] as const).map((k) => {
@@ -223,36 +219,14 @@ export default function SanitaireScreen() {
               )}
             </View>
 
-            {/* Vaccination programs */}
-            <View style={styles.card}>
-              <View style={styles.cardHead}>
-                <CalendarRange size={18} color={tokens.colors.primary[600]} />
-                <Text style={styles.cardTitle}>Programmes vaccinaux</Text>
-              </View>
-              <Text style={styles.body}>
-                {formatNumber(programs?.length ?? 0)} programme(s) plateforme · {formatNumber(units?.length ?? 0)} lot(s) suivi(s).
+            {/* Protocoles & catalogue — une seule ligne de synthèse */}
+            <View style={styles.summaryRow}>
+              <CalendarRange size={16} color={tokens.colors.field.textMuted} />
+              <Text style={styles.summaryText}>
+                {formatNumber(programs?.length ?? 0)} programme(s) · {formatNumber(units?.length ?? 0)} lot(s) suivi(s)
+                {'  ·  '}
+                {formatNumber(vaccines?.length ?? 0)} vaccins · {treatments ? formatNumber(treatments.length) : '—'} traitements
               </Text>
-              <Text style={styles.bodyMuted}>
-                Assignez un programme depuis l&apos;onglet Sanitaire de chaque lot pour suivre le calendrier vaccinal.
-              </Text>
-            </View>
-
-            {/* Medical library */}
-            <View style={styles.card}>
-              <View style={styles.cardHead}>
-                <BookOpen size={18} color={tokens.colors.primary[600]} />
-                <Text style={styles.cardTitle}>Bibliothèque médicale</Text>
-              </View>
-              <View style={styles.libRow}>
-                <View style={styles.libStat}>
-                  <Text style={styles.libLabel}>Vaccins</Text>
-                  <Text style={styles.libVal}>{formatNumber(vaccines?.length ?? 0)}</Text>
-                </View>
-                <View style={styles.libStat}>
-                  <Text style={styles.libLabel}>Traitements</Text>
-                  <Text style={styles.libVal}>{treatments ? formatNumber(treatments.length) : '—'}</Text>
-                </View>
-              </View>
             </View>
           </>
         )}
@@ -274,19 +248,11 @@ const styles = StyleSheet.create({
   lockTitle: { ...tokens.typography.headingMd, color: tokens.colors.field.text },
   lockText: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, textAlign: 'center' },
 
-  kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.spacing[3] },
-  kpiTile: { flexBasis: '47%', flexGrow: 1, backgroundColor: tokens.colors.neutral[0], borderWidth: 1, borderColor: tokens.colors.neutral[200], borderLeftWidth: 4, borderRadius: tokens.radii.lg, padding: tokens.spacing[3], gap: tokens.spacing[1] },
-  kpiTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
-  kpiLabel: { ...tokens.typography.bodySm, fontSize: 11, color: tokens.colors.field.textMuted, flex: 1 },
-  kpiIcon: { width: 30, height: 30, borderRadius: tokens.radii.md, alignItems: 'center', justifyContent: 'center' },
-  kpiVal: { ...tokens.typography.numericSm, fontSize: 22 },
-  kpiHint: { ...tokens.typography.bodySm, fontSize: 11, color: tokens.colors.field.textMuted },
+  section: { marginBottom: tokens.spacing[2] },
+  summaryRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[2], paddingVertical: tokens.spacing[2] },
+  summaryText: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, flex: 1 },
 
-  card: { backgroundColor: tokens.colors.neutral[0], borderWidth: 1, borderColor: tokens.colors.neutral[200], borderRadius: tokens.radii.xl, padding: tokens.spacing[4] },
-  cardHead: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[2], marginBottom: tokens.spacing[2] },
   cardTitle: { ...tokens.typography.headingMd, fontSize: 16, color: tokens.colors.field.text },
-  body: { ...tokens.typography.bodyMd, color: tokens.colors.field.text, marginTop: tokens.spacing[1] },
-  bodyMuted: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginTop: tokens.spacing[2] },
 
   filters: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.spacing[2], marginTop: tokens.spacing[2], marginBottom: tokens.spacing[1] },
   filterChip: { ...tokens.typography.bodySm, fontSize: 12, fontWeight: '600', color: tokens.colors.field.textMuted, backgroundColor: tokens.colors.neutral[100], borderRadius: tokens.radii.full, paddingHorizontal: tokens.spacing[3], paddingVertical: tokens.spacing[1], overflow: 'hidden' },
@@ -299,9 +265,4 @@ const styles = StyleSheet.create({
   eventTitle: { ...tokens.typography.bodyMd, fontWeight: '600', color: tokens.colors.field.text },
   eventSub: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted },
   eventDate: { ...tokens.typography.bodySm, fontSize: 11, color: tokens.colors.field.textMuted },
-
-  libRow: { flexDirection: 'row', gap: tokens.spacing[3], marginTop: tokens.spacing[1] },
-  libStat: { flex: 1, backgroundColor: tokens.colors.neutral[50], borderRadius: tokens.radii.md, padding: tokens.spacing[3] },
-  libLabel: { ...tokens.typography.bodySm, fontSize: 11, color: tokens.colors.field.textMuted },
-  libVal: { ...tokens.typography.numericSm, fontSize: 20, color: tokens.colors.field.text, marginTop: 2 },
 });
