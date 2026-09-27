@@ -1,9 +1,10 @@
 /**
  * Lot detail — broiler batch, rebuilt to the Stitch "Détail du Lot - AviCare
- * Mobile" reference: header, a 2×2 KPI grid (effectif · âge · mortalité ·
- * poids moyen), swipeable tabs (Vue d'ensemble / Saisies / Sanitaire /
- * Documents) and a FAB. Data is ported from the web (poultryBatchesApi):
- * batch, performance, weighings, daily records — nothing recomputed.
+ * Mobile" reference: header, a 4-column KPI ticket row (effectif · âge ·
+ * mortalité · poids moyen), swipeable tabs (Vue d'ensemble / Saisies /
+ * Sanitaire / Documents) and a FAB. Data is ported from the web
+ * (poultryBatchesApi): batch, performance, weighings, daily records —
+ * nothing recomputed.
  */
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -13,6 +14,7 @@ import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
 import { ArrowLeft, ClipboardList, Lock, Plus, Scale } from 'lucide-react-native';
 import { tokens } from '@/theme';
+import { TicketRow } from '@/components/ui';
 import { BatchClosureCard } from '@/components/poultry/BatchClosureCard';
 import { ChickCostSheet } from '@/components/poultry/ChickCostSheet';
 import { GrowthChart, type GrowthPoint } from '@/components/charts/GrowthChart';
@@ -117,13 +119,20 @@ export default function LotDetailScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* KPI grid */}
-        <View style={styles.kpiGrid}>
-          <Kpi label="Effectif actuel" value={batch ? formatNumber(batch.currentCount) : '—'} unit="sujets" />
-          <Kpi label="Âge" value={String(age)} unit="jours" />
-          <Kpi label="Mortalité" value={`${mortalityPct.toFixed(1)}%`} unit="cumulée" tone={deaths > 0 ? tokens.colors.error : undefined} />
-          <Kpi label="Poids moyen" value={avgKg != null ? avgKg.toFixed(2) : '—'} unit="kg" tone={tokens.colors.primary[600]} />
-        </View>
+        {/* KPI ticket row */}
+        <TicketRow
+          items={[
+            { key: 'headcount', value: batch ? formatNumber(batch.currentCount) : '—', label: 'Effectif' },
+            { key: 'age', value: `J${age}`, label: 'Âge' },
+            {
+              key: 'mortality',
+              value: `${mortalityPct.toFixed(1)}%`,
+              label: 'Mortalité',
+              tint: deaths > 0 ? tokens.colors.error : undefined,
+            },
+            { key: 'weight', value: avgKg != null ? `${avgKg.toFixed(2)}kg` : '—', label: 'Poids moyen' },
+          ]}
+        />
 
         {/* Chick purchase cost — recorded at reception, or here if not yet known.
             Hidden once the batch is closed: the backend refuses the correction with a
@@ -326,18 +335,6 @@ export default function LotDetailScreen() {
   );
 }
 
-function Kpi({ label, value, unit, tone }: { label: string; value: string; unit?: string; tone?: string }) {
-  return (
-    <View style={styles.kpi}>
-      <Text style={styles.kpiLabel}>{label.toUpperCase()}</Text>
-      <View style={styles.kpiValRow}>
-        <Text style={[styles.kpiVal, tone && { color: tone }]} numberOfLines={1}>{value}</Text>
-        {unit ? <Text style={styles.kpiUnit}>{unit}</Text> : null}
-      </View>
-    </View>
-  );
-}
-
 function Perf({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.perf}>
@@ -370,12 +367,6 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: tokens.layout.screenPadding, paddingVertical: tokens.spacing[3] },
   headerTitle: { ...tokens.typography.headingLg, color: tokens.colors.field.text, flex: 1, textAlign: 'center' },
   content: { paddingHorizontal: tokens.layout.screenPadding, paddingBottom: tokens.layout.fabScrollClearance },
-  kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.spacing[3] },
-  kpi: { width: '47%', flexGrow: 1, backgroundColor: tokens.colors.neutral[0], borderWidth: 1, borderColor: tokens.colors.neutral[200], borderRadius: tokens.radii.lg, padding: tokens.spacing[4] },
-  kpiLabel: { ...tokens.typography.bodySm, fontSize: 10.5, letterSpacing: 0.4, fontWeight: '700', color: tokens.colors.field.textMuted },
-  kpiValRow: { flexDirection: 'row', alignItems: 'baseline', gap: 5, marginTop: tokens.spacing[2] },
-  kpiVal: { ...tokens.typography.numericSm, fontSize: 24, color: tokens.colors.field.text },
-  kpiUnit: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted },
   tabs: { flexDirection: 'row', marginTop: tokens.spacing[5], borderBottomWidth: 1, borderBottomColor: tokens.colors.neutral[200] },
   tab: { flex: 1, alignItems: 'center', paddingBottom: tokens.spacing[2] },
   tabText: { ...tokens.typography.bodySm, fontWeight: '600', color: tokens.colors.field.textMuted },
