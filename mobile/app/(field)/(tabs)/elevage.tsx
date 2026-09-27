@@ -119,24 +119,29 @@ export default function ElevageScreen() {
           </View>
         ) : (
           <View style={styles.list}>
-            {rows.map((b: PoultryBatch) => {
+            {rows.map((b: PoultryBatch, i: number) => {
               const st = STATUS_STYLE[b.status];
               const age = ageInDays(b.startDate);
               const target = b.targetAgeDays ?? null;
               const progress = target ? Math.max(0, Math.min(1, age / target)) : 0;
               const deaths = b.deaths;
+              // Seuil d'alerte visuel (pastille), pas une règle métier : à réviser si un
+              // seuil de ferme existe un jour côté paramétrage (docs/superpowers/specs
+              // §5 — risque déjà noté à l'écriture de ce plan).
+              const mortalityPct = b.initialCount > 0 ? (deaths / b.initialCount) * 100 : 0;
+              const highMortality = mortalityPct >= 5;
               return (
                 <Pressable
                   key={b.id}
-                  style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+                  style={({ pressed }) => [styles.row, i > 0 && styles.rowBorder, pressed && styles.rowPressed]}
                   onPress={() => router.push(`/(field)/lots/${b.id}`)}
                   accessibilityRole="button"
                   accessibilityLabel={b.name ?? `Lot #${b.id}`}
                 >
                   <View style={styles.cardTop}>
-                    <View style={{ flex: 1 }}>
+                    <View style={styles.nameRow}>
+                      {highMortality && <View style={styles.alertDot} accessibilityLabel="Mortalité élevée" />}
                       <Text style={styles.name} numberOfLines={1}>{b.name ?? `Lot #${b.id}`}</Text>
-                      <Text style={styles.breed}>{breedName.get(b.breedId) ?? 'Race —'}</Text>
                     </View>
                     <View style={[styles.statusChip, { backgroundColor: st.bg }]}>
                       <Text style={[styles.statusText, { color: st.fg }]}>{st.label}</Text>
@@ -207,22 +212,13 @@ const styles = StyleSheet.create({
   filterTextOn: { color: tokens.colors.neutral[0] },
   muted: { ...tokens.typography.bodyMd, color: tokens.colors.field.textMuted, textAlign: 'center', paddingVertical: tokens.spacing[8] },
   list: { gap: tokens.spacing[3] },
-  card: {
-    backgroundColor: tokens.colors.neutral[0],
-    borderRadius: tokens.radii.xl,
-    borderWidth: 1,
-    borderColor: tokens.colors.neutral[200],
-    padding: tokens.spacing[4],
-    shadowColor: '#1C1917',
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
-  },
-  cardPressed: { opacity: 0.92 },
+  row: { paddingVertical: tokens.spacing[4] },
+  rowBorder: { borderTopWidth: 1, borderTopColor: tokens.colors.neutral[100] },
+  rowPressed: { opacity: 0.92 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[2] },
+  alertDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: tokens.colors.accent[400] },
   cardTop: { flexDirection: 'row', alignItems: 'flex-start', gap: tokens.spacing[2] },
   name: { ...tokens.typography.headingMd, color: tokens.colors.field.text },
-  breed: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginTop: 1 },
   statusChip: { borderRadius: tokens.radii.full, paddingHorizontal: tokens.spacing[3], paddingVertical: 4 },
   statusText: { ...tokens.typography.bodySm, fontWeight: '700', fontSize: 11 },
   progressRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: tokens.spacing[3] },
