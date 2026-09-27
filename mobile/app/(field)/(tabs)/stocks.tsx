@@ -1,9 +1,11 @@
 /**
  * Stocks tab — the farm inventory, ported from the web `/stocks` overview
- * (same data via `inventoryStockApi`) and reshaped for the field: KPI cards
- * (articles / alertes / valeur), a low-stock highlight section, a search box
- * and the full stock-item list. Tapping an article opens its detail (quantity,
- * days of cover, threshold, ledger). Shown only to roles with `inventory:read`.
+ * (same data via `inventoryStockApi`) and reshaped for the field: a ticket
+ * row (articles / alertes / valeur), a single fused Alertes section (negative
+ * stock, low stock, overdue orders — three colored cards used to compete for
+ * the same attention), a search box and the full stock-item list. Tapping an
+ * article opens its detail (quantity, days of cover, threshold, ledger).
+ * Shown only to roles with `inventory:read`.
  */
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -11,9 +13,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
-import { AlertTriangle, PackageOpen, Search, Truck, Wallet } from 'lucide-react-native';
+import { AlertTriangle, PackageOpen, Search, Truck, type LucideIcon } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { AppHeader } from '@/components/AppHeader';
+import { TicketRow } from '@/components/ui';
 import {
   useGetInventoryAlertsQuery,
   useGetLowStockItemsQuery,
@@ -66,9 +69,33 @@ export default function StocksScreen() {
 
   if (selectedFarmId === null) return <Redirect href="/(field)" />;
 
-  const lowCount = lowStock?.length ?? 0;
   const negative = alerts?.negativeStockItems ?? [];
   const overdueOrders = alerts?.pendingPurchaseOrders ?? [];
+
+  type AlertRow = { key: string; icon: LucideIcon; tint: string; label: string; value: string };
+  const alertRows: AlertRow[] = [
+    ...negative.map((i): AlertRow => ({
+      key: `neg-${i.stockItemId}`,
+      icon: AlertTriangle,
+      tint: tokens.colors.error,
+      label: i.label ?? i.articleKey,
+      value: `${formatNumber(i.currentQuantity)}${i.unit ? ` ${i.unit}` : ''}`,
+    })),
+    ...(lowStock ?? []).map((i): AlertRow => ({
+      key: `low-${i.id}`,
+      icon: AlertTriangle,
+      tint: tokens.colors.warning,
+      label: articleLabel(i.articleKey),
+      value: `${formatNumber(i.currentQuantity)}${i.unit ? ` ${i.unit}` : ''}`,
+    })),
+    ...overdueOrders.map((o): AlertRow => ({
+      key: `late-${o.purchaseOrderId}`,
+      icon: Truck,
+      tint: tokens.colors.info,
+      label: `${o.orderNumber} · ${o.supplierName}`,
+      value: `${o.daysOverdue} j de retard`,
+    })),
+  ];
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -77,85 +104,33 @@ export default function StocksScreen() {
         <Text style={styles.title}>Stocks</Text>
         <Text style={styles.subtitle}>Aliments, médicaments et consommables en temps réel.</Text>
 
-        {/* KPI row */}
-        <View style={styles.kpiRow}>
-          <View style={styles.kpi}>
-            <PackageOpen size={18} color={tokens.colors.primary[600]} />
-            <Text style={styles.kpiVal}>{formatNumber(items?.length ?? 0)}</Text>
-            <Text style={styles.kpiLabel}>Articles</Text>
-          </View>
-          <View style={[styles.kpi, lowCount > 0 && styles.kpiAlert]}>
-            <AlertTriangle size={18} color={lowCount > 0 ? tokens.colors.error : tokens.colors.neutral[400]} />
-            <Text style={[styles.kpiVal, lowCount > 0 && { color: tokens.colors.error }]}>{formatNumber(lowCount)}</Text>
-            <Text style={styles.kpiLabel}>Alertes</Text>
-          </View>
-          <View style={styles.kpi}>
-            <Wallet size={18} color={tokens.colors.primary[600]} />
-            <Text style={styles.kpiVal}>{formatCurrency(valuation?.totalValueXof ?? 0)}</Text>
-            <Text style={styles.kpiLabel}>Valeur</Text>
-          </View>
-        </View>
+        {/* KPI ticket row */}
+        <TicketRow
+          items={[
+            { key: 'articles', value: formatNumber(items?.length ?? 0), label: 'Articles' },
+            {
+              key: 'alerts',
+              value: formatNumber(alertRows.length),
+              label: 'Alertes',
+              tint: alertRows.length > 0 ? tokens.colors.accent[400] : undefined,
+            },
+            { key: 'value', value: formatCurrency(valuation?.totalValueXof ?? 0), label: 'Valeur' },
+          ]}
+        />
 
-        {negative.length > 0 && (
-          <View style={styles.negativeCard}>
-            <View style={styles.lowHead}>
-              <AlertTriangle size={16} color={tokens.colors.error} />
-              <Text style={styles.negativeTitle}>Stock négatif — {formatNumber(negative.length)}</Text>
-            </View>
-            <Text style={styles.negativeHint}>
-              Un compte sous zéro n&apos;est pas une rupture : c&apos;est une sortie enregistrée
-              deux fois, ou une entrée jamais saisie. À corriger par un mouvement d&apos;inventaire.
-            </Text>
-            {negative.map((i) => (
-              <View key={i.stockItemId} style={styles.lowRow}>
-                <Text style={styles.lowName}>{i.label ?? i.articleKey}</Text>
-                <Text style={styles.negativeQty}>
-                  {formatNumber(i.currentQuantity)} {i.unit ?? ''}
-                </Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {overdueOrders.length > 0 && (
-          <View style={styles.lowCard}>
-            <View style={styles.lowHead}>
-              <Truck size={16} color={tokens.colors.warning} />
-              <Text style={styles.lowTitle}>
-                Commandes en retard — {formatNumber(overdueOrders.length)}
-              </Text>
-            </View>
-            {overdueOrders.map((o) => (
-              <View key={o.purchaseOrderId} style={styles.lowRow}>
-                <Text style={styles.lowName}>
-                  {o.orderNumber} · {o.supplierName}
-                </Text>
-                <Text style={styles.lowQty}>
-                  {o.daysOverdue} j de retard
-                </Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Low-stock highlight */}
-        {lowStock && lowStock.length > 0 && (
-          <View style={styles.lowCard}>
-            <View style={styles.lowHead}>
-              <AlertTriangle size={16} color={tokens.colors.error} />
-              <Text style={styles.lowTitle}>Stock bas — {formatNumber(lowStock.length)}</Text>
-            </View>
-            {lowStock.map((i) => (
-              <View key={i.id} style={styles.lowRow}>
-                <Text style={styles.lowName} numberOfLines={1}>{articleLabel(i.articleKey)}</Text>
-                <Text style={styles.lowQty}>
-                  {formatNumber(i.currentQuantity)}{i.unit ? ` ${i.unit}` : ''}
-                  {i.alertThreshold !== null ? (
-                    <Text style={styles.lowThreshold}>{`  / seuil ${formatNumber(i.alertThreshold)}`}</Text>
-                  ) : null}
-                </Text>
-              </View>
-            ))}
+        {alertRows.length > 0 && (
+          <View style={styles.alertsBlock}>
+            <Text style={styles.alertsTitle}>Alertes ({alertRows.length})</Text>
+            {alertRows.map((a, i) => {
+              const Icon = a.icon;
+              return (
+                <View key={a.key} style={[styles.alertRow, i > 0 && styles.alertRowBorder]}>
+                  <Icon size={16} color={a.tint} />
+                  <Text style={styles.alertLabel} numberOfLines={1}>{a.label}</Text>
+                  <Text style={[styles.alertValue, { color: a.tint }]}>{a.value}</Text>
+                </View>
+              );
+            })}
           </View>
         )}
 
@@ -181,13 +156,13 @@ export default function StocksScreen() {
           </View>
         ) : (
           <View style={styles.list}>
-            {filtered.map((i) => {
+            {filtered.map((i, idx) => {
               const src = SOURCE_STYLE[i.articleSource];
               const low = isLow(i);
               return (
                 <Pressable
                   key={i.id}
-                  style={styles.card}
+                  style={[styles.row, idx > 0 && styles.rowBorder]}
                   // The detail screen, not the movement sheet: consulting a stock — how much is
                   // left, how long it lasts, where it went — is the frequent act. Recording a
                   // movement by hand is a correction, and lives one tap away on that screen.
@@ -208,18 +183,10 @@ export default function StocksScreen() {
                       <Text style={[styles.sourceText, { color: src.fg }]}>{src.label}</Text>
                     </View>
                   </View>
-                  <View style={styles.cardBottom}>
-                    <Text style={[styles.qty, low && { color: tokens.colors.error }]}>
-                      {formatNumber(i.currentQuantity)}
-                      <Text style={styles.unit}>{i.unit ? ` ${i.unit}` : ''}</Text>
-                    </Text>
-                    {low && (
-                      <View style={styles.lowBadge}>
-                        <AlertTriangle size={12} color={tokens.colors.errorDark} />
-                        <Text style={styles.lowBadgeText}>Bas</Text>
-                      </View>
-                    )}
-                  </View>
+                  <Text style={[styles.qty, low && { color: tokens.colors.error }]}>
+                    {formatNumber(i.currentQuantity)}
+                    <Text style={styles.unit}>{i.unit ? ` ${i.unit}` : ''}</Text>
+                  </Text>
                 </Pressable>
               );
             })}
@@ -237,35 +204,12 @@ const styles = StyleSheet.create({
   title: { ...tokens.typography.displayMd, color: tokens.colors.field.text },
   subtitle: { ...tokens.typography.bodyMd, color: tokens.colors.field.textMuted, marginTop: tokens.spacing[1], marginBottom: tokens.spacing[4] },
 
-  kpiRow: { flexDirection: 'row', gap: tokens.spacing[2], marginBottom: tokens.spacing[4] },
-  kpi: { flex: 1, backgroundColor: tokens.colors.neutral[0], borderWidth: 1, borderColor: tokens.colors.neutral[200], borderRadius: tokens.radii.lg, padding: tokens.spacing[3], gap: tokens.spacing[1] },
-  kpiAlert: { borderColor: tokens.colors.error },
-  kpiVal: { ...tokens.typography.numericSm, fontSize: 15, color: tokens.colors.field.text },
-  kpiLabel: { ...tokens.typography.bodySm, fontSize: 11, color: tokens.colors.field.textMuted },
-
-  negativeCard: {
-    marginTop: tokens.spacing[4],
-    padding: tokens.spacing[4],
-    borderRadius: tokens.radii.lg,
-    backgroundColor: tokens.colors.neutral[0],
-    borderWidth: 1,
-    borderColor: tokens.colors.error,
-  },
-  negativeTitle: { ...tokens.typography.label, fontSize: 13, color: tokens.colors.error },
-  negativeHint: {
-    ...tokens.typography.bodySm,
-    color: tokens.colors.field.textMuted,
-    marginTop: tokens.spacing[1],
-    marginBottom: tokens.spacing[2],
-  },
-  negativeQty: { ...tokens.typography.bodySm, fontWeight: '700', color: tokens.colors.error },
-  lowCard: { backgroundColor: tokens.colors.errorLight, borderRadius: tokens.radii.xl, padding: tokens.spacing[4], marginBottom: tokens.spacing[4], gap: tokens.spacing[2] },
-  lowHead: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[2] },
-  lowTitle: { ...tokens.typography.headingMd, fontSize: 15, color: tokens.colors.errorDark },
-  lowRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: tokens.spacing[3] },
-  lowName: { ...tokens.typography.bodySm, fontWeight: '600', color: tokens.colors.field.text, flex: 1 },
-  lowQty: { ...tokens.typography.numericSm, fontSize: 13, color: tokens.colors.errorDark },
-  lowThreshold: { ...tokens.typography.bodySm, fontWeight: '400', color: tokens.colors.field.textMuted },
+  alertsBlock: { marginTop: tokens.spacing[2], marginBottom: tokens.spacing[4] },
+  alertsTitle: { ...tokens.typography.bodySm, fontWeight: '700', color: tokens.colors.field.textMuted, marginBottom: tokens.spacing[2] },
+  alertRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[2], paddingVertical: tokens.spacing[2] },
+  alertRowBorder: { borderTopWidth: 1, borderTopColor: tokens.colors.neutral[100] },
+  alertLabel: { ...tokens.typography.bodyMd, color: tokens.colors.field.text, flex: 1 },
+  alertValue: { ...tokens.typography.numericSm, fontSize: 13 },
 
   searchBox: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[2], backgroundColor: tokens.colors.neutral[0], borderWidth: 1, borderColor: tokens.colors.neutral[200], borderRadius: tokens.radii.lg, paddingHorizontal: tokens.spacing[3], minHeight: 46, marginBottom: tokens.spacing[3] },
   searchInput: { flex: 1, ...tokens.typography.bodyMd, color: tokens.colors.field.text },
@@ -277,15 +221,13 @@ const styles = StyleSheet.create({
   emptySub: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, textAlign: 'center', paddingHorizontal: tokens.spacing[6] },
 
   list: { gap: tokens.spacing[3] },
-  card: { backgroundColor: tokens.colors.neutral[0], borderRadius: tokens.radii.xl, borderWidth: 1, borderColor: tokens.colors.neutral[200], padding: tokens.spacing[4], gap: tokens.spacing[3] },
+  row: { paddingVertical: tokens.spacing[4], gap: tokens.spacing[3] },
+  rowBorder: { borderTopWidth: 1, borderTopColor: tokens.colors.neutral[100] },
   cardTop: { flexDirection: 'row', alignItems: 'flex-start', gap: tokens.spacing[3] },
   name: { ...tokens.typography.headingMd, fontSize: 16, color: tokens.colors.field.text },
   meta: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginTop: 2 },
   sourceChip: { borderRadius: tokens.radii.full, paddingHorizontal: tokens.spacing[3], paddingVertical: 4 },
   sourceText: { ...tokens.typography.bodySm, fontWeight: '700', fontSize: 11 },
-  cardBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   qty: { ...tokens.typography.numeric, color: tokens.colors.field.text },
   unit: { ...tokens.typography.bodyMd, color: tokens.colors.field.textMuted },
-  lowBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: tokens.colors.errorLight, borderRadius: tokens.radii.full, paddingHorizontal: tokens.spacing[2], paddingVertical: 3 },
-  lowBadgeText: { ...tokens.typography.bodySm, fontWeight: '700', fontSize: 11, color: tokens.colors.errorDark },
 });
