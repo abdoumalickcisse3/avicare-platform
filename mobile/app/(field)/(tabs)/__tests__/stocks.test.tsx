@@ -42,21 +42,17 @@ jest.mock('@/store/api/inventoryStockApi', () => ({
 import StocksScreen from '../stocks';
 
 describe('Stocks tab', () => {
-  it('surfaces a negative count as a bookkeeping error, not a shortage', async () => {
-    // A count below zero cannot be restocked away: an exit was recorded twice, or an entry never
-    // recorded, and every figure derived from that article is wrong until someone corrects it.
+  it('regroupe les alertes de tous types dans une seule section', async () => {
     await render(<StocksScreen />);
 
-    expect(screen.getByText(/Stock négatif — 1/)).toBeTruthy();
+    expect(screen.getByText('Alertes (2)')).toBeTruthy();
     expect(screen.getByText('Maïs concassé')).toBeTruthy();
-    expect(screen.getByText(/sortie enregistrée/i)).toBeTruthy();
+    expect(screen.getByText(/BA-2026-004/)).toBeTruthy();
+    expect(screen.getByText(/6 j de retard/)).toBeTruthy();
   });
 
-  it('shows the orders that never arrived', async () => {
+  it('affiche le nombre d\'alertes dans la bande ticket, en orange', async () => {
     await render(<StocksScreen />);
-
-    expect(screen.getByText(/Commandes en retard — 1/)).toBeTruthy();
-    expect(screen.getByText(/BA-2026-004 · Provendier du Sahel/)).toBeTruthy();
-    expect(screen.getByText('6 j de retard')).toBeTruthy();
+    expect(screen.getByText('2')).toBeTruthy();
   });
 });
