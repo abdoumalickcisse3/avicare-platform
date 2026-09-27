@@ -233,7 +233,7 @@ export default function FinanceScreen() {
                       canManage && e.source === 'MANUAL' ? `Corriger ${e.label}` : undefined
                     }
                     onPress={() => setEditing(e)}
-                    style={styles.card}
+                    style={[styles.row, i > 0 && styles.rowBorder]}
                   >
                   <View style={styles.cardTop}>
                     <Text style={styles.cardLabel} numberOfLines={1}>{e.label}</Text>
@@ -369,7 +369,7 @@ export default function FinanceScreen() {
                 {(salaries ?? []).map((s: Salary, i) => {
                   const meta = STATUS_META[s.status];
                   return (
-                    <Animated.View key={s.id} entering={FadeInDown.delay(i * 40).springify().damping(18)} style={styles.card}>
+                    <Animated.View key={s.id} entering={FadeInDown.delay(i * 40).springify().damping(18)} style={[styles.row, i > 0 && styles.rowBorder]}>
                       <View style={styles.cardTop}>
                         <Text style={styles.cardLabel}>{memberName(s.userId)}</Text>
                         <Text style={styles.cardAmount}>{formatCurrency(s.netXof)}</Text>
@@ -540,7 +540,8 @@ const styles = StyleSheet.create({
   settingOff: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginTop: 2 },
   settingAmount: { ...tokens.typography.numericSm, fontSize: 14, color: tokens.colors.field.text },
 
-  card: { backgroundColor: tokens.colors.neutral[0], borderRadius: tokens.radii.xl, borderWidth: 1, borderColor: tokens.colors.neutral[200], padding: tokens.spacing[4], gap: tokens.spacing[2] },
+  row: { paddingVertical: tokens.spacing[4], gap: tokens.spacing[2] },
+  rowBorder: { borderTopWidth: 1, borderTopColor: tokens.colors.neutral[100] },
   cardTop: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: tokens.spacing[2] },
   cardLabel: { ...tokens.typography.bodyMd, fontWeight: '700', color: tokens.colors.field.text, flex: 1 },
   cardAmount: { ...tokens.typography.numericSm, fontSize: 15, color: tokens.colors.primary[600] },
