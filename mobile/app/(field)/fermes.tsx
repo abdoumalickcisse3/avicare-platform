@@ -18,6 +18,7 @@ import { skipToken } from '@reduxjs/toolkit/query/react';
 import { Building2, MapPin, Plus, Settings2 } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { AppHeader } from '@/components/AppHeader';
+import { TicketRow } from '@/components/ui';
 import { useFarmAccess } from '@/auth/useSession';
 import { PERIOD_LABELS, selectPeriod, selectSelectedFarmId, setSelectedFarmId } from '@/store/slices/selectionSlice';
 import { PeriodSelector } from '@/components/PeriodSelector';
@@ -99,10 +100,14 @@ export default function FermesScreen() {
   const ls = dashboard?.livestock;
   const cards = useMemo(
     () => [
-      { label: 'Effectif total', hint: 'Sujets actifs', value: dashLoading ? '…' : ls ? formatNumber(ls.totalHeadcount) : 'n/d' },
-      { label: 'Mortalité', hint: `Sur ${PERIOD_LABELS[period]}`, value: dashLoading ? '…' : pct(ls?.mortalityRate) },
-      { label: `Ponte (${PERIOD_LABELS[period]})`, hint: 'Taux de ponte', value: dashLoading ? '…' : pct(ls?.layingRate) },
-      { label: 'Aliment / jour', hint: 'Conso. moyenne', value: dashLoading ? '…' : kg(ls?.dailyFeedKg) },
+      { key: 'headcount', label: 'Effectif', value: dashLoading ? '…' : ls ? formatNumber(ls.totalHeadcount) : 'n/d' },
+      {
+        key: 'mortality',
+        label: 'Mortalité',
+        value: dashLoading ? '…' : pct(ls?.mortalityRate),
+        tint: ls && (ls.mortalityRate ?? 0) > 0 ? tokens.colors.error : undefined,
+      },
+      { key: 'laying', label: 'Ponte', value: dashLoading ? '…' : pct(ls?.layingRate) },
     ],
     [dashLoading, ls],
   );
@@ -275,15 +280,7 @@ export default function FermesScreen() {
         {seg === 'overview' && (
           <View>
             <PeriodSelector />
-            <View style={styles.kpiGrid}>
-              {cards.map((c, i) => (
-                <Animated.View key={c.label} entering={FadeInDown.delay(i * 40).springify().damping(18)} style={styles.kpi}>
-                  <Text style={styles.kpiLabel}>{c.label}</Text>
-                  <Text style={styles.kpiVal}>{c.value}</Text>
-                  <Text style={styles.kpiHint}>{c.hint}</Text>
-                </Animated.View>
-              ))}
-            </View>
+            <TicketRow items={cards} />
 
             <Text style={styles.sectionTitle}>Activité récente</Text>
             {activityLoading ? (
@@ -293,7 +290,7 @@ export default function FermesScreen() {
             ) : (
               <View style={styles.list}>
                 {activity.map((item, i) => (
-                  <View key={`${item.at}-${i}`} style={styles.activityRow}>
+                  <View key={`${item.at}-${i}`} style={[styles.activityRow, i > 0 && styles.activityRowBorder]}>
                     <View style={styles.dot} />
                     <View style={{ flex: 1 }}>
                       <Text style={styles.activityLabel}>{item.label}</Text>
@@ -483,21 +480,6 @@ const styles = StyleSheet.create({
   segmentText: { ...tokens.typography.bodySm, fontWeight: '600', color: tokens.colors.field.textMuted },
   segmentTextOn: { color: tokens.colors.primary[700] },
 
-  kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.spacing[3], marginBottom: tokens.spacing[5] },
-  kpi: {
-    width: '47%',
-    flexGrow: 1,
-    backgroundColor: tokens.colors.neutral[0],
-    borderWidth: 1,
-    borderColor: tokens.colors.neutral[200],
-    borderRadius: tokens.radii.xl,
-    padding: tokens.spacing[4],
-    gap: 2,
-  },
-  kpiLabel: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted },
-  kpiVal: { ...tokens.typography.numericSm, fontSize: 20, color: tokens.colors.field.text },
-  kpiHint: { ...tokens.typography.bodySm, fontSize: 11, color: tokens.colors.neutral[500] },
-
   sectionTitle: { ...tokens.typography.headingMd, fontSize: 15, color: tokens.colors.field.text, marginBottom: tokens.spacing[2] },
   muted: { ...tokens.typography.bodyMd, color: tokens.colors.field.textMuted, textAlign: 'center', paddingVertical: tokens.spacing[6] },
   list: { gap: tokens.spacing[2] },
@@ -505,11 +487,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: tokens.spacing[3],
-    backgroundColor: tokens.colors.neutral[0],
-    borderRadius: tokens.radii.lg,
-    borderWidth: 1,
-    borderColor: tokens.colors.neutral[200],
-    padding: tokens.spacing[3],
+    paddingVertical: tokens.spacing[3],
+  },
+  activityRowBorder: {
+    borderTopWidth: 1,
+    borderTopColor: tokens.colors.neutral[100],
   },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: tokens.colors.primary[500] },
   activityLabel: { ...tokens.typography.bodyMd, color: tokens.colors.field.text },
