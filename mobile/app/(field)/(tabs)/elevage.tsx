@@ -1,9 +1,9 @@
 /**
  * Élevage › Poulets de chair — the broiler batch list, ported from the web
  * `/elevage/lots` page (same data via `poultryBatchesApi`) and styled to the
- * mobile design system: status filter chips, a search box, and rich batch
- * cards (breed, age progress, headcount, mortality, status). Tapping a card
- * opens the existing lot-detail / entry screens.
+ * mobile design system: status filter chips, a search box, and thin-line rows
+ * (name, age progress, headcount, mortality, status). Tapping a row opens the
+ * existing lot-detail / entry screens.
  */
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -15,7 +15,6 @@ import { Bird, ChevronRight, ClipboardCheck, Search } from 'lucide-react-native'
 import { tokens } from '@/theme';
 import { AppHeader } from '@/components/AppHeader';
 import { useGetBatchesQuery } from '@/store/api/poultryBatchesApi';
-import { useListBreedsQuery } from '@/store/api/breedsApi';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { formatNumber } from '@/lib/format';
 import type { BatchStatus, PoultryBatch } from '@/types';
@@ -50,13 +49,6 @@ export default function ElevageScreen() {
   const { data: batches, isLoading } = useGetBatchesQuery(
     selectedFarmId === null ? skipToken : { farmId: selectedFarmId, status: filter === 'all' ? undefined : filter },
   );
-  const { data: breeds } = useListBreedsQuery(selectedFarmId === null ? skipToken : 'POULTRY');
-
-  const breedName = useMemo(() => {
-    const m = new Map<number, string>();
-    (breeds ?? []).forEach((b) => m.set(b.id, b.name));
-    return m;
-  }, [breeds]);
 
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase();
