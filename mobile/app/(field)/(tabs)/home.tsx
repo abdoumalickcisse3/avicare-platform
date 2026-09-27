@@ -41,7 +41,7 @@ import {
   XCircle,
 } from 'lucide-react-native';
 import { tokens } from '@/theme';
-import { SectionHeader } from '@/components/ui';
+import { SectionHeader, TicketRow } from '@/components/ui';
 import { AppHeader } from '@/components/AppHeader';
 import { Sparkline } from '@/components/charts/Sparkline';
 import { MicButton } from '@/components/assistant/MicButton';
@@ -325,30 +325,14 @@ export default function HomeScreen() {
 
             {/* Stat tiles — the period below applies to every one of them. */}
             <PeriodSelector />
-            <View style={styles.tileGrid}>
-              {tiles.map((t, i) => {
-                const Icon = t.icon;
-                return (
-                  <Animated.View key={t.key} entering={FadeInDown.delay(80 + i * 50).springify().damping(18)} style={styles.tileCell}>
-                    <View style={[styles.tile, t.alert && styles.tileAlert]}>
-                      <View style={styles.tileTop}>
-                        <View style={[styles.tileIcon, { backgroundColor: withAlpha(t.tint, 0.14) }]}>
-                          <Icon size={18} color={t.tint} />
-                        </View>
-                        {t.trend && <TrendChip trend={t.trend} invert={t.invertTrend} />}
-                      </View>
-                      <Text style={styles.tileValue} numberOfLines={1}>{t.value}</Text>
-                      <Text style={styles.tileLabel} numberOfLines={1}>{t.label}</Text>
-                      {t.series && t.series.length >= 2 && (
-                        <View style={styles.tileSpark}>
-                          <Sparkline data={t.series} color={t.tint} width={140} height={28} strokeWidth={2} />
-                        </View>
-                      )}
-                    </View>
-                  </Animated.View>
-                );
-              })}
-            </View>
+            <TicketRow
+              items={tiles.map((t) => ({
+                key: t.key,
+                value: t.value,
+                label: t.label,
+                tint: t.alert ? tokens.colors.error : undefined,
+              }))}
+            />
 
             {/* Quick actions */}
             {quickActions.length > 0 && (
@@ -461,17 +445,6 @@ const styles = StyleSheet.create({
   alertIcon: { width: 30, height: 30, borderRadius: tokens.radii.full, alignItems: 'center', justifyContent: 'center' },
   alertCount: { ...tokens.typography.headingMd, fontSize: 17, fontVariant: ['tabular-nums'] },
   alertLabel: { ...tokens.typography.bodySm, fontSize: 11, color: tokens.colors.field.textMuted },
-
-  /* tiles */
-  tileGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.spacing[3] },
-  tileCell: { width: '47%', flexGrow: 1 },
-  tile: { backgroundColor: tokens.colors.neutral[0], borderRadius: tokens.radii.xl, borderWidth: 1, borderColor: tokens.colors.neutral[200], padding: tokens.spacing[4], overflow: 'hidden', minHeight: 116 },
-  tileAlert: { borderColor: withAlpha(tokens.colors.warning, 0.5) },
-  tileTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  tileIcon: { width: 36, height: 36, borderRadius: tokens.radii.full, alignItems: 'center', justifyContent: 'center' },
-  tileValue: { ...tokens.typography.numericSm, fontSize: 24, lineHeight: 30, color: tokens.colors.field.text, marginTop: tokens.spacing[2] },
-  tileLabel: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginTop: 1 },
-  tileSpark: { marginTop: tokens.spacing[1], marginHorizontal: -tokens.spacing[2], marginBottom: -tokens.spacing[2], alignItems: 'stretch' },
 
   /* trend chip */
   trendChip: { flexDirection: 'row', alignItems: 'center', gap: 2, borderRadius: tokens.radii.full, paddingHorizontal: tokens.spacing[2], paddingVertical: 2 },
