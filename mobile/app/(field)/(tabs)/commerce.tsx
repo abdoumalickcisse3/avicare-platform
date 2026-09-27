@@ -15,6 +15,7 @@ import { skipToken } from '@reduxjs/toolkit/query/react';
 import { Phone, Search, ShoppingCart, UserPlus, Users } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { AppHeader } from '@/components/AppHeader';
+import { TicketRow } from '@/components/ui';
 import { useFarmAccess } from '@/auth/useSession';
 import { useCreateClientMutation, useGetClientsQuery } from '@/store/api/clientsApi';
 import { ClientSheet } from '@/commerce/ClientSheet';
@@ -67,22 +68,19 @@ export default function CommerceScreen() {
         <Text style={styles.title}>Clients</Text>
         <Text style={styles.subtitle}>Votre carnet clients et leurs encours.</Text>
 
-        {/* KPI row */}
-        <View style={styles.kpiRow}>
-          <View style={styles.kpi}>
-            <Users size={18} color={tokens.colors.primary[600]} />
-            <Text style={styles.kpiVal}>{formatNumber(clients?.length ?? 0)}</Text>
-            <Text style={styles.kpiLabel}>Clients</Text>
-          </View>
-          <View style={[styles.kpi, debtors.length > 0 && styles.kpiAlert]}>
-            <Text style={[styles.kpiVal, debtors.length > 0 && { color: tokens.colors.warning }]}>{formatNumber(debtors.length)}</Text>
-            <Text style={styles.kpiLabel}>Débiteurs</Text>
-          </View>
-          <View style={styles.kpi}>
-            <Text style={styles.kpiVal}>{formatCurrency(totalEncours)}</Text>
-            <Text style={styles.kpiLabel}>Encours</Text>
-          </View>
-        </View>
+        {/* KPI ticket row */}
+        <TicketRow
+          items={[
+            { key: 'clients', value: formatNumber(clients?.length ?? 0), label: 'Clients' },
+            {
+              key: 'debtors',
+              value: formatNumber(debtors.length),
+              label: 'Débiteurs',
+              tint: debtors.length > 0 ? tokens.colors.accent[400] : undefined,
+            },
+            { key: 'encours', value: formatCurrency(totalEncours), label: 'Encours' },
+          ]}
+        />
 
         {/* Tabs */}
         <View style={styles.tabs}>
@@ -121,13 +119,13 @@ export default function CommerceScreen() {
           </View>
         ) : (
           <View style={styles.list}>
-            {filtered.map((c: Client) => {
+            {filtered.map((c: Client, i: number) => {
               const color = creditColor(c);
               const ratio = creditRatio(c);
               return (
                 <Pressable
                   key={c.id}
-                  style={styles.card}
+                  style={[styles.row, i > 0 && styles.rowBorder]}
                   accessibilityRole="button"
                   accessibilityLabel={`Voir ${c.displayName}`}
                   onPress={() => router.push(`/(field)/commerce/client/${c.id}`)}
@@ -150,10 +148,7 @@ export default function CommerceScreen() {
                     </View>
                   </View>
 
-                  <View style={styles.balanceRow}>
-                    <Text style={styles.balanceLabel}>Encours</Text>
-                    <Text style={[styles.balanceVal, { color }]}>{formatCurrency(c.currentBalanceXof)}</Text>
-                  </View>
+                  <Text style={[styles.balanceVal, { color }]}>{formatCurrency(c.currentBalanceXof)}</Text>
                   {ratio != null ? (
                     <View style={styles.track}>
                       <View style={[styles.fill, { width: `${Math.min(Math.round(ratio * 100), 100)}%`, backgroundColor: color }]} />
@@ -246,12 +241,6 @@ const styles = StyleSheet.create({
   title: { ...tokens.typography.displayMd, color: tokens.colors.field.text },
   subtitle: { ...tokens.typography.bodyMd, color: tokens.colors.field.textMuted, marginTop: tokens.spacing[1], marginBottom: tokens.spacing[4] },
 
-  kpiRow: { flexDirection: 'row', gap: tokens.spacing[2], marginBottom: tokens.spacing[4] },
-  kpi: { flex: 1, backgroundColor: tokens.colors.neutral[0], borderWidth: 1, borderColor: tokens.colors.neutral[200], borderRadius: tokens.radii.lg, padding: tokens.spacing[3], gap: tokens.spacing[1] },
-  kpiAlert: { borderColor: tokens.colors.warning },
-  kpiVal: { ...tokens.typography.numericSm, fontSize: 15, color: tokens.colors.field.text },
-  kpiLabel: { ...tokens.typography.bodySm, fontSize: 11, color: tokens.colors.field.textMuted },
-
   tabs: { flexDirection: 'row', gap: tokens.spacing[2], marginBottom: tokens.spacing[3] },
   tab: { paddingHorizontal: tokens.spacing[4], paddingVertical: tokens.spacing[2], borderRadius: tokens.radii.full, backgroundColor: tokens.colors.neutral[100] },
   tabOn: { backgroundColor: tokens.colors.primary[600] },
@@ -268,7 +257,8 @@ const styles = StyleSheet.create({
   emptySub: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, textAlign: 'center', paddingHorizontal: tokens.spacing[6] },
 
   list: { gap: tokens.spacing[3] },
-  card: { backgroundColor: tokens.colors.neutral[0], borderRadius: tokens.radii.xl, borderWidth: 1, borderColor: tokens.colors.neutral[200], padding: tokens.spacing[4], gap: tokens.spacing[3] },
+  row: { paddingVertical: tokens.spacing[4], gap: tokens.spacing[3] },
+  rowBorder: { borderTopWidth: 1, borderTopColor: tokens.colors.neutral[100] },
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[3] },
   avatar: { width: 40, height: 40, borderRadius: tokens.radii.full, backgroundColor: tokens.colors.primary[100], alignItems: 'center', justifyContent: 'center' },
   avatarText: { ...tokens.typography.bodySm, fontWeight: '700', color: tokens.colors.primary[700] },
@@ -279,8 +269,6 @@ const styles = StyleSheet.create({
   phoneRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   phone: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted },
 
-  balanceRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
-  balanceLabel: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted },
   balanceVal: { ...tokens.typography.numericSm, fontSize: 15 },
   track: { height: 6, borderRadius: 3, backgroundColor: tokens.colors.neutral[200], overflow: 'hidden' },
   fill: { height: 6, borderRadius: 3 },
