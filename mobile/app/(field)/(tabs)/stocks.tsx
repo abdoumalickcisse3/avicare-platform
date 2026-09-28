@@ -131,6 +131,12 @@ export default function StocksScreen() {
                 </View>
               );
             })}
+            {alertRows.some((a) => a.key.startsWith('neg-')) && (
+              <Text style={styles.alertsHint}>
+                Un compte sous zéro n&apos;est pas une rupture : c&apos;est une sortie enregistrée deux fois, ou une
+                entrée jamais saisie. À corriger par un mouvement d&apos;inventaire.
+              </Text>
+            )}
           </View>
         )}
 
@@ -204,12 +210,13 @@ const styles = StyleSheet.create({
   title: { ...tokens.typography.displayMd, color: tokens.colors.field.text },
   subtitle: { ...tokens.typography.bodyMd, color: tokens.colors.field.textMuted, marginTop: tokens.spacing[1], marginBottom: tokens.spacing[4] },
 
-  alertsBlock: { marginTop: tokens.spacing[2], marginBottom: tokens.spacing[4] },
+  alertsBlock: { marginBottom: tokens.spacing[4] },
   alertsTitle: { ...tokens.typography.bodySm, fontWeight: '700', color: tokens.colors.field.textMuted, marginBottom: tokens.spacing[2] },
   alertRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[2], paddingVertical: tokens.spacing[2] },
   alertRowBorder: { borderTopWidth: 1, borderTopColor: tokens.colors.neutral[100] },
   alertLabel: { ...tokens.typography.bodyMd, color: tokens.colors.field.text, flex: 1 },
   alertValue: { ...tokens.typography.numericSm, fontSize: 13 },
+  alertsHint: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginTop: tokens.spacing[2] },
 
   searchBox: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[2], backgroundColor: tokens.colors.neutral[0], borderWidth: 1, borderColor: tokens.colors.neutral[200], borderRadius: tokens.radii.lg, paddingHorizontal: tokens.spacing[3], minHeight: 46, marginBottom: tokens.spacing[3] },
   searchInput: { flex: 1, ...tokens.typography.bodyMd, color: tokens.colors.field.text },
