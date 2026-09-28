@@ -14,6 +14,7 @@ import { skipToken } from '@reduxjs/toolkit/query/react';
 import { Bird, ChevronRight, ClipboardCheck, Search } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { AppHeader } from '@/components/AppHeader';
+import { TicketRow } from '@/components/ui';
 import { useGetBatchesQuery } from '@/store/api/poultryBatchesApi';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { formatNumber } from '@/lib/format';
@@ -151,19 +152,20 @@ export default function ElevageScreen() {
 
                   {/* Stats */}
                   <View style={styles.stats}>
-                    <View style={styles.stat}>
-                      <Text style={styles.statValue}>{formatNumber(b.currentCount)}</Text>
-                      <Text style={styles.statLabel}>Effectif</Text>
-                    </View>
-                    <View style={styles.statDivider} />
-                    <View style={styles.stat}>
-                      <Text style={[styles.statValue, deaths > 0 && { color: tokens.colors.error }]}>{formatNumber(deaths)}</Text>
-                      <Text style={styles.statLabel}>Mortalité</Text>
-                    </View>
-                    <View style={styles.statDivider} />
-                    <View style={styles.stat}>
-                      <Text style={styles.statValue}>{formatNumber(b.initialCount)}</Text>
-                      <Text style={styles.statLabel}>Départ</Text>
+                    <View style={{ flex: 1 }}>
+                      <TicketRow
+                        variant="flat"
+                        items={[
+                          { key: 'headcount', value: formatNumber(b.currentCount), label: 'Effectif' },
+                          {
+                            key: 'deaths',
+                            value: formatNumber(deaths),
+                            label: 'Mortalité',
+                            tint: deaths > 0 ? tokens.colors.error : undefined,
+                          },
+                          { key: 'initial', value: formatNumber(b.initialCount), label: 'Départ' },
+                        ]}
+                      />
                     </View>
                     <ChevronRight size={20} color={tokens.colors.neutral[400]} />
                   </View>
@@ -208,7 +210,8 @@ const styles = StyleSheet.create({
   rowBorder: { borderTopWidth: 1, borderTopColor: tokens.colors.neutral[100] },
   rowPressed: { opacity: 0.92 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[2] },
-  alertDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: tokens.colors.accent[400] },
+  // Same red as the mortality figure it sits beside — one fact, one colour.
+  alertDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: tokens.colors.error },
   cardTop: { flexDirection: 'row', alignItems: 'flex-start', gap: tokens.spacing[2] },
   name: { ...tokens.typography.headingMd, color: tokens.colors.field.text },
   statusChip: { borderRadius: tokens.radii.full, paddingHorizontal: tokens.spacing[3], paddingVertical: 4 },
@@ -219,10 +222,6 @@ const styles = StyleSheet.create({
   track: { height: 8, backgroundColor: tokens.colors.neutral[100], borderRadius: 4, overflow: 'hidden', marginTop: tokens.spacing[1] },
   fill: { height: '100%', backgroundColor: tokens.colors.primary[500], borderRadius: 4 },
   stats: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[3], marginTop: tokens.spacing[4] },
-  stat: { alignItems: 'flex-start' },
-  statValue: { ...tokens.typography.numericSm, fontSize: 18, color: tokens.colors.field.text },
-  statLabel: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted },
-  statDivider: { width: 1, height: 28, backgroundColor: tokens.colors.neutral[100] },
   emptyBox: { alignItems: 'center', paddingVertical: tokens.spacing[10], gap: tokens.spacing[3] },
   emptyDisc: { width: 64, height: 64, borderRadius: tokens.radii.full, backgroundColor: tokens.colors.primary[50], alignItems: 'center', justifyContent: 'center' },
   emptyText: { ...tokens.typography.bodyMd, color: tokens.colors.field.textMuted },

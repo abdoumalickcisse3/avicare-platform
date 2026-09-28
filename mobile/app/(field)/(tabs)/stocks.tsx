@@ -81,17 +81,19 @@ export default function StocksScreen() {
       label: i.label ?? i.articleKey,
       value: `${formatNumber(i.currentQuantity)}${i.unit ? ` ${i.unit}` : ''}`,
     })),
+    // Low stock and an overdue order both need an action rather than describing something
+    // already wrong, so both share the same accent as the band's alert count.
     ...(lowStock ?? []).map((i): AlertRow => ({
       key: `low-${i.id}`,
       icon: AlertTriangle,
-      tint: tokens.colors.warning,
+      tint: tokens.colors.accent[400],
       label: articleLabel(i.articleKey),
       value: `${formatNumber(i.currentQuantity)}${i.unit ? ` ${i.unit}` : ''}`,
     })),
     ...overdueOrders.map((o): AlertRow => ({
       key: `late-${o.purchaseOrderId}`,
       icon: Truck,
-      tint: tokens.colors.info,
+      tint: tokens.colors.accent[400],
       label: `${o.orderNumber} · ${o.supplierName}`,
       value: `${o.daysOverdue} j de retard`,
     })),
@@ -189,7 +191,7 @@ export default function StocksScreen() {
                       <Text style={[styles.sourceText, { color: src.fg }]}>{src.label}</Text>
                     </View>
                   </View>
-                  <Text style={[styles.qty, low && { color: tokens.colors.error }]}>
+                  <Text style={[styles.qty, low && { color: tokens.colors.accent[400] }]}>
                     {formatNumber(i.currentQuantity)}
                     <Text style={styles.unit}>{i.unit ? ` ${i.unit}` : ''}</Text>
                   </Text>

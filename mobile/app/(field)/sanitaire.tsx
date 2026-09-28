@@ -14,7 +14,6 @@ import { Redirect } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
 import {
-  CalendarClock,
   CalendarRange,
   Eye,
   HeartPulse,
@@ -144,11 +143,14 @@ export default function SanitaireScreen() {
     return days.length ? Math.min(...days) : null;
   })();
 
+  // Only a late vaccine is an already-bad fact worth a tint; the other three are informational
+  // counts/countdowns, not something requiring action — tinting them permanently (as this once
+  // did, success-green included) turns colour into decoration instead of a signal.
   const tiles = [
-    { label: 'Vaccins en attente', value: String(lateCount), hint: lateCount > 0 ? 'Doses en retard' : 'À jour', icon: Syringe, color: lateCount > 0 ? tokens.colors.error : tokens.colors.success },
-    { label: 'Traitements actifs', value: String(withdrawalCount), hint: withdrawalCount > 0 ? 'En cours de délai' : 'Aucun', icon: Pill, color: tokens.colors.info },
-    { label: "Délais d'attente", value: minWithdrawalDays != null ? `J-${minWithdrawalDays}` : '—', hint: minWithdrawalDays != null ? 'Avant vente autorisée' : 'Aucun délai', icon: CalendarClock, color: tokens.colors.warning },
-    { label: 'Prochaine visite véto', value: nextFollowUp ? `J-${nextFollowUp.daysUntil}` : '—', hint: nextFollowUp ? 'Suivi programmé' : 'Aucun suivi', icon: Stethoscope, color: tokens.colors.vet },
+    { label: 'Vaccins en attente', value: String(lateCount), color: lateCount > 0 ? tokens.colors.error : undefined },
+    { label: 'Traitements actifs', value: String(withdrawalCount), color: undefined },
+    { label: "Délais d'attente", value: minWithdrawalDays != null ? `J-${minWithdrawalDays}` : '—', color: undefined },
+    { label: 'Prochaine visite véto', value: nextFollowUp ? `J-${nextFollowUp.daysUntil}` : '—', color: undefined },
   ];
 
   return (
