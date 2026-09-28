@@ -37,4 +37,22 @@ describe('TicketRow', () => {
     );
     expect(screen.getByText('Quatre')).toBeTruthy();
   });
+
+  it('drops the card chrome in flat mode, for nesting inside an already-flat row', async () => {
+    await render(<TicketRow variant="flat" items={[{ key: 'a', value: '5', label: 'Effectif' }]} />);
+
+    const row = screen.getByText('5').parent?.parent;
+    expect(row?.props.style).toContainEqual(
+      expect.objectContaining({ borderWidth: 0, backgroundColor: 'transparent' }),
+    );
+  });
+
+  it('keeps the card chrome by default', async () => {
+    await render(<TicketRow items={[{ key: 'a', value: '5', label: 'Effectif' }]} />);
+
+    const row = screen.getByText('5').parent?.parent;
+    expect(row?.props.style).not.toContainEqual(
+      expect.objectContaining({ borderWidth: 0, backgroundColor: 'transparent' }),
+    );
+  });
 });

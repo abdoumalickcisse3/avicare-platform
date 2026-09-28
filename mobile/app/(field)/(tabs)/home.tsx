@@ -13,17 +13,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import {
-  AlertCircle,
   ArrowDownRight,
   ArrowUpRight,
   Banknote,
-  Bird,
   CheckCircle2,
   ClipboardList,
   Egg,
   Eye,
   HeartPulse,
-  LayoutGrid,
   type LucideIcon,
   Minus,
   PackageOpen,
@@ -99,12 +96,9 @@ interface Tile {
   key: string;
   label: string;
   value: string;
-  icon: LucideIcon;
-  tint: string;
-  series?: number[];
-  trend?: Trend;
-  invertTrend?: boolean;
-  alert?: boolean;
+  /** 'bad': already happened (mortality) — error red. 'action': needs one (money to collect) —
+   *  accent orange. Omitted: neutral, no tint — see the shared convention on TicketItem.tint. */
+  severity?: 'bad' | 'action';
 }
 
 function buildHero(d: DashboardResponse): HeroModel {
@@ -133,30 +127,30 @@ function buildTiles(d: DashboardResponse): Tile[] {
   const c = d.commercial;
   const tiles: Tile[] = [];
   if (l) {
-    tiles.push({ key: 'headcount', label: 'Effectif vivant', value: formatNumber(l.totalHeadcount), icon: Bird, tint: tokens.colors.primary[500] });
-    const mort = l.mortalitySeries.map((p) => p.valueXof);
+    tiles.push({ key: 'headcount', label: 'Effectif vivant', value: formatNumber(l.totalHeadcount) });
     tiles.push({
       key: 'deaths',
       label: 'Mortalité',
       value: formatNumber(l.deaths),
-      icon: HeartPulse,
-      tint: tokens.colors.error,
-      trend: trendOf(mort),
-      invertTrend: true,
-      alert: l.deaths > 0,
+      severity: l.deaths > 0 ? 'bad' : undefined,
     });
     if (l.layingRate != null) {
-      tiles.push({ key: 'laying', label: 'Taux de ponte', value: `${l.layingRate.toFixed(0)} %`, icon: Egg, tint: tokens.colors.accent[400], series: l.layingSeries.map((p) => p.valueXof), trend: trendOf(l.layingSeries.map((p) => p.valueXof)) });
+      tiles.push({ key: 'laying', label: 'Taux de ponte', value: `${l.layingRate.toFixed(0)} %` });
     } else if (l.avgDailyGainG != null) {
-      tiles.push({ key: 'gain', label: 'Gain / jour', value: `${l.avgDailyGainG.toFixed(0)} g`, icon: Scale, tint: tokens.colors.info });
+      tiles.push({ key: 'gain', label: 'Gain / jour', value: `${l.avgDailyGainG.toFixed(0)} g` });
     } else {
-      tiles.push({ key: 'batches', label: 'Lots actifs', value: formatNumber(l.activeBatches), icon: LayoutGrid, tint: tokens.colors.info });
+      tiles.push({ key: 'batches', label: 'Lots actifs', value: formatNumber(l.activeBatches) });
     }
   }
   if (c) {
-    tiles.push({ key: 'overdue', label: 'Impayés', value: formatCurrency(c.overdueXof), icon: AlertCircle, tint: tokens.colors.warning, alert: c.overdueXof > 0 });
+    tiles.push({
+      key: 'overdue',
+      label: 'Impayés',
+      value: formatCurrency(c.overdueXof),
+      severity: c.overdueXof > 0 ? 'action' : undefined,
+    });
   } else if (l) {
-    tiles.push({ key: 'feed', label: 'Aliment / jour', value: l.dailyFeedKg != null ? `${l.dailyFeedKg.toFixed(1)} kg` : 'n/d', icon: PackageOpen, tint: tokens.colors.accent[600] });
+    tiles.push({ key: 'feed', label: 'Aliment / jour', value: l.dailyFeedKg != null ? `${l.dailyFeedKg.toFixed(1)} kg` : 'n/d' });
   }
   return tiles.slice(0, 4);
 }
@@ -330,7 +324,12 @@ export default function HomeScreen() {
                 key: t.key,
                 value: t.value,
                 label: t.label,
-                tint: t.alert ? tokens.colors.error : undefined,
+                tint:
+                  t.severity === 'bad'
+                    ? tokens.colors.error
+                    : t.severity === 'action'
+                      ? tokens.colors.accent[400]
+                      : undefined,
               }))}
             />
 

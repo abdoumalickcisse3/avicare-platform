@@ -59,4 +59,20 @@ describe('Home', () => {
     // Activity feed.
     expect(screen.getByText('Vente enregistrée')).toBeTruthy();
   });
+
+  it('tints a bad-already fact red and something-needing-action orange', async () => {
+    await render(<HomeScreen />);
+
+    // Mortality: deaths already happened — error red.
+    expect(screen.getByText('4').props.style).toContainEqual(
+      expect.objectContaining({ color: '#DC2626' }),
+    );
+    // Overdue payments: money to collect, not itself a failure — accent orange, not error red.
+    expect(screen.getByText('25 000 F').props.style).toContainEqual(
+      expect.objectContaining({ color: '#F8961E' }),
+    );
+    expect(screen.getByText('25 000 F').props.style).not.toContainEqual(
+      expect.objectContaining({ color: '#DC2626' }),
+    );
+  });
 });
