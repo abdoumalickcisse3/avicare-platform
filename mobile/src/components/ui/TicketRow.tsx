@@ -23,7 +23,12 @@ export function TicketRow({ items }: TicketRowProps) {
     <View style={styles.row}>
       {items.map((item, i) => (
         <View key={item.key} style={[styles.cell, i > 0 && styles.cellDivider]}>
-          <Text style={[styles.value, item.tint ? { color: item.tint } : null]} numberOfLines={1}>
+          <Text
+            style={[styles.value, item.tint ? { color: item.tint } : null]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.6}
+          >
             {item.value}
           </Text>
           <Text style={styles.label} numberOfLines={1}>
@@ -43,6 +48,7 @@ const styles = StyleSheet.create({
     borderColor: tokens.colors.neutral[200],
     borderRadius: tokens.radii.xl,
     paddingVertical: tokens.spacing[3],
+    marginBottom: tokens.spacing[4],
   },
   cell: { flex: 1, alignItems: 'center', gap: 2 },
   cellDivider: { borderLeftWidth: 1, borderLeftColor: tokens.colors.neutral[200] },

@@ -49,6 +49,7 @@ describe('Stocks tab', () => {
     expect(screen.getByText('Maïs concassé')).toBeTruthy();
     expect(screen.getByText(/BA-2026-004/)).toBeTruthy();
     expect(screen.getByText(/6 j de retard/)).toBeTruthy();
+    expect(screen.getByText(/Un compte sous zéro n'est pas une rupture/)).toBeTruthy();
   });
 
   it('affiche le nombre d\'alertes dans la bande ticket, en orange', async () => {

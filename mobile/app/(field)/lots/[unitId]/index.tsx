@@ -139,7 +139,7 @@ export default function LotDetailScreen() {
             409, and the web reaches the same place by swapping the whole overview tab
             for the frozen "Bilan". */}
         {batch && !closed && (
-          <View style={styles.card}>
+          <View style={[styles.card, styles.cardAfterTicket]}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <View>
                 <Text style={styles.cardSub}>Coût des poussins</Text>
@@ -373,6 +373,9 @@ const styles = StyleSheet.create({
   tabTextOn: { color: tokens.colors.primary[700] },
   tabUnderline: { position: 'absolute', bottom: -1, height: 2.5, width: '70%', backgroundColor: tokens.colors.primary[600], borderRadius: 2 },
   card: { backgroundColor: tokens.colors.neutral[0], borderWidth: 1, borderColor: tokens.colors.neutral[200], borderRadius: tokens.radii.xl, padding: tokens.spacing[4], marginTop: tokens.spacing[4] },
+  // TicketRow now carries its own bottom margin — the card directly after it
+  // (chick purchase cost) must not stack a second top margin on top of that.
+  cardAfterTicket: { marginTop: 0 },
   cardTitle: { ...tokens.typography.headingMd, color: tokens.colors.field.text },
   cardSub: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted },
   legendRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 2, marginBottom: tokens.spacing[2] },

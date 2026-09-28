@@ -336,7 +336,7 @@ export default function HomeScreen() {
 
             {/* Quick actions */}
             {quickActions.length > 0 && (
-              <View style={styles.section}>
+              <View style={[styles.section, styles.sectionAfterTicket]}>
                 <SectionHeader title="Actions rapides" />
                 <View style={styles.qaGrid}>
                   {quickActions.map((a) => {
@@ -361,7 +361,7 @@ export default function HomeScreen() {
             )}
 
             {/* Recent activity */}
-            <View style={styles.section}>
+            <View style={[styles.section, quickActions.length === 0 && styles.sectionAfterTicket]}>
               <SectionHeader
                 title="Activité récente"
                 action={
@@ -455,6 +455,9 @@ const styles = StyleSheet.create({
 
   /* sections */
   section: { marginTop: tokens.spacing[6] },
+  // TicketRow now carries its own bottom margin — the section directly after it
+  // must not add a second top margin on top of that.
+  sectionAfterTicket: { marginTop: 0 },
   link: { ...tokens.typography.bodyMd, color: tokens.colors.primary[600], fontWeight: '600' },
 
   /* quick actions */
