@@ -2,7 +2,7 @@
  * The health library screen: what each role may do, and what the platform catalog forbids.
  */
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
-import type { Treatment, Vaccine, Veterinarian } from '@/types';
+import type { Treatment, Vaccine, VaccinationProgram, Veterinarian } from '@/types';
 
 const press = async (el: Parameters<typeof fireEvent.press>[0]) => {
   await act(async () => {
@@ -50,6 +50,24 @@ const mockTreatment: Treatment = {
   custom: true,
 };
 
+const mockPlatformProgram: VaccinationProgram = {
+  key: 'standard_chair',
+  label: 'Standard chair',
+  species: 'POULTRY',
+  breedKeys: ['cobb500'],
+  schedule: [
+    { ageValue: 7, ageUnit: 'DAY', vaccineKey: 'newcastle_la_sota', route: 'ocular', mandatory: true },
+  ],
+  custom: false,
+};
+
+const mockCustomProgram: VaccinationProgram = {
+  ...mockPlatformProgram,
+  key: 'mon_programme',
+  label: 'Mon programme',
+  custom: true,
+};
+
 const mockVet: Veterinarian = {
   id: 4,
   farmId: 7,
@@ -66,19 +84,31 @@ const mockVet: Veterinarian = {
 
 const mockUpsertVaccine = jest.fn(() => ({ unwrap: () => Promise.resolve({}) }));
 const mockDeleteVaccine = jest.fn(() => ({ unwrap: () => Promise.resolve({}) }));
+const mockUpsertProgram = jest.fn(() => ({ unwrap: () => Promise.resolve({}) }));
+const mockDeleteProgram = jest.fn(() => ({ unwrap: () => Promise.resolve({}) }));
 
 jest.mock('@/store/api/healthApi', () => ({
   useGetVaccineCatalogQuery: () => ({ data: [mockPlatformVaccine, mockCustomVaccine] }),
   useGetTreatmentLibraryQuery: () => ({ data: [mockTreatment] }),
-  useGetProgramCatalogQuery: () => ({ data: [] }),
+  useGetProgramCatalogQuery: () => ({ data: [mockPlatformProgram, mockCustomProgram] }),
   useGetVeterinariansQuery: () => ({ data: [mockVet] }),
   useUpsertVaccineMutation: () => [mockUpsertVaccine, { isLoading: false }],
   useDeleteVaccineMutation: () => [mockDeleteVaccine, { isLoading: false }],
   useUpsertTreatmentCatalogMutation: () => [jest.fn(), { isLoading: false }],
   useDeleteTreatmentCatalogMutation: () => [jest.fn(), { isLoading: false }],
+  useUpsertProgramMutation: () => [mockUpsertProgram, { isLoading: false }],
+  useDeleteProgramMutation: () => [mockDeleteProgram, { isLoading: false }],
   useCreateVeterinarianMutation: () => [jest.fn(), { isLoading: false }],
   useUpdateVeterinarianMutation: () => [jest.fn(), { isLoading: false }],
   useDeactivateVeterinarianMutation: () => [jest.fn(), { isLoading: false }],
+}));
+
+jest.mock('@/store/api/breedsApi', () => ({
+  useListBreedsQuery: () => ({
+    data: [
+      { id: 1, species: 'POULTRY', code: 'cobb500', name: 'Cobb 500', type: 'broiler', farmId: null, active: true },
+    ],
+  }),
 }));
 
 // eslint-disable-next-line import/first
@@ -130,14 +160,36 @@ describe('HealthLibraryScreen', () => {
     expect(screen.getByLabelText('Nouveau vétérinaire')).toBeTruthy();
   });
 
-  it('offers no add button on the programmes, which cannot be authored', async () => {
+  it('lets an owner create a program and clone a platform one', async () => {
     await render(<HealthLibraryScreen />);
 
     await press(screen.getByLabelText('Programmes'));
 
-    // Custom programmes are out of scope platform-wide; a button here would be a lie.
-    expect(screen.queryByLabelText(/Nouveau/)).toBeNull();
-    expect(screen.getByText(/en lecture seule/)).toBeTruthy();
+    expect(screen.getByLabelText('Nouveau programme')).toBeTruthy();
+    expect(screen.getByLabelText('Cloner Standard chair')).toBeTruthy();
+  });
+
+  it('lets an owner edit or remove a custom program, not a platform one', async () => {
+    await render(<HealthLibraryScreen />);
+
+    await press(screen.getByLabelText('Programmes'));
+
+    expect(screen.getByLabelText('Modifier Mon programme')).toBeTruthy();
+    expect(screen.getByLabelText('Retirer Mon programme')).toBeTruthy();
+    expect(screen.queryByLabelText('Modifier Standard chair')).toBeNull();
+  });
+
+  it('gives a worker a read-only program library', async () => {
+    mockAccess.farmRole = 'FARMER';
+
+    await render(<HealthLibraryScreen />);
+
+    await press(screen.getByLabelText('Programmes'));
+
+    expect(screen.queryByLabelText('Nouveau programme')).toBeNull();
+    expect(screen.queryByLabelText('Cloner Standard chair')).toBeNull();
+    expect(screen.queryByLabelText('Modifier Mon programme')).toBeNull();
+    expect(screen.getByText('Standard chair')).toBeTruthy();
   });
 
   it('shows the withdrawal delays on a treatment, since that is what it decides', async () => {

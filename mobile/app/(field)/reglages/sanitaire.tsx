@@ -8,10 +8,6 @@
  * Four sections, one at a time. The web puts them in tabs of one card; on a phone that would
  * mean four horizontally-scrolling tables, so the sections are chip-selected and each is a list
  * of rows rather than a grid of columns.
- *
- * Programmes are read-only here: the web settings page now supports cloning a platform program
- * into an editable farm copy (and editing vaccins/traitements the same way), but the matching
- * phone UI (schedule editor, clone action) has not been built yet — tracked, not silently done.
  */
 import { useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -19,14 +15,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
-import { ArrowLeft, Pencil, Phone, Plus, Trash2 } from 'lucide-react-native';
+import { ArrowLeft, Copy, Pencil, Phone, Plus, Trash2 } from 'lucide-react-native';
 import { fontFamily, tokens } from '@/theme';
 import { ActionBar } from '@/components/field/ActionBar';
 import { HealthCatalogSheet, confirmCatalogDelete } from '@/health/HealthCatalogSheet';
+import { ProgramSheet, confirmProgramDelete } from '@/health/ProgramSheet';
 import { VeterinarianSheet, confirmVeterinarianRemoval } from '@/health/VeterinarianSheet';
 import {
   useCreateVeterinarianMutation,
   useDeactivateVeterinarianMutation,
+  useDeleteProgramMutation,
   useDeleteTreatmentCatalogMutation,
   useDeleteVaccineMutation,
   useGetProgramCatalogQuery,
@@ -34,13 +32,15 @@ import {
   useGetVaccineCatalogQuery,
   useGetVeterinariansQuery,
   useUpdateVeterinarianMutation,
+  useUpsertProgramMutation,
   useUpsertTreatmentCatalogMutation,
   useUpsertVaccineMutation,
 } from '@/store/api/healthApi';
+import { useListBreedsQuery } from '@/store/api/breedsApi';
 import { useFarmAccess } from '@/auth/useSession';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { ageLabel, humanizeKey, routeLabel } from '@/lib/health';
-import type { Treatment, Vaccine, Veterinarian, VeterinarianInput } from '@/types';
+import type { Treatment, Vaccine, VaccinationProgram, Veterinarian, VeterinarianInput } from '@/types';
 
 type Section = 'vaccins' | 'traitements' | 'programmes' | 'veterinaires';
 
@@ -64,17 +64,24 @@ export default function HealthLibraryScreen() {
     entry: Vaccine | Treatment | null;
   } | null>(null);
   const [vetSheet, setVetSheet] = useState<{ vet: Veterinarian | null } | null>(null);
+  const [programSheet, setProgramSheet] = useState<{
+    entry: VaccinationProgram | null;
+    cloneFrom: VaccinationProgram | null;
+  } | null>(null);
 
   const farmArg = selectedFarmId ? { farmId: selectedFarmId } : skipToken;
   const { data: vaccines = [] } = useGetVaccineCatalogQuery(farmArg);
   const { data: treatments = [] } = useGetTreatmentLibraryQuery(farmArg);
   const { data: programs = [] } = useGetProgramCatalogQuery(farmArg);
   const { data: veterinarians = [] } = useGetVeterinariansQuery(farmArg);
+  const { data: breeds = [] } = useListBreedsQuery('POULTRY');
 
   const [upsertVaccine, { isLoading: savingVaccine }] = useUpsertVaccineMutation();
   const [deleteVaccine] = useDeleteVaccineMutation();
   const [upsertTreatment, { isLoading: savingTreatment }] = useUpsertTreatmentCatalogMutation();
   const [deleteTreatment] = useDeleteTreatmentCatalogMutation();
+  const [upsertProgram, { isLoading: savingProgram }] = useUpsertProgramMutation();
+  const [deleteProgram] = useDeleteProgramMutation();
   const [createVet, { isLoading: creatingVet }] = useCreateVeterinarianMutation();
   const [updateVet, { isLoading: updatingVet }] = useUpdateVeterinarianMutation();
   const [deactivateVet] = useDeactivateVeterinarianMutation();
@@ -83,6 +90,7 @@ export default function HealthLibraryScreen() {
     () => (catalogSheet?.kind === 'vaccine' ? vaccines : treatments).map((e) => e.key),
     [catalogSheet?.kind, vaccines, treatments],
   );
+  const existingProgramKeys = useMemo(() => programs.map((p) => p.key), [programs]);
 
   if (selectedFarmId === null) return <Redirect href="/(field)" />;
 
@@ -97,6 +105,13 @@ export default function HealthLibraryScreen() {
     mutate({ farmId: selectedFarmId, key, value })
       .unwrap()
       .then(() => setCatalogSheet(null))
+      .catch(failed('Enregistrement'));
+  };
+
+  const submitProgram = (key: string, value: Record<string, unknown>) => {
+    upsertProgram({ farmId: selectedFarmId, key, value })
+      .unwrap()
+      .then(() => setProgramSheet(null))
       .catch(failed('Enregistrement'));
   };
 
@@ -219,19 +234,68 @@ export default function HealthLibraryScreen() {
         {section === 'programmes' && (
           <>
             <Text style={styles.muted}>
-              Programmes de la plateforme, en lecture seule. Ils s&apos;assignent à un lot depuis
-              son onglet Sanitaire.
+              Un programme s&apos;assigne à un lot depuis son onglet Sanitaire.
             </Text>
             {programs.map((p) => (
               <View key={p.key} style={styles.row}>
                 <View style={styles.rowText}>
-                  <Text style={styles.rowTitle}>{p.label}</Text>
+                  <View style={styles.rowTitleLine}>
+                    <Text style={styles.rowTitle}>{p.label}</Text>
+                    {p.custom && (
+                      <View style={styles.tag}>
+                        <Text style={styles.tagText}>Perso</Text>
+                      </View>
+                    )}
+                  </View>
                   <Text style={styles.muted}>
                     {p.schedule
                       .map((s) => `${ageLabel(s.ageValue, s.ageUnit)} ${humanizeKey(s.vaccineKey)}`)
                       .join(' · ')}
                   </Text>
                 </View>
+
+                {canManage && (
+                  <View style={styles.rowActions}>
+                    {p.custom ? (
+                      <>
+                        <Pressable
+                          onPress={() => setProgramSheet({ entry: p, cloneFrom: null })}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Modifier ${p.label}`}
+                          hitSlop={8}
+                          style={styles.iconBtn}
+                        >
+                          <Pencil size={18} color={tokens.colors.field.textMuted} />
+                        </Pressable>
+                        <Pressable
+                          onPress={() =>
+                            confirmProgramDelete(p.label, () => {
+                              deleteProgram({ farmId: selectedFarmId, key: p.key })
+                                .unwrap()
+                                .catch(failed('Suppression'));
+                            })
+                          }
+                          accessibilityRole="button"
+                          accessibilityLabel={`Retirer ${p.label}`}
+                          hitSlop={8}
+                          style={styles.iconBtn}
+                        >
+                          <Trash2 size={18} color={tokens.colors.error} />
+                        </Pressable>
+                      </>
+                    ) : (
+                      <Pressable
+                        onPress={() => setProgramSheet({ entry: null, cloneFrom: p })}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Cloner ${p.label}`}
+                        hitSlop={8}
+                        style={styles.iconBtn}
+                      >
+                        <Copy size={18} color={tokens.colors.field.textMuted} />
+                      </Pressable>
+                    )}
+                  </View>
+                )}
               </View>
             ))}
           </>
@@ -291,24 +355,23 @@ export default function HealthLibraryScreen() {
           ))}
       </ScrollView>
 
-      {canManage && section !== 'programmes' && (
+      {canManage && (
         <ActionBar>
           <TouchableOpacity
-            onPress={() =>
-              section === 'veterinaires'
-                ? setVetSheet({ vet: null })
-                : setCatalogSheet({
-                    kind: section === 'vaccins' ? 'vaccine' : 'treatment',
-                    entry: null,
-                  })
-            }
+            onPress={() => {
+              if (section === 'veterinaires') setVetSheet({ vet: null });
+              else if (section === 'programmes') setProgramSheet({ entry: null, cloneFrom: null });
+              else setCatalogSheet({ kind: section === 'vaccins' ? 'vaccine' : 'treatment', entry: null });
+            }}
             accessibilityRole="button"
             accessibilityLabel={
               section === 'vaccins'
                 ? 'Nouveau vaccin'
                 : section === 'traitements'
                   ? 'Nouveau traitement'
-                  : 'Nouveau vétérinaire'
+                  : section === 'programmes'
+                    ? 'Nouveau programme'
+                    : 'Nouveau vétérinaire'
             }
             style={styles.add}
           >
@@ -318,7 +381,9 @@ export default function HealthLibraryScreen() {
                 ? 'Nouveau vaccin'
                 : section === 'traitements'
                   ? 'Nouveau traitement'
-                  : 'Nouveau vétérinaire'}
+                  : section === 'programmes'
+                    ? 'Nouveau programme'
+                    : 'Nouveau vétérinaire'}
             </Text>
           </TouchableOpacity>
         </ActionBar>
@@ -332,6 +397,18 @@ export default function HealthLibraryScreen() {
         saving={savingVaccine || savingTreatment}
         onClose={() => setCatalogSheet(null)}
         onSubmit={submitCatalog}
+      />
+
+      <ProgramSheet
+        open={programSheet !== null}
+        entry={programSheet?.entry ?? null}
+        cloneFrom={programSheet?.cloneFrom ?? null}
+        vaccines={vaccines}
+        breeds={breeds}
+        existingKeys={existingProgramKeys}
+        saving={savingProgram}
+        onClose={() => setProgramSheet(null)}
+        onSubmit={submitProgram}
       />
 
       <VeterinarianSheet
