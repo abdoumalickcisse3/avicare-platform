@@ -218,7 +218,7 @@ export default function HomeScreen() {
   const farmId = selectedFarmId ?? undefined;
   const period = useSelector(selectPeriod);
 
-  const { data, isLoading } = useGetDashboardQuery(
+  const { data, isLoading, isFetching, refetch } = useGetDashboardQuery(
     { farmId: farmId as number, query: { period } },
     { skip: farmId === undefined },
   );
@@ -230,6 +230,11 @@ export default function HomeScreen() {
   const farmName = farms?.find((f) => f.id === farmId)?.name ?? 'Ferme';
   const hero = useMemo(() => (data ? buildHero(data) : null), [data]);
   const tiles = useMemo(() => (data ? buildTiles(data) : []), [data]);
+
+  // The spinner is for a request in flight only. Failed, timed out or never started (no farm yet)
+  // all leave `data` undefined; treating that as "loading" is what left Home spinning forever.
+  const showSpinner = !hero && (isLoading || isFetching);
+  const retry = () => (farmId === undefined ? router.replace('/(field)') : refetch());
 
   const goElevage = () => router.push('/(field)/(tabs)/elevage');
   const alerts: Alert[] = useMemo(() => {
@@ -261,8 +266,20 @@ export default function HomeScreen() {
             when the dashboard is the thing that is failing to load. */}
         <AnnouncementBanner />
 
-        {isLoading || !hero ? (
-          <View style={styles.loading}><ActivityIndicator color={tokens.colors.primary[600]} /></View>
+        {!hero ? (
+          showSpinner ? (
+            <View style={styles.loading} accessibilityLabel="Chargement du tableau de bord">
+              <ActivityIndicator color={tokens.colors.primary[600]} />
+            </View>
+          ) : (
+            <View style={styles.loading}>
+              <Text style={styles.errorTitle}>Impossible de charger le tableau de bord</Text>
+              <Text style={styles.errorHint}>Vérifiez votre connexion puis réessayez.</Text>
+              <Pressable style={styles.retryBtn} onPress={retry} accessibilityRole="button" accessibilityLabel="Réessayer">
+                <Text style={styles.retryText}>Réessayer</Text>
+              </Pressable>
+            </View>
+          )
         ) : (
           <>
             {/* Hero */}
@@ -417,7 +434,11 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: tokens.colors.neutral[50] },
   content: { paddingHorizontal: tokens.layout.screenPadding, paddingTop: tokens.spacing[2], paddingBottom: tokens.layout.fabScrollClearance },
-  loading: { paddingVertical: tokens.spacing[16], alignItems: 'center' },
+  loading: { paddingVertical: tokens.spacing[16], alignItems: 'center', gap: tokens.spacing[2] },
+  errorTitle: { ...tokens.typography.headingMd, color: tokens.colors.field.text, textAlign: 'center' },
+  errorHint: { ...tokens.typography.bodyMd, color: tokens.colors.field.textMuted, textAlign: 'center' },
+  retryBtn: { marginTop: tokens.spacing[3], minHeight: 48, paddingHorizontal: tokens.spacing[6], borderRadius: tokens.radii.lg, backgroundColor: tokens.colors.primary[600], alignItems: 'center', justifyContent: 'center' },
+  retryText: { ...tokens.typography.bodyMd, fontWeight: '700', color: tokens.colors.neutral[0] },
 
   /* hero */
   hero: {

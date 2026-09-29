@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 
 jest.mock('expo-router', () => ({ useRouter: jest.fn(() => ({ push: jest.fn() })) }));
 jest.mock('react-redux', () => ({ useSelector: jest.fn(() => 7), useDispatch: jest.fn(() => jest.fn()), useStore: jest.fn(() => ({})) }));
@@ -43,6 +43,19 @@ jest.mock('@/store/api/dashboardApi', () => ({
 }));
 
 import HomeScreen from '../home';
+import { useRouter } from 'expo-router';
+import { useSelector } from 'react-redux';
+import { useGetDashboardQuery } from '@/store/api/dashboardApi';
+import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
+
+const dashboardMock = useGetDashboardQuery as unknown as jest.Mock;
+const defaultDashboard = dashboardMock.getMockImplementation();
+const selectorMock = useSelector as unknown as jest.Mock;
+const defaultSelector = selectorMock.getMockImplementation();
+afterEach(() => {
+  dashboardMock.mockImplementation(defaultDashboard);
+  selectorMock.mockImplementation(defaultSelector);
+});
 
 describe('Home', () => {
   it('renders the hero headline, stat tiles, an alerts strip and recent activity', async () => {
@@ -74,5 +87,51 @@ describe('Home', () => {
     expect(screen.getByText('25 000 F').props.style).not.toContainEqual(
       expect.objectContaining({ color: '#DC2626' }),
     );
+  });
+
+  describe('when the dashboard has no data', () => {
+    it('shows a spinner while the first load is in flight', async () => {
+      dashboardMock.mockReturnValue({ data: undefined, isLoading: true, isFetching: true, isError: false, refetch: jest.fn() });
+      await render(<HomeScreen />);
+      expect(screen.getByLabelText('Chargement du tableau de bord')).toBeTruthy();
+      expect(screen.queryByText('Réessayer')).toBeNull();
+    });
+
+    it('shows an error with a retry — never an endless spinner — when the request failed', async () => {
+      const refetch = jest.fn();
+      dashboardMock.mockReturnValue({ data: undefined, isLoading: false, isFetching: false, isError: true, refetch });
+      await render(<HomeScreen />);
+      expect(screen.queryByLabelText('Chargement du tableau de bord')).toBeNull();
+      expect(screen.getByText('Impossible de charger le tableau de bord')).toBeTruthy();
+      fireEvent.press(screen.getByText('Réessayer'));
+      expect(refetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows the retry as well when the query never ran (skipped: no data, not loading, no error)', async () => {
+      dashboardMock.mockReturnValue({ data: undefined, isLoading: false, isFetching: false, isError: false, refetch: jest.fn() });
+      await render(<HomeScreen />);
+      expect(screen.queryByLabelText('Chargement du tableau de bord')).toBeNull();
+      expect(screen.getByText('Réessayer')).toBeTruthy();
+    });
+
+    it('with no farm selected, the retry goes back to the farm picker instead of refetching a skipped query', async () => {
+      const replace = jest.fn();
+      (useRouter as jest.Mock).mockReturnValue({ push: jest.fn(), replace });
+      selectorMock.mockImplementation((sel: unknown) => (sel === selectSelectedFarmId ? null : 7));
+      const refetch = jest.fn();
+      dashboardMock.mockReturnValue({ data: undefined, isLoading: false, isFetching: false, isError: false, refetch });
+      await render(<HomeScreen />);
+      fireEvent.press(screen.getByText('Réessayer'));
+      expect(refetch).not.toHaveBeenCalled();
+      expect(replace).toHaveBeenCalledWith('/(field)');
+    });
+
+    it('keeps showing the cached figures when a refresh failed (offline)', async () => {
+      const cached = (defaultDashboard as () => { data: unknown })().data;
+      dashboardMock.mockReturnValue({ data: cached, isLoading: false, isFetching: false, isError: true, refetch: jest.fn() });
+      await render(<HomeScreen />);
+      expect(screen.getByText('Ventes de la période')).toBeTruthy();
+      expect(screen.queryByText('Impossible de charger le tableau de bord')).toBeNull();
+    });
   });
 });
