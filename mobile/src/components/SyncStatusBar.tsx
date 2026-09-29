@@ -6,9 +6,14 @@
  *
  * Fusion rule (design direction §6 "règle de fusion et sa priorité"): the
  * ribbon shows exactly one phrase, never connectivity and queue separately.
- * Priority, most urgent first: a FAILED row always outranks a pending count
+ * Priority, most urgent first: a FAILED row always outranks everything
  * — a definitive rejection needs the farmer's action and never clears on its
- * own, so it must never be masked by an in-flight sync.
+ * own, so it must never be masked by an in-flight sync — then offline, then
+ * a pending count.
+ *
+ * Online with nothing queued renders NOTHING. A ribbon that permanently says
+ * "all good" stops being read, costs 44px of a small screen, and (as it once
+ * did) ends up saying "all synced" while the phone has no network at all.
  */
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { tokens, type SyncState } from '@/theme';
@@ -29,12 +34,24 @@ export type SyncStatusBarProps = {
 
 type Presentation = { state: SyncState; icon: string; text: string };
 
-function present(pending: number, failed: number): Presentation {
+function present(online: boolean, pending: number, failed: number): Presentation | null {
   if (failed > 0) {
     return {
       state: 'failed',
       icon: '!',
       text: failed === 1 ? '1 saisie à corriger' : `${failed} saisies à corriger`,
+    };
+  }
+  if (!online) {
+    return {
+      state: 'offline',
+      icon: '⌀',
+      text:
+        pending === 0
+          ? 'Hors ligne — vos saisies sont gardées'
+          : pending === 1
+            ? 'Hors ligne · 1 action en attente'
+            : `Hors ligne · ${pending} actions en attente`,
     };
   }
   if (pending > 0) {
@@ -44,16 +61,16 @@ function present(pending: number, failed: number): Presentation {
       text: pending === 1 ? '1 action en attente de sync' : `${pending} actions en attente de sync`,
     };
   }
-  return { state: 'synced', icon: '✓', text: 'Tout est synchronisé' };
+  return null;
 }
 
 export function SyncStatusBar({ online, pending, failed, syncing, onPress }: SyncStatusBarProps) {
-  const { state, icon, text } = present(pending, failed);
+  const shown = present(online, pending, failed);
+  if (!shown) return null;
+  const { state, icon, text } = shown;
   const palette = tokens.colors.sync[state];
-  // Connectivity has no effect on the single displayed phrase (the fusion
-  // rule above already collapses queue + network into one signal), but a
-  // screen reader still benefits from the extra context.
-  const accessibilityLabel = online ? text : `${text}, hors ligne`;
+  // A failure phrase does not mention the network, so a screen reader gets it appended.
+  const accessibilityLabel = online || state === 'offline' ? text : `${text}, hors ligne`;
 
   const body = (
     <>
