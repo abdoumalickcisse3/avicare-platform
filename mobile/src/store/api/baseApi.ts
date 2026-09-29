@@ -25,8 +25,14 @@ import { resolveApiUrl } from '@/config/apiUrl';
 
 const API_URL = resolveApiUrl();
 
+// fetch has no timeout of its own: on a flaky mobile network a request can hang for minutes, and a
+// screen waiting on it shows a spinner the whole time. Past this, the query fails and the screen
+// can offer a retry.
+export const REQUEST_TIMEOUT_MS = 20_000;
+
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: API_URL,
+  timeout: REQUEST_TIMEOUT_MS,
   prepareHeaders: async (headers) => {
     const token = await getAccessToken();
     if (token) headers.set('Authorization', `Bearer ${token}`);
