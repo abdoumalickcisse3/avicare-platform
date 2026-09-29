@@ -33,10 +33,10 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
    */
   @Query(
       "SELECT e FROM Expense e WHERE e.farmId = :farmId "
-          + "AND (:from IS NULL OR e.expenseDate >= :from) "
-          + "AND (:to IS NULL OR e.expenseDate <= :to) "
-          + "AND (:categoryKey IS NULL OR e.categoryKey = :categoryKey) "
-          + "AND (:unitId IS NULL OR e.productionUnitId = :unitId) "
+          + "AND (cast(:from as LocalDate) IS NULL OR e.expenseDate >= :from) "
+          + "AND (cast(:to as LocalDate) IS NULL OR e.expenseDate <= :to) "
+          + "AND (cast(:categoryKey as string) IS NULL OR e.categoryKey = :categoryKey) "
+          + "AND (cast(:unitId as long) IS NULL OR e.productionUnitId = :unitId) "
           + "ORDER BY e.expenseDate DESC, e.id DESC")
   List<Expense> search(
       @Param("farmId") Long farmId,
@@ -74,8 +74,8 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
   @Query(
       "SELECT e.categoryKey, SUM(e.amountXof) FROM Expense e "
           + "WHERE e.farmId = :farmId "
-          + "AND (:from IS NULL OR e.expenseDate >= :from) "
-          + "AND (:to IS NULL OR e.expenseDate <= :to) GROUP BY e.categoryKey")
+          + "AND (cast(:from as LocalDate) IS NULL OR e.expenseDate >= :from) "
+          + "AND (cast(:to as LocalDate) IS NULL OR e.expenseDate <= :to) GROUP BY e.categoryKey")
   List<Object[]> sumByCategory(
       @Param("farmId") Long farmId, @Param("from") LocalDate from, @Param("to") LocalDate to);
 
