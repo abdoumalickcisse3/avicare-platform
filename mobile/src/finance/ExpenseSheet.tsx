@@ -28,6 +28,7 @@ import {
   useUpdateExpenseMutation,
 } from '@/store/api/financeApi';
 import { tokens } from '@/theme';
+import { KeyboardSafeSheet, SheetScroll, sheetBounds } from '@/components/ui';
 import { formatCurrency } from '@/lib/format';
 import type { Expense } from '@/types';
 
@@ -103,8 +104,10 @@ export function ExpenseSheet({
 
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
+      <KeyboardSafeSheet>
       <Pressable style={styles.backdrop} accessibilityLabel="Fermer" onPress={onClose} />
       <View style={styles.sheet}>
+        <SheetScroll contentContainerStyle={styles.content}>
         <Text style={styles.title}>{expense ? 'Corriger la dépense' : 'Nouvelle dépense'}</Text>
         <Text style={styles.subtitle}>
           {expense
@@ -230,7 +233,9 @@ export function ExpenseSheet({
             <Text style={styles.deleteText}>Supprimer la dépense</Text>
           </Pressable>
         ) : null}
+        </SheetScroll>
       </View>
+      </KeyboardSafeSheet>
     </Modal>
   );
 }
@@ -243,8 +248,9 @@ const styles = StyleSheet.create({
     borderTopRightRadius: tokens.radii.xl,
     padding: tokens.layout.screenPadding,
     paddingBottom: tokens.spacing[8],
-    gap: tokens.spacing[1],
+    ...sheetBounds,
   },
+  content: { gap: tokens.spacing[1] },
   title: { ...tokens.typography.headingMd, color: tokens.colors.field.text },
   subtitle: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginBottom: tokens.spacing[1] },
   fieldLabel: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginTop: tokens.spacing[2] },

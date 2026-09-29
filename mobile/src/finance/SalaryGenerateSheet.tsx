@@ -13,6 +13,7 @@
 import { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { fontFamily, tokens } from '@/theme';
+import { KeyboardSafeSheet, sheetBounds } from '@/components/ui';
 import { FormField } from '@/components/field/FormField';
 import { formatCurrency } from '@/lib/format';
 import type { SalarySetting } from '@/types';
@@ -53,6 +54,7 @@ export function SalaryGenerateSheet({
 
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
+      <KeyboardSafeSheet>
       <Pressable style={styles.backdrop} accessibilityLabel="Fermer" onPress={onClose} />
       <View style={styles.sheet}>
         <Text style={styles.title}>Générer les salaires</Text>
@@ -124,6 +126,7 @@ export function SalaryGenerateSheet({
           </Pressable>
         </View>
       </View>
+      </KeyboardSafeSheet>
     </Modal>
   );
 }
@@ -135,7 +138,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: tokens.radii.xl,
     borderTopRightRadius: tokens.radii.xl,
     paddingTop: tokens.spacing[5],
-    maxHeight: '90%',
+    ...sheetBounds,
   },
   title: {
     ...tokens.typography.headingLg,

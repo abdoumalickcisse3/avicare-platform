@@ -17,6 +17,7 @@ import { useGetDeliveriesQuery } from '@/store/api/deliveriesApi';
 import { formatCurrency } from '@/lib/format';
 import { apiErrorMessage } from '@/lib/apiError';
 import { tokens } from '@/theme';
+import { KeyboardSafeSheet, SheetScroll, sheetBounds } from '@/components/ui';
 
 type Source = 'SALE' | 'DELIVERY';
 
@@ -108,77 +109,81 @@ export function GenerateInvoiceSheet({
 
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} accessibilityLabel="Fermer" onPress={onClose} />
-      <View style={styles.sheet}>
-        <Text style={styles.title}>Nouvelle facture</Text>
+      <KeyboardSafeSheet>
+        <Pressable style={styles.backdrop} accessibilityLabel="Fermer" onPress={onClose} />
+        <View style={styles.sheet}>
+          <SheetScroll contentContainerStyle={styles.content}>
+            <Text style={styles.title}>Nouvelle facture</Text>
 
-        <View style={styles.toggle}>
-          {(['SALE', 'DELIVERY'] as const).map((s) => (
+            <View style={styles.toggle}>
+              {(['SALE', 'DELIVERY'] as const).map((s) => (
+                <Pressable
+                  key={s}
+                  accessibilityRole="button"
+                  accessibilityLabel={s === 'SALE' ? 'Depuis une vente' : 'Depuis une livraison'}
+                  onPress={() => switchSource(s)}
+                  style={[styles.toggleBtn, source === s && styles.toggleBtnOn]}
+                >
+                  <Text style={[styles.toggleLabel, source === s && styles.toggleLabelOn]}>
+                    {s === 'SALE' ? 'Vente' : 'Livraison'}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <Text style={styles.fieldLabel}>Source à facturer</Text>
+            <ScrollView style={{ maxHeight: 260 }}>
+              {options.length === 0 ? (
+                <Text style={styles.muted}>
+                  {source === 'SALE' ? 'Aucune vente à facturer.' : 'Aucune livraison à facturer.'}
+                </Text>
+              ) : (
+                options.map((o) => (
+                  <Pressable
+                    key={o.id}
+                    accessibilityRole="button"
+                    accessibilityLabel={o.invoicedAs ? `${o.label} — déjà facturée` : o.label}
+                    disabled={o.invoicedAs !== null}
+                    onPress={() => setSourceId(o.id)}
+                    style={[
+                      styles.optionRow,
+                      sourceId === o.id && styles.optionRowOn,
+                      o.invoicedAs !== null && styles.optionRowDone,
+                    ]}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.optionLabel, sourceId === o.id && styles.optionLabelOn]}>{o.label}</Text>
+                      {o.invoicedAs !== null && (
+                        <Text style={styles.optionDone}>Déjà facturée · {o.invoicedAs}</Text>
+                      )}
+                    </View>
+                    <Text style={styles.optionTotal}>{formatCurrency(o.total)}</Text>
+                  </Pressable>
+                ))
+              )}
+            </ScrollView>
+
+            <Text style={styles.fieldLabel}>Échéance (AAAA-MM-JJ, optionnel)</Text>
+            <TextInput
+              value={dueDate}
+              onChangeText={setDueDate}
+              placeholder="2026-08-31"
+              accessibilityLabel="Date d'échéance"
+              style={styles.input}
+            />
+
             <Pressable
-              key={s}
               accessibilityRole="button"
-              accessibilityLabel={s === 'SALE' ? 'Depuis une vente' : 'Depuis une livraison'}
-              onPress={() => switchSource(s)}
-              style={[styles.toggleBtn, source === s && styles.toggleBtnOn]}
+              accessibilityLabel="Générer la facture"
+              onPress={submit}
+              disabled={sourceId == null}
+              style={[styles.commit, sourceId == null && styles.commitDisabled]}
             >
-              <Text style={[styles.toggleLabel, source === s && styles.toggleLabelOn]}>
-                {s === 'SALE' ? 'Vente' : 'Livraison'}
-              </Text>
+              <Text style={styles.commitLabel}>Générer la facture</Text>
             </Pressable>
-          ))}
+          </SheetScroll>
         </View>
-
-        <Text style={styles.fieldLabel}>Source à facturer</Text>
-        <ScrollView style={{ maxHeight: 260 }}>
-          {options.length === 0 ? (
-            <Text style={styles.muted}>
-              {source === 'SALE' ? 'Aucune vente à facturer.' : 'Aucune livraison à facturer.'}
-            </Text>
-          ) : (
-            options.map((o) => (
-              <Pressable
-                key={o.id}
-                accessibilityRole="button"
-                accessibilityLabel={o.invoicedAs ? `${o.label} — déjà facturée` : o.label}
-                disabled={o.invoicedAs !== null}
-                onPress={() => setSourceId(o.id)}
-                style={[
-                  styles.optionRow,
-                  sourceId === o.id && styles.optionRowOn,
-                  o.invoicedAs !== null && styles.optionRowDone,
-                ]}
-              >
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.optionLabel, sourceId === o.id && styles.optionLabelOn]}>{o.label}</Text>
-                  {o.invoicedAs !== null && (
-                    <Text style={styles.optionDone}>Déjà facturée · {o.invoicedAs}</Text>
-                  )}
-                </View>
-                <Text style={styles.optionTotal}>{formatCurrency(o.total)}</Text>
-              </Pressable>
-            ))
-          )}
-        </ScrollView>
-
-        <Text style={styles.fieldLabel}>Échéance (AAAA-MM-JJ, optionnel)</Text>
-        <TextInput
-          value={dueDate}
-          onChangeText={setDueDate}
-          placeholder="2026-08-31"
-          accessibilityLabel="Date d'échéance"
-          style={styles.input}
-        />
-
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Générer la facture"
-          onPress={submit}
-          disabled={sourceId == null}
-          style={[styles.commit, sourceId == null && styles.commitDisabled]}
-        >
-          <Text style={styles.commitLabel}>Générer la facture</Text>
-        </Pressable>
-      </View>
+      </KeyboardSafeSheet>
     </Modal>
   );
 }
@@ -191,8 +196,9 @@ const styles = StyleSheet.create({
     borderTopRightRadius: tokens.radii.xl,
     padding: tokens.layout.screenPadding,
     paddingBottom: tokens.spacing[8],
-    gap: tokens.spacing[2],
+    ...sheetBounds,
   },
+  content: { gap: tokens.spacing[2] },
   title: { ...tokens.typography.headingMd, color: tokens.colors.field.text, marginBottom: tokens.spacing[1] },
   toggle: { flexDirection: 'row', gap: tokens.spacing[2] },
   toggleBtn: { flex: 1, paddingVertical: tokens.spacing[2], borderRadius: tokens.radii.lg, borderWidth: 1, borderColor: tokens.colors.neutral[300], alignItems: 'center' },

@@ -11,6 +11,7 @@
 import { useEffect, useState } from 'react';
 import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { tokens } from '@/theme';
+import { KeyboardSafeSheet, sheetBounds } from '@/components/ui';
 import { FormField } from '@/components/field/FormField';
 import type { Veterinarian, VeterinarianInput } from '@/types';
 
@@ -52,6 +53,7 @@ export function VeterinarianSheet({ open, vet, saving, onClose, onSubmit }: Vete
 
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
+      <KeyboardSafeSheet>
       <Pressable style={styles.backdrop} accessibilityLabel="Fermer" onPress={onClose} />
       <View style={styles.sheet}>
         <Text style={styles.title}>{vet ? 'Modifier le vétérinaire' : 'Nouveau vétérinaire'}</Text>
@@ -105,6 +107,7 @@ export function VeterinarianSheet({ open, vet, saving, onClose, onSubmit }: Vete
           </Pressable>
         </View>
       </View>
+      </KeyboardSafeSheet>
     </Modal>
   );
 }
@@ -128,7 +131,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: tokens.radii.xl,
     borderTopRightRadius: tokens.radii.xl,
     paddingTop: tokens.spacing[5],
-    maxHeight: '88%',
+    ...sheetBounds,
   },
   title: {
     ...tokens.typography.headingLg,

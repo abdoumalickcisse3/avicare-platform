@@ -9,6 +9,7 @@ import * as Haptics from 'expo-haptics';
 import { useRecordMovementMutation } from '@/store/api/inventoryStockApi';
 import { formatNumber } from '@/lib/format';
 import { tokens } from '@/theme';
+import { KeyboardSafeSheet, SheetScroll, sheetBounds } from '@/components/ui';
 import type { MovementReason, MovementType, StockItem } from '@/types';
 
 const REASONS: Record<'IN' | 'OUT', { value: MovementReason; label: string }[]> = {
@@ -67,54 +68,59 @@ export function StockMovementSheet({
 
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} accessibilityLabel="Fermer" onPress={onClose} />
-      <View style={styles.sheet}>
-        <Text style={styles.title}>{name}</Text>
-        <Text style={styles.stock}>
-          En stock : {formatNumber(item.currentQuantity)} {item.unit ?? ''}
-        </Text>
+      <KeyboardSafeSheet>
+        <Pressable style={styles.backdrop} accessibilityLabel="Fermer" onPress={onClose} />
+        <View style={styles.sheet}>
+          <SheetScroll contentContainerStyle={styles.content}>
+            <Text style={styles.title}>{name}</Text>
+            <Text style={styles.stock}>
+              En stock : {formatNumber(item.currentQuantity)} {item.unit ?? ''}
+            </Text>
 
-        <View style={styles.toggle}>
-          {(['IN', 'OUT'] as const).map((t) => (
-            <Pressable
-              key={t}
-              accessibilityRole="button"
-              accessibilityLabel={t === 'IN' ? 'Entrée' : 'Sortie'}
-              onPress={() => switchType(t)}
-              style={[styles.toggleBtn, type === t && (t === 'IN' ? styles.toggleInOn : styles.toggleOutOn)]}
-            >
-              <Text style={[styles.toggleLabel, type === t && styles.toggleLabelOn]}>
-                {t === 'IN' ? 'Entrée' : 'Sortie'}
-              </Text>
+            <View style={styles.toggle}>
+              {(['IN', 'OUT'] as const).map((t) => (
+                <Pressable
+                  key={t}
+                  accessibilityRole="button"
+                  accessibilityLabel={t === 'IN' ? 'Entrée' : 'Sortie'}
+                  onPress={() => switchType(t)}
+                  style={[styles.toggleBtn, type === t && (t === 'IN' ? styles.toggleInOn : styles.toggleOutOn)]}
+                >
+                  <Text style={[styles.toggleLabel, type === t && styles.toggleLabelOn]}>
+                    {t === 'IN' ? 'Entrée' : 'Sortie'}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <Text style={styles.fieldLabel}>Quantité ({item.unit ?? 'unité'})</Text>
+            <TextInput value={qty} onChangeText={setQty} keyboardType="number-pad" inputMode="numeric" placeholder="0" accessibilityLabel="Quantité" style={styles.input} />
+
+            <Text style={styles.fieldLabel}>Motif</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+              {REASONS[type].map((r) => (
+                <Pressable key={r.value} accessibilityRole="button" accessibilityLabel={r.label} onPress={() => setReason(r.value)} style={[styles.chip, reason === r.value && styles.chipOn]}>
+                  <Text style={[styles.chipLabel, reason === r.value && styles.chipLabelOn]}>{r.label}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+
+            <TextInput value={notes} onChangeText={setNotes} placeholder="Note (optionnel)" accessibilityLabel="Note" style={[styles.input, { marginTop: tokens.spacing[2] }]} maxLength={120} />
+
+            <Pressable accessibilityRole="button" accessibilityLabel="Enregistrer le mouvement" onPress={submit} disabled={!canSubmit || isLoading} style={[styles.commit, (!canSubmit || isLoading) && styles.commitDisabled]}>
+              <Text style={styles.commitLabel}>Enregistrer</Text>
             </Pressable>
-          ))}
+          </SheetScroll>
         </View>
-
-        <Text style={styles.fieldLabel}>Quantité ({item.unit ?? 'unité'})</Text>
-        <TextInput value={qty} onChangeText={setQty} keyboardType="number-pad" inputMode="numeric" placeholder="0" accessibilityLabel="Quantité" style={styles.input} />
-
-        <Text style={styles.fieldLabel}>Motif</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-          {REASONS[type].map((r) => (
-            <Pressable key={r.value} accessibilityRole="button" accessibilityLabel={r.label} onPress={() => setReason(r.value)} style={[styles.chip, reason === r.value && styles.chipOn]}>
-              <Text style={[styles.chipLabel, reason === r.value && styles.chipLabelOn]}>{r.label}</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-
-        <TextInput value={notes} onChangeText={setNotes} placeholder="Note (optionnel)" accessibilityLabel="Note" style={[styles.input, { marginTop: tokens.spacing[2] }]} maxLength={120} />
-
-        <Pressable accessibilityRole="button" accessibilityLabel="Enregistrer le mouvement" onPress={submit} disabled={!canSubmit || isLoading} style={[styles.commit, (!canSubmit || isLoading) && styles.commitDisabled]}>
-          <Text style={styles.commitLabel}>Enregistrer</Text>
-        </Pressable>
-      </View>
+      </KeyboardSafeSheet>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(18,43,18,0.35)' },
-  sheet: { backgroundColor: tokens.colors.neutral[0], borderTopLeftRadius: tokens.radii.xl, borderTopRightRadius: tokens.radii.xl, padding: tokens.layout.screenPadding, paddingBottom: tokens.spacing[8], gap: tokens.spacing[2] },
+  sheet: { backgroundColor: tokens.colors.neutral[0], borderTopLeftRadius: tokens.radii.xl, borderTopRightRadius: tokens.radii.xl, padding: tokens.layout.screenPadding, paddingBottom: tokens.spacing[8], ...sheetBounds },
+  content: { gap: tokens.spacing[2] },
   title: { ...tokens.typography.headingMd, color: tokens.colors.field.text },
   stock: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted },
   toggle: { flexDirection: 'row', gap: tokens.spacing[2], marginTop: tokens.spacing[1] },

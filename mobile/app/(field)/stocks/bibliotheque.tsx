@@ -14,6 +14,7 @@ import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
 import { ArrowLeft, BookOpen, Check, Plus, X } from 'lucide-react-native';
 import { tokens } from '@/theme';
+import { KeyboardSafeSheet, SheetScroll, sheetBounds } from '@/components/ui';
 import { useFarmAccess } from '@/auth/useSession';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import {
@@ -206,54 +207,58 @@ export default function BibliothequeScreen() {
       )}
 
       <Modal visible={sheetOpen} transparent animationType="slide" onRequestClose={() => setSheetOpen(false)}>
-        <Pressable style={styles.backdrop} accessibilityLabel="Fermer" onPress={() => setSheetOpen(false)} />
-        <View style={styles.sheet}>
-          <Text style={styles.sheetTitle}>Nouvel article</Text>
+        <KeyboardSafeSheet>
+          <Pressable style={styles.backdrop} accessibilityLabel="Fermer" onPress={() => setSheetOpen(false)} />
+          <View style={styles.sheet}>
+            <SheetScroll contentContainerStyle={styles.sheetContent}>
+              <Text style={styles.sheetTitle}>Nouvel article</Text>
 
-          <Text style={styles.fieldLabel}>Nom de l&apos;article</Text>
-          <TextInput value={label} onChangeText={setLabel} placeholder="Ex. Maïs concassé" placeholderTextColor={tokens.colors.field.disabled} accessibilityLabel="Nom" style={styles.input} maxLength={80} />
+              <Text style={styles.fieldLabel}>Nom de l&apos;article</Text>
+              <TextInput value={label} onChangeText={setLabel} placeholder="Ex. Maïs concassé" placeholderTextColor={tokens.colors.field.disabled} accessibilityLabel="Nom" style={styles.input} maxLength={80} />
 
-          <Text style={styles.fieldLabel}>Type</Text>
-          <View style={styles.typeRow}>
-            {SUBCATEGORIES.map((s) => {
-              const on = subcategory === s.value;
-              return (
-                <Pressable
-                  key={s.value}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected: on }}
-                  accessibilityLabel={s.label}
-                  onPress={() => setSubcategory(s.value)}
-                  style={[styles.typeChip, on && styles.typeChipOn]}
-                >
-                  {on && <Check size={14} color={tokens.colors.neutral[0]} />}
-                  <Text style={[styles.typeChipLabel, on && styles.typeChipLabelOn]}>{s.label}</Text>
-                </Pressable>
-              );
-            })}
+              <Text style={styles.fieldLabel}>Type</Text>
+              <View style={styles.typeRow}>
+                {SUBCATEGORIES.map((s) => {
+                  const on = subcategory === s.value;
+                  return (
+                    <Pressable
+                      key={s.value}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected: on }}
+                      accessibilityLabel={s.label}
+                      onPress={() => setSubcategory(s.value)}
+                      style={[styles.typeChip, on && styles.typeChipOn]}
+                    >
+                      {on && <Check size={14} color={tokens.colors.neutral[0]} />}
+                      <Text style={[styles.typeChipLabel, on && styles.typeChipLabelOn]}>{s.label}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              <View style={styles.row}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.fieldLabel}>Unité</Text>
+                  <TextInput value={unit} onChangeText={setUnit} placeholder="kg, sac, L…" placeholderTextColor={tokens.colors.field.disabled} accessibilityLabel="Unité" style={styles.input} maxLength={16} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.fieldLabel}>Prix indicatif (XOF)</Text>
+                  <TextInput value={price} onChangeText={setPrice} keyboardType="number-pad" inputMode="numeric" placeholder="0" placeholderTextColor={tokens.colors.field.disabled} accessibilityLabel="Prix" style={styles.input} />
+                </View>
+              </View>
+
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Enregistrer l'article"
+                onPress={submit}
+                disabled={!canSubmit || saving}
+                style={[styles.commit, (!canSubmit || saving) && styles.commitDisabled]}
+              >
+                <Text style={styles.commitLabel}>Enregistrer</Text>
+              </Pressable>
+            </SheetScroll>
           </View>
-
-          <View style={styles.row}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.fieldLabel}>Unité</Text>
-              <TextInput value={unit} onChangeText={setUnit} placeholder="kg, sac, L…" placeholderTextColor={tokens.colors.field.disabled} accessibilityLabel="Unité" style={styles.input} maxLength={16} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.fieldLabel}>Prix indicatif (XOF)</Text>
-              <TextInput value={price} onChangeText={setPrice} keyboardType="number-pad" inputMode="numeric" placeholder="0" placeholderTextColor={tokens.colors.field.disabled} accessibilityLabel="Prix" style={styles.input} />
-            </View>
-          </View>
-
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Enregistrer l'article"
-            onPress={submit}
-            disabled={!canSubmit || saving}
-            style={[styles.commit, (!canSubmit || saving) && styles.commitDisabled]}
-          >
-            <Text style={styles.commitLabel}>Enregistrer</Text>
-          </Pressable>
-        </View>
+        </KeyboardSafeSheet>
       </Modal>
     </SafeAreaView>
   );
@@ -326,7 +331,8 @@ const styles = StyleSheet.create({
   },
 
   backdrop: { flex: 1, backgroundColor: 'rgba(18,43,18,0.35)' },
-  sheet: { backgroundColor: tokens.colors.neutral[0], borderTopLeftRadius: tokens.radii.xl, borderTopRightRadius: tokens.radii.xl, padding: tokens.layout.screenPadding, paddingBottom: tokens.spacing[8], gap: tokens.spacing[1] },
+  sheet: { backgroundColor: tokens.colors.neutral[0], borderTopLeftRadius: tokens.radii.xl, borderTopRightRadius: tokens.radii.xl, padding: tokens.layout.screenPadding, paddingBottom: tokens.spacing[8], ...sheetBounds },
+  sheetContent: { gap: tokens.spacing[1] },
   sheetTitle: { ...tokens.typography.headingMd, color: tokens.colors.field.text, marginBottom: tokens.spacing[1] },
   fieldLabel: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginTop: tokens.spacing[2] },
   input: { minHeight: 46, borderRadius: tokens.radii.lg, borderWidth: 1, borderColor: tokens.colors.neutral[300], paddingHorizontal: tokens.spacing[3], color: tokens.colors.field.text, ...tokens.typography.bodyMd },

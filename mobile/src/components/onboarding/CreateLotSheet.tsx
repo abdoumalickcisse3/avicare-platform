@@ -16,6 +16,7 @@ import {
 import { X } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { tokens } from '@/theme';
+import { KeyboardSafeSheet, sheetBounds } from '@/components/ui';
 import { FormField } from '@/components/field/FormField';
 import { useListBreedsQuery } from '@/store/api/breedsApi';
 import { useCreateBatchMutation } from '@/store/api/poultryBatchesApi';
@@ -99,6 +100,7 @@ export function CreateLotSheet({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <KeyboardSafeSheet>
       <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Fermer" />
       <View style={styles.sheet}>
         <View style={styles.header}>
@@ -170,24 +172,21 @@ export function CreateLotSheet({
           </Pressable>
         </ScrollView>
       </View>
+      </KeyboardSafeSheet>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(18,43,18,0.4)' },
+  backdrop: { flex: 1, backgroundColor: 'rgba(18,43,18,0.4)' },
   sheet: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    maxHeight: '88%',
     backgroundColor: tokens.colors.neutral[0],
     borderTopLeftRadius: tokens.radii.xl,
     borderTopRightRadius: tokens.radii.xl,
     paddingHorizontal: tokens.spacing[5],
     paddingTop: tokens.spacing[4],
     paddingBottom: tokens.spacing[8],
+    ...sheetBounds,
   },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.spacing[3] },
   title: { ...tokens.typography.headingLg, color: tokens.colors.neutral[900] },

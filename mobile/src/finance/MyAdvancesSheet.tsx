@@ -23,6 +23,7 @@ import {
 import * as Haptics from 'expo-haptics';
 import { skipToken } from '@reduxjs/toolkit/query/react';
 import { fontFamily, tokens } from '@/theme';
+import { KeyboardSafeSheet, SheetScroll, sheetBounds } from '@/components/ui';
 import { useGetMyAdvancesQuery, useRequestAdvanceMutation } from '@/store/api/financeApi';
 import { formatCurrency, formatRelative } from '@/lib/format';
 import type { AdvanceStatus } from '@/types';
@@ -80,81 +81,85 @@ export function MyAdvancesSheet({
 
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} accessibilityLabel="Fermer" onPress={onClose} />
-      <View style={styles.sheet}>
-        <Text style={styles.title}>Mes avances</Text>
-        <Text style={styles.subtitle}>
-          Une avance accordée est retenue sur vos prochains salaires.
-        </Text>
+      <KeyboardSafeSheet>
+        <Pressable style={styles.backdrop} accessibilityLabel="Fermer" onPress={onClose} />
+        <View style={styles.sheet}>
+          <SheetScroll contentContainerStyle={styles.content}>
+            <Text style={styles.title}>Mes avances</Text>
+            <Text style={styles.subtitle}>
+              Une avance accordée est retenue sur vos prochains salaires.
+            </Text>
 
-        <Text style={styles.fieldLabel}>Montant (XOF)</Text>
-        <TextInput
-          value={amount}
-          onChangeText={setAmount}
-          keyboardType="number-pad"
-          inputMode="numeric"
-          placeholder="0"
-          placeholderTextColor={tokens.colors.field.disabled}
-          accessibilityLabel="Montant de l'avance"
-          style={styles.input}
-        />
+            <Text style={styles.fieldLabel}>Montant (XOF)</Text>
+            <TextInput
+              value={amount}
+              onChangeText={setAmount}
+              keyboardType="number-pad"
+              inputMode="numeric"
+              placeholder="0"
+              placeholderTextColor={tokens.colors.field.disabled}
+              accessibilityLabel="Montant de l'avance"
+              style={styles.input}
+            />
 
-        <Text style={styles.fieldLabel}>Motif (facultatif)</Text>
-        <TextInput
-          value={reason}
-          onChangeText={setReason}
-          placeholder="Ex. Rentrée scolaire"
-          placeholderTextColor={tokens.colors.field.disabled}
-          accessibilityLabel="Motif de l'avance"
-          style={styles.input}
-          maxLength={200}
-        />
+            <Text style={styles.fieldLabel}>Motif (facultatif)</Text>
+            <TextInput
+              value={reason}
+              onChangeText={setReason}
+              placeholder="Ex. Rentrée scolaire"
+              placeholderTextColor={tokens.colors.field.disabled}
+              accessibilityLabel="Motif de l'avance"
+              style={styles.input}
+              maxLength={200}
+            />
 
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Demander l'avance"
-          onPress={submit}
-          disabled={!canSubmit}
-          style={[styles.commit, !canSubmit && styles.commitDisabled]}
-        >
-          <Text style={styles.commitLabel}>{submitting ? 'Envoi…' : 'Demander'}</Text>
-        </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Demander l'avance"
+              onPress={submit}
+              disabled={!canSubmit}
+              style={[styles.commit, !canSubmit && styles.commitDisabled]}
+            >
+              <Text style={styles.commitLabel}>{submitting ? 'Envoi…' : 'Demander'}</Text>
+            </Pressable>
 
-        {stillOwed > 0 && (
-          <Text style={styles.owed}>
-            {formatCurrency(stillOwed)} restent à retenir sur vos prochains salaires.
-          </Text>
-        )}
+            {stillOwed > 0 && (
+              <Text style={styles.owed}>
+                {formatCurrency(stillOwed)} restent à retenir sur vos prochains salaires.
+              </Text>
+            )}
 
-        <Text style={styles.historyTitle}>Historique</Text>
-        {isLoading ? (
-          <Text style={styles.muted}>Chargement…</Text>
-        ) : advances.length === 0 ? (
-          <Text style={styles.muted}>Aucune demande d&apos;avance.</Text>
-        ) : (
-          <ScrollView style={styles.historyScroll} keyboardShouldPersistTaps="handled">
-            <View style={styles.historyList}>
-              {advances.map((a) => {
-                const meta = STATUS_META[a.status];
-                return (
-                  <View key={a.id} style={styles.row}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.rowAmount}>{formatCurrency(a.amountXof)}</Text>
-                      <Text style={styles.rowMeta} numberOfLines={1}>
-                        {formatRelative(a.requestedAt)}
-                        {a.reason?.trim() ? ` · ${a.reason}` : ''}
-                      </Text>
-                    </View>
-                    <View style={[styles.chip, { borderColor: meta.color }]}>
-                      <Text style={[styles.chipText, { color: meta.color }]}>{meta.label}</Text>
-                    </View>
-                  </View>
-                );
-              })}
-            </View>
-          </ScrollView>
-        )}
-      </View>
+            <Text style={styles.historyTitle}>Historique</Text>
+            {isLoading ? (
+              <Text style={styles.muted}>Chargement…</Text>
+            ) : advances.length === 0 ? (
+              <Text style={styles.muted}>Aucune demande d&apos;avance.</Text>
+            ) : (
+              <ScrollView style={styles.historyScroll} keyboardShouldPersistTaps="handled">
+                <View style={styles.historyList}>
+                  {advances.map((a) => {
+                    const meta = STATUS_META[a.status];
+                    return (
+                      <View key={a.id} style={styles.row}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.rowAmount}>{formatCurrency(a.amountXof)}</Text>
+                          <Text style={styles.rowMeta} numberOfLines={1}>
+                            {formatRelative(a.requestedAt)}
+                            {a.reason?.trim() ? ` · ${a.reason}` : ''}
+                          </Text>
+                        </View>
+                        <View style={[styles.chip, { borderColor: meta.color }]}>
+                          <Text style={[styles.chipText, { color: meta.color }]}>{meta.label}</Text>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              </ScrollView>
+            )}
+          </SheetScroll>
+        </View>
+      </KeyboardSafeSheet>
     </Modal>
   );
 }
@@ -167,8 +172,9 @@ const styles = StyleSheet.create({
     borderTopRightRadius: tokens.radii.xl,
     padding: tokens.layout.screenPadding,
     paddingBottom: tokens.spacing[8],
-    gap: tokens.spacing[1],
+    ...sheetBounds,
   },
+  content: { gap: tokens.spacing[1] },
   title: { ...tokens.typography.headingMd, color: tokens.colors.field.text },
   subtitle: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginBottom: tokens.spacing[1] },
   fieldLabel: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginTop: tokens.spacing[2] },

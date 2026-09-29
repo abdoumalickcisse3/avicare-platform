@@ -12,6 +12,7 @@ import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
 import { ArrowLeft, ChevronRight, Phone, Plus, Truck } from 'lucide-react-native';
 import { tokens } from '@/theme';
+import { KeyboardSafeSheet, SheetScroll, sheetBounds } from '@/components/ui';
 import { useFarmAccess } from '@/auth/useSession';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { useCreateSupplierMutation, useGetSuppliersQuery } from '@/store/api/suppliersApi';
@@ -133,29 +134,33 @@ export default function FournisseursScreen() {
       )}
 
       <Modal visible={sheetOpen} transparent animationType="slide" onRequestClose={() => setSheetOpen(false)}>
-        <Pressable style={styles.backdrop} accessibilityLabel="Fermer" onPress={() => setSheetOpen(false)} />
-        <View style={styles.sheet}>
-          <Text style={styles.sheetTitle}>Nouveau fournisseur</Text>
-          <Text style={styles.fieldLabel}>Nom commercial *</Text>
-          <TextInput value={name} onChangeText={setName} placeholder="Ex. Sénégal Aliments" accessibilityLabel="Nom commercial" style={styles.input} />
-          <Text style={styles.fieldLabel}>Téléphone</Text>
-          <TextInput value={phone} onChangeText={setPhone} placeholder="Optionnel" keyboardType="phone-pad" accessibilityLabel="Téléphone" style={styles.input} />
-          <View style={styles.switchRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.fieldLabel}>Prévenir par WhatsApp</Text>
-              {!hasPhone && <Text style={styles.helper}>Renseignez un téléphone pour activer les avis.</Text>}
-            </View>
-            <Switch
-              value={notifyWhatsapp}
-              onValueChange={setNotifyWhatsapp}
-              disabled={!hasPhone}
-              accessibilityLabel="Prévenir par WhatsApp"
-            />
+        <KeyboardSafeSheet>
+          <Pressable style={styles.backdrop} accessibilityLabel="Fermer" onPress={() => setSheetOpen(false)} />
+          <View style={styles.sheet}>
+            <SheetScroll contentContainerStyle={styles.sheetContent}>
+              <Text style={styles.sheetTitle}>Nouveau fournisseur</Text>
+              <Text style={styles.fieldLabel}>Nom commercial *</Text>
+              <TextInput value={name} onChangeText={setName} placeholder="Ex. Sénégal Aliments" accessibilityLabel="Nom commercial" style={styles.input} />
+              <Text style={styles.fieldLabel}>Téléphone</Text>
+              <TextInput value={phone} onChangeText={setPhone} placeholder="Optionnel" keyboardType="phone-pad" accessibilityLabel="Téléphone" style={styles.input} />
+              <View style={styles.switchRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.fieldLabel}>Prévenir par WhatsApp</Text>
+                  {!hasPhone && <Text style={styles.helper}>Renseignez un téléphone pour activer les avis.</Text>}
+                </View>
+                <Switch
+                  value={notifyWhatsapp}
+                  onValueChange={setNotifyWhatsapp}
+                  disabled={!hasPhone}
+                  accessibilityLabel="Prévenir par WhatsApp"
+                />
+              </View>
+              <Pressable accessibilityRole="button" accessibilityLabel="Enregistrer le fournisseur" onPress={submit} disabled={!name.trim() || saving} style={[styles.commit, (!name.trim() || saving) && styles.commitDisabled]}>
+                <Text style={styles.commitLabel}>Enregistrer</Text>
+              </Pressable>
+            </SheetScroll>
           </View>
-          <Pressable accessibilityRole="button" accessibilityLabel="Enregistrer le fournisseur" onPress={submit} disabled={!name.trim() || saving} style={[styles.commit, (!name.trim() || saving) && styles.commitDisabled]}>
-            <Text style={styles.commitLabel}>Enregistrer</Text>
-          </Pressable>
-        </View>
+        </KeyboardSafeSheet>
       </Modal>
     </SafeAreaView>
   );
@@ -181,7 +186,8 @@ const styles = StyleSheet.create({
   fab: { position: 'absolute', right: tokens.layout.screenPadding, bottom: tokens.spacing[6], width: 56, height: 56, borderRadius: tokens.radii.full, backgroundColor: tokens.colors.accent[400], alignItems: 'center', justifyContent: 'center', shadowColor: tokens.colors.primary[900], shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 4 },
 
   backdrop: { flex: 1, backgroundColor: 'rgba(18,43,18,0.35)' },
-  sheet: { backgroundColor: tokens.colors.neutral[0], borderTopLeftRadius: tokens.radii.xl, borderTopRightRadius: tokens.radii.xl, padding: tokens.layout.screenPadding, paddingBottom: tokens.spacing[8], gap: tokens.spacing[2] },
+  sheet: { backgroundColor: tokens.colors.neutral[0], borderTopLeftRadius: tokens.radii.xl, borderTopRightRadius: tokens.radii.xl, padding: tokens.layout.screenPadding, paddingBottom: tokens.spacing[8], ...sheetBounds },
+  sheetContent: { gap: tokens.spacing[2] },
   sheetTitle: { ...tokens.typography.headingMd, color: tokens.colors.field.text, marginBottom: tokens.spacing[1] },
   fieldLabel: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginTop: tokens.spacing[2] },
   input: { minHeight: 46, borderRadius: tokens.radii.lg, borderWidth: 1, borderColor: tokens.colors.neutral[300], paddingHorizontal: tokens.spacing[3], color: tokens.colors.field.text },
