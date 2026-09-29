@@ -132,11 +132,13 @@ const field = {
 } as const;
 
 /**
- * The three sync states. Colour never carries the information alone:
+ * The four sync states. Colour never carries the information alone:
  * every state is paired with an icon and a word (colour-blindness + sun-washout).
  *
  * `stripe` = full-height header stripe, identifies the state at the edge of peripheral vision.
- * `bg`/`fg` = the pair actually read. Display priority: failed > pending > synced.
+ * `bg`/`fg` = the pair actually read. Display priority: failed > offline > pending > synced.
+ * `synced` is never rendered as a ribbon (the calm state shows nothing); it stays as a token for
+ * places that still need to colour "up to date".
  */
 const sync = {
   /** Up to date. Calm: if the normal state shouts, the abnormal one no longer stands out. */
@@ -150,6 +152,12 @@ const sync = {
     stripe: accent[400],
     bg: neutral[0],
     fg: neutral[900],
+  },
+  /** No network. Dark, solid and distinct from `failed`: nothing is wrong, work is just kept locally. */
+  offline: {
+    stripe: accent[400],
+    bg: neutral[800],
+    fg: neutral[0],
   },
   /** Rejected by the server (definitive 4xx, doc 08 §7.3). The only state shown as a solid fill. */
   failed: {

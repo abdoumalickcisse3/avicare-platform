@@ -14,6 +14,7 @@
 import { useEffect, useRef, useState } from 'react';
 import NetInfo from '@react-native-community/netinfo';
 import { isSyncing, queue, subscribe } from './index';
+import { isOnline } from './isOnline';
 
 export type SyncStatus = {
   online: boolean;
@@ -42,11 +43,11 @@ export function useSyncStatus(): SyncStatus {
     };
 
     NetInfo.fetch()
-      .then((state) => applyOnline(Boolean(state.isConnected)))
+      .then((state) => applyOnline(isOnline(state)))
       .catch(() => undefined);
 
     const unsubscribeNetInfo = NetInfo.addEventListener((state) => {
-      applyOnline(Boolean(state.isConnected));
+      applyOnline(isOnline(state));
     });
     const unsubscribeQueue = subscribe(() => {
       setStatus(readStatus(onlineRef.current));
