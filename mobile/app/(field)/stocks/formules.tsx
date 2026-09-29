@@ -15,6 +15,7 @@ import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
 import { ArrowLeft, Check, Copy, MoreVertical, Pencil, Wheat } from 'lucide-react-native';
 import { tokens } from '@/theme';
+import { KeyboardSafeSheet, SheetScroll, sheetBounds } from '@/components/ui';
 import { useFarmAccess } from '@/auth/useSession';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import {
@@ -199,71 +200,75 @@ export default function FormulesScreen() {
       )}
 
       <Modal visible={cloneOpen} transparent animationType="slide" onRequestClose={() => setCloneOpen(false)}>
-        <Pressable style={styles.backdrop} accessibilityLabel="Fermer" onPress={() => setCloneOpen(false)} />
-        <View style={styles.sheet}>
-          <Text style={styles.sheetTitle}>Cloner une formule</Text>
-          <Text style={styles.sheetSub}>Partez d&apos;un modèle plateforme.</Text>
+        <KeyboardSafeSheet>
+          <Pressable style={styles.backdrop} accessibilityLabel="Fermer" onPress={() => setCloneOpen(false)} />
+          <View style={styles.sheet}>
+            <SheetScroll contentContainerStyle={styles.sheetContent}>
+              <Text style={styles.sheetTitle}>Cloner une formule</Text>
+              <Text style={styles.sheetSub}>Partez d&apos;un modèle plateforme.</Text>
 
-          <Text style={styles.fieldLabel}>Modèle</Text>
-          {templates.length === 0 ? (
-            <Text style={styles.muted}>Aucun modèle disponible.</Text>
-          ) : (
-            <ScrollView style={styles.templateScroll} keyboardShouldPersistTaps="handled">
-              {templates.map((t) => {
-                const on = t.key === sourceKey;
-                return (
-                  <Pressable
-                    key={t.key}
-                    accessibilityRole="button"
-                    accessibilityLabel={t.label}
-                    onPress={() => setSourceKey(t.key)}
-                    style={styles.templateRow}
-                  >
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.templateName, on && styles.templateNameOn]}>{t.label}</Text>
-                      <Text style={styles.templateMeta}>
-                        {FEED_PHASE_LABELS[t.targetPhase as keyof typeof FEED_PHASE_LABELS] ?? t.targetPhase}
-                        {t.estimatedCostPer100kgXof != null ? ` · ${formatCurrency(t.estimatedCostPer100kgXof)} / 100 kg` : ''}
-                      </Text>
-                    </View>
-                    {on && <Check size={16} color={tokens.colors.primary[600]} />}
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          )}
-
-          {sourceKey !== '' && (
-            <View style={styles.composition}>
-              <Text style={styles.compositionTitle}>Composition</Text>
-              {preview == null ? (
-                <Text style={styles.muted}>Lecture…</Text>
-              ) : preview.ingredients.length === 0 ? (
-                <Text style={styles.muted}>Ce modèle ne liste aucun ingrédient.</Text>
+              <Text style={styles.fieldLabel}>Modèle</Text>
+              {templates.length === 0 ? (
+                <Text style={styles.muted}>Aucun modèle disponible.</Text>
               ) : (
-                preview.ingredients.map((i) => (
-                  <View key={`${i.articleSource}:${i.articleKey}`} style={styles.compositionRow}>
-                    <Text style={styles.compositionName}>{i.articleKey}</Text>
-                    <Text style={styles.compositionPct}>{i.percentage} %</Text>
-                  </View>
-                ))
+                <ScrollView style={styles.templateScroll} keyboardShouldPersistTaps="handled">
+                  {templates.map((t) => {
+                    const on = t.key === sourceKey;
+                    return (
+                      <Pressable
+                        key={t.key}
+                        accessibilityRole="button"
+                        accessibilityLabel={t.label}
+                        onPress={() => setSourceKey(t.key)}
+                        style={styles.templateRow}
+                      >
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.templateName, on && styles.templateNameOn]}>{t.label}</Text>
+                          <Text style={styles.templateMeta}>
+                            {FEED_PHASE_LABELS[t.targetPhase as keyof typeof FEED_PHASE_LABELS] ?? t.targetPhase}
+                            {t.estimatedCostPer100kgXof != null ? ` · ${formatCurrency(t.estimatedCostPer100kgXof)} / 100 kg` : ''}
+                          </Text>
+                        </View>
+                        {on && <Check size={16} color={tokens.colors.primary[600]} />}
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
               )}
-            </View>
-          )}
 
-          <Text style={styles.fieldLabel}>Nom (optionnel)</Text>
-          <TextInput value={newName} onChangeText={setNewName} placeholder="Nom de la nouvelle formule" placeholderTextColor={tokens.colors.field.disabled} accessibilityLabel="Nom" style={styles.input} maxLength={80} />
+              {sourceKey !== '' && (
+                <View style={styles.composition}>
+                  <Text style={styles.compositionTitle}>Composition</Text>
+                  {preview == null ? (
+                    <Text style={styles.muted}>Lecture…</Text>
+                  ) : preview.ingredients.length === 0 ? (
+                    <Text style={styles.muted}>Ce modèle ne liste aucun ingrédient.</Text>
+                  ) : (
+                    preview.ingredients.map((i) => (
+                      <View key={`${i.articleSource}:${i.articleKey}`} style={styles.compositionRow}>
+                        <Text style={styles.compositionName}>{i.articleKey}</Text>
+                        <Text style={styles.compositionPct}>{i.percentage} %</Text>
+                      </View>
+                    ))
+                  )}
+                </View>
+              )}
 
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Cloner la formule"
-            onPress={submitClone}
-            disabled={!sourceKey || cloning}
-            style={[styles.commit, (!sourceKey || cloning) && styles.commitDisabled]}
-          >
-            <Text style={styles.commitLabel}>Cloner</Text>
-          </Pressable>
-        </View>
+              <Text style={styles.fieldLabel}>Nom (optionnel)</Text>
+              <TextInput value={newName} onChangeText={setNewName} placeholder="Nom de la nouvelle formule" placeholderTextColor={tokens.colors.field.disabled} accessibilityLabel="Nom" style={styles.input} maxLength={80} />
+
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Cloner la formule"
+                onPress={submitClone}
+                disabled={!sourceKey || cloning}
+                style={[styles.commit, (!sourceKey || cloning) && styles.commitDisabled]}
+              >
+                <Text style={styles.commitLabel}>Cloner</Text>
+              </Pressable>
+            </SheetScroll>
+          </View>
+        </KeyboardSafeSheet>
       </Modal>
     </SafeAreaView>
   );
@@ -350,7 +355,8 @@ const styles = StyleSheet.create({
   },
 
   backdrop: { flex: 1, backgroundColor: 'rgba(18,43,18,0.35)' },
-  sheet: { backgroundColor: tokens.colors.neutral[0], borderTopLeftRadius: tokens.radii.xl, borderTopRightRadius: tokens.radii.xl, padding: tokens.layout.screenPadding, paddingBottom: tokens.spacing[8], gap: tokens.spacing[1] },
+  sheet: { backgroundColor: tokens.colors.neutral[0], borderTopLeftRadius: tokens.radii.xl, borderTopRightRadius: tokens.radii.xl, padding: tokens.layout.screenPadding, paddingBottom: tokens.spacing[8], ...sheetBounds },
+  sheetContent: { gap: tokens.spacing[1] },
   sheetTitle: { ...tokens.typography.headingMd, color: tokens.colors.field.text },
   sheetSub: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginBottom: tokens.spacing[1] },
   fieldLabel: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginTop: tokens.spacing[2] },

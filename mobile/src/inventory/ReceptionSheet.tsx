@@ -19,6 +19,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { fontFamily, tokens } from '@/theme';
+import { KeyboardSafeSheet, sheetBounds } from '@/components/ui';
 import { FormField } from '@/components/field/FormField';
 import { formatCurrency, formatNumber } from '@/lib/format';
 import type { PurchaseOrder } from '@/types';
@@ -81,6 +82,7 @@ export function ReceptionSheet({
 
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
+      <KeyboardSafeSheet>
       <Pressable style={styles.backdrop} accessibilityLabel="Fermer" onPress={onClose} />
       <View style={styles.sheet}>
         <Text style={styles.title}>Réception</Text>
@@ -166,6 +168,7 @@ export function ReceptionSheet({
           </Pressable>
         </View>
       </View>
+      </KeyboardSafeSheet>
     </Modal>
   );
 }
@@ -177,7 +180,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: tokens.radii.xl,
     borderTopRightRadius: tokens.radii.xl,
     paddingTop: tokens.spacing[5],
-    maxHeight: '92%',
+    ...sheetBounds,
   },
   title: {
     ...tokens.typography.headingLg,

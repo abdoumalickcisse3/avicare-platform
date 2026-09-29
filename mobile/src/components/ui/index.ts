@@ -4,3 +4,4 @@ export { QuickAction } from './QuickAction';
 export { PrimaryButton } from './PrimaryButton';
 export { SectionHeader } from './SectionHeader';
 export { TicketRow, type TicketItem } from './TicketRow';
+export { KeyboardSafeSheet, SheetScroll, sheetBounds } from './KeyboardSafeSheet';

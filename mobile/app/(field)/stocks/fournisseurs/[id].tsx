@@ -25,6 +25,7 @@ import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
 import { ArrowLeft, Trash2 } from 'lucide-react-native';
 import { tokens } from '@/theme';
+import { KeyboardSafeSheet, SheetScroll, sheetBounds } from '@/components/ui';
 import { useFarmAccess } from '@/auth/useSession';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import {
@@ -383,70 +384,74 @@ function LedgerEntrySheet({
 
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={close}>
-      <Pressable style={styles.backdrop} accessibilityLabel="Fermer" onPress={close} />
-      <View style={styles.sheet}>
-        <Text style={styles.sheetTitle}>
-          {isCredit ? 'Enregistrer un paiement' : 'Ajouter une dette'}
-        </Text>
-        {supplierName && <Text style={styles.sheetSubtitle}>{supplierName}</Text>}
-        {!isCredit && (
-          <Text style={styles.sheetHelper}>
-            Ce que vous devez au fournisseur hors bon d’achat — le carnet de la boutique. Aucune
-            dépense n’est créée : elle l’est à la réception du bon d’achat.
-          </Text>
-        )}
-
-        <Text style={styles.fieldLabel}>Montant *</Text>
-        <TextInput
-          value={amount}
-          onChangeText={(t) => setAmount(t.replace(/[^0-9]/g, ''))}
-          keyboardType="number-pad"
-          inputMode="numeric"
-          placeholder="0"
-          accessibilityLabel="Montant"
-          style={styles.input}
-        />
-
-        <Text style={styles.fieldLabel}>Libellé</Text>
-        <TextInput value={label} onChangeText={setLabel} placeholder="Optionnel" accessibilityLabel="Libellé" style={styles.input} />
-
-        {isCredit && (
-          <>
-            <Text style={styles.fieldLabel}>Mode de paiement</Text>
-            <View style={styles.chipRow}>
-              {PAYMENT_METHOD_OPTIONS.map((m) => (
-                <Chip key={m} label={PAYMENT_METHOD_LABELS[m]} active={method === m} onPress={() => setMethod(m)} />
-              ))}
-            </View>
-
-            <Text style={styles.fieldLabel}>Référence</Text>
-            <TextInput value={reference} onChangeText={setReference} placeholder="Optionnel" accessibilityLabel="Référence" style={styles.input} />
-          </>
-        )}
-
-        {isCredit && canNotify && (
-          <View style={styles.switchRow}>
-            <Text style={[styles.fieldLabel, { marginTop: 0, flex: 1 }]}>
-              {supplierName ? `Prévenir ${supplierName} par WhatsApp` : 'Prévenir par WhatsApp'}
+      <KeyboardSafeSheet>
+        <Pressable style={styles.backdrop} accessibilityLabel="Fermer" onPress={close} />
+        <View style={styles.sheet}>
+          <SheetScroll contentContainerStyle={styles.sheetContent}>
+            <Text style={styles.sheetTitle}>
+              {isCredit ? 'Enregistrer un paiement' : 'Ajouter une dette'}
             </Text>
-            <Switch
-              value={notifySupplier}
-              onValueChange={setNotifySupplier}
-              accessibilityLabel={supplierName ? `Prévenir ${supplierName} par WhatsApp` : 'Prévenir par WhatsApp'}
-            />
-          </View>
-        )}
+            {supplierName && <Text style={styles.sheetSubtitle}>{supplierName}</Text>}
+            {!isCredit && (
+              <Text style={styles.sheetHelper}>
+                Ce que vous devez au fournisseur hors bon d’achat — le carnet de la boutique. Aucune
+                dépense n’est créée : elle l’est à la réception du bon d’achat.
+              </Text>
+            )}
 
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={isCredit ? 'Confirmer le paiement' : 'Confirmer la dette'}
-          onPress={submit}
-          disabled={!canSubmit}
-          style={[styles.commit, !canSubmit && styles.commitDisabled]}
-        >
-          <Text style={styles.commitLabel}>Enregistrer</Text>
-        </Pressable>
-      </View>
+            <Text style={styles.fieldLabel}>Montant *</Text>
+            <TextInput
+              value={amount}
+              onChangeText={(t) => setAmount(t.replace(/[^0-9]/g, ''))}
+              keyboardType="number-pad"
+              inputMode="numeric"
+              placeholder="0"
+              accessibilityLabel="Montant"
+              style={styles.input}
+            />
+
+            <Text style={styles.fieldLabel}>Libellé</Text>
+            <TextInput value={label} onChangeText={setLabel} placeholder="Optionnel" accessibilityLabel="Libellé" style={styles.input} />
+
+            {isCredit && (
+              <>
+                <Text style={styles.fieldLabel}>Mode de paiement</Text>
+                <View style={styles.chipRow}>
+                  {PAYMENT_METHOD_OPTIONS.map((m) => (
+                    <Chip key={m} label={PAYMENT_METHOD_LABELS[m]} active={method === m} onPress={() => setMethod(m)} />
+                  ))}
+                </View>
+
+                <Text style={styles.fieldLabel}>Référence</Text>
+                <TextInput value={reference} onChangeText={setReference} placeholder="Optionnel" accessibilityLabel="Référence" style={styles.input} />
+              </>
+            )}
+
+            {isCredit && canNotify && (
+              <View style={styles.switchRow}>
+                <Text style={[styles.fieldLabel, { marginTop: 0, flex: 1 }]}>
+                  {supplierName ? `Prévenir ${supplierName} par WhatsApp` : 'Prévenir par WhatsApp'}
+                </Text>
+                <Switch
+                  value={notifySupplier}
+                  onValueChange={setNotifySupplier}
+                  accessibilityLabel={supplierName ? `Prévenir ${supplierName} par WhatsApp` : 'Prévenir par WhatsApp'}
+                />
+              </View>
+            )}
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={isCredit ? 'Confirmer le paiement' : 'Confirmer la dette'}
+              onPress={submit}
+              disabled={!canSubmit}
+              style={[styles.commit, !canSubmit && styles.commitDisabled]}
+            >
+              <Text style={styles.commitLabel}>Enregistrer</Text>
+            </Pressable>
+          </SheetScroll>
+        </View>
+      </KeyboardSafeSheet>
     </Modal>
   );
 }
@@ -502,7 +507,8 @@ const styles = StyleSheet.create({
   sheetHelper: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginTop: tokens.spacing[1] },
 
   backdrop: { flex: 1, backgroundColor: 'rgba(18,43,18,0.35)' },
-  sheet: { backgroundColor: tokens.colors.neutral[0], borderTopLeftRadius: tokens.radii.xl, borderTopRightRadius: tokens.radii.xl, padding: tokens.layout.screenPadding, paddingBottom: tokens.spacing[8], gap: tokens.spacing[2] },
+  sheet: { backgroundColor: tokens.colors.neutral[0], borderTopLeftRadius: tokens.radii.xl, borderTopRightRadius: tokens.radii.xl, padding: tokens.layout.screenPadding, paddingBottom: tokens.spacing[8], ...sheetBounds },
+  sheetContent: { gap: tokens.spacing[2] },
   sheetTitle: { ...tokens.typography.headingMd, color: tokens.colors.field.text },
   sheetSubtitle: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginBottom: tokens.spacing[1] },
   fieldLabel: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginTop: tokens.spacing[2] },

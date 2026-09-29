@@ -20,6 +20,7 @@ import { useDeleteAccountMutation, useGetDeletionPreviewQuery } from '@/store/ap
 import { apiErrorMessage } from '@/lib/apiError';
 import { signOut } from '@/auth/signOut';
 import { tokens } from '@/theme';
+import { KeyboardSafeSheet, sheetBounds } from '@/components/ui';
 
 /** Le mot à retaper. En français, en majuscules : il ne se tape pas par distraction. */
 const CONFIRMATION = 'SUPPRIMER';
@@ -61,6 +62,7 @@ export function DeleteAccountSheet({ open, onClose }: { open: boolean; onClose: 
 
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={close}>
+      <KeyboardSafeSheet>
       <Pressable style={styles.backdrop} accessibilityLabel="Fermer" onPress={close} />
       <View style={styles.sheet}>
         <ScrollView keyboardShouldPersistTaps="handled">
@@ -155,6 +157,7 @@ export function DeleteAccountSheet({ open, onClose }: { open: boolean; onClose: 
           </Pressable>
         </ScrollView>
       </View>
+      </KeyboardSafeSheet>
     </Modal>
   );
 }
@@ -162,12 +165,12 @@ export function DeleteAccountSheet({ open, onClose }: { open: boolean; onClose: 
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(18,43,18,0.35)' },
   sheet: {
-    maxHeight: '88%',
     backgroundColor: tokens.colors.neutral[0],
     borderTopLeftRadius: tokens.radii.xl,
     borderTopRightRadius: tokens.radii.xl,
     padding: tokens.layout.screenPadding,
     paddingBottom: tokens.spacing[8],
+    ...sheetBounds,
   },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[2] },
   title: { ...tokens.typography.headingMd, color: tokens.colors.field.text },

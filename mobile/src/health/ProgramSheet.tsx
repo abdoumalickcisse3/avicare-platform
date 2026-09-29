@@ -18,6 +18,7 @@ import { useEffect, useState } from 'react';
 import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Check, Plus, Trash2 } from 'lucide-react-native';
 import { tokens } from '@/theme';
+import { KeyboardSafeSheet, sheetBounds } from '@/components/ui';
 import { FormField } from '@/components/field/FormField';
 import { HEALTH_ROUTE_LABELS, routeLabel } from '@/lib/health';
 import { slugify } from './slug';
@@ -132,6 +133,7 @@ export function ProgramSheet({
 
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
+      <KeyboardSafeSheet>
       <Pressable style={styles.backdrop} accessibilityLabel="Fermer" onPress={onClose} />
       <View style={styles.sheet}>
       <Text style={styles.title}>{title}</Text>
@@ -321,6 +323,7 @@ export function ProgramSheet({
         </Pressable>
       </View>
       </View>
+      </KeyboardSafeSheet>
     </Modal>
   );
 }
@@ -345,7 +348,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: tokens.radii.xl,
     borderTopRightRadius: tokens.radii.xl,
     paddingTop: tokens.spacing[5],
-    maxHeight: '90%',
+    ...sheetBounds,
   },
   title: {
     ...tokens.typography.headingLg,

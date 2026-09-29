@@ -15,6 +15,7 @@
 import { useEffect, useState } from 'react';
 import { Alert, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { fontFamily, tokens } from '@/theme';
+import { KeyboardSafeSheet, sheetBounds } from '@/components/ui';
 import { FormField } from '@/components/field/FormField';
 import { FARM_ROLE_LABELS } from '@/lib/members';
 import { Chip } from './Chip';
@@ -123,6 +124,7 @@ export function MemberSheet({
 
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
+      <KeyboardSafeSheet>
       <Pressable style={styles.backdrop} accessibilityLabel="Fermer" onPress={onClose} />
       <View style={styles.sheet}>
         <Text style={styles.title}>{member ? member.fullName : 'Nouveau membre'}</Text>
@@ -274,6 +276,7 @@ export function MemberSheet({
           </Pressable>
         </View>
       </View>
+      </KeyboardSafeSheet>
     </Modal>
   );
 }
@@ -285,7 +288,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: tokens.radii.xl,
     borderTopRightRadius: tokens.radii.xl,
     paddingTop: tokens.spacing[5],
-    maxHeight: '90%',
+    ...sheetBounds,
   },
   title: {
     ...tokens.typography.headingLg,
