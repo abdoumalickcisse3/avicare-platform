@@ -21,6 +21,15 @@ class DashboardPeriodTest {
   }
 
   @Test
+  void preset90dSpansLast90DaysInclusive() {
+    DashboardPeriod p = DashboardPeriod.resolve("90d", null, null, TODAY);
+    assertThat(p.kind()).isEqualTo("preset");
+    assertThat(p.value()).isEqualTo("90d");
+    assertThat(p.to()).isEqualTo(TODAY);
+    assertThat(p.from()).isEqualTo(LocalDate.of(2026, 3, 25)); // 89 jours avant -> 90 jours inclus
+  }
+
+  @Test
   void presetTodayIsSingleDay() {
     DashboardPeriod p = DashboardPeriod.resolve("today", null, null, TODAY);
     assertThat(p.from()).isEqualTo(TODAY);

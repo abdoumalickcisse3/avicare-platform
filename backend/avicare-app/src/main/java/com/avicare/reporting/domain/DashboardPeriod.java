@@ -3,7 +3,7 @@ package com.avicare.reporting.domain;
 import com.avicare.common.api.exception.ValidationException;
 import java.time.LocalDate;
 
-/** Resolves the time window for a dashboard: preset (today/7d/30d/mtd) or custom date range. */
+/** Resolves the time window for a dashboard: preset (today/7d/30d/90d/mtd) or custom date range. */
 public record DashboardPeriod(String kind, String value, LocalDate from, LocalDate to) {
 
   public static DashboardPeriod resolve(
@@ -28,6 +28,7 @@ public record DashboardPeriod(String kind, String value, LocalDate from, LocalDa
       case "today" -> new DashboardPeriod("preset", "today", today, today);
       case "7d" -> new DashboardPeriod("preset", "7d", today.minusDays(6), today);
       case "30d" -> new DashboardPeriod("preset", "30d", today.minusDays(29), today);
+      case "90d" -> new DashboardPeriod("preset", "90d", today.minusDays(89), today);
       case "mtd" -> new DashboardPeriod("preset", "mtd", today.withDayOfMonth(1), today);
       default ->
           throw new ValidationException(
