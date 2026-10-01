@@ -7,14 +7,17 @@
  */
 import { signOut } from '../signOut';
 import { clearTokens, getRefreshToken } from '../tokens';
-import { notifyAuthInvalidated } from '@/sync';
+import { flushAndPurgeQueue, notifyAuthInvalidated } from '@/sync';
 import { revokePushDevice } from '@/push/revokePushDevice';
 
 jest.mock('../tokens', () => ({
   clearTokens: jest.fn(async () => {}),
   getRefreshToken: jest.fn(async () => 'refresh-abc'),
 }));
-jest.mock('@/sync', () => ({ notifyAuthInvalidated: jest.fn() }));
+jest.mock('@/sync', () => ({
+  notifyAuthInvalidated: jest.fn(),
+  flushAndPurgeQueue: jest.fn(async () => {}),
+}));
 jest.mock('@/push/revokePushDevice', () => ({ revokePushDevice: jest.fn(async () => {}) }));
 jest.mock('@/config/apiUrl', () => ({ resolveApiUrl: () => 'https://api.test' }));
 
@@ -92,5 +95,30 @@ describe('signOut', () => {
 
     expect(fetchMock).not.toHaveBeenCalled();
     expect(clearTokens).toHaveBeenCalledTimes(1);
+  });
+
+  it('sends what is queued one last time and empties the queue before the tokens go', async () => {
+    // The queue belongs to the account that is leaving; the next person on a shared phone must not
+    // replay it under their own session.
+    const order: string[] = [];
+    (flushAndPurgeQueue as jest.Mock).mockImplementationOnce(async () => {
+      order.push('queue');
+    });
+    (clearTokens as jest.Mock).mockImplementationOnce(async () => {
+      order.push('clear');
+    });
+
+    await signOut();
+
+    expect(order).toEqual(['queue', 'clear']);
+  });
+
+  it('still signs out when emptying the queue fails', async () => {
+    (flushAndPurgeQueue as jest.Mock).mockRejectedValueOnce(new Error('disk'));
+
+    await signOut();
+
+    expect(clearTokens).toHaveBeenCalledTimes(1);
+    expect(notifyAuthInvalidated).toHaveBeenCalledTimes(1);
   });
 });

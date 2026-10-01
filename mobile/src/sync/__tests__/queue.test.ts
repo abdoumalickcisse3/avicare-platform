@@ -94,4 +94,39 @@ describe('mutation queue', () => {
     expect(afterSecond).toBeDefined();
     expect(afterSecond?.attempts).toBe(2);
   });
+
+  it('gives a manual retry a fresh attempt budget', () => {
+    const q = setup();
+    q.enqueue(mutation);
+    const id = q.peekNext()!.id;
+    q.bumpAttempts(id);
+    q.bumpAttempts(id);
+    q.markFailed(id, 'HTTP 503 after 8 attempts');
+
+    q.markPending(id);
+
+    expect(q.listAll()[0]).toEqual(expect.objectContaining({ status: 'PENDING', attempts: 0, lastError: null }));
+  });
+
+  it('records a transport error without changing status or attempts', () => {
+    const q = setup();
+    q.enqueue(mutation);
+    const id = q.peekNext()!.id;
+
+    q.noteError(id, 'Network request failed');
+
+    expect(q.listAll()[0]).toEqual(
+      expect.objectContaining({ status: 'PENDING', attempts: 0, lastError: 'Network request failed' }),
+    );
+  });
+
+  it('empties the queue on clearAll', () => {
+    const q = setup();
+    q.enqueue(mutation);
+    q.enqueue({ ...mutation, clientRef: 'other-ref' });
+
+    q.clearAll();
+
+    expect(q.listAll()).toEqual([]);
+  });
 });

@@ -16,7 +16,7 @@
  * live as drains resolve and as the actions below mutate the queue.
  */
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { tokens } from '@/theme';
@@ -40,8 +40,17 @@ export default function QueueScreen() {
     syncEngine.drain().catch(() => undefined);
   }
 
+  // Deleting drops the only copy of an entry the farmer typed in the field (a mortality count, a
+  // weighing): one stray tap on a button next to "Réessayer" must not be enough.
   function remove(id: number): void {
-    queue.markDone(id);
+    Alert.alert(
+      'Supprimer cette saisie ?',
+      "Elle ne sera jamais envoyée au serveur. Cette action est définitive.",
+      [
+        { text: 'Annuler', style: 'cancel' },
+        { text: 'Supprimer', style: 'destructive', onPress: () => queue.markDone(id) },
+      ],
+    );
   }
 
   return (

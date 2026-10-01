@@ -19,3 +19,18 @@ export function subscribeSessionChanged(listener: () => void): () => void {
 export function notifySessionChanged(): void {
   for (const listener of listeners) listener();
 }
+
+// --- session-gone signal ----------------------------------------------------
+// "The session is gone, purge everything." Lives here rather than in `@/sync` so the auth layer
+// (the refresh, `baseApi`) can raise it without importing the sync singleton, which opens the
+// SQLite database at import time. `@/sync` re-exports both functions.
+const invalidatedListeners = new Set<() => void>();
+
+export function subscribeAuthInvalidated(listener: () => void): () => void {
+  invalidatedListeners.add(listener);
+  return () => invalidatedListeners.delete(listener);
+}
+
+export function notifyAuthInvalidated(): void {
+  for (const listener of invalidatedListeners) listener();
+}

@@ -13,19 +13,23 @@
  * this runs while the cache is being torn down, and a mutation dispatched into a store that is
  * about to reset gets aborted before it leaves the phone.
  *
+ * <p>Offline writes still queued are sent one last time, then dropped: left on the phone they would
+ * be replayed under the next account's session.
+ *
  * <p>The call is best-effort. A farmer in a dead zone must still get out of the app, so a failed
  * revocation never blocks the local sign-out — the token then expires on its own.
  */
 import { clearTokens, getRefreshToken } from './tokens';
-import { notifyAuthInvalidated } from '@/sync';
+import { flushAndPurgeQueue, notifyAuthInvalidated } from '@/sync';
 import { revokePushDevice } from '@/push/revokePushDevice';
 import { resolveApiUrl } from '@/config/apiUrl';
+import { fetchWithTimeout } from '@/config/requestTimeout';
 
 async function revokeRefreshToken(): Promise<void> {
   const refreshToken = await getRefreshToken();
   if (!refreshToken) return;
   try {
-    await fetch(`${resolveApiUrl()}/api/v1/auth/logout`, {
+    await fetchWithTimeout(`${resolveApiUrl()}/api/v1/auth/logout`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refreshToken }),
@@ -36,7 +40,9 @@ async function revokeRefreshToken(): Promise<void> {
 }
 
 export async function signOut(): Promise<void> {
-  // Needs the access token, so it goes before the tokens are cleared.
+  // Both need the access token, so they go before the tokens are cleared. The queue is emptied
+  // because it belongs to the account that is leaving, not to whoever signs in next.
+  await flushAndPurgeQueue().catch(() => undefined);
   await revokePushDevice();
   await revokeRefreshToken();
   await clearTokens();

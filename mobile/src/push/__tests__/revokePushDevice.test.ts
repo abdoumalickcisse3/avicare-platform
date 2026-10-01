@@ -48,4 +48,10 @@ describe('revokePushDevice', () => {
     fetchMock.mockRejectedValueOnce(new Error('offline'));
     await expect(revokePushDevice()).resolves.toBeUndefined();
   });
+
+  it('keeps the stored token when the backend refuses the revoke', async () => {
+    fetchMock.mockResolvedValueOnce(new Response('{}', { status: 401 }));
+    await revokePushDevice();
+    expect(clearStoredPushToken).not.toHaveBeenCalled();
+  });
 });

@@ -20,15 +20,14 @@ import {
   type FetchArgs,
   type FetchBaseQueryError,
 } from '@reduxjs/toolkit/query/react';
-import { clearTokens, getAccessToken, getRefreshToken, saveTokens } from '@/auth/tokens';
+import { getAccessToken } from '@/auth/tokens';
+import { refreshSession } from '@/auth/refreshSession';
 import { resolveApiUrl } from '@/config/apiUrl';
+import { REQUEST_TIMEOUT_MS } from '@/config/requestTimeout';
 
 const API_URL = resolveApiUrl();
 
-// fetch has no timeout of its own: on a flaky mobile network a request can hang for minutes, and a
-// screen waiting on it shows a spinner the whole time. Past this, the query fails and the screen
-// can offer a retry.
-export const REQUEST_TIMEOUT_MS = 20_000;
+export { REQUEST_TIMEOUT_MS };
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: API_URL,
@@ -40,32 +39,23 @@ const rawBaseQuery = fetchBaseQuery({
   },
 });
 
+const urlOf = (args: string | FetchArgs): string => (typeof args === 'string' ? args : args.url);
+
 const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (
   args,
   api,
   extraOptions,
 ) => {
-  let result = await rawBaseQuery(args, api, extraOptions);
+  const result = await rawBaseQuery(args, api, extraOptions);
 
-  if (result.error?.status === 401) {
-    const refreshToken = await getRefreshToken();
-    if (refreshToken) {
-      const refresh = await rawBaseQuery(
-        { url: '/api/v1/auth/refresh', method: 'POST', body: { refreshToken } },
-        api,
-        extraOptions,
-      );
-      const data = (refresh.data as { data?: { accessToken: string; refreshToken: string } })
-        ?.data;
-      if (data?.accessToken && data.refreshToken) {
-        await saveTokens({ accessToken: data.accessToken, refreshToken: data.refreshToken });
-        result = await rawBaseQuery(args, api, extraOptions);
-        return result;
-      }
-    }
-    await clearTokens();
-  }
+  // A 401 on /auth/* is a wrong password or a dead refresh token, not an expired access token:
+  // refreshing there would only loop.
+  if (result.error?.status !== 401 || urlOf(args).startsWith('/api/v1/auth/')) return result;
 
+  // Shared with every other caller (see refreshSession): a second concurrent refresh would replay
+  // a single-use token and get the whole account signed out.
+  const outcome = await refreshSession();
+  if (outcome === 'refreshed') return rawBaseQuery(args, api, extraOptions);
   return result;
 };
 

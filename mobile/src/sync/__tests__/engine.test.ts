@@ -213,4 +213,55 @@ describe('sync engine', () => {
     expect(recovered.sent).toBe(1);
     expect(q.countPending()).toBe(0);
   });
+
+  it('never parks an entry FAILED because the phone stayed offline, however many passes fail', async () => {
+    const q = setupQueue();
+    q.enqueue(mutation);
+    const engine = createEngine({
+      queue: q,
+      maxAttempts: 2,
+      transport: async () => {
+        throw new Error('Network request failed');
+      },
+    });
+
+    for (let i = 0; i < 6; i += 1) await engine.drain();
+
+    expect(q.listFailed()).toHaveLength(0);
+    expect(q.countPending()).toBe(1);
+    expect(q.listAll()[0]?.attempts).toBe(0);
+    expect(q.listAll()[0]?.lastError).toBe('Network request failed');
+  });
+
+  it('still parks an entry the server keeps answering 5xx, after the attempt ceiling', async () => {
+    const q = setupQueue();
+    q.enqueue(mutation);
+    const engine = createEngine({
+      queue: q,
+      maxAttempts: 2,
+      transport: async () => ({ status: 503 }),
+    });
+
+    await engine.drain();
+    const second = await engine.drain();
+
+    expect(second.failed).toBe(1);
+    expect(q.listFailed()).toHaveLength(1);
+  });
+
+  it('leaves the entry untouched and retryable when the refresh cannot reach the server', async () => {
+    const q = setupQueue();
+    q.enqueue(mutation);
+    const engine = createEngine({
+      queue: q,
+      refresh: async () => false,
+      transport: async () => ({ status: 401 }),
+    });
+
+    const result = await engine.drain();
+
+    expect(result.retryable).toBe(1);
+    expect(q.listAll()[0]?.attempts).toBe(0);
+    expect(q.countPending()).toBe(1);
+  });
 });

@@ -60,8 +60,20 @@ export function createQueue(driver: SqlDriver) {
       driver.run(`UPDATE mutation_queue SET status = 'FAILED', last_error = ? WHERE id = ?`, [message, id]);
     },
 
+    // A manual retry starts a fresh budget: leaving attempts at the ceiling would park the row
+    // FAILED again after a single failure, so "Réessayer" would be one try, not a retry.
     markPending(id: number): void {
-      driver.run(`UPDATE mutation_queue SET status = 'PENDING', last_error = NULL WHERE id = ?`, [id]);
+      driver.run(`UPDATE mutation_queue SET status = 'PENDING', last_error = NULL, attempts = 0 WHERE id = ?`, [id]);
+    },
+
+    clearAll(): void {
+      driver.run(`DELETE FROM mutation_queue`, []);
+    },
+
+    // Records why a send did not go through without touching status or attempts: an unreachable
+    // network is not the mutation's fault.
+    noteError(id: number, message: string): void {
+      driver.run(`UPDATE mutation_queue SET last_error = ? WHERE id = ?`, [message, id]);
     },
 
     bumpAttempts(id: number): void {

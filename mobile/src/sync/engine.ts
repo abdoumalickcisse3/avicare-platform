@@ -76,6 +76,11 @@ export function createEngine(deps: EngineDeps) {
       }
     }
 
+    function noteUnreachable(next: QueuedMutation, err: unknown): void {
+      queue.noteError(next.id, transportErrorLabel(err));
+      result.retryable += 1;
+    }
+
     try {
       let refreshedThisPass = false;
       for (;;) {
@@ -89,8 +94,11 @@ export function createEngine(deps: EngineDeps) {
           // Transport rejected (DNS failure, timeout, airplane mode, ...).
           // This module's whole job is surviving an unreliable network, so
           // it must classify this itself rather than let it escape drain()
-          // as an uncaught rejection: treat it exactly like a 5xx.
-          markRetryable(next, transportErrorLabel(err));
+          // as an uncaught rejection. Unlike a 5xx it says nothing about the
+          // mutation: a farmer offline for a week must not find eight
+          // "attempts" burned and every entry parked FAILED, so it leaves
+          // `attempts` alone and records only the reason.
+          noteUnreachable(next, err);
           break;
         }
 
@@ -104,7 +112,7 @@ export function createEngine(deps: EngineDeps) {
           try {
             response = await transport(next);
           } catch (err) {
-            markRetryable(next, transportErrorLabel(err));
+            noteUnreachable(next, err);
             break;
           }
         }

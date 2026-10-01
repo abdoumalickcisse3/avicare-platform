@@ -1,3 +1,4 @@
+import { Alert } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 
 /**
@@ -101,14 +102,40 @@ describe('QueueScreen', () => {
     expect(syncEngine.drain).toHaveBeenCalled();
   });
 
-  it('delete removes a failed mutation from the queue', async () => {
+  it('delete asks for confirmation and only then removes the failed mutation', async () => {
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
     const id = enqueueMortality('ref-1');
     queue.markFailed(id, 'Requête invalide');
 
     await render(<QueueScreen />);
     await press(screen.getByLabelText('Supprimer'));
 
+    // Nothing is lost by the tap alone.
+    expect(queue.listAll()).toHaveLength(1);
+    const buttons = alert.mock.calls[0]?.[2] ?? [];
+    const confirm = buttons.find((b) => b.style === 'destructive');
+    await act(async () => {
+      confirm?.onPress?.();
+    });
+
     expect(queue.listAll()).toHaveLength(0);
+    alert.mockRestore();
+  });
+
+  it('keeps the mutation when the deletion is cancelled', async () => {
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+    const id = enqueueMortality('ref-1');
+    queue.markFailed(id, 'Requête invalide');
+
+    await render(<QueueScreen />);
+    await press(screen.getByLabelText('Supprimer'));
+    const cancel = (alert.mock.calls[0]?.[2] ?? []).find((b) => b.style === 'cancel');
+    await act(async () => {
+      cancel?.onPress?.();
+    });
+
+    expect(queue.listAll()).toHaveLength(1);
+    alert.mockRestore();
   });
 
   it('lists pending mutations and reflects an empty queue', async () => {
