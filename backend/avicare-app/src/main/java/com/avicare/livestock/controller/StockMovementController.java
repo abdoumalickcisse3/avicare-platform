@@ -7,6 +7,7 @@ import com.avicare.livestock.inventory.StockMovementService;
 import com.avicare.livestock.inventory.dto.StockMovementRequest;
 import com.avicare.livestock.inventory.dto.StockMovementResponse;
 import com.avicare.livestock.service.LivestockService;
+import com.avicare.paging.Windowed;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,7 @@ public class StockMovementController {
 
   @GetMapping
   @PreAuthorize(InventoryAccess.READ)
+  @Windowed
   public ApiResponse<List<StockMovementResponse>> listForItem(
       @PathVariable Long farmId, @RequestParam Long stockItemId) {
     return ApiResponse.of(
@@ -46,6 +48,7 @@ public class StockMovementController {
 
   @GetMapping("/by-lot")
   @PreAuthorize(InventoryAccess.READ)
+  @Windowed
   public ApiResponse<List<StockMovementResponse>> listForLot(
       @PathVariable Long farmId, @RequestParam Long unitId) {
     assertUnitInFarm(farmId, unitId);

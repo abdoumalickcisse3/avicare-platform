@@ -8,6 +8,7 @@ import com.avicare.livestock.inventory.dto.PurchaseOrderCancelRequest;
 import com.avicare.livestock.inventory.dto.PurchaseOrderDraftRequest;
 import com.avicare.livestock.inventory.dto.PurchaseOrderReceiveRequest;
 import com.avicare.livestock.inventory.dto.PurchaseOrderResponse;
+import com.avicare.paging.Windowed;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,7 @@ public class PurchaseOrderController {
 
   @GetMapping
   @PreAuthorize(InventoryAccess.READ)
+  @Windowed
   public ApiResponse<List<PurchaseOrderResponse>> list(
       @PathVariable Long farmId, @RequestParam(required = false) PurchaseOrderStatus status) {
     return ApiResponse.of(
