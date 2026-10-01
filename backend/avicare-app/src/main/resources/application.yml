@@ -13,6 +13,15 @@ spring:
     scheduling:
       pool:
         size: 4
+  # Jackson 3 turns FAIL_ON_NULL_FOR_PRIMITIVES on by default; Jackson 2 had it off. A record
+  # component declared as a primitive receives null when the field is absent from the payload, so
+  # with the new default every request that omits one is rejected as malformed JSON — nine request
+  # DTOs here, and the clients legitimately omit those fields (an absent notifyWhatsapp has always
+  # read as false). Kept off to preserve the HTTP contract; a field that must be sent is enforced
+  # with a boxed type plus @NotNull, not by the parser.
+  jackson:
+    deserialization:
+      fail-on-null-for-primitives: false
 
 server:
   port: ${SERVER_PORT:8080}
