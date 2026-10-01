@@ -31,10 +31,16 @@ public class EggTrayStockService {
             });
   }
 
+  private EggTrayStock lockedForFarm(Long farmId) {
+    return eggTrayStockRepository
+        .findByFarmIdForUpdate(farmId)
+        .orElseGet(() -> getOrCreateForFarm(farmId));
+  }
+
   /** Apply signed deltas to the full/empty tray counts; rejects any result below 0. */
   @Transactional
   public EggTrayStock adjustStock(Long farmId, int fullDelta, int emptyDelta) {
-    EggTrayStock stock = getOrCreateForFarm(farmId);
+    EggTrayStock stock = lockedForFarm(farmId);
     int newFull = stock.getFullTraysCount() + fullDelta;
     int newEmpty = stock.getEmptyTraysCount() + emptyDelta;
     requireNonNegative(newFull, newEmpty);
@@ -47,7 +53,7 @@ public class EggTrayStockService {
   @Transactional
   public EggTrayStock record(Long farmId, EggTrayStockUpdate cmd) {
     requireNonNegative(cmd.fullTraysCount(), cmd.emptyTraysCount());
-    EggTrayStock stock = getOrCreateForFarm(farmId);
+    EggTrayStock stock = lockedForFarm(farmId);
     stock.setFullTraysCount(cmd.fullTraysCount());
     stock.setEmptyTraysCount(cmd.emptyTraysCount());
     return stock;

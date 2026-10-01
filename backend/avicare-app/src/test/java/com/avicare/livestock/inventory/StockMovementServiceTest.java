@@ -76,7 +76,7 @@ class StockMovementServiceTest {
   @Test
   void recordMovement_manualValuedIn_recordsStockEntryExpenseWithInheritedLot() {
     StockItem item = stockItem(ArticleSource.INVENTORY, "feed-starter");
-    when(stockItemRepository.findByFarmIdAndId(FARM_ID, STOCK_ITEM_ID))
+    when(stockItemRepository.findByFarmIdAndIdForUpdate(FARM_ID, STOCK_ITEM_ID))
         .thenReturn(Optional.of(item));
     when(inventoryCatalogService.listAllAvailableArticles(org.mockito.ArgumentMatchers.anyLong()))
         .thenReturn(
@@ -125,7 +125,7 @@ class StockMovementServiceTest {
   void recordMovement_outValued_neverRecordsExpense() {
     StockItem item = stockItem(ArticleSource.INVENTORY, "feed-starter");
     item.setCurrentQuantity(new BigDecimal("100"));
-    when(stockItemRepository.findByFarmIdAndId(FARM_ID, STOCK_ITEM_ID))
+    when(stockItemRepository.findByFarmIdAndIdForUpdate(FARM_ID, STOCK_ITEM_ID))
         .thenReturn(Optional.of(item));
 
     StockMovementCommand cmd =
@@ -153,7 +153,7 @@ class StockMovementServiceTest {
   @Test
   void recordMovement_inWithPurchaseOrderBackref_neverRecordsExpense() {
     StockItem item = stockItem(ArticleSource.INVENTORY, "feed-starter");
-    when(stockItemRepository.findByFarmIdAndId(FARM_ID, STOCK_ITEM_ID))
+    when(stockItemRepository.findByFarmIdAndIdForUpdate(FARM_ID, STOCK_ITEM_ID))
         .thenReturn(Optional.of(item));
 
     StockMovementCommand cmd =
@@ -181,7 +181,7 @@ class StockMovementServiceTest {
   @Test
   void recordMovement_manualUnvaluedIn_neverRecordsExpense() {
     StockItem item = stockItem(ArticleSource.INVENTORY, "feed-starter");
-    when(stockItemRepository.findByFarmIdAndId(FARM_ID, STOCK_ITEM_ID))
+    when(stockItemRepository.findByFarmIdAndIdForUpdate(FARM_ID, STOCK_ITEM_ID))
         .thenReturn(Optional.of(item));
 
     StockMovementCommand cmd =
@@ -210,7 +210,7 @@ class StockMovementServiceTest {
   void recordMovement_manualPositiveAdjustmentValued_recordsDeltaValueExpense() {
     StockItem item = stockItem(ArticleSource.INVENTORY, "feed-grower");
     item.setCurrentQuantity(new BigDecimal("10")); // before = 10
-    when(stockItemRepository.findByFarmIdAndId(FARM_ID, STOCK_ITEM_ID))
+    when(stockItemRepository.findByFarmIdAndIdForUpdate(FARM_ID, STOCK_ITEM_ID))
         .thenReturn(Optional.of(item));
     when(inventoryCatalogService.listAllAvailableArticles(org.mockito.ArgumentMatchers.anyLong()))
         .thenReturn(

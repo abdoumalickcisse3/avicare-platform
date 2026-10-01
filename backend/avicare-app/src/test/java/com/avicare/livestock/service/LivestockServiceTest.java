@@ -3,6 +3,7 @@ package com.avicare.livestock.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
@@ -19,6 +20,7 @@ import com.avicare.livestock.repository.ProductionUnitRepository;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.ObjectProvider;
 
@@ -67,6 +69,18 @@ class LivestockServiceTest {
     assertThat(u.getCurrentCount()).isEqualTo(488);
     assertThat(event.getEventType()).isEqualTo(LivestockService.EVENT_MORTALITY);
     assertThat(event.getQuantityDelta()).isEqualTo(-12);
+  }
+
+  @Test
+  void recordEvent_locksTheUnitRowBeforeReadingItsCount() {
+    ProductionUnit u = unit(500, UnitStatus.ACTIVE);
+    when(productionUnitRepository.findById(1L)).thenReturn(Optional.of(u));
+
+    service.recordMortality(1L, 12, "heat", 99L);
+
+    InOrder order = inOrder(productionUnitRepository);
+    order.verify(productionUnitRepository).lockRow(1L);
+    order.verify(productionUnitRepository).findById(1L);
   }
 
   @Test

@@ -2,10 +2,12 @@ package com.avicare.livestock.repository;
 
 import com.avicare.livestock.domain.ArticleSource;
 import com.avicare.livestock.domain.StockItem;
+import jakarta.persistence.LockModeType;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -20,6 +22,16 @@ public interface StockItemRepository extends JpaRepository<StockItem, Long> {
   List<StockItem> findByFarmIdOrderById(Long farmId);
 
   Optional<StockItem> findByFarmIdAndId(Long farmId, Long id);
+
+  /**
+   * Same row, locked for the rest of the transaction. A movement reads the quantity, computes the
+   * new one and writes it back: two movements in flight on the same article would each start from
+   * the old value and the later write would erase the earlier one.
+   */
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("SELECT s FROM StockItem s WHERE s.farmId = :farmId AND s.id = :id")
+  Optional<StockItem> findByFarmIdAndIdForUpdate(
+      @Param("farmId") Long farmId, @Param("id") Long id);
 
   /** Active stocks of a farm whose quantity has gone negative (Décision 19 fallout). */
   List<StockItem> findByFarmIdAndActiveTrueAndCurrentQuantityLessThanOrderByArticleKey(
