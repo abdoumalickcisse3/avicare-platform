@@ -63,3 +63,10 @@ notifications:
     enabled: ${NOTIF_PUSH_ENABLED:true}
   scan:
     manual-trigger-enabled: ${NOTIF_SCAN_MANUAL_TRIGGER:false}
+
+# The API contract and the Swagger UI are not served in production (they map every route).
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

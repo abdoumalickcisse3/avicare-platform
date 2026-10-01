@@ -46,7 +46,7 @@ public class OutboxEnqueuerImpl implements OutboxEnqueuer {
     /*
      * Read once, not per member: the farm name is the same for everyone on the message.
      *
-     * Contained, because this runs inside the scanner's transaction: a farm that cannot be
+     * Contained, because this runs inside the scanner's per-detector transaction: a farm that cannot be
      * resolved must cost one silent message, never the whole scan. And a message that cannot say
      * which farm it is about is worse than no message — an unknown number telling someone their
      * birds are dying is a message people distrust.

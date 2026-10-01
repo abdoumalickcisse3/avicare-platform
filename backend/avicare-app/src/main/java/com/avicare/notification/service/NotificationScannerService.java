@@ -15,9 +15,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * Materializes alert conditions into notifications (Sprint C1). For each farm it asks every {@link
@@ -57,6 +60,7 @@ public class NotificationScannerService {
   private final TenancyFacade tenancyFacade;
   private final OutboxEnqueuer outboxEnqueuer;
   private final PushNotifier pushNotifier;
+  private final ObjectProvider<PlatformTransactionManager> transactionManager;
 
   /**
    * How long after being resolved a returning condition is still the same episode.
@@ -85,22 +89,20 @@ public class NotificationScannerService {
     }
   }
 
-  /** Reconcile notifications for one farm: create new conditions, resolve disappeared ones. */
-  @Transactional
+  /**
+   * Reconcile notifications for one farm: create new conditions, resolve disappeared ones.
+   *
+   * <p>One transaction per detector, opened here rather than with {@code @Transactional}: the
+   * hourly {@link #scanAll()} calls this method on {@code this}, where the proxy (and so the
+   * annotation) is bypassed. Per detector, not per farm, so a failing query aborts only its own
+   * detector instead of every detector of the farm; and the push fan-out, which waits for the
+   * commit, then runs once its notification is really stored.
+   */
   public void scanFarm(Long farmId) {
     for (AlertDetector detector : detectors) {
       try {
-        List<DetectedCondition> conditions = detector.detect(farmId);
-        Set<String> currentKeys =
-            conditions.stream().map(DetectedCondition::dedupKey).collect(Collectors.toSet());
-
-        for (DetectedCondition condition : conditions) {
-          upsert(farmId, condition);
-        }
-
-        for (NotificationCategory category : detector.categories()) {
-          resolveDisappeared(farmId, category, currentKeys);
-        }
+        new TransactionTemplate(transactionManager.getObject())
+            .executeWithoutResult(status -> scanWith(detector, farmId));
       } catch (RuntimeException e) {
         log.warn(
             "Detector {} failed for farm {}: {}",
@@ -109,6 +111,20 @@ public class NotificationScannerService {
             e.getMessage(),
             e);
       }
+    }
+  }
+
+  private void scanWith(AlertDetector detector, Long farmId) {
+    List<DetectedCondition> conditions = detector.detect(farmId);
+    Set<String> currentKeys =
+        conditions.stream().map(DetectedCondition::dedupKey).collect(Collectors.toSet());
+
+    for (DetectedCondition condition : conditions) {
+      upsert(farmId, condition);
+    }
+
+    for (NotificationCategory category : detector.categories()) {
+      resolveDisappeared(farmId, category, currentKeys);
     }
   }
 

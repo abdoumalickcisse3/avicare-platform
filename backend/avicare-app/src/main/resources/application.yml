@@ -3,6 +3,16 @@ spring:
     name: avicare-app
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
+  # Outbound calls (Konekt WhatsApp, Expo push) run inside the hourly scan: without a timeout, one
+  # hung gateway blocks the scan thread and, with a single scheduler thread, every other job.
+  http:
+    client:
+      connect-timeout: 5s
+      read-timeout: 15s
+  task:
+    scheduling:
+      pool:
+        size: 4
 
 server:
   port: ${SERVER_PORT:8080}

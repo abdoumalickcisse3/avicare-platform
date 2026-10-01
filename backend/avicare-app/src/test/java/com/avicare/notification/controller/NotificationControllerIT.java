@@ -1,6 +1,5 @@
 package com.avicare.notification.controller;
 
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -255,7 +254,6 @@ class NotificationControllerIT {
 
   @Test
   void pushDevice_register_attachesThePhoneToTheCaller() throws Exception {
-    when(pushDeviceRepository.findByToken(TOKEN)).thenReturn(java.util.Optional.empty());
     mockMvc
         .perform(
             post("/api/v1/push-devices")
@@ -264,8 +262,7 @@ class NotificationControllerIT {
                 .content("{\"token\":\"" + TOKEN + "\",\"platform\":\"IOS\"}"))
         .andExpect(status().isOk());
 
-    verify(pushDeviceRepository)
-        .save(argThat(d -> d.getUserId() == 10L && d.getToken().equals(TOKEN)));
+    verify(pushDeviceRepository).upsert(10L, TOKEN, "IOS");
   }
 
   @Test
