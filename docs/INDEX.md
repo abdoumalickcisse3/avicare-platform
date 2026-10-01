@@ -23,11 +23,19 @@
 
 ---
 
-## Documents à venir (livrés au fil du projet)
+## Documents ajoutés en cours de route
 
-| # | Document | Quand l'aborder |
+| Document | Rôle | Quand le lire |
 |---|---|---|
-| 09 | `09-plan-j1-j30.md` | Avant de coder — résumé opérationnel des 30 premiers jours |
+| `roadmap-pre-first-client.md` | Feuille de route P1–P6 avant le premier client (traçage, kill switch, intégrité, menaces, runbooks, continuité) — **terminée côté code** | Pour comprendre les garde-fous de la plateforme |
+| `decisions/` | ADR (001–016) : choix d'architecture et d'exploitation verrouillés | Avant de remettre une décision en question |
+| `runbooks/` | Quoi faire quand un client appelle : incident, sauvegarde, restauration, plateforme injoignable | Avant de diagnostiquer un incident ; à mettre à jour après chacun |
+| `continuity/` | Briefing de la personne de secours | Avant de renseigner `ADMIN_EMERGENCY_PHONE` |
+| `../infra/DEPLOY.md` | Déploiement VPS, health check, rollback, sauvegardes | Avant tout déploiement |
+
+> Le document **09** (`09-plan-j1-j30.md`, plan opérationnel des 30 premiers jours) n'a **jamais été
+> rédigé** : les 30 premiers jours sont passés, et `01-roadmap-v1.md` puis
+> `roadmap-pre-first-client.md` en tiennent lieu. Ne pas le chercher.
 
 ---
 
@@ -102,9 +110,18 @@ Pour toute décision d'architecture non documentée, ME DEMANDER avant d'agir.
       sur le compte de résultat, comparaison des bandes. Le rendu PDF/Excel
       **serveur** et `kpi_configs` restent hors périmètre, faute d'usage réel :
       cf. la spec de clôture §2.2)
-- [ ] Sprint C3 — QR + buyer
-- [ ] Sprint C4 — polish + bêta
-- [ ] Sprint C5 — production go-live
+- [ ] Sprint C3 — QR + buyer — **non construit** : aucun endpoint `/qr/*` ni `/buyer/*`, aucune
+      page `/scan` (seules les lignes de modules `qr_codes` / `buyer_portal` existent en base). Le
+      besoin « client B2B » a pris une autre forme : compte-courant client et portail partenaire
+      (provendier/véto, `/portal`). À re-décider, pas à reprendre tel quel.
+- [ ] Sprint C4 — polish + bêta — **partiel** : fait = parcours d'inscription/onboarding guidé,
+      pages 404 et d'erreur, tests E2E Playwright (`web/e2e`), états de chargement ; **pas fait** =
+      bêta mesurée avec NPS ≥ 7, audit UX complet du parcours signup → premier paiement
+- [ ] Sprint C5 — production go-live — **partiel** : en ligne sur `jawdi.app` (VPS, HTTPS, GHCR,
+      déploiement par workflow, sauvegardes quotidiennes + copie hors site, sondes d'uptime, app
+      mobile sur TestFlight) ; **pas fait** = restauration rejouée sur le VPS (cf.
+      `runbooks/ops/restaurer-une-sauvegarde.md`), documentation utilisateur, ouverture publique
+      (aujourd'hui : phase collaborateurs, inscription via contact)
 
 ---
 
