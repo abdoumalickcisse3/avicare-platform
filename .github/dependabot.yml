@@ -11,6 +11,15 @@ updates:
     groups:
       web-minor-patch:
         update-types: [minor, patch]
+    ignore:
+      # Both majors are blocked by plugins that eslint-config-next bundles, not by our code:
+      # typescript-eslint refuses TS 7 ("does not support TS 7.0"), and eslint-plugin-react still
+      # calls context.getFilename(), removed in ESLint 10. Nothing to fix on our side — retry when
+      # eslint-config-next ships updated plugins, by lifting the entry and running `npm run lint`.
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
+      - dependency-name: eslint
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: npm
     directory: /landing
@@ -20,8 +29,11 @@ updates:
       landing-minor-patch:
         update-types: [minor, patch]
 
-  # Expo SDK packages are pinned to the SDK (`~57.x`): bump the SDK itself with `npx expo install`
-  # and ignore Dependabot's major proposals for them by closing the PR.
+  # On a managed Expo project the SDK, not npm, decides the version of every expo-* package and of
+  # react-native and its companions. `npx expo install --check` says what is actually behind;
+  # `--fix` applies it. A Dependabot bump past the SDK fails with an ERESOLVE peer mismatch (#394)
+  # or quietly installs a package built for the next SDK (#396, expo-router 58 under SDK 57).
+  # These entries stop that noise; the way to move them is to move the SDK.
   - package-ecosystem: npm
     directory: /mobile
     schedule:
@@ -29,6 +41,18 @@ updates:
     groups:
       mobile-minor-patch:
         update-types: [minor, patch]
+    ignore:
+      - dependency-name: expo
+      - dependency-name: expo-*
+      - dependency-name: react-native
+      - dependency-name: react-native-*
+      - dependency-name: react
+      - dependency-name: react-dom
+      - dependency-name: babel-preset-expo
+      - dependency-name: jest-expo
+      - dependency-name: "@expo/*"
+      - dependency-name: "@expo-google-fonts/*"
+      - dependency-name: "@react-native/*"
 
   - package-ecosystem: maven
     directory: /backend
