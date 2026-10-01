@@ -8,6 +8,7 @@ import com.avicare.finance.dto.response.ExpenseSummaryResponse;
 import com.avicare.finance.dto.response.FarmAnalyticsResponse;
 import com.avicare.finance.service.ExpenseService;
 import com.avicare.finance.service.FinanceAnalyticsService;
+import com.avicare.paging.Windowed;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
@@ -41,6 +42,7 @@ public class ExpenseController {
 
   @GetMapping("/expenses")
   @PreAuthorize(FinanceAccess.READ)
+  @Windowed
   public ApiResponse<List<ExpenseResponse>> list(
       @PathVariable Long farmId,
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,

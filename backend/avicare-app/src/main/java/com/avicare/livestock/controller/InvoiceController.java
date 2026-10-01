@@ -8,6 +8,7 @@ import com.avicare.livestock.commercial.dto.InvoiceFromDeliveryRequest;
 import com.avicare.livestock.commercial.dto.InvoiceFromSaleRequest;
 import com.avicare.livestock.commercial.dto.InvoiceResponse;
 import com.avicare.livestock.domain.InvoiceStatus;
+import com.avicare.paging.Windowed;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,7 @@ public class InvoiceController {
 
   @GetMapping
   @PreAuthorize(CommercialAccess.READ)
+  @Windowed
   public ApiResponse<List<InvoiceResponse>> list(
       @PathVariable Long farmId, @RequestParam(required = false) InvoiceStatus status) {
     return ApiResponse.of(

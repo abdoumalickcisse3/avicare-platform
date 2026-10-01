@@ -7,6 +7,7 @@ import com.avicare.livestock.commercial.dto.CancelRequest;
 import com.avicare.livestock.commercial.dto.OrderDraftRequest;
 import com.avicare.livestock.commercial.dto.OrderResponse;
 import com.avicare.livestock.domain.OrderStatus;
+import com.avicare.paging.Windowed;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,7 @@ public class OrderController {
 
   @GetMapping
   @PreAuthorize(CommercialAccess.READ)
+  @Windowed
   public ApiResponse<List<OrderResponse>> list(
       @PathVariable Long farmId,
       @RequestParam(required = false) OrderStatus status,

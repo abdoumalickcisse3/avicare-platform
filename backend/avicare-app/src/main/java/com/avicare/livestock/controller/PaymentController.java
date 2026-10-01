@@ -6,6 +6,7 @@ import com.avicare.livestock.commercial.PaymentService;
 import com.avicare.livestock.commercial.dto.CancelRequest;
 import com.avicare.livestock.commercial.dto.PaymentRequest;
 import com.avicare.livestock.commercial.dto.PaymentResponse;
+import com.avicare.paging.Windowed;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,7 @@ public class PaymentController {
 
   @GetMapping
   @PreAuthorize(CommercialAccess.READ)
+  @Windowed
   public ApiResponse<List<PaymentResponse>> list(
       @PathVariable Long farmId, @RequestParam(required = false) Long invoiceId) {
     return ApiResponse.of(
