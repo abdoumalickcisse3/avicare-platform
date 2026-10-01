@@ -8,12 +8,14 @@
 import { signOut } from '../signOut';
 import { clearTokens, getRefreshToken } from '../tokens';
 import { notifyAuthInvalidated } from '@/sync';
+import { revokePushDevice } from '@/push/revokePushDevice';
 
 jest.mock('../tokens', () => ({
   clearTokens: jest.fn(async () => {}),
   getRefreshToken: jest.fn(async () => 'refresh-abc'),
 }));
 jest.mock('@/sync', () => ({ notifyAuthInvalidated: jest.fn() }));
+jest.mock('@/push/revokePushDevice', () => ({ revokePushDevice: jest.fn(async () => {}) }));
 jest.mock('@/config/apiUrl', () => ({ resolveApiUrl: () => 'https://api.test' }));
 
 const fetchMock = jest.fn(async () => new Response('{}', { status: 200 }));
@@ -66,6 +68,21 @@ describe('signOut', () => {
 
     expect(clearTokens).toHaveBeenCalledTimes(1);
     expect(notifyAuthInvalidated).toHaveBeenCalledTimes(1);
+  });
+
+  it('drops the phone from push before the access token it needs is cleared', async () => {
+    // A banner for the previous account's farm must not reach a phone that has been handed on.
+    const order: string[] = [];
+    (revokePushDevice as jest.Mock).mockImplementationOnce(async () => {
+      order.push('push');
+    });
+    (clearTokens as jest.Mock).mockImplementationOnce(async () => {
+      order.push('clear');
+    });
+
+    await signOut();
+
+    expect(order).toEqual(['push', 'clear']);
   });
 
   it('sends nothing when there is no refresh token to revoke', async () => {

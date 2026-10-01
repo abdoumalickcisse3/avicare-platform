@@ -17,6 +17,7 @@ import {
   useMarkAllNotificationsReadMutation,
   useMarkNotificationReadMutation,
 } from '@/store/api/notificationsApi';
+import { hrefFor } from '@/push/notificationRoute';
 import type { AppNotification, NotificationSeverity } from '@/types';
 
 const SEVERITY_COLOR: Record<NotificationSeverity, string> = {
@@ -24,17 +25,6 @@ const SEVERITY_COLOR: Record<NotificationSeverity, string> = {
   WARNING: tokens.colors.warning,
   CRITICAL: tokens.colors.error,
 };
-
-/** Deep-link target for a notification, from its sourceRef. */
-function hrefFor(n: AppNotification): string | null {
-  const ref = n.sourceRef ?? {};
-  if (typeof ref.unitId === 'number') return `/(field)/lots/${ref.unitId}`;
-  if (typeof ref.itemId === 'number' || typeof ref.purchaseOrderId === 'number')
-    return '/(field)/(tabs)/stocks';
-  if (typeof ref.invoiceId === 'number') return '/(field)/commerce/factures';
-  if (typeof ref.clientId === 'number') return '/(field)/commerce/commandes';
-  return null;
-}
 
 function timeAgo(iso: string): string {
   const min = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
@@ -63,7 +53,7 @@ export default function NotificationsScreen() {
 
   const open = (n: AppNotification) => {
     if (!n.read) markRead({ farmId: selectedFarmId, id: n.id });
-    const href = hrefFor(n);
+    const href = hrefFor(n.sourceRef);
     if (href) router.push(href as never);
   };
 

@@ -34,6 +34,7 @@ import { DrawerOverlay } from '@/components/navigation/DrawerOverlay';
 import { NavProvider } from '@/navigation/NavContext';
 import { startSyncTriggers } from '@/sync/triggers';
 import { subscribeAuthInvalidated } from '@/sync';
+import { usePushNotifications } from '@/push/usePushNotifications';
 
 type GuardStatus = 'loading' | 'unauthenticated' | 'forbidden' | 'authorized';
 
@@ -46,6 +47,7 @@ export default function FieldLayout() {
   // and that question does not depend on which screen is open. It was built and tested in the
   // socle lot and rendered nowhere — the same trap as the numeric keypad.
   const sync = useSyncStatus();
+  usePushNotifications(status === 'authorized');
 
   useEffect(() => {
     let cancelled = false;

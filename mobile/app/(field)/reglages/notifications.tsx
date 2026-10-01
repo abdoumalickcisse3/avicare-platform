@@ -1,7 +1,7 @@
 /**
  * Notification preferences (Sprint C1) — per-category delivery settings for the
- * two channels (Cloche in-app / WhatsApp), mirroring the web
- * `/reglages/notifications` grid. Each channel has an on/off switch and, when on,
+ * three channels (Cloche in-app / WhatsApp / Push), mirroring the web
+ * `/reglages/notifications` grid (which has no push column). Each channel has an on/off switch and, when on,
  * a severity floor (Toutes / Importantes / Critiques). WhatsApp uses the phone
  * from the user's profile. Personal to the signed-in user.
  */
@@ -45,6 +45,7 @@ const SEVERITY_LABELS: Record<NotificationSeverity, string> = {
 const CHANNELS: { key: NotificationChannelKey; label: string }[] = [
   { key: 'IN_APP', label: 'Cloche' },
   { key: 'WHATSAPP', label: 'WhatsApp' },
+  { key: 'PUSH', label: 'Push (téléphone)' },
 ];
 
 const keyOf = (c: string, ch: NotificationChannelKey) => `${c}::${ch}`;
@@ -103,7 +104,7 @@ export default function NotificationPreferencesScreen() {
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.subtitle}>
-          Le WhatsApp utilise le numéro de votre profil.
+          Le WhatsApp utilise le numéro de votre profil. Le push arrive sur ce téléphone.
         </Text>
 
         {categories.map((category) => (

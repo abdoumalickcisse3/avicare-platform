@@ -1,6 +1,7 @@
 /**
  * Unified notifications (Sprint C1) — mirrors `web/src/store/api/notificationsApi.ts`.
- * Bell feed, unread badge, mark-read and per-user delivery preferences (in-app + WhatsApp).
+ * Bell feed, unread badge, mark-read, per-user delivery preferences (in-app, WhatsApp, push) and
+ * the phone's push-token registration.
  * Farm-scoped; gated on farm membership on the backend. The feed endpoint returns a raw
  * PageResponse; the others are `{ data }`-wrapped.
  */
@@ -69,6 +70,10 @@ export const notificationsApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [{ type: 'Notification', id: 'prefs' }],
     }),
+
+    registerPushDevice: build.mutation<void, { token: string; platform: 'IOS' | 'ANDROID' }>({
+      query: (body) => ({ url: '/api/v1/push-devices', method: 'POST', body }),
+    }),
   }),
 });
 
@@ -79,4 +84,5 @@ export const {
   useMarkAllNotificationsReadMutation,
   useGetNotificationPreferencesQuery,
   useUpdateNotificationPreferencesMutation,
+  useRegisterPushDeviceMutation,
 } = notificationsApi;
