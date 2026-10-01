@@ -84,7 +84,7 @@ public class PoultryBatchController {
   @PreAuthorize(READ)
   public ApiResponse<PoultryBatchResponse> get(
       @PathVariable Long farmId, @PathVariable Long batchId) {
-    PoultryBatch batch = poultryBatchService.get(batchId);
+    PoultryBatch batch = poultryBatchService.getInFarm(farmId, batchId);
     Long chickCost = financeFacade.chickPurchaseCostForUnit(farmId, batchId).orElse(null);
     return ApiResponse.of(
         toResponse(batch, -lifecycleEventRepository.sumMortalityDelta(batchId), chickCost));

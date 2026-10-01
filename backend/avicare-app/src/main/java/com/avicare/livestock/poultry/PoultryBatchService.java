@@ -128,6 +128,14 @@ public class PoultryBatchService {
   }
 
   @Transactional(readOnly = true)
+  public PoultryBatch getInFarm(Long farmId, Long batchId) {
+    PoultryBatch batch = get(batchId);
+    if (!batch.getFarmId().equals(farmId)) {
+      throw NotFoundException.of("PoultryBatch", batchId);
+    }
+    return batch;
+  }
+
   public PoultryBatch get(Long id) {
     return poultryBatchRepository
         .findById(id)

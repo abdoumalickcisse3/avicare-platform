@@ -7,6 +7,7 @@ import com.avicare.finance.domain.ExpenseSource;
 import com.avicare.finance.dto.request.ExpenseRequest;
 import com.avicare.finance.dto.response.ExpenseResponse;
 import com.avicare.finance.repository.ExpenseRepository;
+import com.avicare.livestock.api.LivestockFacade;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ExpenseService {
 
   private final ExpenseRepository expenseRepository;
+  private final LivestockFacade livestockFacade;
 
   @Transactional
   public ExpenseResponse create(Long farmId, ExpenseRequest request, Long userId) {
@@ -29,14 +31,14 @@ public class ExpenseService {
     expense.setFarmId(farmId);
     expense.setSource(ExpenseSource.MANUAL);
     expense.setCreatedBy(userId);
-    applyRequest(expense, request);
+    applyRequest(farmId, expense, request);
     return toResponse(expenseRepository.save(expense));
   }
 
   @Transactional
   public ExpenseResponse update(Long farmId, Long id, ExpenseRequest request) {
     Expense expense = loadEditable(farmId, id);
-    applyRequest(expense, request);
+    applyRequest(farmId, expense, request);
     return toResponse(expenseRepository.save(expense));
   }
 
@@ -83,7 +85,10 @@ public class ExpenseService {
     return expense;
   }
 
-  private static void applyRequest(Expense expense, ExpenseRequest request) {
+  private void applyRequest(Long farmId, Expense expense, ExpenseRequest request) {
+    if (request.productionUnitId() != null) {
+      livestockFacade.requireUnitOnFarm(farmId, request.productionUnitId());
+    }
     expense.setCategoryKey(request.categoryKey());
     expense.setAmountXof(request.amountXof());
     expense.setExpenseDate(request.expenseDate());

@@ -81,13 +81,14 @@ public class ProductionUnitController {
   @PreAuthorize(READ_PERMISSION)
   public ApiResponse<ProductionUnitResponse> get(
       @PathVariable Long farmId, @PathVariable Long unitId) {
-    return ApiResponse.of(toResponse(livestockService.getUnit(unitId)));
+    return ApiResponse.of(toResponse(livestockService.getUnitInFarm(farmId, unitId)));
   }
 
   @GetMapping("/{unitId}/events")
   @PreAuthorize(READ_PERMISSION)
   public ApiResponse<List<LifecycleEventResponse>> events(
       @PathVariable Long farmId, @PathVariable Long unitId) {
+    livestockService.getUnitInFarm(farmId, unitId);
     return ApiResponse.of(
         livestockService.listEvents(unitId).stream()
             .map(ProductionUnitController::toEventResponse)
@@ -101,6 +102,7 @@ public class ProductionUnitController {
       @PathVariable Long farmId,
       @PathVariable Long unitId,
       @RequestBody @Valid LifecycleEventRequest request) {
+    livestockService.getUnitInFarm(farmId, unitId);
     LifecycleEvent event =
         livestockService.recordEvent(
             unitId,
@@ -119,6 +121,7 @@ public class ProductionUnitController {
       @PathVariable Long farmId,
       @PathVariable Long unitId,
       @RequestBody @Valid RecordMortalityRequest request) {
+    livestockService.getUnitInFarm(farmId, unitId);
     LifecycleEvent event =
         livestockService.recordMortality(
             unitId,
