@@ -13,6 +13,7 @@ import com.avicare.notification.domain.Notification;
 import com.avicare.notification.domain.NotificationCategory;
 import com.avicare.notification.domain.NotificationSeverity;
 import com.avicare.notification.domain.NotificationStatus;
+import com.avicare.notification.push.PushNotifier;
 import com.avicare.notification.repository.NotificationRepository;
 import com.avicare.notification.whatsapp.OutboxEnqueuer;
 import com.avicare.tenancy.api.TenancyFacade;
@@ -34,13 +35,15 @@ class NotificationScannerServiceTest {
   @Mock NotificationRepository repo;
   @Mock TenancyFacade tenancyFacade;
   @Mock OutboxEnqueuer outboxEnqueuer;
+  @Mock PushNotifier pushNotifier;
 
   NotificationScannerService scanner;
 
   @BeforeEach
   void setUp() {
     scanner =
-        new NotificationScannerService(List.of(detector), repo, tenancyFacade, outboxEnqueuer);
+        new NotificationScannerService(
+            List.of(detector), repo, tenancyFacade, outboxEnqueuer, pushNotifier);
   }
 
   private DetectedCondition cond(String key) {
@@ -102,6 +105,7 @@ class NotificationScannerServiceTest {
                     n.getDedupKey().equals("LOW_STOCK:item:42")
                         && n.getStatus() == NotificationStatus.ACTIVE));
     verify(outboxEnqueuer).enqueueFor(any(Notification.class));
+    verify(pushNotifier).notifyFor(any(Notification.class));
   }
 
   @Test
@@ -118,6 +122,7 @@ class NotificationScannerServiceTest {
 
     verify(repo, never()).save(any());
     verify(outboxEnqueuer, never()).enqueueFor(any());
+    verify(pushNotifier, never()).notifyFor(any());
   }
 
   @Test
@@ -174,6 +179,7 @@ class NotificationScannerServiceTest {
 
     verify(repo).save(argThat(n -> n.getStatus() == NotificationStatus.ACTIVE));
     verify(outboxEnqueuer, never()).enqueueFor(any());
+    verify(pushNotifier, never()).notifyFor(any());
   }
 
   /** Past the window it is news again: a problem still there hours later deserves saying so. */
@@ -192,5 +198,6 @@ class NotificationScannerServiceTest {
     scanner.scanFarm(1L);
 
     verify(outboxEnqueuer).enqueueFor(any(Notification.class));
+    verify(pushNotifier).notifyFor(any(Notification.class));
   }
 }

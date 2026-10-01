@@ -1,7 +1,11 @@
 package com.avicare.notification.controller;
 
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -108,6 +112,7 @@ class NotificationControllerIT {
   @MockitoBean private UserRepository userRepository;
   @MockitoBean private RefreshTokenRepository refreshTokenRepository;
   @MockitoBean private FarmRepository farmRepository;
+  @MockitoBean private com.avicare.notification.push.PushDeviceRepository pushDeviceRepository;
   @MockitoBean private com.avicare.livestock.closure.UnitClosureRepository unitClosureRepository;
   @MockitoBean private PartnerRepository partnerRepository;
 
@@ -234,6 +239,58 @@ class NotificationControllerIT {
             get("/api/v1/farms/999/notifications/unread-count")
                 .header("Authorization", "Bearer " + token))
         .andExpect(status().isForbidden());
+  }
+
+  private static final String TOKEN = "ExponentPushToken[abc123]";
+
+  @Test
+  void pushDevice_register_withoutToken_returns401() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/push-devices")
+                .contentType("application/json")
+                .content("{\"token\":\"" + TOKEN + "\",\"platform\":\"IOS\"}"))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void pushDevice_register_attachesThePhoneToTheCaller() throws Exception {
+    when(pushDeviceRepository.findByToken(TOKEN)).thenReturn(java.util.Optional.empty());
+    mockMvc
+        .perform(
+            post("/api/v1/push-devices")
+                .header("Authorization", "Bearer " + memberToken(FARM_ID))
+                .contentType("application/json")
+                .content("{\"token\":\"" + TOKEN + "\",\"platform\":\"IOS\"}"))
+        .andExpect(status().isOk());
+
+    verify(pushDeviceRepository)
+        .save(argThat(d -> d.getUserId() == 10L && d.getToken().equals(TOKEN)));
+  }
+
+  @Test
+  void pushDevice_register_rejectsAStringThatIsNotAnExpoToken() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/push-devices")
+                .header("Authorization", "Bearer " + memberToken(FARM_ID))
+                .contentType("application/json")
+                .content("{\"token\":\"not-a-token\",\"platform\":\"IOS\"}"))
+        .andExpect(status().isBadRequest());
+
+    verify(pushDeviceRepository, never()).save(org.mockito.ArgumentMatchers.any());
+  }
+
+  @Test
+  void pushDevice_revoke_returns200() throws Exception {
+    when(pushDeviceRepository.findByToken(TOKEN)).thenReturn(java.util.Optional.empty());
+    mockMvc
+        .perform(
+            post("/api/v1/push-devices/revoke")
+                .header("Authorization", "Bearer " + memberToken(FARM_ID))
+                .contentType("application/json")
+                .content("{\"token\":\"" + TOKEN + "\"}"))
+        .andExpect(status().isOk());
   }
 
   private String memberToken(Long farmId) {

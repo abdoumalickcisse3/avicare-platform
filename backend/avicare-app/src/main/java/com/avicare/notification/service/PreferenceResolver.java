@@ -30,6 +30,8 @@ import org.springframework.stereotype.Component;
  *       limit — where the manager is already looking at the dashboard, and a phone buzz adds
  *       nothing but noise and cost.
  * </ul>
+ *
+ * <p><b>PUSH</b> is free, so its floor is the WhatsApp one lowered by a level.
  */
 @Component
 public class PreferenceResolver {
@@ -65,7 +67,16 @@ public class PreferenceResolver {
     return switch (channel) {
       case IN_APP -> new ResolvedPreference(true, NotificationSeverity.INFO);
       case WHATSAPP -> new ResolvedPreference(true, whatsappFloor(category));
+      case PUSH -> new ResolvedPreference(true, pushFloor(category));
     };
+  }
+
+  /**
+   * Push costs nothing, so it sits one level under WhatsApp: the field hears everything from INFO,
+   * the desk from WARNING. Derived from the WhatsApp floor so the two cannot drift apart.
+   */
+  private static NotificationSeverity pushFloor(NotificationCategory category) {
+    return NotificationSeverity.values()[whatsappFloor(category).ordinal() - 1];
   }
 
   /** See the class comment: the field gets WARNING, the desk gets CRITICAL only. */
