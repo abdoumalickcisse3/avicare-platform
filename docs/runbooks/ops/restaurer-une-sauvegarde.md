@@ -3,7 +3,9 @@
 **Sévérité** : CRITICAL — c'est le geste qui écrase les données actuelles.
 **Temps de résolution** : 10-20 min selon la taille.
 **Vérifié** : 2026-08-31, en local — restauration complète dans un conteneur jetable, **0 erreur**,
-72 tables, schéma v51, 32 fermes, 36 utilisateurs retrouvés.
+72 tables, schéma v51, 32 fermes, 36 utilisateurs retrouvés. **Sur le VPS de production : jamais
+rejoué** — l'exercice ci-dessous est à faire une première fois, puis chaque trimestre, et cette ligne
+n'est à modifier qu'après l'avoir fait (date, lieu, résultat).
 
 ## Quand
 
@@ -58,6 +60,30 @@ Ce qu'il faut vérifier :
   fait démarrer l'application sur un schéma incomplet ; Flyway appliquera les migrations manquantes,
   mais vérifie que c'est bien ce que tu veux ;
 - les volumétries plausibles (une base à 0 ferme est un dump vide).
+
+## Exercice sur le VPS (à jouer une fois, puis chaque trimestre)
+
+La répétition locale prouve que la méthode marche, pas que **les sauvegardes du VPS** sont
+restaurables. Ce second exercice, lui, le prouve. Il ne touche pas à la base de production : la
+restauration se fait dans un conteneur jetable, sur un port local.
+
+1. Sur le VPS, prends **le dump le plus récent** et, une fois par exercice, **la copie hors site**
+   plutôt que le fichier local (c'est elle qui sert si le VPS disparaît) :
+   ```bash
+   ls -lh ~/avicare-backups | tail -3
+   rclone copy "$BACKUP_REMOTE/<nom-du-dump>.sql.gz" /tmp/restore-test/   # copie hors site
+   ```
+2. Rejoue la « Répétition » ci-dessus avec ce fichier (`gunzip -c … | docker exec -i … psql`).
+3. Compare avec la production : `schema_version` identique au dernier `flyway_schema_history`,
+   `fermes` et `utilisateurs` proches des chiffres de la console.
+4. Nettoie : `docker rm -f jawdi-restore-test && rm -rf /tmp/restore-test`.
+5. **Alors seulement**, remplace la ligne « Vérifié » en tête par la date, le fichier utilisé
+   (local ou hors site) et le résultat réel. Un exercice raté se note aussi, avec ce qui a cassé.
+
+Depuis le correctif de `backup-db.sh`, un dump n'obtient son nom définitif qu'après contrôle de
+taille, d'intégrité gzip et de la ligne de fin de `pg_dump` ; un dump vide ou tronqué n'existe donc
+plus dans `~/avicare-backups`. Ce contrôle n'est pas un exercice de restauration : il ne vérifie pas
+que le contenu se recharge.
 
 ## Résolution — restaurer en production
 

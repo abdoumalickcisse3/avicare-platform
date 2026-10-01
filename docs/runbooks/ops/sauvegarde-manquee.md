@@ -38,7 +38,8 @@ Causes fréquentes, par ordre de probabilité :
 | Disque plein | `No space left` dans le log ; `df -h` |
 | Conteneur postgres arrêté | Le script échoue sur `docker compose exec` |
 | `.env` manquant ou illisible | `ERROR: missing infra/.env` |
-| `rclone` absent ou mal configuré | Le dump **local** existe, seul l'envoi distant manque |
+| `rclone` absent ou mal configuré | Le dump **local** existe, seul l'envoi distant manque ; le script sort en erreur (`ERROR: rclone upload … failed` dans le log) |
+| Dump vide, trop petit ou tronqué | `ERROR: dump is only … bytes` / `no closing marker` dans le log ; le fichier est écarté, il n'y a **pas** de nouveau `.sql.gz` |
 
 ## Résolution
 
