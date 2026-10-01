@@ -295,6 +295,11 @@ const KNOWN_DIVERGENCES: { url: string; side: "web" | "mobile"; why: string }[] 
     side: "mobile",
     why: "Dictée vocale : fonction du terrain, elle n'a pas de sens sur un poste de bureau.",
   },
+  {
+    url: "/api/v1/push-devices/revoke",
+    side: "mobile",
+    why: "Notifications push : iPhone seulement (pas de web push). Appelé par un fetch brut à la déconnexion, le jeton de l'appareil n'existe que sur le téléphone.",
+  },
 ];
 
 /**
