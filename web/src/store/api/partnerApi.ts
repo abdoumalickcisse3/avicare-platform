@@ -1,11 +1,6 @@
-import {
-  createApi,
-  fetchBaseQuery,
-  type BaseQueryFn,
-  type FetchArgs,
-  type FetchBaseQueryError,
-} from "@reduxjs/toolkit/query/react";
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { partnerTokenStorage } from "@/lib/partnerStorage";
+import { createReauthBaseQuery } from "./reauth";
 import type {
   NetworkDashboard,
   NetworkFarmRow,
@@ -31,37 +26,19 @@ const rawBaseQuery = fetchBaseQuery({
 });
 
 /**
- * On a 401, try a single refresh against {@code POST /api/v1/partner/auth/refresh} and retry; on
- * failure, purge the partner token and redirect to the partner login. Fully separate from the
+ * On a 401, one shared refresh against {@code POST /api/v1/partner/auth/refresh} then a retry; if
+ * that fails, purge the partner token and redirect to the partner login. Fully separate from the
  * farmer {@code baseApi} — cloisonnement.
  */
-const baseQueryWithReauth: BaseQueryFn<
-  string | FetchArgs,
-  unknown,
-  FetchBaseQueryError
-> = async (args, api, extraOptions) => {
-  const result = await rawBaseQuery(args, api, extraOptions);
-
-  if (result.error?.status === 401) {
-    const refreshToken = partnerTokenStorage.getRefresh();
-    if (refreshToken) {
-      const refresh = await rawBaseQuery(
-        { url: "/api/v1/partner/auth/refresh", method: "POST", body: { refreshToken } },
-        api,
-        extraOptions,
-      );
-      const data = (refresh.data as { data?: PartnerAuthTokens })?.data;
-      if (data?.accessToken) {
-        partnerTokenStorage.set(data.accessToken, data.refreshToken);
-        return rawBaseQuery(args, api, extraOptions);
-      }
-    }
+const baseQueryWithReauth = createReauthBaseQuery({
+  rawBaseQuery,
+  tokens: partnerTokenStorage,
+  refreshUrl: "/api/v1/partner/auth/refresh",
+  onSessionLost: () => {
     partnerTokenStorage.clear();
     if (typeof window !== "undefined") window.location.href = "/portal/login";
-  }
-
-  return result;
-};
+  },
+});
 
 export const partnerApi = createApi({
   reducerPath: "partnerApi",
