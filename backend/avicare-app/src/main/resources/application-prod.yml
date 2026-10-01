@@ -59,5 +59,7 @@ notifications:
   app-url: ${NOTIF_APP_URL:https://app.jawdi.app}
   whatsapp:
     enabled: ${NOTIF_WHATSAPP_ENABLED:true}
+  push:
+    enabled: ${NOTIF_PUSH_ENABLED:true}
   scan:
     manual-trigger-enabled: ${NOTIF_SCAN_MANUAL_TRIGGER:false}

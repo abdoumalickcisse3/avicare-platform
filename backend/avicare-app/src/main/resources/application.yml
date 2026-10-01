@@ -146,6 +146,9 @@ notifications:
     dispatch-cron: ${NOTIF_WHATSAPP_DISPATCH_CRON:0 */2 * * * *}
     max-attempts: ${NOTIF_WHATSAPP_MAX_ATTEMPTS:5}
     default-country-code: ${NOTIF_WHATSAPP_DEFAULT_CC:221}
+  push:
+    # Pushes sur téléphone via Expo. Faux par défaut : en local, aucun envoi vers l'extérieur.
+    enabled: ${NOTIF_PUSH_ENABLED:false}
   scan:
     # Horaire pendant les heures ouvrables, pas une fois par jour : un stock épuisé à 7h ne doit
     # pas attendre le lendemain matin pour le dire. Borné volontairement — rien ici ne vaut de
@@ -166,3 +169,9 @@ partner:
     critical-days: ${PARTNER_RISK_CRITICAL_DAYS:30}
     scan-cron: ${PARTNER_RISK_SCAN_CRON:0 30 6 * * *}
     zone: ${PARTNER_RISK_SCAN_ZONE:Africa/Dakar}
+
+expo:
+  push:
+    base-url: ${EXPO_PUSH_BASE_URL:https://exp.host}
+    # Optionnel : seulement si « enhanced push security » est activé dans le tableau de bord EAS.
+    access-token: ${EXPO_ACCESS_TOKEN:}

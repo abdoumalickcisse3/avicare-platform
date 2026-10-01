@@ -5,6 +5,7 @@ import com.avicare.notification.detect.DetectedCondition;
 import com.avicare.notification.domain.Notification;
 import com.avicare.notification.domain.NotificationCategory;
 import com.avicare.notification.domain.NotificationStatus;
+import com.avicare.notification.push.PushNotifier;
 import com.avicare.notification.repository.NotificationRepository;
 import com.avicare.notification.whatsapp.OutboxEnqueuer;
 import com.avicare.tenancy.api.TenancyFacade;
@@ -55,6 +56,7 @@ public class NotificationScannerService {
   private final NotificationRepository notificationRepository;
   private final TenancyFacade tenancyFacade;
   private final OutboxEnqueuer outboxEnqueuer;
+  private final PushNotifier pushNotifier;
 
   /**
    * How long after being resolved a returning condition is still the same episode.
@@ -154,6 +156,7 @@ public class NotificationScannerService {
     Notification saved = notificationRepository.save(n);
     if (notify) {
       outboxEnqueuer.enqueueFor(saved);
+      pushNotifier.notifyFor(saved);
     } else {
       log.debug(
           "Quiet period: {} re-appeared within {}h, not re-notifying",

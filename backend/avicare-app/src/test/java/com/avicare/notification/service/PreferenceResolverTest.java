@@ -68,6 +68,22 @@ class PreferenceResolverTest {
     }
   }
 
+  /**
+   * Push is free, so its floor sits one level under WhatsApp's: the field gets everything from INFO
+   * and the desk gets WARNING. A cost-free signal that fires too late is not worth having.
+   */
+  @Test
+  void push_floorIsOneLevelUnderWhatsapp() {
+    for (NotificationCategory c : NotificationCategory.values()) {
+      ResolvedPreference whatsapp = resolver.resolve(c, NotificationChannel.WHATSAPP, List.of());
+      ResolvedPreference push = resolver.resolve(c, NotificationChannel.PUSH, List.of());
+      assertThat(push.enabled()).as("%s enabled", c).isTrue();
+      assertThat(push.minSeverity().ordinal())
+          .as("%s floor", c)
+          .isEqualTo(whatsapp.minSeverity().ordinal() - 1);
+    }
+  }
+
   /** A farmer who finds it noisy can still raise the floor back — the default is only a default. */
   @Test
   void override_canRaiseTheFloorBackToCritical() {
