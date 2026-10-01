@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
-import { useRefreshMutation } from '@/store/api/authApi';
-import { getRefreshToken, saveTokens } from '@/auth/tokens';
+import { refreshSession } from '@/auth/refreshSession';
 import { notifySessionChanged } from '@/auth/sessionEvents';
 
 /**
@@ -16,16 +15,13 @@ import { notifySessionChanged } from '@/auth/sessionEvents';
  * inline copies because the one place that forgot it (creating a second farm from the Fermes
  * screen) left the whole app answering 403 with no way out but signing out and back in.
  *
- * <p>No-op when there is no stored refresh token.
+ * <p>Goes through the shared single-flight `refreshSession`, so it cannot race a 401 refresh. Throws
+ * when the server could not be reached; a rejected token ends the session (login redirect).
  */
 export function useRefreshSession(): () => Promise<void> {
-  const [refresh] = useRefreshMutation();
-
   return useCallback(async () => {
-    const refreshToken = await getRefreshToken();
-    if (!refreshToken) return;
-    const tokens = await refresh({ refreshToken }).unwrap();
-    await saveTokens(tokens);
-    notifySessionChanged();
-  }, [refresh]);
+    const outcome = await refreshSession();
+    if (outcome === 'unreachable') throw new Error('REFRESH_UNREACHABLE');
+    if (outcome === 'refreshed') notifySessionChanged();
+  }, []);
 }

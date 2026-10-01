@@ -4,14 +4,15 @@ import SignupScreen from '../signup';
 const mockReplace = jest.fn();
 const mockSignup = jest.fn(() => ({ unwrap: () => Promise.resolve({ accessToken: 'a', refreshToken: 'r' }) }));
 const mockCreateFarm = jest.fn(() => ({ unwrap: () => Promise.resolve({ id: 1 }) }));
-const mockRefresh = jest.fn(() => ({ unwrap: () => Promise.resolve({ accessToken: 'a2', refreshToken: 'r2' }) }));
 
 jest.mock('expo-router', () => ({
   useRouter: () => ({ replace: mockReplace, push: jest.fn() }),
 }));
 jest.mock('@/store/api/authApi', () => ({
   useSignupMutation: () => [mockSignup, {}],
-  useRefreshMutation: () => [mockRefresh, {}],
+}));
+jest.mock('@/auth/refreshSession', () => ({
+  refreshSession: jest.fn(() => Promise.resolve('refreshed')),
 }));
 jest.mock('@/store/api/farmsApi', () => ({
   useCreateFarmMutation: () => [mockCreateFarm, {}],

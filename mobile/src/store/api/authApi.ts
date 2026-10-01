@@ -29,10 +29,6 @@ export const authApi = baseApi.injectEndpoints({
       query: (body) => ({ url: '/api/v1/auth/login', method: 'POST', body }),
       transformResponse: (r: ApiEnvelope<AuthTokens>) => r.data,
     }),
-    refresh: build.mutation<AuthTokens, { refreshToken: string }>({
-      query: (body) => ({ url: '/api/v1/auth/refresh', method: 'POST', body }),
-      transformResponse: (r: ApiEnvelope<AuthTokens>) => r.data,
-    }),
     signup: build.mutation<AuthTokens, SignupRequest>({
       query: (body) => ({ url: '/api/v1/auth/signup', method: 'POST', body }),
       transformResponse: (r: ApiEnvelope<AuthTokens>) => r.data,
@@ -103,7 +99,6 @@ export const authApi = baseApi.injectEndpoints({
 
 export const {
   useLoginMutation,
-  useRefreshMutation,
   useSignupMutation,
   useRequestPasswordResetMutation,
   useConfirmPasswordResetMutation,

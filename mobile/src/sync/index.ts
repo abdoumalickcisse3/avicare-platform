@@ -15,8 +15,11 @@
  * `expo-secure-store`) that don't run under Jest. Verified by `tsc --noEmit`
  * and by the app actually bundling/running (see task 7 report).
  */
-import { clearTokens, getAccessToken, getRefreshToken, saveTokens } from '@/auth/tokens';
+import { getAccessToken } from '@/auth/tokens';
+import { refreshSession } from '@/auth/refreshSession';
+import { notifyAuthInvalidated, subscribeAuthInvalidated } from '@/auth/sessionEvents';
 import { resolveApiUrl } from '@/config/apiUrl';
+import { REQUEST_TIMEOUT_MS } from '@/config/requestTimeout';
 import { createSqliteDriver } from './driver';
 import { createQueue } from './queue';
 import { createEngine, type TransportResponse } from './engine';
@@ -41,34 +44,11 @@ function notify(): void {
 }
 
 // --- auth-invalidation signal --------------------------------------------
-// Separate from the queue subscribe/notify above on purpose: this fires only
-// when `refresh()` (below) gives up on the session and purges tokens, which
-// is a completely different concern from "pending/failed counts changed."
-// Overloading one Set for both would make `useSyncStatus` re-render on auth
-// loss (harmless but noisy) and, worse, couple a future change to one
-// concern into accidentally firing the other. The field route guard
-// (`app/(field)/_layout.tsx`) is the sole subscriber today: its `useEffect`
-// reads the token exactly once on mount, so without this signal a
-// background `drain()` that kills the session leaves the guard showing
-// `authorized` for a logged-out user.
-const authInvalidatedListeners = new Set<() => void>();
-
-export function subscribeAuthInvalidated(listener: () => void): () => void {
-  authInvalidatedListeners.add(listener);
-  return () => authInvalidatedListeners.delete(listener);
-}
-
-/**
- * Tell the app the session is gone.
- *
- * <p>Exported so a deliberate logout goes through the same path as a refresh that gave up: both
- * must purge the persisted cache and flip the route guard. Before this was exported, the two
- * logout buttons cleared the tokens directly and left the previous account's cached data — and its
- * selected farm — on disk for whoever signed in next on a shared field phone.
- */
-export function notifyAuthInvalidated(): void {
-  for (const listener of authInvalidatedListeners) listener();
-}
+// The signal itself lives in `@/auth/sessionEvents` (the auth layer raises it without importing this
+// singleton); re-exported here because the route guards and the logout purge subscribe through
+// `@/sync`. A deliberate logout goes through the same path as a refresh that gave up: both must
+// purge the persisted cache and flip the route guard.
+export { notifyAuthInvalidated, subscribeAuthInvalidated };
 
 // --- synchronised-writes signal ------------------------------------------
 // Kept apart from the two Sets above for the reason stated there: one Set per
@@ -143,53 +123,30 @@ async function parseBody(res: Response): Promise<unknown> {
 
 async function transport(mutation: QueuedMutation): Promise<TransportResponse> {
   const token = await getAccessToken();
-  const res = await fetch(`${API_URL}${mutation.endpoint}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify(mutation.payload),
-  });
-  return { status: res.status, body: await parseBody(res) };
+  // Without a timeout a hung connection keeps the engine's `running` flag set for as long as the OS
+  // lets the socket sit, and every later trigger is ignored: the ribbon spins and nothing syncs.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const res = await fetch(`${API_URL}${mutation.endpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(mutation.payload),
+      signal: controller.signal,
+    });
+    return { status: res.status, body: await parseBody(res) };
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
-type RefreshResponseBody = { data?: { accessToken?: string; refreshToken?: string } };
-
+// Same single-flight refresh as the screens' queries (see `refreshSession`): a drain and a screen
+// answering 401 together must not replay the same single-use refresh token.
 async function refresh(): Promise<boolean> {
-  const refreshToken = await getRefreshToken();
-  if (!refreshToken) {
-    await clearTokens();
-    notifyAuthInvalidated();
-    return false;
-  }
-
-  try {
-    const res = await fetch(`${API_URL}/api/v1/auth/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken }),
-    });
-    if (!res.ok) {
-      await clearTokens();
-      notifyAuthInvalidated();
-      return false;
-    }
-    const body = (await parseBody(res)) as RefreshResponseBody | undefined;
-    const accessToken = body?.data?.accessToken;
-    const nextRefreshToken = body?.data?.refreshToken;
-    if (!accessToken || !nextRefreshToken) {
-      await clearTokens();
-      notifyAuthInvalidated();
-      return false;
-    }
-    await saveTokens({ accessToken, refreshToken: nextRefreshToken });
-    return true;
-  } catch {
-    // Network failure while refreshing: leave the caller to retry later
-    // rather than clearing valid tokens on a transient error.
-    return false;
-  }
+  return (await refreshSession()) === 'refreshed';
 }
 
 // --- engine ---------------------------------------------------------------
@@ -209,3 +166,25 @@ export const syncEngine = {
     }
   },
 };
+
+const SIGN_OUT_DRAIN_BUDGET_MS = 8_000;
+
+/**
+ * Last chance to send what is queued, then empty the queue — called by a deliberate sign-out only.
+ * The queue holds the previous account's writes; left in place, the next person to sign in on a
+ * shared phone would replay them under their own session. Entries that still cannot be sent after
+ * the budget are dropped rather than carried across accounts.
+ */
+export async function flushAndPurgeQueue(): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const budget = new Promise<void>((resolve) => {
+    timer = setTimeout(resolve, SIGN_OUT_DRAIN_BUDGET_MS);
+  });
+  try {
+    await Promise.race([syncEngine.drain().then(() => undefined, () => undefined), budget]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+  rawQueue.clearAll();
+  notify();
+}
