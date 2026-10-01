@@ -69,6 +69,13 @@
             <groupId>com.bucket4j</groupId>
             <artifactId>bucket4j_jdk17-core</artifactId>
         </dependency>
+        <!-- Spring Boot 4 moved FlywayAutoConfiguration out of spring-boot-autoconfigure.
+             Without this artifact flyway-core is on the classpath but never runs, and Hibernate
+             validates an empty schema: "Schema validation: missing table [admin_audit_log]". -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-flyway</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
