@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -33,32 +32,12 @@ class PushDeviceServiceTest {
     return d;
   }
 
+  /** One statement covers both a new token and a phone handed to another account. */
   @Test
-  void register_createsADeviceForANewToken() {
-    when(repo.findByToken("ExponentPushToken[a]")).thenReturn(Optional.empty());
-
+  void register_upsertsTheTokenForTheCaller() {
     service().register(10L, "ExponentPushToken[a]", PushPlatform.IOS);
 
-    ArgumentCaptor<PushDevice> saved = ArgumentCaptor.forClass(PushDevice.class);
-    verify(repo).save(saved.capture());
-    assertThat(saved.getValue().getUserId()).isEqualTo(10L);
-    assertThat(saved.getValue().getToken()).isEqualTo("ExponentPushToken[a]");
-    assertThat(saved.getValue().getPlatform()).isEqualTo(PushPlatform.IOS);
-    assertThat(saved.getValue().getRevokedAt()).isNull();
-  }
-
-  /** A phone handed to another account must stop ringing for the previous owner. */
-  @Test
-  void register_movesAnExistingTokenToTheNewOwnerAndReactivatesIt() {
-    PushDevice d = existing(99L, LocalDateTime.now().minusDays(1));
-    when(repo.findByToken("ExponentPushToken[a]")).thenReturn(Optional.of(d));
-
-    service().register(10L, "ExponentPushToken[a]", PushPlatform.IOS);
-
-    assertThat(d.getUserId()).isEqualTo(10L);
-    assertThat(d.getRevokedAt()).isNull();
-    assertThat(d.getLastSeenAt()).isNotNull();
-    verify(repo).save(d);
+    verify(repo).upsert(10L, "ExponentPushToken[a]", "IOS");
   }
 
   @Test

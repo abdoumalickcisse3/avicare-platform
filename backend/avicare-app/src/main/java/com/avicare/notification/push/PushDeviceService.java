@@ -22,13 +22,7 @@ public class PushDeviceService {
    */
   @Transactional
   public void register(Long userId, String token, PushPlatform platform) {
-    PushDevice device = devices.findByToken(token).orElseGet(PushDevice::new);
-    device.setUserId(userId);
-    device.setToken(token);
-    device.setPlatform(platform);
-    device.setLastSeenAt(LocalDateTime.now());
-    device.setRevokedAt(null);
-    devices.save(device);
+    devices.upsert(userId, token, platform.name());
   }
 
   /** Retire a token at logout — only if it belongs to the caller. */
