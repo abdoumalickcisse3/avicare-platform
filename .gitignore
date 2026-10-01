@@ -60,6 +60,7 @@ logs/
 
 # Docker volumes locaux
 infra/data/
+infra/.last-good-tag
 
 # Coverage reports
 **/coverage/

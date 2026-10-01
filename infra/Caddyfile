@@ -10,41 +10,83 @@
 # If Cloudflare is in front, use DNS-only (grey cloud) for the first certs,
 # then optionally enable the orange-cloud proxy (Full/strict). See DEPLOY.md.
 
+# --- Shared snippets ---
+
+# Hold a request for up to 60 s while the upstream is not accepting connections (container
+# restarting during a deploy) instead of answering 502 at once. Only dial failures are retried, so
+# a request that reached the app is never replayed.
+(retry_upstream) {
+	lb_try_duration 60s
+	lb_try_interval 500ms
+}
+
+# HSTS lives here and only here: TLS terminates at Caddy. `header` SETS (replaces) a field, so a
+# value coming from an upstream (nginx, Next.js) never ends up duplicated.
+(base_headers) {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Frame-Options "SAMEORIGIN"
+	}
+}
+
+# App sites add a Content-Security-Policy in REPORT-ONLY mode: Next.js needs inline scripts and
+# styles and the policy could not be validated against every screen from here. It blocks nothing;
+# watch the browser console, tighten, then rename the header to Content-Security-Policy.
+(app_headers) {
+	import base_headers
+	header Content-Security-Policy-Report-Only "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
+}
+
 # --- Marketing vitrine (root + www) ---
 {$DOMAIN}, www.{$DOMAIN} {
 	encode zstd gzip
-	reverse_proxy landing:80
+	import base_headers
+	reverse_proxy landing:80 {
+		import retry_upstream
+	}
 }
 
 # --- App: dashboard + API, on the app subdomain ---
 app.{$DOMAIN} {
 	encode zstd gzip
+	import app_headers
 
 	# Backend: REST API, actuator, OpenAPI/Swagger.
 	@backend path /api/* /actuator/* /v3/api-docs* /swagger-ui*
 	handle @backend {
-		reverse_proxy backend:8080
+		reverse_proxy backend:8080 {
+			import retry_upstream
+		}
 	}
 
 	# Everything else -> Next.js web app.
 	handle {
-		reverse_proxy web:3000
+		reverse_proxy web:3000 {
+			import retry_upstream
+		}
 	}
 }
 
 # --- Partner portal (B2), same web + backend containers, own subdomain ---
 partner.{$DOMAIN} {
 	encode zstd gzip
+	import app_headers
 
 	# Backend: REST API, actuator, OpenAPI/Swagger.
 	@backend path /api/* /actuator/* /v3/api-docs* /swagger-ui*
 	handle @backend {
-		reverse_proxy backend:8080
+		reverse_proxy backend:8080 {
+			import retry_upstream
+		}
 	}
 
 	# Everything else -> Next.js web app (the (partner) route group serves /portal).
 	handle {
-		reverse_proxy web:3000
+		reverse_proxy web:3000 {
+			import retry_upstream
+		}
 	}
 }
 
@@ -53,16 +95,21 @@ partner.{$DOMAIN} {
 # discoverable from the farmer app or the partner portal.
 admin.{$DOMAIN} {
 	encode zstd gzip
+	import app_headers
 
 	# Backend: REST API, actuator, OpenAPI/Swagger.
 	@backend path /api/* /actuator/* /v3/api-docs* /swagger-ui*
 	handle @backend {
-		reverse_proxy backend:8080
+		reverse_proxy backend:8080 {
+			import retry_upstream
+		}
 	}
 
 	# Everything else -> Next.js web app (the (admin) route group serves /console).
 	handle {
-		reverse_proxy web:3000
+		reverse_proxy web:3000 {
+			import retry_upstream
+		}
 	}
 }
 
@@ -75,6 +122,7 @@ admin.{$DOMAIN} {
 #   docker run --rm caddy:2-alpine caddy hash-password --plaintext '<password>'
 jaeger.{$DOMAIN} {
 	encode zstd gzip
+	import base_headers
 
 	basic_auth {
 		{$JAEGER_UI_USER} {$JAEGER_UI_PASSWORD_HASH}
