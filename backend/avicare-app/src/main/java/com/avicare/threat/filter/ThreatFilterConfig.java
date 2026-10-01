@@ -1,13 +1,13 @@
 package com.avicare.threat.filter;
 
 import com.avicare.threat.service.ThreatDetectionService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.scheduling.annotation.Scheduled;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Puts the two security filters in front of everything, in the order that costs the least.

@@ -2,18 +2,17 @@ package com.avicare.admin.trace;
 
 import com.avicare.admin.domain.RequestTrace;
 import com.avicare.admin.repository.RequestTraceRepository;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 /**
  * Cleans a {@link RequestTraceDraft} and persists it, off the request thread.
@@ -122,8 +121,7 @@ public class RequestTraceRecorder {
   /** Walks the tree and blanks every value whose field name looks like a credential. */
   private static void maskInPlace(JsonNode node) {
     if (node instanceof ObjectNode object) {
-      for (Iterator<Map.Entry<String, JsonNode>> it = object.fields(); it.hasNext(); ) {
-        Map.Entry<String, JsonNode> field = it.next();
+      for (Map.Entry<String, JsonNode> field : object.properties()) {
         if (isSensitive(field.getKey())) {
           object.put(field.getKey(), MASK);
         } else {

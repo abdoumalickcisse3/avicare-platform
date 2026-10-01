@@ -22,7 +22,6 @@ import com.avicare.identity.mapper.IdentityMapper;
 import com.avicare.identity.repository.UserRepository;
 import com.avicare.identity.spi.MembershipProvider;
 import com.avicare.support.RsaKeys;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.security.KeyPair;
 import java.time.Duration;
 import java.util.Optional;
@@ -34,6 +33,7 @@ import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Pure unit test for {@link AuthService}: repositories and {@link RefreshTokenService} are mocked,

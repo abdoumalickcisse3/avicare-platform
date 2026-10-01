@@ -57,6 +57,15 @@ public class RequestTraceFilter extends OncePerRequestFilter {
   private final RequestTraceRecorder recorder;
   private final TracingProperties properties;
 
+  /**
+   * Spring Framework 7 removed the unbounded request-caching constructor, which used to hold a
+   * whole upload in memory just to discard it. Four bytes per character is the UTF-8 worst case, so
+   * every body the recorder would have kept whole is still buffered whole.
+   */
+  private int requestBodyCacheLimit() {
+    return properties.maxRequestBodyChars() * 4;
+  }
+
   @Override
   protected boolean shouldNotFilter(HttpServletRequest request) {
     if (!properties.enabled() || "OPTIONS".equals(request.getMethod())) {
@@ -73,7 +82,7 @@ public class RequestTraceFilter extends OncePerRequestFilter {
 
     boolean buffered = MUTATING_METHODS.contains(request.getMethod());
     ContentCachingRequestWrapper wrappedRequest =
-        buffered ? new ContentCachingRequestWrapper(request) : null;
+        buffered ? new ContentCachingRequestWrapper(request, requestBodyCacheLimit()) : null;
     ContentCachingResponseWrapper wrappedResponse =
         buffered ? new ContentCachingResponseWrapper(response) : null;
 

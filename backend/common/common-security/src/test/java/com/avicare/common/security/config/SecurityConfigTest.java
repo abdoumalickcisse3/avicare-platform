@@ -4,15 +4,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 import com.avicare.common.security.jwt.JwtFilter;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Unit tests for the RFC 7807 entry point / access-denied handler beans. The full {@link
@@ -21,9 +21,10 @@ import org.springframework.security.authentication.InsufficientAuthenticationExc
  */
 class SecurityConfigTest {
 
-  // Mirrors the Spring Boot auto-configured ObjectMapper (JSR-310 module registered) so the
-  // ProblemDetailResponse#timestamp (Instant) serializes the same way it does at runtime.
-  private final ObjectMapper objectMapper = Jackson2ObjectMapperBuilder.json().build();
+  // Mirrors the Spring Boot auto-configured ObjectMapper so the ProblemDetailResponse#timestamp
+  // (Instant) serializes the same way it does at runtime. Jackson 3 registers java.time support
+  // and writes ISO-8601 by default, so no module or feature has to be set here.
+  private final ObjectMapper objectMapper = JsonMapper.builder().build();
   private final SecurityConfig config = new SecurityConfig(mock(JwtFilter.class), objectMapper);
 
   @Test

@@ -2,7 +2,6 @@ package com.avicare.threat.filter;
 
 import com.avicare.common.api.web.ClientIp;
 import com.avicare.threat.service.ThreatDetectionService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import jakarta.servlet.FilterChain;
@@ -16,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.filter.OncePerRequestFilter;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Caps how fast one address can hit the API.
