@@ -44,6 +44,7 @@ import {
 import { formatCurrency } from "@/lib/format";
 import { colors } from "@/theme/tokens";
 import type { Client } from "@/types";
+import { QueryError } from "@/components/shared/QueryError";
 
 const mono = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" } as const;
 
@@ -82,7 +83,7 @@ export default function ClientsPage() {
   // (`CommercialAccess.WRITE_MANAGER`) : on cache plutôt que de proposer un 403.
   const canWrite = canManageCatalog(useFarmRole(farmId));
   const { showToast } = useToast();
-  const { data: clients, isLoading } = useGetClientsQuery(
+  const { data: clients, isLoading, error, refetch } = useGetClientsQuery(
     { farmId: farmId as number },
     { skip: !hasFarm || !hasCommercial },
   );
@@ -229,9 +230,10 @@ export default function ClientsPage() {
         }}
       />
 
+      {error && <QueryError error={error} onRetry={refetch} sx={{ mb: 2 }} />}
       {isLoading && <Skeleton variant="rectangular" height={240} sx={{ borderRadius: 3 }} />}
 
-      {!isLoading && filtered.length === 0 && (
+      {!isLoading && !error && filtered.length === 0 && (
         <Box
           sx={{
             textAlign: "center",
@@ -256,7 +258,7 @@ export default function ClientsPage() {
         </Box>
       )}
 
-      {!isLoading && filtered.length > 0 && (
+      {!isLoading && !error && filtered.length > 0 && (
         <TableContainer sx={{ border: `1px solid ${colors.neutral[200]}`, borderRadius: 3 }}>
           <Table>
             <TableHead>

@@ -31,6 +31,7 @@ import { formatCurrency, formatDate, formatNumber } from "@/lib/format";
 import { colors } from "@/theme/tokens";
 import type { Sale } from "@/types";
 import { useMemo } from "react";
+import { QueryError } from "@/components/shared/QueryError";
 
 const mono = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" } as const;
 const monoBold = { ...mono, fontWeight: 700 } as const;
@@ -49,7 +50,7 @@ export default function VentesPage() {
   const canWrite = canManageCatalog(useFarmRole(farmId));
   const { showToast } = useToast();
   const skip = !hasFarm || !hasCommercial;
-  const { data: sales, isLoading } = useGetSalesQuery({ farmId: farmId as number }, { skip });
+  const { data: sales, isLoading, error, refetch } = useGetSalesQuery({ farmId: farmId as number }, { skip });
   const { data: clients } = useGetClientsQuery({ farmId: farmId as number }, { skip });
   const { data: channels } = useGetCatalogQuery(
     { farmId: farmId as number, category: "sales_channels" },
@@ -91,9 +92,10 @@ export default function VentesPage() {
         </Typography>
       </Box>
 
+      {error && <QueryError error={error} onRetry={refetch} sx={{ mb: 2 }} />}
       {isLoading && <Skeleton variant="rectangular" height={240} sx={{ borderRadius: 3 }} />}
 
-      {!isLoading && (sales?.length ?? 0) === 0 && (
+      {!isLoading && !error && (sales?.length ?? 0) === 0 && (
         <Box
           sx={{
             textAlign: "center",
@@ -111,7 +113,7 @@ export default function VentesPage() {
         </Box>
       )}
 
-      {!isLoading && (sales?.length ?? 0) > 0 && (
+      {!isLoading && !error && (sales?.length ?? 0) > 0 && (
         <TableContainer sx={{ border: `1px solid ${colors.neutral[200]}`, borderRadius: 3 }}>
           <Table>
             <TableHead>
