@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { apiErrorMessage, apiErrorReference, parseApiError } from "./apiError";
+import { apiErrorMessage, apiErrorReference, isNetworkError, parseApiError } from "./apiError";
 
 const problem = (status: number, traceId?: string) => ({
   data: {
@@ -36,5 +36,23 @@ describe("apiError", () => {
 
   it("does not invent a reference when the backend sent none", () => {
     expect(apiErrorMessage(problem(500))).toBe("An unexpected error occurred");
+  });
+
+  it("says it plainly when the request never left the device", () => {
+    const offline = { status: "FETCH_ERROR", error: "TypeError: Failed to fetch" };
+    expect(isNetworkError(offline)).toBe(true);
+    expect(apiErrorMessage(offline)).toMatch(/connexion/i);
+    expect(isNetworkError(problem(500))).toBe(false);
+  });
+
+  it("translates a known business code and keeps an unknown detail", () => {
+    const known = { data: { type: "t", title: "Unprocessable", status: 422, code: "SALE_NO_LINES", detail: "A sale needs at least one line" } };
+    const unknown = { data: { type: "t", title: "Unprocessable", status: 422, code: "SOMETHING_NEW", detail: "Raison métier" } };
+    expect(apiErrorMessage(known)).toBe("Ajoutez au moins une ligne à la vente.");
+    expect(apiErrorMessage(unknown)).toBe("Raison métier");
+  });
+
+  it("falls back to a French sentence by status when the body is not a problem", () => {
+    expect(apiErrorMessage({ status: 502, data: "<html>Bad Gateway</html>" })).toMatch(/indisponible/);
   });
 });

@@ -33,6 +33,7 @@ import { InventoryAlertsKpis } from "@/components/inventory/InventoryAlertsKpis"
 import { StockItemsTable } from "@/components/inventory/StockItemsTable";
 import { StockMovementDialog } from "@/components/inventory/StockMovementDialog";
 import { colors } from "@/theme/tokens";
+import { QueryError } from "@/components/shared/QueryError";
 
 const QUICK_ACTIONS = [
   { label: "Bibliothèque", desc: "Catalogue des articles", href: "/stocks/articles", icon: BookOpen },
@@ -47,7 +48,7 @@ export default function StocksOverviewPage() {
   const [moveOpen, setMoveOpen] = useState(false);
 
   const skip = !hasFarm || !hasInventory;
-  const { data: items, isLoading } = useGetStockItemsQuery(
+  const { data: items, isLoading, error, refetch } = useGetStockItemsQuery(
     { farmId: farmId as number },
     { skip },
   );
@@ -115,11 +116,12 @@ export default function StocksOverviewPage() {
         }}
       />
 
+      {error && <QueryError error={error} onRetry={refetch} sx={{ mb: 2 }} />}
       {isLoading && (
         <Skeleton variant="rectangular" height={280} sx={{ borderRadius: 3, mb: 4 }} />
       )}
 
-      {!isLoading && filtered.length === 0 && (
+      {!isLoading && !error && filtered.length === 0 && (
         <Box
           sx={{
             textAlign: "center",
@@ -138,7 +140,7 @@ export default function StocksOverviewPage() {
         </Box>
       )}
 
-      {!isLoading && filtered.length > 0 && (
+      {!isLoading && !error && filtered.length > 0 && (
         <Box sx={{ mb: 4 }}>
           <StockItemsTable items={filtered} />
         </Box>

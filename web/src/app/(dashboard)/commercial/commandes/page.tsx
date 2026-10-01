@@ -35,6 +35,7 @@ import { DELIVERY_STATUS_META, ORDER_STATUS_META } from "@/lib/commercial";
 import { formatCurrency, formatDate, formatNumber } from "@/lib/format";
 import { colors } from "@/theme/tokens";
 import type { Delivery, Order, OrderStatus } from "@/types";
+import { QueryError } from "@/components/shared/QueryError";
 
 const mono = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" } as const;
 
@@ -62,9 +63,9 @@ export default function CommandesPage() {
   const canWrite = canManageCatalog(useFarmRole(farmId));
   const { showToast } = useToast();
   const skip = !hasFarm || !hasCommercial;
-  const { data: orders, isLoading: ordersLoading } = useGetOrdersQuery({ farmId: farmId as number }, { skip });
+  const { data: orders, isLoading: ordersLoading, error: ordersError, refetch: refetchOrders } = useGetOrdersQuery({ farmId: farmId as number }, { skip });
   const { data: clients } = useGetClientsQuery({ farmId: farmId as number }, { skip });
-  const { data: deliveries, isLoading: deliveriesLoading } = useGetDeliveriesQuery({ farmId: farmId as number }, { skip });
+  const { data: deliveries, isLoading: deliveriesLoading, error: deliveriesError, refetch: refetchDeliveries } = useGetDeliveriesQuery({ farmId: farmId as number }, { skip });
   const [cancelDelivery] = useCancelDeliveryMutation();
   const [tab, setTab] = useState("IN_PROGRESS");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -157,9 +158,10 @@ export default function CommandesPage() {
       {/* Orders tab content */}
       {tab !== "livraisons" && (
         <>
+          {ordersError && <QueryError error={ordersError} onRetry={refetchOrders} sx={{ mb: 2 }} />}
           {ordersLoading && <Skeleton variant="rectangular" height={240} sx={{ borderRadius: 3 }} />}
 
-          {!ordersLoading && filteredOrders.length === 0 && (
+          {!ordersLoading && !ordersError && filteredOrders.length === 0 && (
             <Box
               sx={{
                 textAlign: "center",
@@ -177,7 +179,7 @@ export default function CommandesPage() {
             </Box>
           )}
 
-          {!ordersLoading && filteredOrders.length > 0 && (
+          {!ordersLoading && !ordersError && filteredOrders.length > 0 && (
             <TableContainer sx={{ border: `1px solid ${colors.neutral[200]}`, borderRadius: 3 }}>
               <Table>
                 <TableHead>
@@ -229,9 +231,10 @@ export default function CommandesPage() {
       {/* Deliveries tab content */}
       {tab === "livraisons" && (
         <>
+          {deliveriesError && <QueryError error={deliveriesError} onRetry={refetchDeliveries} sx={{ mb: 2 }} />}
           {deliveriesLoading && <Skeleton variant="rectangular" height={240} sx={{ borderRadius: 3 }} />}
 
-          {!deliveriesLoading && (deliveries?.length ?? 0) === 0 && (
+          {!deliveriesLoading && !deliveriesError && (deliveries?.length ?? 0) === 0 && (
             <Box
               sx={{
                 textAlign: "center",
@@ -249,7 +252,7 @@ export default function CommandesPage() {
             </Box>
           )}
 
-          {!deliveriesLoading && (deliveries?.length ?? 0) > 0 && (
+          {!deliveriesLoading && !deliveriesError && (deliveries?.length ?? 0) > 0 && (
             <TableContainer sx={{ border: `1px solid ${colors.neutral[200]}`, borderRadius: 3 }}>
               <Table>
                 <TableHead>

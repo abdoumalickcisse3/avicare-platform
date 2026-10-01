@@ -35,6 +35,7 @@ import { formatCurrency } from "@/lib/format";
 import { ARTICLE_SOURCE_LABELS } from "@/lib/inventory";
 import { colors } from "@/theme/tokens";
 import type { InventoryCatalogItem } from "@/types";
+import { QueryError } from "@/components/shared/QueryError";
 
 const mono = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" } as const;
 const ALL = "Tous";
@@ -44,7 +45,7 @@ export default function ArticleLibraryPage() {
   const [category, setCategory] = useState(ALL);
   const { showToast } = useToast();
 
-  const { data: articles, isLoading } = useGetInventoryArticlesQuery(
+  const { data: articles, isLoading, error, refetch } = useGetInventoryArticlesQuery(
     { farmId: farmId as number },
     { skip: !hasFarm || !hasInventory },
   );
@@ -131,9 +132,10 @@ export default function ArticleLibraryPage() {
         ))}
       </Stack>
 
+      {error && <QueryError error={error} onRetry={refetch} sx={{ mb: 2 }} />}
       {isLoading && <Skeleton variant="rectangular" height={320} sx={{ borderRadius: 3 }} />}
 
-      {!isLoading && (
+      {!isLoading && !error && (
         <TableContainer sx={{ border: `1px solid ${colors.neutral[200]}`, borderRadius: 3 }}>
           <Table>
             <TableHead>

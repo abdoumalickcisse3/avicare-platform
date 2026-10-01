@@ -31,6 +31,7 @@ import { formatCurrency } from "@/lib/format";
 import { FEED_PHASE_LABELS } from "@/lib/inventory";
 import { colors } from "@/theme/tokens";
 import type { FeedFormula } from "@/types";
+import { QueryError } from "@/components/shared/QueryError";
 
 const mono = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums", fontWeight: 700 } as const;
 
@@ -40,7 +41,7 @@ export default function FeedFormulasPage() {
   // (`InventoryAccess.WRITE_MANAGER`) : on cache plutôt que de proposer un 403.
   const canWrite = canManageCatalog(useFarmRole(farmId));
   const { showToast } = useToast();
-  const { data, isLoading } = useGetAvailableFormulasQuery(
+  const { data, isLoading, error, refetch } = useGetAvailableFormulasQuery(
     { farmId: farmId as number },
     { skip: !hasFarm || !hasInventory },
   );
@@ -105,9 +106,10 @@ export default function FeedFormulasPage() {
         </Stack>
       </Stack>
 
+      {error && <QueryError error={error} onRetry={refetch} sx={{ mb: 2 }} />}
       {isLoading && <Skeleton variant="rectangular" height={240} sx={{ borderRadius: 3 }} />}
 
-      {!isLoading && farmFormulas.length === 0 && (
+      {!isLoading && !error && farmFormulas.length === 0 && (
         <Box sx={{ textAlign: "center", py: 8, border: (t) => `1px dashed ${t.palette.divider}`, borderRadius: 3 }}>
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
             Aucune formule
@@ -121,7 +123,7 @@ export default function FeedFormulasPage() {
         </Box>
       )}
 
-      {!isLoading && farmFormulas.length > 0 && (
+      {!isLoading && !error && farmFormulas.length > 0 && (
         <Box
           sx={{
             display: "grid",

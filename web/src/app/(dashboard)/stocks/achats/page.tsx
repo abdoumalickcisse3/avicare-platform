@@ -28,6 +28,7 @@ import { formatCurrency, formatDate } from "@/lib/format";
 import { PO_STATUS_META } from "@/lib/inventory";
 import { colors } from "@/theme/tokens";
 import type { PurchaseOrderStatus } from "@/types";
+import { QueryError } from "@/components/shared/QueryError";
 
 const mono = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" } as const;
 
@@ -48,7 +49,7 @@ export default function PurchaseOrdersPage() {
   const [createOpen, setCreateOpen] = useState(false);
 
   const status = TABS.find((t) => t.key === tab)?.status;
-  const { data: orders, isLoading } = useGetPurchaseOrdersQuery(
+  const { data: orders, isLoading, error, refetch } = useGetPurchaseOrdersQuery(
     { farmId: farmId as number, status },
     { skip: !hasFarm || !hasInventory },
   );
@@ -85,9 +86,10 @@ export default function PurchaseOrdersPage() {
         ))}
       </Tabs>
 
+      {error && <QueryError error={error} onRetry={refetch} sx={{ mb: 2 }} />}
       {isLoading && <Skeleton variant="rectangular" height={280} sx={{ borderRadius: 3 }} />}
 
-      {!isLoading && (orders?.length ?? 0) === 0 && (
+      {!isLoading && !error && (orders?.length ?? 0) === 0 && (
         <Box sx={{ textAlign: "center", py: 8, border: (t) => `1px dashed ${t.palette.divider}`, borderRadius: 3 }}>
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
             Aucun bon d&apos;achat
@@ -98,7 +100,7 @@ export default function PurchaseOrdersPage() {
         </Box>
       )}
 
-      {!isLoading && (orders?.length ?? 0) > 0 && (
+      {!isLoading && !error && (orders?.length ?? 0) > 0 && (
         <TableContainer sx={{ border: `1px solid ${colors.neutral[200]}`, borderRadius: 3 }}>
           <Table>
             <TableHead>

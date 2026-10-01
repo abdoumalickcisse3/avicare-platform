@@ -35,6 +35,7 @@ import { INVOICE_STATUS_META, PAYMENT_METHOD_LABELS, isInvoiceOverdue } from "@/
 import { formatCurrency, formatDate } from "@/lib/format";
 import { colors } from "@/theme/tokens";
 import type { InvoiceStatus, Payment } from "@/types";
+import { QueryError } from "@/components/shared/QueryError";
 
 const mono = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" } as const;
 const monoBold = { ...mono, fontWeight: 700 } as const;
@@ -56,9 +57,9 @@ export default function FacturesPage() {
   const canWrite = canManageCatalog(useFarmRole(farmId));
   const { showToast } = useToast();
   const skip = !hasFarm || !hasCommercial;
-  const { data: invoices, isLoading: invoicesLoading } = useGetInvoicesQuery({ farmId: farmId as number }, { skip });
+  const { data: invoices, isLoading: invoicesLoading, error: invoicesError, refetch: refetchInvoices } = useGetInvoicesQuery({ farmId: farmId as number }, { skip });
   const { data: clients } = useGetClientsQuery({ farmId: farmId as number }, { skip });
-  const { data: payments, isLoading: paymentsLoading } = useGetPaymentsQuery({ farmId: farmId as number }, { skip });
+  const { data: payments, isLoading: paymentsLoading, error: paymentsError, refetch: refetchPayments } = useGetPaymentsQuery({ farmId: farmId as number }, { skip });
   const [voidPayment] = useVoidPaymentMutation();
   const [tab, setTab] = useState("unpaid");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -147,9 +148,10 @@ export default function FacturesPage() {
       {/* Invoices tab content */}
       {tab !== "paiements" && (
         <>
+          {invoicesError && <QueryError error={invoicesError} onRetry={refetchInvoices} sx={{ mb: 2 }} />}
           {invoicesLoading && <Skeleton variant="rectangular" height={240} sx={{ borderRadius: 3 }} />}
 
-          {!invoicesLoading && filteredInvoices.length === 0 && (
+          {!invoicesLoading && !invoicesError && filteredInvoices.length === 0 && (
             <Box sx={{ textAlign: "center", py: 8, border: (t) => `1px dashed ${t.palette.divider}`, borderRadius: 3 }}>
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
                 Aucune facture
@@ -160,7 +162,7 @@ export default function FacturesPage() {
             </Box>
           )}
 
-          {!invoicesLoading && filteredInvoices.length > 0 && (
+          {!invoicesLoading && !invoicesError && filteredInvoices.length > 0 && (
             <TableContainer sx={{ border: `1px solid ${colors.neutral[200]}`, borderRadius: 3 }}>
               <Table>
                 <TableHead>
@@ -218,9 +220,10 @@ export default function FacturesPage() {
       {/* Payments tab content */}
       {tab === "paiements" && (
         <>
+          {paymentsError && <QueryError error={paymentsError} onRetry={refetchPayments} sx={{ mb: 2 }} />}
           {paymentsLoading && <Skeleton variant="rectangular" height={240} sx={{ borderRadius: 3 }} />}
 
-          {!paymentsLoading && (payments?.length ?? 0) === 0 && (
+          {!paymentsLoading && !paymentsError && (payments?.length ?? 0) === 0 && (
             <Box sx={{ textAlign: "center", py: 8, border: (t) => `1px dashed ${t.palette.divider}`, borderRadius: 3 }}>
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
                 Aucun paiement
@@ -231,7 +234,7 @@ export default function FacturesPage() {
             </Box>
           )}
 
-          {!paymentsLoading && (payments?.length ?? 0) > 0 && (
+          {!paymentsLoading && !paymentsError && (payments?.length ?? 0) > 0 && (
             <TableContainer sx={{ border: `1px solid ${colors.neutral[200]}`, borderRadius: 3 }}>
               <Table>
                 <TableHead>

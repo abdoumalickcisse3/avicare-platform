@@ -30,6 +30,7 @@ import { apiErrorMessage } from "@/lib/apiError";
 import { formatCurrency } from "@/lib/format";
 import { colors } from "@/theme/tokens";
 import type { Supplier } from "@/types";
+import { QueryError } from "@/components/shared/QueryError";
 
 export default function SuppliersPage() {
   const router = useRouter();
@@ -38,7 +39,7 @@ export default function SuppliersPage() {
   // (`InventoryAccess.WRITE_MANAGER`) : on cache plutôt que de proposer un 403.
   const canWrite = canManageCatalog(useFarmRole(farmId));
   const { showToast } = useToast();
-  const { data: suppliers, isLoading } = useGetSuppliersQuery(
+  const { data: suppliers, isLoading, error, refetch } = useGetSuppliersQuery(
     { farmId: farmId as number },
     { skip: !hasFarm || !hasInventory },
   );
@@ -102,9 +103,10 @@ export default function SuppliersPage() {
         )}
       </Stack>
 
+      {error && <QueryError error={error} onRetry={refetch} sx={{ mb: 2 }} />}
       {isLoading && <Skeleton variant="rectangular" height={200} sx={{ borderRadius: 3 }} />}
 
-      {!isLoading && (suppliers?.length ?? 0) === 0 && (
+      {!isLoading && !error && (suppliers?.length ?? 0) === 0 && (
         <Box sx={{ textAlign: "center", py: 8, border: (t) => `1px dashed ${t.palette.divider}`, borderRadius: 3 }}>
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
             Aucun fournisseur
@@ -120,7 +122,7 @@ export default function SuppliersPage() {
         </Box>
       )}
 
-      {!isLoading && (suppliers?.length ?? 0) > 0 && (
+      {!isLoading && !error && (suppliers?.length ?? 0) > 0 && (
         <Box
           sx={{
             display: "grid",
