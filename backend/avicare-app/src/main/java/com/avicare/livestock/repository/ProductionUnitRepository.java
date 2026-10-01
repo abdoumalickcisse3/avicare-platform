@@ -16,6 +16,15 @@ public interface ProductionUnitRepository extends JpaRepository<ProductionUnit, 
 
   List<ProductionUnit> findByFarmId(Long farmId);
 
+  /**
+   * Locks the unit's row until the transaction ends. Native and id-only on purpose: a locking JPQL
+   * query over this JOINED hierarchy would lock the subclass tables through outer joins, which
+   * PostgreSQL refuses. The result is only there to make the statement run; the caller loads the
+   * entity afterwards, once it holds the lock.
+   */
+  @Query(value = "SELECT id FROM production_units WHERE id = :id FOR UPDATE", nativeQuery = true)
+  List<Long> lockRow(@Param("id") Long id);
+
   List<ProductionUnit> findByFarmIdAndStatus(Long farmId, UnitStatus status);
 
   // ── Dashboard aggregations (Task 2.1, Spec B) ────────────────────────────

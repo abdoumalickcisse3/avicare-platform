@@ -170,6 +170,9 @@ public class LivestockService {
       Map<String, Object> details,
       Long userId,
       UUID clientRef) {
+    // Read-modify-write on the head count: take the row lock first so two workers recording
+    // losses on the same lot at once are applied one after the other, not both from the same count.
+    productionUnitRepository.lockRow(unitId);
     ProductionUnit unit = getUnit(unitId);
     if (unit.getStatus() == UnitStatus.CLOSED || unit.getStatus() == UnitStatus.CANCELLED) {
       throw new BusinessRuleException(

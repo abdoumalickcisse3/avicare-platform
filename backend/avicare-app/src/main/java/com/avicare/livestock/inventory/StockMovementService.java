@@ -56,7 +56,7 @@ public class StockMovementService {
     }
     StockItem item =
         stockItemRepository
-            .findByFarmIdAndId(farmId, cmd.stockItemId())
+            .findByFarmIdAndIdForUpdate(farmId, cmd.stockItemId())
             .orElseThrow(() -> NotFoundException.of("StockItem", cmd.stockItemId()));
 
     BigDecimal before = item.getCurrentQuantity();
