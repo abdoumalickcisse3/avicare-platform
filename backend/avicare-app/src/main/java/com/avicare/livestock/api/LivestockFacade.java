@@ -21,6 +21,9 @@ public interface LivestockFacade {
 
   long countActiveUnits(Long farmId);
 
+  /** 404 unless {@code unitId} is a production unit of {@code farmId}. */
+  void requireUnitOnFarm(Long farmId, Long unitId);
+
   /**
    * Most recent livestock activity per farm, in one query, for the platform-wide support views.
    * Farms with no activity are absent from the map rather than mapped to a zero date.

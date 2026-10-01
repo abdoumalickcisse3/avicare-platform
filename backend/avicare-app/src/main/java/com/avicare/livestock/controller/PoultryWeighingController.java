@@ -9,6 +9,7 @@ import com.avicare.livestock.dto.response.GrowthPerformanceResponse;
 import com.avicare.livestock.dto.response.WeighingSampleResponse;
 import com.avicare.livestock.poultry.GrowthAnalysisService;
 import com.avicare.livestock.poultry.WeighingCommand;
+import com.avicare.livestock.service.LivestockService;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -33,11 +34,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class PoultryWeighingController {
 
   private final GrowthAnalysisService growthAnalysisService;
+  private final LivestockService livestockService;
 
   @GetMapping("/weighings")
   @PreAuthorize(PoultryBatchController.READ)
   public ApiResponse<List<WeighingSampleResponse>> listWeighings(
       @PathVariable Long farmId, @PathVariable Long batchId) {
+    livestockService.getUnitInFarm(farmId, batchId);
     return ApiResponse.of(
         growthAnalysisService.listWeighings(batchId).stream()
             .map(PoultryWeighingController::toResponse)
@@ -51,6 +54,7 @@ public class PoultryWeighingController {
       @PathVariable Long farmId,
       @PathVariable Long batchId,
       @RequestBody @Valid WeighingRequest request) {
+    livestockService.getUnitInFarm(farmId, batchId);
     WeighingSample saved =
         growthAnalysisService.recordWeighing(
             batchId,
@@ -64,6 +68,7 @@ public class PoultryWeighingController {
   @PreAuthorize(PoultryBatchController.READ)
   public ApiResponse<GrowthPerformanceResponse> performance(
       @PathVariable Long farmId, @PathVariable Long batchId) {
+    livestockService.getUnitInFarm(farmId, batchId);
     return ApiResponse.of(toResponse(growthAnalysisService.getLatestPerformance(batchId)));
   }
 

@@ -159,6 +159,12 @@ public class LivestockFacadeImpl implements LivestockFacade {
   }
 
   @Override
+  @Transactional(readOnly = true)
+  public void requireUnitOnFarm(Long farmId, Long unitId) {
+    livestockService.getUnitInFarm(farmId, unitId);
+  }
+
+  @Override
   @Transactional
   public void recordMortality(Long farmId, Long unitId, int count, String reason, Long userId) {
     ProductionUnit unit =

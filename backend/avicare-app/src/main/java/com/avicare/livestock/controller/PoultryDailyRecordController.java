@@ -7,6 +7,7 @@ import com.avicare.livestock.dto.request.DailyRecordRequest;
 import com.avicare.livestock.dto.response.DailyRecordResponse;
 import com.avicare.livestock.poultry.DailyRecordCommand;
 import com.avicare.livestock.poultry.DailyRecordService;
+import com.avicare.livestock.service.LivestockService;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -43,11 +44,13 @@ public class PoultryDailyRecordController {
       "@farmAccess.hasPermission(#farmId, 'poultry:write') and " + FEATURE_ANY;
 
   private final DailyRecordService dailyRecordService;
+  private final LivestockService livestockService;
 
   @GetMapping
   @PreAuthorize(READ)
   public ApiResponse<List<DailyRecordResponse>> list(
       @PathVariable Long farmId, @PathVariable Long batchId) {
+    livestockService.getUnitInFarm(farmId, batchId);
     return ApiResponse.of(
         dailyRecordService.listForUnit(batchId).stream()
             .map(PoultryDailyRecordController::toResponse)
@@ -61,6 +64,7 @@ public class PoultryDailyRecordController {
       @PathVariable Long farmId,
       @PathVariable Long batchId,
       @RequestBody @Valid DailyRecordRequest request) {
+    livestockService.getUnitInFarm(farmId, batchId);
     DailyRecord saved =
         dailyRecordService.record(
             batchId,

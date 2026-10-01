@@ -16,6 +16,7 @@ import com.avicare.finance.domain.ExpenseSource;
 import com.avicare.finance.dto.request.ExpenseRequest;
 import com.avicare.finance.dto.response.ExpenseResponse;
 import com.avicare.finance.repository.ExpenseRepository;
+import com.avicare.livestock.api.LivestockFacade;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -29,12 +30,14 @@ class ExpenseServiceTest {
 
   private ExpenseRepository expenseRepository;
   private ExpenseService expenseService;
+  private LivestockFacade livestockFacade;
   private FinanceFacade financeFacade;
 
   @BeforeEach
   void setUp() {
     expenseRepository = Mockito.mock(ExpenseRepository.class);
-    expenseService = new ExpenseService(expenseRepository);
+    livestockFacade = Mockito.mock(LivestockFacade.class);
+    expenseService = new ExpenseService(expenseRepository, livestockFacade);
     financeFacade =
         new FinanceFacadeImpl(expenseRepository, Mockito.mock(FinanceAnalyticsService.class));
   }
@@ -67,6 +70,19 @@ class ExpenseServiceTest {
     assertThat(saved.getCreatedBy()).isEqualTo(9L);
     assertThat(response.categoryKey()).isEqualTo("feed");
     assertThat(response.source()).isEqualTo("MANUAL");
+  }
+
+  @Test
+  void create_withAUnitOfAnotherFarm_throwsNotFound_andNeverSaves() {
+    org.mockito.Mockito.doThrow(NotFoundException.of("ProductionUnit", 4L))
+        .when(livestockFacade)
+        .requireUnitOnFarm(3L, 4L);
+    ExpenseRequest request =
+        new ExpenseRequest("feed", 15000L, LocalDate.of(2026, 7, 1), "Achat aliment", null, 4L);
+
+    assertThatThrownBy(() -> expenseService.create(3L, request, 9L))
+        .isInstanceOf(NotFoundException.class);
+    verify(expenseRepository, never()).save(any(Expense.class));
   }
 
   @Test

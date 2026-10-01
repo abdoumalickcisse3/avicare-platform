@@ -58,6 +58,18 @@ public class LivestockService {
         .orElseThrow(() -> NotFoundException.of("ProductionUnit", unitId));
   }
 
+  /**
+   * The unit, or 404 when it does not belong to {@code farmId} (never leak another farm's unit).
+   */
+  @Transactional(readOnly = true)
+  public ProductionUnit getUnitInFarm(Long farmId, Long unitId) {
+    ProductionUnit unit = getUnit(unitId);
+    if (!unit.getFarmId().equals(farmId)) {
+      throw NotFoundException.of("ProductionUnit", unitId);
+    }
+    return unit;
+  }
+
   @Transactional(readOnly = true)
   public List<ProductionUnit> listByFarm(Long farmId) {
     return productionUnitRepository.findByFarmId(farmId);
