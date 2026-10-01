@@ -28,7 +28,7 @@
 | Document | Rôle | Quand le lire |
 |---|---|---|
 | `roadmap-pre-first-client.md` | Feuille de route P1–P6 avant le premier client (traçage, kill switch, intégrité, menaces, runbooks, continuité) — **terminée côté code** | Pour comprendre les garde-fous de la plateforme |
-| `decisions/` | ADR (001–016) : choix d'architecture et d'exploitation verrouillés | Avant de remettre une décision en question |
+| `decisions/` | ADR (001–017) : choix d'architecture et d'exploitation verrouillés | Avant de remettre une décision en question |
 | `runbooks/` | Quoi faire quand un client appelle : incident, sauvegarde, restauration, plateforme injoignable | Avant de diagnostiquer un incident ; à mettre à jour après chacun |
 | `continuity/` | Briefing de la personne de secours | Avant de renseigner `ADMIN_EMERGENCY_PHONE` |
 | `../infra/DEPLOY.md` | Déploiement VPS, health check, rollback, sauvegardes | Avant tout déploiement |
