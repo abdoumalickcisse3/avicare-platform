@@ -1,6 +1,5 @@
 package com.avicare.subscription.domain;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -16,6 +15,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+import tools.jackson.databind.JsonNode;
 
 /**
  * A requested change to a subscription, moving through the review workflow (Décision 16). The

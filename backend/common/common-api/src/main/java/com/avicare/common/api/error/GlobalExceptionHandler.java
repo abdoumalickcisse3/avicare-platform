@@ -2,7 +2,6 @@ package com.avicare.common.api.error;
 
 import com.avicare.common.api.exception.BusinessException;
 import com.avicare.common.api.exception.ValidationException;
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.util.List;
@@ -25,6 +24,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import tools.jackson.databind.exc.InvalidFormatException;
 
 /**
  * Centralized exception handler that converts every thrown exception to an RFC 7807 Problem Details
@@ -264,7 +264,8 @@ public class GlobalExceptionHandler {
         && ex.getCause() instanceof InvalidFormatException ife) {
       String field =
           ife.getPath().stream()
-              .map(r -> r.getFieldName() == null ? "[" + r.getIndex() + "]" : r.getFieldName())
+              .map(
+                  r -> r.getPropertyName() == null ? "[" + r.getIndex() + "]" : r.getPropertyName())
               .reduce((a, b) -> a + "." + b)
               .orElse("body");
       Class<?> target = ife.getTargetType();

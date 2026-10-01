@@ -6,12 +6,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.avicare.support.RsaKeys;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.security.KeyPair;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -19,6 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import tools.jackson.databind.ObjectMapper;
 
 /** E2E: the /activity endpoint returns a merged feed with RBAC. CI-only (Docker). */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
@@ -158,7 +158,7 @@ class ActivityControllerIT {
             .getResponse()
             .getContentAsString();
     boolean hasSale = false;
-    for (com.fasterxml.jackson.databind.JsonNode n : objectMapper.readTree(body).get("data")) {
+    for (tools.jackson.databind.JsonNode n : objectMapper.readTree(body).get("data")) {
       if ("SALE".equals(n.get("kind").asText())) {
         hasSale = true;
       }

@@ -7,13 +7,13 @@ import com.avicare.common.security.exception.WrongTokenTypeException;
 import com.avicare.common.security.principal.AvicarePrincipal;
 import com.avicare.common.security.principal.PartnerPrincipal;
 import com.avicare.common.security.principal.UserRole;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.security.KeyPair;
 import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.DefaultResourceLoader;
+import tools.jackson.databind.ObjectMapper;
 
 /** Partner-token generation/validation and the cross-audience cloisonnement guarantee. */
 class JwtServicePartnerTest {

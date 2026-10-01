@@ -7,8 +7,6 @@ import com.avicare.common.security.principal.AvicarePrincipal;
 import com.avicare.common.security.principal.Membership;
 import com.avicare.common.security.principal.PartnerPrincipal;
 import com.avicare.common.security.principal.UserRole;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -25,6 +23,8 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Generates and validates the platform's RSA-signed JWTs.

@@ -14,12 +14,12 @@ import com.avicare.subscription.domain.Subscription;
 import com.avicare.subscription.domain.SubscriptionChangeRequest;
 import com.avicare.subscription.repository.SubscriptionChangeRequestRepository;
 import com.avicare.subscription.repository.SubscriptionRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ArrayNode;
 
 /** Unit test for {@link ChangeRequestService} workflow transitions and approval side effects. */
 class ChangeRequestServiceTest {

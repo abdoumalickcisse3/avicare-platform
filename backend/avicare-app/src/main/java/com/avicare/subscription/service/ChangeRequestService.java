@@ -8,12 +8,12 @@ import com.avicare.subscription.domain.Subscription;
 import com.avicare.subscription.domain.SubscriptionChangeRequest;
 import com.avicare.subscription.repository.SubscriptionChangeRequestRepository;
 import com.avicare.subscription.repository.SubscriptionRepository;
-import com.fasterxml.jackson.databind.JsonNode;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.JsonNode;
 
 /**
  * Drives the subscription change-request review workflow (Décision 16): {@code DRAFT → SUBMITTED →

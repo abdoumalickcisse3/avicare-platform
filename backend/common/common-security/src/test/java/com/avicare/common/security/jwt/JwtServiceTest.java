@@ -10,13 +10,13 @@ import com.avicare.common.security.principal.AvicarePrincipal;
 import com.avicare.common.security.principal.FarmRole;
 import com.avicare.common.security.principal.Membership;
 import com.avicare.common.security.principal.UserRole;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.security.KeyPair;
 import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.DefaultResourceLoader;
+import tools.jackson.databind.ObjectMapper;
 
 class JwtServiceTest {
 

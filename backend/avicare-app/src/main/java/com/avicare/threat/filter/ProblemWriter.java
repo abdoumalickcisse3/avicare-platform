@@ -1,13 +1,13 @@
 package com.avicare.threat.filter;
 
 import com.avicare.common.api.error.ProblemDetailResponse;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URI;
 import org.slf4j.MDC;
 import org.springframework.http.MediaType;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Writes a refusal in the same RFC 7807 shape as the rest of the API.

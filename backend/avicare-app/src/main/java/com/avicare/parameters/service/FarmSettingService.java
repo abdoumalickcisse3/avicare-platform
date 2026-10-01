@@ -6,13 +6,13 @@ import com.avicare.parameters.domain.UserSetting;
 import com.avicare.parameters.repository.CatalogItemRepository;
 import com.avicare.parameters.repository.FarmSettingRepository;
 import com.avicare.parameters.repository.UserSettingRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * The central 3-layer parametrization lookup (doc 06 §3). A value is resolved from the most

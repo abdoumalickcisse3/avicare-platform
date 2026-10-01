@@ -11,12 +11,12 @@ import com.avicare.parameters.domain.UserSetting;
 import com.avicare.parameters.repository.CatalogItemRepository;
 import com.avicare.parameters.repository.FarmSettingRepository;
 import com.avicare.parameters.repository.UserSettingRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import tools.jackson.databind.ObjectMapper;
 
 /** Unit test for the 3-layer lookup precedence in {@link FarmSettingService} (repos mocked). */
 class FarmSettingServiceTest {

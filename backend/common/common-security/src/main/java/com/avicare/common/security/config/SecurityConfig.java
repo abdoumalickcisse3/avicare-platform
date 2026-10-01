@@ -2,7 +2,6 @@ package com.avicare.common.security.config;
 
 import com.avicare.common.api.error.ProblemDetailResponse;
 import com.avicare.common.security.jwt.JwtFilter;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -27,6 +26,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Activates and configures Spring Security for the platform.

@@ -2,7 +2,6 @@ package com.avicare.threat.filter;
 
 import com.avicare.common.api.web.ClientIp;
 import com.avicare.threat.service.ThreatDetectionService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -10,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.filter.OncePerRequestFilter;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Turns away addresses the platform is currently refusing.

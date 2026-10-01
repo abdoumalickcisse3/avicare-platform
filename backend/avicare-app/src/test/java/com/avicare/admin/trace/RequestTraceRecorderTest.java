@@ -7,13 +7,13 @@ import static org.mockito.Mockito.verify;
 
 import com.avicare.admin.domain.RequestTrace;
 import com.avicare.admin.repository.RequestTraceRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * The recorder is the only thing standing between a support tool and a leak, so its rules are
