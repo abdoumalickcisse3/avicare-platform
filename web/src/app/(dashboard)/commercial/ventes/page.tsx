@@ -32,6 +32,7 @@ import { colors } from "@/theme/tokens";
 import type { Sale } from "@/types";
 import { useMemo } from "react";
 import { QueryError } from "@/components/shared/QueryError";
+import { ListWindowNotice } from "@/components/shared/ListWindowNotice";
 
 const mono = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" } as const;
 const monoBold = { ...mono, fontWeight: 700 } as const;
@@ -91,6 +92,7 @@ export default function VentesPage() {
           Vos ventes au comptant. Utilisez le bouton « Vente directe » pour en enregistrer une.
         </Typography>
       </Box>
+      <ListWindowNotice endpoint="getSales" />
 
       {error && <QueryError error={error} onRetry={refetch} sx={{ mb: 2 }} />}
       {isLoading && <Skeleton variant="rectangular" height={240} sx={{ borderRadius: 3 }} />}

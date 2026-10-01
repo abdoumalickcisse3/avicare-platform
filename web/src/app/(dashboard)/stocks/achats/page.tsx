@@ -29,6 +29,7 @@ import { PO_STATUS_META } from "@/lib/inventory";
 import { colors } from "@/theme/tokens";
 import type { PurchaseOrderStatus } from "@/types";
 import { QueryError } from "@/components/shared/QueryError";
+import { ListWindowNotice } from "@/components/shared/ListWindowNotice";
 
 const mono = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" } as const;
 
@@ -79,6 +80,7 @@ export default function PurchaseOrdersPage() {
           </Button>
         )}
       </Stack>
+      <ListWindowNotice endpoint="getPurchaseOrders" />
 
       <Tabs value={tab} onChange={(_e, v) => setTab(v)} sx={{ mb: 2 }} variant="scrollable" scrollButtons="auto">
         {TABS.map((t) => (

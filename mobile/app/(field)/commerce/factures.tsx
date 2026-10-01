@@ -20,6 +20,7 @@ import { GenerateInvoiceSheet } from '@/commerce/GenerateInvoiceSheet';
 import { INVOICE_STATUS_LABELS, invoiceStatusColor } from '@/lib/commercial';
 import { formatCurrency } from '@/lib/format';
 import type { Invoice } from '@/types';
+import { ListWindowNotice } from '@/components/ui';
 
 type Filter = 'all' | 'unpaid';
 
@@ -73,6 +74,7 @@ export default function FacturesScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
+        <ListWindowNotice endpoint="getInvoices" />
         {isLoading ? (
           <Text style={styles.muted}>Chargement…</Text>
         ) : rows.length === 0 ? (

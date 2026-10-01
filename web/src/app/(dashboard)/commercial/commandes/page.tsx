@@ -36,6 +36,7 @@ import { formatCurrency, formatDate, formatNumber } from "@/lib/format";
 import { colors } from "@/theme/tokens";
 import type { Delivery, Order, OrderStatus } from "@/types";
 import { QueryError } from "@/components/shared/QueryError";
+import { ListWindowNotice } from "@/components/shared/ListWindowNotice";
 
 const mono = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" } as const;
 
@@ -133,6 +134,7 @@ export default function CommandesPage() {
           Nouvelle commande
         </Button>
       </Stack>
+      <ListWindowNotice endpoint="getOrders" />
 
       <Tabs
         value={tab}

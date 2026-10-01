@@ -42,6 +42,7 @@ import { formatCurrency } from '@/lib/format';
 import { ExpenseSheet } from '@/finance/ExpenseSheet';
 import { FinanceAnalytics } from '@/finance/FinanceAnalytics';
 import type { Expense, ExpenseSource, Salary, SalarySetting, SalaryStatus } from '@/types';
+import { ListWindowNotice } from '@/components/ui';
 
 type Tab = 'expenses' | 'salaries' | 'advances' | 'analytics';
 
@@ -148,6 +149,7 @@ export default function FinanceScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <AppHeader />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <ListWindowNotice endpoint="getExpenses" />
         <Text style={styles.title}>Finance</Text>
         <Text style={styles.subtitle}>Dépenses, salaires et rentabilité de la ferme.</Text>
 

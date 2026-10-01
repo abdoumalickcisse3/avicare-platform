@@ -17,6 +17,7 @@ import { useGetPurchaseOrdersQuery } from '@/store/api/purchaseOrdersApi';
 import { PURCHASE_ORDER_STATUS_LABELS, purchaseOrderStatusColor } from '@/lib/commercial';
 import { formatCurrency } from '@/lib/format';
 import type { PurchaseOrder } from '@/types';
+import { ListWindowNotice } from '@/components/ui';
 
 type Filter = 'active' | 'all';
 
@@ -65,6 +66,7 @@ export default function AchatsScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
+        <ListWindowNotice endpoint="getPurchaseOrders" />
         {isLoading ? (
           <Text style={styles.muted}>Chargement…</Text>
         ) : rows.length === 0 ? (

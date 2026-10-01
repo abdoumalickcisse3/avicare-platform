@@ -37,6 +37,7 @@ import { apiErrorMessage } from "@/lib/apiError";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { colors } from "@/theme/tokens";
 import type { Expense, ExpenseSource } from "@/types";
+import { ListWindowNotice } from "@/components/shared/ListWindowNotice";
 
 const SOURCE_LABELS: Record<ExpenseSource, string> = {
   MANUAL: "Manuelle",
@@ -109,6 +110,7 @@ export function ExpensesView({ farmId }: { farmId: number }) {
           </Button>
         )}
       </Stack>
+      <ListWindowNotice endpoint="getExpenses" />
 
       <Card variant="outlined" sx={{ mb: 2 }}>
         <CardContent sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>

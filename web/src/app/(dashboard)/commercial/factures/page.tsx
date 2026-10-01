@@ -36,6 +36,7 @@ import { formatCurrency, formatDate } from "@/lib/format";
 import { colors } from "@/theme/tokens";
 import type { InvoiceStatus, Payment } from "@/types";
 import { QueryError } from "@/components/shared/QueryError";
+import { ListWindowNotice } from "@/components/shared/ListWindowNotice";
 
 const mono = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" } as const;
 const monoBold = { ...mono, fontWeight: 700 } as const;
@@ -127,6 +128,7 @@ export default function FacturesPage() {
           Nouvelle facture
         </Button>
       </Stack>
+      <ListWindowNotice endpoint="getInvoices" />
 
       <Tabs
         value={tab}
@@ -234,6 +236,7 @@ export default function FacturesPage() {
             </Box>
           )}
 
+          <ListWindowNotice endpoint="getPayments" />
           {!paymentsLoading && !paymentsError && (payments?.length ?? 0) > 0 && (
             <TableContainer sx={{ border: `1px solid ${colors.neutral[200]}`, borderRadius: 3 }}>
               <Table>
