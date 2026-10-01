@@ -18,6 +18,7 @@ import { useGetClientsQuery } from '@/store/api/clientsApi';
 import { ORDER_STATUS_LABELS, orderStatusColor } from '@/lib/commercial';
 import { formatCurrency } from '@/lib/format';
 import type { Order } from '@/types';
+import { ListWindowNotice } from '@/components/ui';
 
 type Filter = 'active' | 'all';
 
@@ -70,6 +71,7 @@ export default function CommandesScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
+        <ListWindowNotice endpoint="getOrders" />
         {isLoading ? (
           <Text style={styles.muted}>Chargement…</Text>
         ) : rows.length === 0 ? (

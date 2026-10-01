@@ -4,6 +4,7 @@ import { partnerApi } from "./api/partnerApi";
 import { adminApi } from "./api/adminApi";
 import authReducer from "./slices/authSlice";
 import uiReducer from "./slices/uiSlice";
+import listWindowReducer from "./slices/listWindowSlice";
 
 export const makeStore = () =>
   configureStore({
@@ -13,6 +14,7 @@ export const makeStore = () =>
       [adminApi.reducerPath]: adminApi.reducer,
       auth: authReducer,
       ui: uiReducer,
+      listWindow: listWindowReducer,
     },
     middleware: (getDefault) => getDefault().concat(baseApi.middleware, partnerApi.middleware, adminApi.middleware),
   });

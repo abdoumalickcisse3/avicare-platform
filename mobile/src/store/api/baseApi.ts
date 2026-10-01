@@ -24,6 +24,7 @@ import { getAccessToken } from '@/auth/tokens';
 import { refreshSession } from '@/auth/refreshSession';
 import { resolveApiUrl } from '@/config/apiUrl';
 import { REQUEST_TIMEOUT_MS } from '@/config/requestTimeout';
+import { recordListWindow } from './recordListWindow';
 
 const API_URL = resolveApiUrl();
 
@@ -61,7 +62,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
 
 export const baseApi = createApi({
   reducerPath: 'api',
-  baseQuery: baseQueryWithReauth,
+  baseQuery: recordListWindow(baseQueryWithReauth),
   tagTypes: [
     'Auth', 'Farm', 'ProductionUnit', 'Breed', 'LayerConfig', 'Dashboard',
     'PoultryBatch', 'DailyRecord', 'Weighing', 'Performance',

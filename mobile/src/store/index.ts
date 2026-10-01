@@ -23,11 +23,13 @@ import { combineReducers, configureStore } from '@reduxjs/toolkit';
 import { FLUSH, PAUSE, PERSIST, persistReducer, PURGE, REGISTER, REHYDRATE } from 'redux-persist';
 import { baseApi } from './api/baseApi';
 import { selectionReducer } from './slices/selectionSlice';
+import { listWindowReducer } from './slices/listWindowSlice';
 import { apiPersistConfig, createPersistor, wrapWithPersistence } from './persist';
 
 const rootReducer = combineReducers({
   [baseApi.reducerPath]: persistReducer(apiPersistConfig, baseApi.reducer),
   selection: selectionReducer,
+  listWindow: listWindowReducer,
 });
 
 const persistedReducer = wrapWithPersistence(rootReducer);

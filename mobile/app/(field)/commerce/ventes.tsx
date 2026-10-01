@@ -19,6 +19,7 @@ import { useGetClientsQuery } from '@/store/api/clientsApi';
 import { SALE_STATUS_LABELS, saleStatusColor } from '@/lib/commercial';
 import { formatCurrency, formatNumber } from '@/lib/format';
 import type { Sale } from '@/types';
+import { ListWindowNotice } from '@/components/ui';
 
 function articlesSummary(sale: Sale): string {
   if (sale.items.length === 0) return '—';
@@ -75,6 +76,7 @@ export default function VentesScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
+        <ListWindowNotice endpoint="getSales" />
         {isLoading ? (
           <Text style={styles.muted}>Chargement…</Text>
         ) : (sales ?? []).length === 0 ? (

@@ -2,6 +2,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { tokenStorage } from "@/lib/storage";
 import { clearAuthData } from "@/lib/auth";
 import { createReauthBaseQuery } from "./reauth";
+import { recordListWindow } from "./recordListWindow";
 
 // API base URL. Dev sets NEXT_PUBLIC_API_URL (e.g. http://localhost:8080).
 // In the prod image it's left empty — but Next.js normalizes an empty
@@ -37,7 +38,7 @@ const baseQueryWithReauth = createReauthBaseQuery({
 
 export const baseApi = createApi({
   reducerPath: "api",
-  baseQuery: baseQueryWithReauth,
+  baseQuery: recordListWindow(baseQueryWithReauth),
   tagTypes: [
     "Auth",
     "User",
