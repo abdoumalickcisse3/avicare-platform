@@ -23,6 +23,7 @@ import { REQUEST_TIMEOUT_MS } from '@/config/requestTimeout';
 import { createSqliteDriver } from './driver';
 import { createQueue } from './queue';
 import { createEngine, type TransportResponse } from './engine';
+import { requestHeaders } from './requestHeaders';
 import { QUEUE_SCHEMA } from './schema';
 import type { MutationKind, QueuedMutation } from './types';
 
@@ -130,10 +131,7 @@ async function transport(mutation: QueuedMutation): Promise<TransportResponse> {
   try {
     const res = await fetch(`${API_URL}${mutation.endpoint}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
+      headers: requestHeaders(mutation, token),
       body: JSON.stringify(mutation.payload),
       signal: controller.signal,
     });
