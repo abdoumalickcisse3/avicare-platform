@@ -5,6 +5,11 @@ name: Deploy
 # on once you trust the pipeline.
 on:
   workflow_dispatch:
+    inputs:
+      force:
+        description: "Skip the main-only and green-CI gate (emergency hotfix only)"
+        type: boolean
+        default: false
   # push:
   #   branches: [main]
 
@@ -18,7 +23,49 @@ env:
   LANDING_IMAGE: ghcr.io/${{ github.repository_owner }}/avicare-landing
 
 jobs:
+  # main has no server-side branch protection (free private plan, ADR-002), so this job is the only
+  # guard: it refuses to ship a branch other than main, or a commit whose CI is not fully green.
+  gate:
+    name: deploy-gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: read
+    steps:
+      - name: Require main and green CI
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REF: ${{ github.ref }}
+          SHA: ${{ github.sha }}
+          REPO: ${{ github.repository }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          if [ "$FORCE" = "true" ]; then
+            echo "::warning::force=true — main-only and green-CI checks skipped."
+            exit 0
+          fi
+          if [ "$REF" != "refs/heads/main" ]; then
+            echo "::error::Refusing to deploy $REF. Run the workflow on main, or tick 'force' for a hotfix."
+            exit 1
+          fi
+          runs="$(gh api "repos/$REPO/commits/$SHA/check-runs" --paginate \
+            --jq '.check_runs[] | select(.name != "deploy-gate") | [.name, .status, (.conclusion // "-")] | @tsv')"
+          echo "$runs"
+          for required in "Backend build" "Web build"; do
+            if ! printf '%s\n' "$runs" | cut -f1 | grep -qx "$required"; then
+              echo "::error::No '$required' check found on $SHA — CI has not run on this commit."
+              exit 1
+            fi
+          done
+          bad="$(printf '%s\n' "$runs" | awk -F'\t' '$2 != "completed" || ($3 != "success" && $3 != "neutral" && $3 != "skipped")')"
+          if [ -n "$bad" ]; then
+            echo "::error::CI is not green on $SHA:"
+            echo "$bad"
+            exit 1
+          fi
+
   build-push:
+    needs: gate
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -97,9 +144,25 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
+          # deploy.sh waits up to 3 min for a healthy backend (twice if it has to roll back).
+          command_timeout: 15m
           script: |
             set -e
             cd ${{ secrets.DEPLOY_DIR }}
             git pull --ff-only
             cd infra
             ./deploy.sh ${{ github.sha }}
+
+      # Second opinion from outside the box: what a farmer's phone would see through Caddy.
+      - name: Verify public health
+        run: |
+          for i in $(seq 1 12); do
+            if curl -fsS --max-time 10 https://app.jawdi.app/actuator/health | grep -q '"status":"UP"'; then
+              echo "Public health is UP."
+              exit 0
+            fi
+            echo "Not UP yet (attempt $i/12)…"
+            sleep 10
+          done
+          echo "::error::https://app.jawdi.app/actuator/health is not UP after deploy."
+          exit 1

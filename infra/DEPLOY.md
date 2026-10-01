@@ -136,8 +136,18 @@ Restore: `./scripts/restore-db.sh ~/avicare-backups/avicare_avicare_<stamp>.sql.
 ## 7. Day-2
 
 - Logs: `docker compose -f docker-compose.prod.yml logs -f <svc>`
-- Update: push to main (or run the workflow) → images rebuilt, `deploy.sh <sha>` restarts.
-- Rollback: `./deploy.sh <previous-sha>` (immutable SHA tags make this safe).
+- Update: run the **Deploy** workflow on `main` → images rebuilt, `deploy.sh <sha>` restarts.
+  The workflow refuses any other branch, and a commit whose CI is not fully green, unless the
+  `force` input is ticked (hotfix only). It ends with a probe of `https://app.jawdi.app/actuator/health`.
+- Health check: after `up -d`, `deploy.sh` waits up to 180 s (`HEALTH_TIMEOUT`) for the backend's
+  Docker healthcheck. If it never turns healthy it redeploys the tag recorded in
+  `infra/.last-good-tag` (written after every healthy deploy, not versioned), prints the backend
+  logs and exits 1 so the workflow goes red.
+- Manual rollback: `./deploy.sh <previous-sha>` (immutable SHA tags make this safe for the code).
+- **Flyway is not reversible.** A rollback — automatic or manual — restores the old *code*, never
+  the old *schema*: migrations only move forward. The previous code must tolerate the newer schema
+  (additive migrations do; a dropped or renamed column does not). If a bad migration shipped,
+  restore the database from a backup (section 6) instead of rolling back the image.
 - Scale up: resize the VPS to 16 GB and raise `BACKEND_MEM` in `.env`, or move
   Postgres to a managed instance (OVH/Scaleway) and drop the `postgres` service.
 
