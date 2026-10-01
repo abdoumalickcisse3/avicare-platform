@@ -1,11 +1,6 @@
-import {
-  createApi,
-  fetchBaseQuery,
-  type BaseQueryFn,
-  type FetchArgs,
-  type FetchBaseQueryError,
-} from "@reduxjs/toolkit/query/react";
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { adminTokenStorage } from "@/lib/adminStorage";
+import { createReauthBaseQuery } from "./reauth";
 import type {
   PlatformBackups,
   AssistantTurn,
@@ -61,39 +56,22 @@ const rawBaseQuery = fetchBaseQuery({
 });
 
 /**
- * On a 401, refresh once against the shared auth endpoint and retry; on failure purge the staff
- * token and return to the console login.
+ * On a 401, one shared refresh against the shared auth endpoint then a retry; if that fails, purge
+ * the staff token and return to the console login.
  *
  * A standalone `createApi`, never `injectEndpoints` on `baseApi`: sharing the slice would send the
  * farmer token to back-office routes and the staff token to tenant routes. Same reasoning as
  * `partnerApi`.
  */
-const baseQueryWithReauth: BaseQueryFn<
-  string | FetchArgs,
-  unknown,
-  FetchBaseQueryError
-> = async (args, api, extraOptions) => {
-  const result = await rawBaseQuery(args, api, extraOptions);
-
-  if (result.error?.status === 401) {
-    const refreshToken = adminTokenStorage.getRefresh();
-    if (refreshToken) {
-      const refresh = await rawBaseQuery(
-        { url: "/api/v1/auth/refresh", method: "POST", body: { refreshToken } },
-        api,
-        extraOptions,
-      );
-      const data = (refresh.data as { data?: AuthTokens })?.data;
-      if (data?.accessToken) {
-        adminTokenStorage.set(data.accessToken, data.refreshToken);
-        return rawBaseQuery(args, api, extraOptions);
-      }
-    }
+const baseQueryWithReauth = createReauthBaseQuery({
+  rawBaseQuery,
+  tokens: adminTokenStorage,
+  refreshUrl: "/api/v1/auth/refresh",
+  onSessionLost: () => {
     adminTokenStorage.clear();
     if (typeof window !== "undefined") window.location.href = "/console/login";
-  }
-  return result;
-};
+  },
+});
 
 export const adminApi = createApi({
   reducerPath: "adminApi",

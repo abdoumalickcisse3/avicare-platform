@@ -1,12 +1,7 @@
-import {
-  createApi,
-  fetchBaseQuery,
-  type BaseQueryFn,
-  type FetchArgs,
-  type FetchBaseQueryError,
-} from "@reduxjs/toolkit/query/react";
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { tokenStorage } from "@/lib/storage";
 import { clearAuthData } from "@/lib/auth";
+import { createReauthBaseQuery } from "./reauth";
 
 // API base URL. Dev sets NEXT_PUBLIC_API_URL (e.g. http://localhost:8080).
 // In the prod image it's left empty — but Next.js normalizes an empty
@@ -26,45 +21,19 @@ const rawBaseQuery = fetchBaseQuery({
 });
 
 /**
- * Wraps the base query: on a 401, try a single refresh against
- * {@code POST /api/v1/auth/refresh} (refresh token from storage) and retry; on
- * failure, purge auth and redirect to /login. The backend wraps payloads in
+ * On a 401, one shared refresh against {@code POST /api/v1/auth/refresh} then a retry; if that
+ * fails, purge auth and redirect to /login. The backend wraps payloads in
  * {@code ApiResponse<T>}; endpoints use {@code transformResponse: r => r.data}.
  */
-const baseQueryWithReauth: BaseQueryFn<
-  string | FetchArgs,
-  unknown,
-  FetchBaseQueryError
-> = async (args, api, extraOptions) => {
-  let result = await rawBaseQuery(args, api, extraOptions);
-
-  if (result.error?.status === 401) {
-    const refreshToken = tokenStorage.getRefresh();
-    if (refreshToken) {
-      const refresh = await rawBaseQuery(
-        {
-          url: "/api/v1/auth/refresh",
-          method: "POST",
-          body: { refreshToken },
-        },
-        api,
-        extraOptions,
-      );
-      const data = (refresh.data as { data?: { accessToken: string; refreshToken: string } })?.data;
-      if (data?.accessToken) {
-        tokenStorage.set(data.accessToken, data.refreshToken);
-        result = await rawBaseQuery(args, api, extraOptions);
-        return result;
-      }
-    }
+const baseQueryWithReauth = createReauthBaseQuery({
+  rawBaseQuery,
+  tokens: tokenStorage,
+  refreshUrl: "/api/v1/auth/refresh",
+  onSessionLost: () => {
     clearAuthData();
-    if (typeof window !== "undefined") {
-      window.location.href = "/login";
-    }
-  }
-
-  return result;
-};
+    if (typeof window !== "undefined") window.location.href = "/login";
+  },
+});
 
 export const baseApi = createApi({
   reducerPath: "api",
