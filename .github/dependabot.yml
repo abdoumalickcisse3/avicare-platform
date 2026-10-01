@@ -1,0 +1,47 @@
+version: 2
+
+# Weekly update PRs. Minor and patch bumps are grouped into one PR per ecosystem to keep the noise
+# down; a major bump arrives as its own PR so it gets reviewed on its own. Every PR runs the same
+# CI as any other (Backend CI, Web CI, Mobile CI).
+updates:
+  - package-ecosystem: npm
+    directory: /web
+    schedule:
+      interval: weekly
+    groups:
+      web-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /landing
+    schedule:
+      interval: weekly
+    groups:
+      landing-minor-patch:
+        update-types: [minor, patch]
+
+  # Expo SDK packages are pinned to the SDK (`~57.x`): bump the SDK itself with `npx expo install`
+  # and ignore Dependabot's major proposals for them by closing the PR.
+  - package-ecosystem: npm
+    directory: /mobile
+    schedule:
+      interval: weekly
+    groups:
+      mobile-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: maven
+    directory: /backend
+    schedule:
+      interval: weekly
+    groups:
+      backend-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions-minor-patch:
+        update-types: [minor, patch]
