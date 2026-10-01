@@ -18,6 +18,7 @@
  */
 import { clearTokens, getRefreshToken } from './tokens';
 import { notifyAuthInvalidated } from '@/sync';
+import { revokePushDevice } from '@/push/revokePushDevice';
 import { resolveApiUrl } from '@/config/apiUrl';
 
 async function revokeRefreshToken(): Promise<void> {
@@ -35,6 +36,8 @@ async function revokeRefreshToken(): Promise<void> {
 }
 
 export async function signOut(): Promise<void> {
+  // Needs the access token, so it goes before the tokens are cleared.
+  await revokePushDevice();
   await revokeRefreshToken();
   await clearTokens();
   notifyAuthInvalidated();

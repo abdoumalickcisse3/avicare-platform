@@ -923,7 +923,7 @@ export interface PaymentInput {
 /* ===================== Notifications (Sprint C1) ===================== */
 
 export type NotificationSeverity = 'INFO' | 'WARNING' | 'CRITICAL';
-export type NotificationChannelKey = 'IN_APP' | 'WHATSAPP';
+export type NotificationChannelKey = 'IN_APP' | 'WHATSAPP' | 'PUSH';
 export type NotificationStatus = 'ACTIVE' | 'RESOLVED';
 
 /** One materialized notification (mirrors backend NotificationResponse). */
