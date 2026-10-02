@@ -8,6 +8,10 @@ jest.mock('expo-speech-recognition', () => ({
     stop: jest.fn(),
     abort: jest.fn(),
     requestPermissionsAsync: jest.fn(async () => ({ granted: false })),
+    // The hook asks the device what it can do before starting; keep the mock answering, or
+    // every screen that mounts the assistant reads a mic that claims to be unavailable.
+    isRecognitionAvailable: jest.fn(() => true),
+    supportsOnDeviceRecognition: jest.fn(() => true),
   },
   useSpeechRecognitionEvent: jest.fn(),
 }));
