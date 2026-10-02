@@ -25,7 +25,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useSelector } from 'react-redux';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowLeft, Check, Mic, Send, Sparkles, X } from 'lucide-react-native';
+import { AlertTriangle, ArrowLeft, Check, Mic, Send, Sparkles, X } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import {
@@ -227,6 +227,14 @@ export default function AssistantScreen() {
                 </Pressable>
               ))}
             </ScrollView>
+          ) : null}
+
+          {/* A dictation failure used to be invisible: the mic simply did nothing. */}
+          {speech.error ? (
+            <View style={styles.speechNotice}>
+              <AlertTriangle size={14} color={tokens.colors.warningDark} />
+              <Text style={styles.speechNoticeText}>{speech.error}</Text>
+            </View>
           ) : null}
 
           {/* Input bar */}
@@ -540,6 +548,19 @@ const styles = StyleSheet.create({
     borderColor: tokens.colors.primary[200],
   },
   chipText: { ...tokens.typography.bodyMd, color: tokens.colors.primary[700] },
+
+  speechNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.spacing[2],
+    marginHorizontal: tokens.spacing[4],
+    marginBottom: tokens.spacing[2],
+    paddingVertical: tokens.spacing[2],
+    paddingHorizontal: tokens.spacing[3],
+    borderRadius: tokens.radii.md,
+    backgroundColor: tokens.colors.warningLight,
+  },
+  speechNoticeText: { ...tokens.typography.bodySm, color: tokens.colors.warningDark, flexShrink: 1 },
 
   inputBar: {
     flexDirection: 'row',
