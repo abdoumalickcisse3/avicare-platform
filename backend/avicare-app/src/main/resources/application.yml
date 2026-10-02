@@ -23,6 +23,18 @@ spring:
     deserialization:
       fail-on-null-for-primitives: false
 
+  # Hibernate choisit son mappeur JSON tout seul, dans cet ordre : OSON, Jackson 2, Jackson 3,
+  # JSON-B. Jackson 2 est encore sur le classpath (le SDK Anthropic en dépend), donc c'est lui qui
+  # gagne — et un ObjectMapper Jackson 2 ne sait pas construire un tools.jackson.databind.JsonNode :
+  # la relecture de subscription_change_requests.requested_modules meurt sur « Cannot construct
+  # instance of JsonNode ». Le mappeur est donc imposé, ici et pas dans un profil, pour que les
+  # tranches de test l'aient aussi. Retirable le jour où Jackson 2 quitte le classpath.
+  jpa:
+    properties:
+      hibernate:
+        type:
+          json_format_mapper: jackson3
+
 server:
   port: ${SERVER_PORT:8080}
   shutdown: graceful
