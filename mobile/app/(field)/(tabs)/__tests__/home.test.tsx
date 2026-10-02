@@ -73,6 +73,13 @@ describe('Home', () => {
     expect(screen.getByText('Vente enregistrée')).toBeTruthy();
   });
 
+  it('ne garde qu’un bouton flottant : Jawdi, plus le « + »', async () => {
+    await render(<HomeScreen />);
+
+    // Le « + » menait à l'onglet Élevage, que la barre d'onglets atteint déjà.
+    expect(screen.queryByLabelText('Nouvelle saisie')).toBeNull();
+  });
+
   it('tints a bad-already fact red and something-needing-action orange', async () => {
     await render(<HomeScreen />);
 

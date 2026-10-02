@@ -36,6 +36,7 @@ import {
 } from '@/store/api/assistantApi';
 import { useSpeechInput } from '@/assistant/speech/useSpeechInput';
 import { SpeakButton } from '@/components/assistant/SpeakButton';
+import { JawdiGreeting } from '@/components/assistant/JawdiGreeting';
 import { Markdown } from '@/components/assistant/Markdown';
 
 type Kind = 'ANSWER' | 'DRAFT' | 'CLARIFICATION';
@@ -198,7 +199,7 @@ export default function AssistantScreen() {
             keyboardShouldPersistTaps="handled"
           >
             {empty ? (
-              <Welcome onPick={send} />
+              <JawdiGreeting suggestions={SUGGESTIONS} onPick={send} />
             ) : (
               messages.map((m) =>
                 m.role === 'user' ? (
@@ -440,25 +441,6 @@ function MicButton({ listening, onPress }: { listening: boolean; onPress: () => 
   );
 }
 
-function Welcome({ onPick }: { onPick: (s: string) => void }) {
-  return (
-    <View style={styles.welcome}>
-      <Avatar size={72} />
-      <Text style={styles.welcomeTitle}>Bonjour, je suis Jawdi.</Text>
-      <Text style={styles.welcomeSub}>
-        Votre conseiller d’élevage. Posez une question sur votre ferme, ou dictez une action — je m’appuie sur vos données réelles.
-      </Text>
-      <View style={styles.welcomeChips}>
-        {SUGGESTIONS.map((s) => (
-          <Pressable key={s} style={styles.chip} onPress={() => onPick(s)}>
-            <Text style={styles.chipText}>{s}</Text>
-          </Pressable>
-        ))}
-      </View>
-    </View>
-  );
-}
-
 /* ------------------------------------------------------------- styles */
 
 const GLASS_TINT = 'rgba(255,255,255,0.55)';
@@ -485,10 +467,6 @@ const styles = StyleSheet.create({
   threadScroll: { flex: 1 },
   thread: { padding: tokens.spacing[4], gap: tokens.spacing[4], flexGrow: 1 },
 
-  welcome: { alignItems: 'center', gap: tokens.spacing[4], paddingTop: tokens.spacing[10], paddingHorizontal: tokens.spacing[3] },
-  welcomeTitle: { ...tokens.typography.displayMd, color: tokens.colors.field.text, textAlign: 'center' },
-  welcomeSub: { ...tokens.typography.bodyMd, color: tokens.colors.field.textMuted, textAlign: 'center', maxWidth: 320 },
-  welcomeChips: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: tokens.spacing[2], marginTop: tokens.spacing[2] },
 
   userRow: { alignItems: 'flex-end' },
   userBubble: {
