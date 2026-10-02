@@ -53,6 +53,12 @@ updates:
       - dependency-name: "@expo/*"
       - dependency-name: "@expo-google-fonts/*"
       - dependency-name: "@react-native/*"
+      # Un module natif dont le nom ne commence pas par react-native- est passé par ce trou :
+      # async-storage 3.1.1 sous SDK 57, qui en attend 2.2.0 (#418). La partie JS s'installe,
+      # la partie native reste celle du build précédent, et la montée a déplacé le mock Jest du
+      # paquet — CI rouge pour une version que l'app ne peut de toute façon pas embarquer.
+      - dependency-name: "@react-native-async-storage/*"
+      - dependency-name: "@react-native-community/*"
 
   - package-ecosystem: maven
     directory: /backend
