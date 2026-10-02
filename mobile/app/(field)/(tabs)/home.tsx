@@ -25,7 +25,6 @@ import {
   Minus,
   PackageOpen,
   Pill,
-  Plus,
   PlusCircle,
   Receipt,
   Scale,
@@ -423,10 +422,9 @@ export default function HomeScreen() {
         )}
       </ScrollView>
 
+      {/* Un seul bouton flottant, et c'est Jawdi. Le « + » menait à l'onglet Élevage, que la
+          barre d'onglets atteint déjà d'un geste — il ne gagnait rien et volait la place. */}
       <MicButton onPress={() => router.push('/(field)/assistant')} style={styles.micFab} />
-      <Pressable style={styles.fab} onPress={goElevage} accessibilityRole="button" accessibilityLabel="Nouvelle saisie">
-        <Plus size={30} color={tokens.colors.earth} />
-      </Pressable>
     </SafeAreaView>
   );
 }
@@ -498,6 +496,5 @@ const styles = StyleSheet.create({
   actTime: { ...tokens.typography.bodySm, color: tokens.colors.neutral[400] },
 
   /* fabs */
-  fab: { position: 'absolute', right: tokens.spacing[5], bottom: tokens.spacing[6], width: 60, height: 60, borderRadius: tokens.radii.full, backgroundColor: tokens.colors.accent[400], alignItems: 'center', justifyContent: 'center', shadowColor: '#1C1917', shadowOpacity: 0.25, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 6 },
-  micFab: { position: 'absolute', right: tokens.spacing[5], bottom: tokens.spacing[6] + 72 },
+  micFab: { position: 'absolute', right: tokens.spacing[5], bottom: tokens.spacing[6] },
 });

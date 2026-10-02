@@ -316,8 +316,10 @@ export default function LotDetailScreen() {
         }
         style={styles.micFab}
       />
+      {/* La saisie du jour porte tout ce qui se note chaque matin — mortalité incluse. Le « + »
+          y mène donc, au lieu de n'ouvrir que la seule mortalité. */}
       {canWrite && (
-        <Pressable style={styles.fab} onPress={() => router.push(`/(field)/lots/${batchId}/mortalite`)} accessibilityRole="button" accessibilityLabel="Nouvelle saisie">
+        <Pressable style={styles.fab} onPress={() => router.push(`/(field)/lots/${batchId}/journalier`)} accessibilityRole="button" accessibilityLabel="Saisie du jour">
           <Plus size={30} color={tokens.colors.earth} />
         </Pressable>
       )}
