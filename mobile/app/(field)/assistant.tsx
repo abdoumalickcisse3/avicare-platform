@@ -35,6 +35,7 @@ import {
   type Risk,
 } from '@/store/api/assistantApi';
 import { useSpeechInput } from '@/assistant/speech/useSpeechInput';
+import { SpeakButton } from '@/components/assistant/SpeakButton';
 import { Markdown } from '@/components/assistant/Markdown';
 
 type Kind = 'ANSWER' | 'DRAFT' | 'CLARIFICATION';
@@ -325,6 +326,7 @@ function AssistantBubble({ text }: { text: string }) {
       <Avatar size={30} />
       <Glass radius={18} style={styles.assistantBubble}>
         <Markdown text={text} />
+        <SpeakButton text={text} />
       </Glass>
     </View>
   );
@@ -344,6 +346,7 @@ function DraftCard({ msg, onConfirm, onCancel }: { msg: Msg; onConfirm: () => vo
           <Text style={styles.draftAction}>{msg.action}</Text>
         </View>
         <Text style={styles.draftSummary}>{msg.summary}</Text>
+        <SpeakButton text={msg.summary ?? ''} />
 
         {done ? (
           <Text
