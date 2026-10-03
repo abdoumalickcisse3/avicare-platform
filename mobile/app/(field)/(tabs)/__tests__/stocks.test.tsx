@@ -35,8 +35,9 @@ const alerts = {
   recentMovements: [],
 };
 
+const mockPush = jest.fn();
 jest.mock('expo-router', () => ({
-  useRouter: jest.fn(() => ({ push: jest.fn() })),
+  useRouter: jest.fn(() => ({ push: mockPush })),
   Redirect: () => null,
 }));
 jest.mock('react-redux', () => ({
@@ -57,7 +58,33 @@ jest.mock('@/store/api/inventoryStockApi', () => ({
 
 import StocksScreen from '../stocks';
 
+/** Remplace une requête de l'API stock le temps d'un test, puis la remet comme déclarée. */
+async function withStockApi(
+  overrides: Record<string, unknown>,
+  run: () => Promise<void>,
+): Promise<void> {
+  const api = jest.requireMock('@/store/api/inventoryStockApi');
+  const saved = Object.fromEntries(
+    Object.keys(overrides).map((k) => [k, api[k].getMockImplementation()]),
+  );
+  for (const [k, v] of Object.entries(overrides)) api[k].mockImplementation(() => v);
+  try {
+    await run();
+  } finally {
+    for (const k of Object.keys(overrides)) api[k].mockImplementation(saved[k]);
+  }
+}
+
+const EMPTY_ALERTS = {
+  lowStockItems: [],
+  negativeStockItems: [],
+  pendingPurchaseOrders: [],
+  recentMovements: [],
+};
+
 describe('Stocks tab', () => {
+  beforeEach(() => mockPush.mockClear());
+
   it('regroupe les alertes de tous types dans une seule section', async () => {
     await render(<StocksScreen />);
 
@@ -137,5 +164,49 @@ describe('Stocks tab', () => {
     expect(screen.getByText(/6 j de retard/).props.style).toContainEqual(
       expect.objectContaining({ color: '#F8961E' }),
     );
+  });
+
+  it('ouvre les quatre autres écrans du module stock', async () => {
+    // Le web porte ces quatre entrées sous la liste ; sur mobile elles n'existaient que dans le
+    // tiroir, donc un éleveur devant un stock vide n'avait aucun moyen de voir où sont ses
+    // articles ni comment en faire entrer.
+    await render(<StocksScreen />);
+
+    for (const label of ['Bibliothèque', 'Fournisseurs', "Bons d'achat", 'Formules']) {
+      expect(screen.getByLabelText(label)).toBeTruthy();
+    }
+
+    await act(async () => fireEvent.press(screen.getByLabelText('Bibliothèque')));
+    expect(mockPush).toHaveBeenCalledWith('/(field)/stocks/bibliotheque');
+  });
+
+  it("n'envoie plus l'éleveur sur l'application web quand le stock est vide", async () => {
+    await withStockApi(
+      {
+        useGetStockItemsQuery: { data: [], isLoading: false },
+        useGetLowStockItemsQuery: { data: [] },
+        useGetInventoryAlertsQuery: { data: EMPTY_ALERTS },
+      },
+      async () => {
+        await render(<StocksScreen />);
+
+        // Le mobile sait faire entrer du stock : un bon d'achat et une feuille de mouvement.
+        expect(screen.queryByText(/application web/i)).toBeNull();
+        await act(async () => fireEvent.press(screen.getByLabelText("Créer un bon d'achat")));
+        expect(mockPush).toHaveBeenCalledWith('/(field)/stocks/achat-nouveau');
+      },
+    );
+  });
+
+  it('distingue une recherche sans résultat d’un stock vide', async () => {
+    await render(<StocksScreen />);
+
+    await act(async () =>
+      fireEvent.changeText(screen.getByPlaceholderText('Rechercher un article…'), 'zzz'),
+    );
+
+    expect(screen.getByText(/Aucun article ne correspond/)).toBeTruthy();
+    // Proposer de commander quelque chose n'a aucun sens ici : le stock n'est pas vide.
+    expect(screen.queryByLabelText("Créer un bon d'achat")).toBeNull();
   });
 });

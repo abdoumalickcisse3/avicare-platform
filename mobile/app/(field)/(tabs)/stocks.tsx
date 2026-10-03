@@ -4,7 +4,10 @@
  * row (articles / alertes / valeur), a single fused Alertes section (negative
  * stock, low stock, overdue orders — three colored cards used to compete for
  * the same attention), a search box and the full stock-item list. Tapping an
- * article opens its detail (quantity, days of cover, threshold, ledger).
+ * article opens its detail (quantity, days of cover, threshold, ledger). Below
+ * the list, the web's four quick actions (Bibliothèque, Fournisseurs, Bons
+ * d'achat, Formules) — they existed only in the drawer, so a farmer looking at
+ * a stock he had just configured had no way to reach his own catalogue.
  * Shown only to roles with `inventory:read`.
  */
 import { useMemo, useState } from 'react';
@@ -13,10 +16,19 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
-import { AlertTriangle, PackageOpen, Search, Truck, type LucideIcon } from 'lucide-react-native';
+import {
+  AlertTriangle,
+  BookOpen,
+  ClipboardList,
+  PackageOpen,
+  Search,
+  Truck,
+  Wheat,
+  type LucideIcon,
+} from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { AppHeader } from '@/components/AppHeader';
-import { TicketRow } from '@/components/ui';
+import { QuickAction, SectionHeader, TicketRow } from '@/components/ui';
 import {
   useGetInventoryAlertsQuery,
   useGetLowStockItemsQuery,
@@ -40,6 +52,14 @@ function articleLabel(key: string): string {
   const s = key.replace(/[_-]+/g, ' ').trim();
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
+
+/** The web `/stocks` quick actions, same four screens, same order. */
+const STOCK_ACTIONS: { label: string; icon: LucideIcon; tint: string; route: string }[] = [
+  { label: 'Bibliothèque', icon: BookOpen, tint: tokens.colors.primary[600], route: '/(field)/stocks/bibliotheque' },
+  { label: 'Fournisseurs', icon: Truck, tint: tokens.colors.infoDark, route: '/(field)/stocks/fournisseurs' },
+  { label: "Bons d'achat", icon: ClipboardList, tint: tokens.colors.accent[400], route: '/(field)/stocks/achats' },
+  { label: 'Formules', icon: Wheat, tint: tokens.colors.successDark, route: '/(field)/stocks/formules' },
+];
 
 function isLow(i: StockItem): boolean {
   return i.alertThreshold !== null && i.currentQuantity <= i.alertThreshold;
@@ -163,8 +183,32 @@ export default function StocksScreen() {
         ) : filtered.length === 0 ? (
           <View style={styles.emptyBox}>
             <View style={styles.emptyDisc}><PackageOpen size={28} color={tokens.colors.primary[600]} /></View>
-            <Text style={styles.emptyText}>Aucun article en stock.</Text>
-            <Text style={styles.emptySub}>Le stock se crée à la réception d&apos;un bon d&apos;achat ou via un mouvement (application web).</Text>
+            {q.trim() !== '' ? (
+              // Une recherche sans résultat n'est pas un stock vide : proposer d'y faire entrer
+              // quelque chose serait un contresens.
+              <>
+                <Text style={styles.emptyText}>Aucun résultat</Text>
+                <Text style={styles.emptySub}>Aucun article ne correspond à « {q.trim()} ».</Text>
+              </>
+            ) : (
+              <>
+                <Text style={styles.emptyText}>Aucun article en stock.</Text>
+                <Text style={styles.emptySub}>
+                  Déclarez vos articles dans la Bibliothèque, puis faites-les entrer par un bon
+                  d&apos;achat : à la réception, la quantité tombe dans le stock.
+                </Text>
+                {canWrite && (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Créer un bon d'achat"
+                    onPress={() => router.push('/(field)/stocks/achat-nouveau')}
+                    style={styles.emptyCta}
+                  >
+                    <Text style={styles.emptyCtaLabel}>Créer un bon d&apos;achat</Text>
+                  </Pressable>
+                )}
+              </>
+            )}
           </View>
         ) : (
           <View style={styles.list}>
@@ -204,6 +248,16 @@ export default function StocksScreen() {
             })}
           </View>
         )}
+        <View style={styles.qaBlock}>
+          <SectionHeader title="Actions rapides" />
+          <View style={styles.qaGrid}>
+            {STOCK_ACTIONS.map((a) => (
+              <View key={a.label} style={styles.qaCell}>
+                <QuickAction label={a.label} icon={a.icon} tint={a.tint} onPress={() => router.push(a.route)} />
+              </View>
+            ))}
+          </View>
+        </View>
       </ScrollView>
 
     </SafeAreaView>
@@ -232,6 +286,13 @@ const styles = StyleSheet.create({
   emptyDisc: { width: 60, height: 60, borderRadius: tokens.radii.full, backgroundColor: tokens.colors.primary[50], alignItems: 'center', justifyContent: 'center' },
   emptyText: { ...tokens.typography.headingMd, color: tokens.colors.field.text },
   emptySub: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, textAlign: 'center', paddingHorizontal: tokens.spacing[6] },
+
+  emptyCta: { minHeight: tokens.touch.button, borderRadius: tokens.radii.lg, backgroundColor: tokens.colors.accent[400], alignItems: 'center', justifyContent: 'center', paddingHorizontal: tokens.spacing[5], marginTop: tokens.spacing[2] },
+  emptyCtaLabel: { ...tokens.typography.button, fontSize: 15, color: tokens.colors.primary[900] },
+
+  qaBlock: { marginTop: tokens.spacing[6] },
+  qaGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: tokens.spacing[3] },
+  qaCell: { width: '48%' },
 
   list: { gap: tokens.spacing[3] },
   row: { paddingVertical: tokens.spacing[4], gap: tokens.spacing[3] },
