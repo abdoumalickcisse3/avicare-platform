@@ -22,6 +22,7 @@
 | Base corrompue, données perdues | [Restaurer une sauvegarde](ops/restaurer-une-sauvegarde.md) | CRITICAL |
 | « Le site ne marche pas », plus rien ne répond | [La plateforme ne répond plus](ops/plateforme-injoignable.md) | CRITICAL |
 | Malick est injoignable depuis des jours | [Propriétaire indisponible](recovery/proprietaire-indisponible.md) | variable |
+| « Je veux que le dépôt cesse d'être public » | [Passer le dépôt en privé](ops/passer-le-depot-en-prive.md) | préventif |
 
 Le dernier ne s'adresse pas à toi mais au **contact de secours** : c'est le seul runbook écrit pour
 quelqu'un d'autre, et il suppose que cette personne existe et a été briefée
@@ -47,4 +48,5 @@ Chaque runbook porte une ligne **« Vérifié »** disant quand ses étapes ont 
 quel environnement**. Un runbook rejoué en local n'est pas un runbook rejoué en production, et
 prétendre le contraire est pire que ne rien écrire — c'est une confiance qu'on n'a pas gagnée.
 
-Modèle : voir n'importe lequel des cinq. Symptômes → Diagnostic → Résolution → Après.
+Modèle : voir n'importe lequel des autres. Symptômes → Diagnostic → Résolution → Après.
+(Le compte exact vieillissait à chaque ajout — il n'est plus écrit.)
