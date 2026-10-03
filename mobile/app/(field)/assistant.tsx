@@ -25,7 +25,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useSelector } from 'react-redux';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { AlertTriangle, ArrowLeft, Check, Mic, Send, Sparkles, X } from 'lucide-react-native';
+import { AlertTriangle, ArrowLeft, Check, Mic, Send, X } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import {
@@ -37,6 +37,7 @@ import {
 import { useSpeechInput } from '@/assistant/speech/useSpeechInput';
 import { SpeakButton } from '@/components/assistant/SpeakButton';
 import { JawdiGreeting } from '@/components/assistant/JawdiGreeting';
+import { JawdiFace } from '@/components/assistant/JawdiFace';
 import { Markdown } from '@/components/assistant/Markdown';
 
 type Kind = 'ANSWER' | 'DRAFT' | 'CLARIFICATION';
@@ -273,15 +274,13 @@ export default function AssistantScreen() {
 
 /* ------------------------------------------------------------- pieces */
 
+/**
+ * Who is speaking. The same face as the button and the greeting — but without the hand: a wave
+ * is a greeting, and greeting the reader again beside every single reply would be ten hands
+ * waving at once.
+ */
 function Avatar({ size = 40 }: { size?: number }) {
-  return (
-    <LinearGradient
-      colors={[tokens.colors.primary[500], tokens.colors.primary[700]]}
-      style={[styles.avatar, { width: size, height: size, borderRadius: size / 2 }]}
-    >
-      <Sparkles size={size * 0.5} color={tokens.colors.neutral[0]} />
-    </LinearGradient>
-  );
+  return <JawdiFace size={size} wave={false} />;
 }
 
 /**
@@ -462,7 +461,6 @@ const styles = StyleSheet.create({
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   onlineDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: tokens.colors.primary[500] },
   statusText: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted },
-  avatar: { alignItems: 'center', justifyContent: 'center' },
 
   threadScroll: { flex: 1 },
   thread: { padding: tokens.spacing[4], gap: tokens.spacing[4], flexGrow: 1 },
