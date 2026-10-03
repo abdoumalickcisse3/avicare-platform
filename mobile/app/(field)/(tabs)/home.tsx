@@ -40,7 +40,7 @@ import { tokens } from '@/theme';
 import { SectionHeader, TicketRow } from '@/components/ui';
 import { AppHeader } from '@/components/AppHeader';
 import { Sparkline } from '@/components/charts/Sparkline';
-import { MicButton } from '@/components/assistant/MicButton';
+import { JawdiButton } from '@/components/assistant/JawdiButton';
 import { MyNetworkCard } from '@/components/field/MyNetworkCard';
 import { AnnouncementBanner } from '@/components/field/AnnouncementBanner';
 import { BenchmarkCard } from '@/components/field/BenchmarkCard';
@@ -424,7 +424,7 @@ export default function HomeScreen() {
 
       {/* Un seul bouton flottant, et c'est Jawdi. Le « + » menait à l'onglet Élevage, que la
           barre d'onglets atteint déjà d'un geste — il ne gagnait rien et volait la place. */}
-      <MicButton onPress={() => router.push('/(field)/assistant')} style={styles.micFab} />
+      <JawdiButton onPress={() => router.push('/(field)/assistant')} style={styles.jawdiFab} />
     </SafeAreaView>
   );
 }
@@ -496,5 +496,5 @@ const styles = StyleSheet.create({
   actTime: { ...tokens.typography.bodySm, color: tokens.colors.neutral[400] },
 
   /* fabs */
-  micFab: { position: 'absolute', right: tokens.spacing[5], bottom: tokens.spacing[6] },
+  jawdiFab: { position: 'absolute', right: tokens.spacing[5], bottom: tokens.spacing[6] },
 });

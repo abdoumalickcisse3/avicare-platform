@@ -4,7 +4,7 @@ jest.mock('expo-router', () => ({ useRouter: jest.fn(() => ({ push: jest.fn() })
 jest.mock('react-redux', () => ({ useSelector: jest.fn(() => 7), useDispatch: jest.fn(() => jest.fn()), useStore: jest.fn(() => ({})) }));
 jest.mock('@/components/AppHeader', () => ({ AppHeader: () => null }));
 jest.mock('@/components/charts/Sparkline', () => ({ Sparkline: () => null }));
-jest.mock('@/components/assistant/MicButton', () => ({ MicButton: () => null }));
+jest.mock('@/components/assistant/JawdiButton', () => ({ JawdiButton: () => null }));
 jest.mock('@/auth/useSession', () => ({ useFarmAccess: jest.fn(() => ({ can: () => true, isAdmin: true, farmRole: 'OWNER', session: null })) }));
 jest.mock('@/store/api/farmsApi', () => ({ useListFarmsQuery: jest.fn(() => ({ data: [{ id: 7, name: 'Ferme Test' }] })) }));
 // Added with the banner and the comparison card: mocks are per API module, so a component

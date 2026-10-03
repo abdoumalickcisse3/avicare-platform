@@ -21,7 +21,7 @@ import { GrowthChart, type GrowthPoint } from '@/components/charts/GrowthChart';
 import { MortalityChart } from '@/components/charts/MortalityChart';
 import { FeedConsumptionChart } from '@/components/charts/FeedConsumptionChart';
 import { HealthSection } from '@/components/health/HealthSection';
-import { MicButton } from '@/components/assistant/MicButton';
+import { JawdiButton } from '@/components/assistant/JawdiButton';
 import { scoreMeta, daysUntil } from '@/lib/poultry';
 import {
   useGetBatchQuery,
@@ -309,12 +309,12 @@ export default function LotDetailScreen() {
         )}
       </ScrollView>
 
-      {/* Assistant vocal (Jawdi) as a full page, scoped to this lot; quick-entry FAB gated. */}
-      <MicButton
+      {/* Jawdi, named and in person, as a full page scoped to this lot; quick-entry FAB gated. */}
+      <JawdiButton
         onPress={() =>
           router.push({ pathname: '/(field)/assistant', params: { unitId: String(batchId) } })
         }
-        style={styles.micFab}
+        style={styles.jawdiFab}
       />
       {/* La saisie du jour porte tout ce qui se note chaque matin — mortalité incluse. Le « + »
           y mène donc, au lieu de n'ouvrir que la seule mortalité. */}
@@ -411,5 +411,5 @@ const styles = StyleSheet.create({
   recTitle: { ...tokens.typography.bodyMd, fontWeight: '600', color: tokens.colors.field.text },
   recSub: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted },
   fab: { position: 'absolute', right: tokens.spacing[5], bottom: tokens.spacing[6], width: 60, height: 60, borderRadius: tokens.radii.full, backgroundColor: tokens.colors.accent[400], alignItems: 'center', justifyContent: 'center', shadowColor: '#1C1917', shadowOpacity: 0.25, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 6 },
-  micFab: { position: 'absolute', right: tokens.spacing[5], bottom: tokens.spacing[6] + 72 },
+  jawdiFab: { position: 'absolute', right: tokens.spacing[5], bottom: tokens.spacing[6] + 72 },
 });
