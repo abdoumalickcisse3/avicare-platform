@@ -44,7 +44,7 @@ jest.mock('@/components/charts/FeedConsumptionChart', () => ({ FeedConsumptionCh
 jest.mock('@/components/health/HealthSection', () => ({ HealthSection: () => null }));
 jest.mock('@/components/poultry/BatchClosureCard', () => ({ BatchClosureCard: () => null }));
 jest.mock('@/components/poultry/ChickCostSheet', () => ({ ChickCostSheet: () => null }));
-jest.mock('@/components/assistant/MicButton', () => ({ MicButton: () => null }));
+jest.mock('@/components/assistant/JawdiButton', () => ({ JawdiButton: () => null }));
 
 import BatchScreen from '../index';
 
