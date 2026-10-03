@@ -65,4 +65,28 @@ class InventoryCatalogServiceTest {
     assertThat(custom.label()).isEqualTo("Mélange maison");
     assertThat(custom.typicalUnitPriceXof()).isNull();
   }
+
+  /**
+   * A stock row carries no label snapshot, so every response that names an article resolves it
+   * here. An entry whose catalog value has no {@code label} must simply be absent from the map —
+   * {@code Collectors.toMap} would blow up on the null value.
+   */
+  @Test
+  void labelsByKey_mapsEveryArticle_andSkipsAMissingLabel() {
+    when(parametersFacade.listForFarm(7L, "inventory_items"))
+        .thenReturn(
+            List.of(
+                new CatalogEntryInfo(
+                    "inventory_items",
+                    "feed_starter_broiler",
+                    Map.of("label", "Démarrage poulet chair", "unit", "kg"),
+                    false),
+                new CatalogEntryInfo(
+                    "inventory_items", "sans_libelle", Map.of("unit", "kg"), true)));
+    when(healthCatalogService.listTreatments(7L)).thenReturn(List.of());
+
+    Map<String, String> labels = service.labelsByKey(7L);
+
+    assertThat(labels).containsExactly(Map.entry("feed_starter_broiler", "Démarrage poulet chair"));
+  }
 }

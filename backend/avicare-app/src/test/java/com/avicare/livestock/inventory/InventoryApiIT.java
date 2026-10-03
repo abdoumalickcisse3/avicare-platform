@@ -219,6 +219,56 @@ class InventoryApiIT {
         .anyMatch(s -> s.get("stockItemId").asLong() == stockItemId);
   }
 
+  /**
+   * A brand-new farm has configured articles (onboarding seeds the catalog) but no movement yet:
+   * the overview must already list them at 0, named, and each one openable — otherwise the farmer
+   * finishes signup in front of an empty screen.
+   */
+  @Test
+  void stockItems_onAFarmWithNoMovement_listTheCatalogArticlesAtZero() throws Exception {
+    String owner = onboardOwner("inv-seed");
+    long farmId = createFarm(owner, "Ferme Sans Mouvement");
+    owner = relogin("inv-seed");
+    enableModule(owner, farmId, "module.inventory");
+    String inv = "/api/v1/farms/" + farmId + "/inventory";
+
+    JsonNode articles = data(getOk(inv + "/catalog/articles", owner));
+    List<String> inventoryKeys =
+        stream(articles)
+            .filter(a -> a.get("articleSource").asText().equals("INVENTORY"))
+            .map(a -> a.get("articleKey").asText())
+            .toList();
+    assertThat(inventoryKeys).isNotEmpty();
+
+    JsonNode stockItems = data(getOk(inv + "/stock-items", owner));
+    assertThat(stream(stockItems).map(s -> s.get("articleKey").asText()).toList())
+        .containsAll(inventoryKeys);
+    JsonNode first =
+        stream(stockItems)
+            .filter(s -> s.get("articleKey").asText().equals(inventoryKeys.get(0)))
+            .findFirst()
+            .orElseThrow();
+    assertThat(first.get("currentQuantity").asDouble()).isEqualTo(0.0);
+    assertThat(first.get("label").asText()).isNotBlank();
+    assertThat(first.get("articleSource").asText()).isEqualTo("INVENTORY");
+
+    // Medications stay out: they are managed in Sanitaire.
+    assertThat(stream(stockItems))
+        .noneMatch(s -> s.get("articleSource").asText().equals("TREATMENT"));
+
+    // The row is real: it can be opened and given a threshold.
+    long id = first.get("id").asLong();
+    assertThat(data(getOk(inv + "/stock-items/" + id, owner)).get("label").asText()).isNotBlank();
+    assertThat(
+            data(putOk(inv + "/stock-items/" + id + "/threshold", owner, "{\"threshold\":25}"))
+                .get("alertThreshold")
+                .asDouble())
+        .isEqualTo(25.0);
+
+    // Idempotent: a second read creates no duplicate.
+    assertThat(data(getOk(inv + "/stock-items", owner)).size()).isEqualTo(stockItems.size());
+  }
+
   @Test
   void inventoryEndpoint_withoutModule_returns403() throws Exception {
     String owner = onboardOwner("inv-gate");

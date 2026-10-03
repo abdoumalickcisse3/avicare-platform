@@ -6,6 +6,8 @@ import com.avicare.livestock.domain.StockItem;
 import com.avicare.livestock.repository.StockItemRepository;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,6 +68,47 @@ public class StockItemService {
                 new NotFoundException(
                     "ARTICLE_NOT_FOUND",
                     "Unknown article " + articleKey + " (source " + source + ")"));
+  }
+
+  /**
+   * Materialize a zero-quantity stock row for every {@code INVENTORY} article the farm has in its
+   * catalog but never stocked. An article configured at onboarding only lands in {@code
+   * inventory_items}: without this, the overview stayed empty until the first purchase-order
+   * reception, and the farmer had nowhere to see — or set a threshold on — what he had just
+   * configured.
+   *
+   * <p>Idempotent, and it never touches a row that already exists: real quantities are safe, and an
+   * article the farmer hid with {@code deactivate} stays hidden. Medications ({@code TREATMENT})
+   * are left out — they are managed in Sanitaire and would bury the feed under products nobody
+   * stocks.
+   */
+  @Transactional
+  public void syncCatalogArticles(Long farmId, Long userId) {
+    Set<String> stocked =
+        stockItemRepository.findByFarmIdOrderById(farmId).stream()
+            .filter(s -> s.getArticleSource() == ArticleSource.INVENTORY)
+            .map(StockItem::getArticleKey)
+            .collect(Collectors.toSet());
+    List<StockItem> missing =
+        inventoryCatalogService.listInventoryArticles(farmId).stream()
+            .filter(c -> !stocked.contains(c.articleKey()))
+            .map(c -> emptyStock(farmId, c, userId))
+            .toList();
+    if (!missing.isEmpty()) {
+      stockItemRepository.saveAll(missing);
+    }
+  }
+
+  private static StockItem emptyStock(Long farmId, InventoryCatalogItemDto catalog, Long userId) {
+    StockItem item = new StockItem();
+    item.setFarmId(farmId);
+    item.setArticleSource(ArticleSource.INVENTORY);
+    item.setArticleKey(catalog.articleKey());
+    item.setCurrentQuantity(BigDecimal.ZERO);
+    item.setUnit(catalog.unit());
+    item.setTypicalUnitPriceXof(catalog.typicalUnitPriceXof());
+    item.setCreatedBy(userId);
+    return item;
   }
 
   @Transactional(readOnly = true)

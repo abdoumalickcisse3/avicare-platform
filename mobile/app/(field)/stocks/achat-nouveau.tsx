@@ -33,6 +33,7 @@ import {
 import { formatCurrency } from '@/lib/format';
 import type { ArticleSource, PurchaseOrderInput } from '@/types';
 
+/** Fallback only: the stock row carries the catalog label, null just for an unknown key. */
 function articleLabel(key: string): string {
   const s = key.replace(/[_-]+/g, ' ').trim();
   return s.charAt(0).toUpperCase() + s.slice(1);
@@ -119,11 +120,17 @@ export default function AchatNouveauScreen() {
   const total = lines.reduce((s, l) => s + l.quantity * l.unitPriceXof, 0);
   const supplierLabel = supplierId == null ? 'Choisir un fournisseur' : (suppliers?.find((s) => s.id === supplierId)?.commercialName ?? 'Fournisseur');
 
-  const addArticle = (articleKey: string, articleSource: ArticleSource, unit: string, price: number) => {
+  const addArticle = (
+    articleKey: string,
+    articleSource: ArticleSource,
+    unit: string,
+    price: number,
+    label: string | null,
+  ) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setLines((cur) => {
       if (cur.some((l) => l.articleKey === articleKey)) return cur;
-      return [...cur, { articleKey, articleSource, label: articleLabel(articleKey), unit, quantity: 1, unitPriceXof: price }];
+      return [...cur, { articleKey, articleSource, label: label ?? articleLabel(articleKey), unit, quantity: 1, unitPriceXof: price }];
     });
   };
   const setQty = (key: string, qty: number) =>
@@ -203,13 +210,13 @@ export default function AchatNouveauScreen() {
             {(items ?? []).filter((i) => i.active).map((i) => (
               <Pressable
                 key={i.id}
-                onPress={() => addArticle(i.articleKey, i.articleSource, i.unit ?? 'unité', i.typicalUnitPriceXof ?? 0)}
+                onPress={() => addArticle(i.articleKey, i.articleSource, i.unit ?? 'unité', i.typicalUnitPriceXof ?? 0, i.label)}
                 accessibilityRole="button"
-                accessibilityLabel={`Ajouter ${articleLabel(i.articleKey)}`}
+                accessibilityLabel={`Ajouter ${i.label ?? articleLabel(i.articleKey)}`}
                 style={styles.pickerCard}
               >
                 <Package size={18} color={tokens.colors.primary[600]} />
-                <Text style={styles.pickerLabel} numberOfLines={1}>{articleLabel(i.articleKey)}</Text>
+                <Text style={styles.pickerLabel} numberOfLines={1}>{i.label ?? articleLabel(i.articleKey)}</Text>
                 <Text style={styles.pickerMeta}>{i.unit ?? ''}</Text>
               </Pressable>
             ))}
