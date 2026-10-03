@@ -34,8 +34,8 @@ const SOURCE_STYLE: Record<ArticleSource, { label: string; bg: string; fg: strin
   PRODUCTION: { label: 'Production', bg: tokens.colors.successLight, fg: tokens.colors.successDark },
 };
 
-/** Humanize an article key (`feed_layer` → "Feed layer") — the mobile stock
- * item carries no label snapshot, so we derive a readable name from the key. */
+/** Humanize an article key (`feed_layer` → "Feed layer"). Fallback only: the backend resolves
+ * the catalog label, and it is null just for a key the catalog no longer knows. */
 function articleLabel(key: string): string {
   const s = key.replace(/[_-]+/g, ' ').trim();
   return s.charAt(0).toUpperCase() + s.slice(1);
@@ -64,7 +64,11 @@ export default function StocksScreen() {
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     const rows = (items ?? []).filter((i) => i.active);
-    return needle ? rows.filter((i) => i.articleKey.toLowerCase().includes(needle)) : rows;
+    // Sur le libellé ET sur la clé : la liste porte maintenant tous les articles configurés, et
+    // l'éleveur cherche « maïs », pas « mais_concasse ».
+    return needle
+      ? rows.filter((i) => `${i.label ?? ''} ${i.articleKey}`.toLowerCase().includes(needle))
+      : rows;
   }, [items, q]);
 
   if (selectedFarmId === null) return <Redirect href="/(field)" />;
@@ -87,7 +91,7 @@ export default function StocksScreen() {
       key: `low-${i.id}`,
       icon: AlertTriangle,
       tint: tokens.colors.accent[400],
-      label: articleLabel(i.articleKey),
+      label: i.label ?? articleLabel(i.articleKey),
       value: `${formatNumber(i.currentQuantity)}${i.unit ? ` ${i.unit}` : ''}`,
     })),
     ...overdueOrders.map((o): AlertRow => ({
@@ -176,11 +180,11 @@ export default function StocksScreen() {
                   // movement by hand is a correction, and lives one tap away on that screen.
                   onPress={() => router.push(`/(field)/stocks/${i.id}`)}
                   accessibilityRole="button"
-                  accessibilityLabel={`Ouvrir ${articleLabel(i.articleKey)}`}
+                  accessibilityLabel={`Ouvrir ${i.label ?? articleLabel(i.articleKey)}`}
                 >
                   <View style={styles.cardTop}>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.name} numberOfLines={1}>{articleLabel(i.articleKey)}</Text>
+                      <Text style={styles.name} numberOfLines={1}>{i.label ?? articleLabel(i.articleKey)}</Text>
                       {i.lastMovementAt ? (
                         <Text style={styles.meta}>Dernier mouvement {formatRelative(i.lastMovementAt)}</Text>
                       ) : (

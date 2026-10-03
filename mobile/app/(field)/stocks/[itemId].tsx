@@ -82,7 +82,7 @@ export default function StockItemScreen() {
 
   if (farmId === null) return <Redirect href="/(field)" />;
 
-  const name = item ? articleLabel(item.articleKey) : 'Article';
+  const name = item ? (item.label ?? articleLabel(item.articleKey)) : 'Article';
   const low =
     item != null && item.alertThreshold != null && item.currentQuantity <= item.alertThreshold;
 

@@ -1,10 +1,11 @@
-import { render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import type { StockItem } from '@/types';
 
 const lowItem: StockItem = {
   id: 5,
   farmId: 7,
   articleKey: 'feed_layer',
+  label: 'Aliment ponte',
   articleSource: 'INVENTORY',
   currentQuantity: 12,
   unit: 'kg',
@@ -62,10 +63,48 @@ describe('Stocks tab', () => {
 
     expect(screen.getByText('Alertes (3)')).toBeTruthy();
     expect(screen.getByText('Maïs concassé')).toBeTruthy();
-    expect(screen.getAllByText('Feed layer').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Aliment ponte').length).toBeGreaterThan(0);
     expect(screen.getByText(/BA-2026-004/)).toBeTruthy();
     expect(screen.getByText(/6 j de retard/)).toBeTruthy();
     expect(screen.getByText(/Un compte sous zéro n'est pas une rupture/)).toBeTruthy();
+  });
+
+  it("nomme l'article avec son libellé de catalogue, pas avec sa clé technique", async () => {
+    await render(<StocksScreen />);
+
+    // Les articles configurés à l'inscription arrivent à 0 : affichés par leur clé, la vue
+    // d'ensemble se lisait « Feed layer », « Feed starter broiler »…
+    expect(screen.getAllByText('Aliment ponte').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Feed layer')).toBeNull();
+  });
+
+  it('retombe sur la clé humanisée quand le catalogue ne connaît plus l’article', async () => {
+    const { useGetStockItemsQuery } = jest.requireMock('@/store/api/inventoryStockApi');
+    const asDeclared = useGetStockItemsQuery.getMockImplementation();
+    useGetStockItemsQuery.mockImplementation(() => ({
+      data: [{ ...lowItem, label: null }],
+      isLoading: false,
+    }));
+    try {
+      await render(<StocksScreen />);
+
+      expect(screen.getAllByText('Feed layer').length).toBeGreaterThan(0);
+    } finally {
+      useGetStockItemsQuery.mockImplementation(asDeclared);
+    }
+  });
+
+  it('cherche sur le libellé affiché, pas seulement sur la clé technique', async () => {
+    await render(<StocksScreen />);
+    const search = screen.getByPlaceholderText('Rechercher un article…');
+
+    // « Aliment ponte » apparaît deux fois quand la ligne survit au filtre : dans Alertes (jamais
+    // filtré) et dans la liste. Une seule fois ⇒ la liste l'a écartée.
+    await act(async () => fireEvent.changeText(search, 'ponte'));
+    expect(screen.getAllByText('Aliment ponte')).toHaveLength(2);
+
+    await act(async () => fireEvent.changeText(search, 'zzz'));
+    expect(screen.getAllByText('Aliment ponte')).toHaveLength(1);
   });
 
   it("affiche le nombre d'alertes dans la bande ticket, en orange", async () => {

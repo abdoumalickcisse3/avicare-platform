@@ -58,7 +58,11 @@ export default function StocksOverviewPage() {
   const filtered = useMemo(() => {
     if (!items) return [];
     const q = search.trim().toLowerCase();
-    return q ? items.filter((i) => i.articleKey.toLowerCase().includes(q)) : items;
+    // Label AND key: the list now carries every configured article, and the farmer searches
+    // "maïs", not "mais_concasse".
+    return q
+      ? items.filter((i) => `${i.label ?? ""} ${i.articleKey}`.toLowerCase().includes(q))
+      : items;
   }, [items, search]);
 
   if (!gatingLoading && hasFarm && !hasInventory) {

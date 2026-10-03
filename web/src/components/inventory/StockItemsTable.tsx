@@ -52,7 +52,7 @@ export function StockItemsTable({ items }: { items: StockItem[] }) {
                 onClick={() => router.push(`/stocks/articles/${item.id}`)}
               >
                 <TableCell>
-                  <Box sx={{ fontWeight: 600 }}>{item.articleKey}</Box>
+                  <Box sx={{ fontWeight: 600 }}>{item.label ?? item.articleKey}</Box>
                   <Box sx={{ fontSize: 12, color: colors.neutral[500] }}>
                     {ARTICLE_SOURCE_LABELS[item.articleSource]}
                   </Box>

@@ -38,7 +38,7 @@ jest.mock('@/store/api/suppliersApi', () => ({
 }));
 jest.mock('@/store/api/inventoryStockApi', () => ({
   useGetStockItemsQuery: jest.fn(() => ({
-    data: [{ id: 9, farmId: 7, articleKey: 'feed_starter', articleSource: 'INVENTORY', currentQuantity: 100, unit: 'kg', alertThreshold: null, typicalUnitPriceXof: 300, lastMovementAt: null, active: true, notes: null }],
+    data: [{ id: 9, farmId: 7, articleKey: 'feed_starter', label: 'Démarrage chair', articleSource: 'INVENTORY', currentQuantity: 100, unit: 'kg', alertThreshold: null, typicalUnitPriceXof: 300, lastMovementAt: null, active: true, notes: null }],
   })),
 }));
 jest.mock('@/store/api/purchaseOrdersApi', () => ({
@@ -62,8 +62,11 @@ describe('Nouveau bon d\'achat', () => {
     await render(<AchatNouveauScreen />);
     await press(screen.getByLabelText('Choisir le fournisseur'));
     await press(screen.getByLabelText('Sénégal Aliments'));
-    await press(screen.getByLabelText('Ajouter Feed starter'));
-    await type(screen.getByLabelText('Quantité Feed starter'), '500');
+    // Le sélecteur ET la ligne du panier nomment l'article comme le catalogue : depuis que la
+    // vue d'ensemble liste tout ce qui est configuré, ce sélecteur n'est plus limité à ce qui a
+    // déjà bougé, et « Feed starter » se lisait partout à la place de « Aliment démarrage ».
+    await press(screen.getByLabelText('Ajouter Démarrage chair'));
+    await type(screen.getByLabelText('Quantité Démarrage chair'), '500');
     await press(screen.getByLabelText('Valider le bon d\'achat'));
     expect(mockCreate).toHaveBeenCalledWith({
       farmId: 7,

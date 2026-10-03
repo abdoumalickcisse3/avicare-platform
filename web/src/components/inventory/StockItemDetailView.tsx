@@ -111,7 +111,7 @@ export function StockItemDetailView({ stockItemId }: { stockItemId: number }) {
         <Link href="/stocks" style={{ color: colors.neutral[500], textDecoration: "none" }}>
           Stocks
         </Link>
-        <Typography color="text.primary">{item.articleKey}</Typography>
+        <Typography color="text.primary">{item.label ?? item.articleKey}</Typography>
       </Breadcrumbs>
 
       <Stack
@@ -121,7 +121,7 @@ export function StockItemDetailView({ stockItemId }: { stockItemId: number }) {
       >
         <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
           <Typography variant="h4" sx={{ fontWeight: 700 }}>
-            {item.articleKey}
+            {item.label ?? item.articleKey}
           </Typography>
           <Chip label={ARTICLE_SOURCE_LABELS[item.articleSource]} size="small" />
           <Chip label={meta.label} size="small" sx={{ bgcolor: meta.bg, color: meta.fg, fontWeight: 600 }} />
@@ -244,7 +244,7 @@ export function StockItemDetailView({ stockItemId }: { stockItemId: number }) {
           />
           <ConfirmDialog
             open={archiveOpen}
-            title={`Archiver ${item.articleKey} ?`}
+            title={`Archiver ${item.label ?? item.articleKey} ?`}
             // Désactivation douce : le dire, sinon « archiver » se lit comme « effacer ».
             message="L'article disparaît de la liste des stocks. Son historique reste consultable, et rien de ce qui a été consommé n'est effacé."
             confirmLabel="Archiver"

@@ -13,6 +13,7 @@ const mockItem: StockItem = {
   id: 5,
   farmId: 7,
   articleKey: 'feed_starter',
+  label: 'Démarrage poulet chair',
   articleSource: 'INVENTORY',
   currentQuantity: 45,
   unit: 'kg',

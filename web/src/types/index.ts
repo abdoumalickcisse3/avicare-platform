@@ -683,6 +683,8 @@ export interface StockItem {
   id: number;
   farmId: number;
   articleKey: string;
+  /** Catalog label resolved by the backend; null when the catalog no longer knows the key. */
+  label: string | null;
   articleSource: ArticleSource;
   currentQuantity: number;
   unit: string | null;

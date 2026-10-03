@@ -4,6 +4,7 @@ import com.avicare.livestock.domain.ArticleSource;
 import com.avicare.livestock.health.HealthCatalogService;
 import com.avicare.parameters.api.ParametersFacade;
 import com.avicare.parameters.api.dto.CatalogEntryInfo;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -62,6 +63,21 @@ public class InventoryCatalogService {
     return Stream.concat(
             listInventoryArticles(farmId).stream(), listMedicationArticles(farmId).stream())
         .toList();
+  }
+
+  /**
+   * Article key → human label, for every stockable article of the farm. A stock row carries no
+   * label snapshot (only the key), so every response that names an article resolves it here. An
+   * article whose catalog value carries no label is simply absent from the map.
+   */
+  public Map<String, String> labelsByKey(Long farmId) {
+    Map<String, String> labels = new HashMap<>();
+    for (InventoryCatalogItemDto a : listAllAvailableArticles(farmId)) {
+      if (a.label() != null) {
+        labels.putIfAbsent(a.articleKey(), a.label());
+      }
+    }
+    return labels;
   }
 
   private static InventoryCatalogItemDto toInventoryDto(CatalogEntryInfo e) {
