@@ -71,3 +71,7 @@ shared/types/generated/
 
 # Espace de travail des plans superpowers (scratch, non versionné)
 .superpowers/
+
+# Le monorepo n'a pas de paquet npm à la racine : chaque application porte le sien.
+# Un `npx` lancé ici en fabrique un vide — qu'il reste hors du dépôt.
+/package-lock.json
