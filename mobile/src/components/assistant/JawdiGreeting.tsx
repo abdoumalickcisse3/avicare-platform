@@ -14,10 +14,9 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Sparkles } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { SpeakButton } from '@/components/assistant/SpeakButton';
+import { JawdiFace } from '@/components/assistant/JawdiFace';
 
 const GREETING = 'Bonjour 👋';
 const INTRODUCTION = 'Je suis Jawdi IA, votre conseiller d’élevage.';
@@ -106,10 +105,9 @@ export function JawdiGreeting({
   );
 }
 
-/** The avatar arriving, with a hand that waves twice and then settles. */
+/** The person arriving: the same face as the button, popping in and waving on their own. */
 function Hand({ reduced }: { reduced: boolean }) {
   const enter = useRef(new Animated.Value(0)).current;
-  const wave = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (reduced) {
@@ -122,34 +120,12 @@ function Hand({ reduced }: { reduced: boolean }) {
       easing: Easing.out(Easing.back(1.6)),
       useNativeDriver: true,
     }).start();
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(wave, { toValue: 1, duration: 180, useNativeDriver: true }),
-        Animated.timing(wave, { toValue: -1, duration: 180, useNativeDriver: true }),
-      ]),
-      { iterations: 2 },
-    ).start(() => wave.setValue(0));
-  }, [enter, wave, reduced]);
+  }, [enter, reduced]);
 
   return (
-    <View style={styles.handRow}>
-      <Animated.View style={{ opacity: enter, transform: [{ scale: enter }] }}>
-        <LinearGradient
-          colors={[tokens.colors.primary[500], tokens.colors.primary[700]]}
-          style={styles.avatar}
-        >
-          <Sparkles size={34} color={tokens.colors.neutral[0]} />
-        </LinearGradient>
-      </Animated.View>
-      <Animated.Text
-        style={[
-          styles.wave,
-          { transform: [{ rotate: wave.interpolate({ inputRange: [-1, 1], outputRange: ['-18deg', '18deg'] }) }] },
-        ]}
-      >
-        👋
-      </Animated.Text>
-    </View>
+    <Animated.View style={{ opacity: enter, transform: [{ scale: enter }] }}>
+      <JawdiFace size={72} animated={!reduced} />
+    </Animated.View>
   );
 }
 
@@ -222,9 +198,6 @@ function Line({
 
 const styles = StyleSheet.create({
   wrap: { alignItems: 'center', paddingTop: tokens.spacing[10], gap: tokens.spacing[3] },
-  handRow: { flexDirection: 'row', alignItems: 'flex-end', gap: tokens.spacing[2] },
-  avatar: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center' },
-  wave: { fontSize: 28 },
   typingRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[2], minHeight: 40 },
   typingText: { ...tokens.typography.bodyMd, color: tokens.colors.field.textMuted },
   dots: { flexDirection: 'row', gap: 4 },

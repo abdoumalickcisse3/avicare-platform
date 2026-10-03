@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Box, type BoxProps, Typography } from "@mui/material";
 import { keyframes } from "@mui/material/styles";
-import { Check, Mic, Send, Sparkles, X } from "lucide-react";
+import { Check, Mic, Send, X } from "lucide-react";
+import { JawdiFace } from "./JawdiFace";
 import {
   useChatMutation,
   useConfirmActionMutation,
@@ -366,21 +367,22 @@ function Halos() {
   );
 }
 
-function Avatar({ glow = false }: { glow?: boolean }) {
+/**
+ * Who is speaking: the same face as the floating button, so the advisor a farmer taps is the
+ * advisor who answers. The hand is kept for the welcome only — a wave greets, and greeting the
+ * reader again beside every reply would be a row of hands waving at once.
+ */
+function Avatar({ glow = false, wave = false }: { glow?: boolean; wave?: boolean }) {
   return (
     <Box
       sx={{
         flexShrink: 0,
-        width: 40,
-        height: 40,
-        borderRadius: "50%",
-        display: "grid",
-        placeItems: "center",
-        background: `linear-gradient(135deg, ${aurora.primaryDeep}, ${aurora.primary})`,
-        boxShadow: glow ? `0 0 18px ${aurora.primary}66` : "none",
+        borderRadius: wave ? 0 : "50%",
+        boxShadow: glow && !wave ? `0 0 18px ${aurora.primary}66` : "none",
+        display: "flex",
       }}
     >
-      <Sparkles size={20} color={aurora.onPrimary} strokeWidth={2.4} />
+      <JawdiFace size={40} wave={wave} />
     </Box>
   );
 }
@@ -389,7 +391,7 @@ function Welcome({ onPick }: { onPick: (s: string) => void }) {
   return (
     <Flex alignItems="center" gap={2.5} sx={{ py: { xs: 6, md: 10 }, textAlign: "center", animation: `${rise} 0.5s ease` }}>
       <Box sx={{ transform: "scale(1.6)", mb: 1 }}>
-        <Avatar glow />
+        <Avatar wave />
       </Box>
       <Typography sx={{ fontWeight: 700, fontSize: { xs: "1.6rem", md: "2rem" }, lineHeight: 1.15, maxWidth: 520 }}>
         Bonjour, je suis Jawdi.

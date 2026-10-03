@@ -11,6 +11,10 @@
  * from the 44dp avatar of a button to whatever a screen wants. Motion is the only thing that is
  * optional: `animated={false}` draws the same face, awake and still, for a phone that asked for
  * less movement.
+ *
+ * `wave={false}` drops the hand. A wave is a greeting: it belongs on the button and on the
+ * opening of a conversation, not beside every single reply — ten messages would be ten hands
+ * waving at once.
  */
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
@@ -32,11 +36,21 @@ const WAVE_FIRST = 400;
 const WAVE_EVERY = 6000;
 const WAVE_SWING = 180;
 
-export function JawdiFace({ size = 48, animated = true }: { size?: number; animated?: boolean }) {
+export function JawdiFace({
+  size = 48,
+  animated = true,
+  wave = true,
+}: {
+  size?: number;
+  animated?: boolean;
+  wave?: boolean;
+}) {
   return (
-    <View style={{ width: size + size * 0.46, height: size }}>
+    <View style={{ width: wave ? size + size * 0.46 : size, height: size }}>
       <Head size={size} animated={animated} />
-      <WavingHand size={size * 0.52} animated={animated} left={size * 0.9} top={size * 0.02} />
+      {wave ? (
+        <WavingHand size={size * 0.52} animated={animated} left={size * 0.9} top={size * 0.02} />
+      ) : null}
     </View>
   );
 }

@@ -11,6 +11,10 @@
  *
  * Both eye states are always in the DOM; the blink alternates their opacity. That is why a
  * reader with motion disabled still sees open eyes: the "closed" group simply never surfaces.
+ *
+ * `wave={false}` drops the hand. A wave is a greeting: it belongs on the button and on the
+ * opening of a conversation, not beside every single reply — ten messages would be ten hands
+ * waving at once.
  */
 import { useId } from "react";
 import { Box } from "@mui/material";
@@ -37,12 +41,12 @@ const wave = keyframes`
   100% { transform: rotate(0deg) }
 ` as unknown as string;
 
-export function JawdiFace({ size = 46 }: { size?: number }) {
+export function JawdiFace({ size = 46, wave: waves = true }: { size?: number; wave?: boolean }) {
   // Several faces can share a page (button, header, empty state): the clip needs its own id.
   const clip = useId().replace(/:/g, "");
 
   return (
-    <Box sx={{ position: "relative", width: size * 1.46, height: size, flexShrink: 0 }}>
+    <Box sx={{ position: "relative", width: waves ? size * 1.46 : size, height: size, flexShrink: 0 }}>
       <Box
         component="svg"
         viewBox="0 0 100 100"
@@ -101,6 +105,7 @@ export function JawdiFace({ size = 46 }: { size?: number }) {
       </Box>
 
       {/* An open hand raised beside the head, pivoting at the wrist. */}
+      {waves ? (
       <Box
         component="svg"
         viewBox="0 0 40 44"
@@ -124,6 +129,7 @@ export function JawdiFace({ size = 46 }: { size?: number }) {
         <rect x="5" y="20" width="5" height="12" rx="2.5" fill={SKIN} transform="rotate(-24 7.5 26)" />
         <rect x="9" y="18" width="22" height="20" rx="9" fill={SKIN} />
       </Box>
+      ) : null}
     </Box>
   );
 }

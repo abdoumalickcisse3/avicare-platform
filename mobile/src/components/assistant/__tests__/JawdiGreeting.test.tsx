@@ -73,6 +73,13 @@ describe('JawdiGreeting', () => {
     expect(speak).toHaveBeenCalledWith(expect.stringContaining('Jawdi IA'), expect.anything());
   });
 
+  it('montre le visage du bouton — c’est la même personne qui arrive', async () => {
+    await render(<JawdiGreeting suggestions={SUGGESTIONS} onPick={jest.fn()} />);
+
+    // Dès le premier instant, avant même la première phrase : quelqu'un est là.
+    expect(screen.getByTestId('jawdi-eyes-open')).toBeTruthy();
+  });
+
   it('affiche tout d’un coup quand les animations sont réduites', async () => {
     reduceMotion.mockResolvedValue(true);
 
