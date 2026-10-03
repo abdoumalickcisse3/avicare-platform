@@ -12,6 +12,9 @@ import { QuickSaleDialog } from "./QuickSaleDialog";
  * floating button always within thumb's reach, since recording a cash sale is the
  * farmer's most frequent action. Shown only when the farm has the commercial
  * module; the backend stays the real guard.
+ *
+ * It sits one notch above the bottom-right corner: that corner belongs to the Jawdi button,
+ * which is present on every page, so the page-scoped action stacks on top of the constant one.
  */
 export function CommercialFab() {
   const { farmId, hasFarm, hasCommercial } = useCommercialGating();
@@ -28,7 +31,7 @@ export function CommercialFab() {
         color="primary"
         variant="extended"
         onClick={() => setOpen(true)}
-        sx={{ position: "fixed", bottom: 24, right: 24, zIndex: (t) => t.zIndex.speedDial, gap: 1 }}
+        sx={{ position: "fixed", bottom: 104, right: 24, zIndex: (t) => t.zIndex.speedDial, gap: 1 }}
       >
         <Plus size={20} />
         Vente directe

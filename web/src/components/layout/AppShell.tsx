@@ -7,6 +7,7 @@ import { Header } from "./Header";
 import { Sidebar, SIDEBAR_WIDTH } from "./Sidebar";
 import { colors } from "@/theme/tokens";
 import { ImpersonationBanner } from "@/components/admin/ImpersonationBanner";
+import { JawdiFab } from "@/components/assistant/JawdiFab";
 
 /** Responsive app shell: permanent sidebar on md+, temporary drawer on mobile. */
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -57,6 +58,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </Box>
       </Box>
       </Box>
+      {/* Jawdi floats over every page: the advisor is reachable without hunting the sidebar. */}
+      <JawdiFab />
     </Box>
   );
 }
