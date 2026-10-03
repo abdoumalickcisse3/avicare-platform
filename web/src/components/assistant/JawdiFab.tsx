@@ -52,7 +52,7 @@ export function JawdiFab() {
       }}
     >
       <JawdiFace size={46} />
-      <Box>
+      <Box sx={{ whiteSpace: "nowrap" }}>
         <Typography sx={{ color: "#fff", fontWeight: 600, fontSize: 16, lineHeight: 1.3 }}>
           Jawdi IA
         </Typography>
