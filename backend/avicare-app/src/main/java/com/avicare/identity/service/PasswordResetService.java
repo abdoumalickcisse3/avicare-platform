@@ -52,6 +52,7 @@ public class PasswordResetService {
   private final PasswordEncoder passwordEncoder;
   private final WhatsAppMessenger whatsAppMessenger;
   private final RefreshTokenService refreshTokenService;
+  private final PhoneLookup phoneLookup;
 
   /**
    * Send a reset code to the account holding {@code rawPhone}, if there is exactly one.
@@ -132,15 +133,10 @@ public class PasswordResetService {
     if (rawPhone == null || rawPhone.isBlank()) {
       return Optional.empty();
     }
-    List<User> matches = userRepository.findByPhoneDigits(digitsOf(rawPhone));
+    List<User> matches = userRepository.findByPhoneDigits(phoneLookup.candidates(rawPhone));
     return matches.size() == 1 && matches.get(0).isActive()
         ? Optional.of(matches.get(0))
         : Optional.empty();
-  }
-
-  /** Compare on digits only: a farmer types their number the way they say it, not as stored. */
-  static String digitsOf(String raw) {
-    return raw == null ? "" : raw.replaceAll("\\D", "");
   }
 
   private static String newCode() {

@@ -95,9 +95,75 @@ class AuthServiceTest {
             jwtProperties,
             ENCODER,
             staffLoginAuditor,
+            new PhoneLookup("221"),
             mapper,
             membershipProvider,
             loginAttempts);
+  }
+
+  /**
+   * Login by phone, added 2026-10-08. The field on the wire is still called {@code email} on
+   * purpose: an iOS build already in testers' hands sends that name, and renaming it would lock
+   * them out. It carries an identifier now — an address or a number.
+   */
+  private User existingUser(String email, String phone, String rawPassword) {
+    User u = new User();
+    u.setId(7L);
+    u.setEmail(email);
+    u.setPhone(phone);
+    u.setFullName("Awa Diop");
+    u.setPasswordHash(ENCODER.encode(rawPassword));
+    u.setActive(true);
+    return u;
+  }
+
+  @Test
+  void login_acceptsAPhoneNumberWhereverItsOwnerTypedIt() {
+    User awa = existingUser("awa@avicare.io", "+221771842787", "password123");
+    // Stored as E.164; typed as the owner pleases. All of these are the same person.
+    when(userRepository.findByPhoneDigits(any())).thenReturn(java.util.List.of(awa));
+    when(refreshTokenService.issue(7L)).thenReturn("refresh-raw");
+
+    for (String typed :
+        java.util.List.of("+221771842787", "221771842787", "771842787", "0771842787")) {
+      assertThat(authService.login(new LoginRequest(typed, "password123")).accessToken())
+          .as("connexion avec « %s »", typed)
+          .isNotBlank();
+    }
+  }
+
+  @Test
+  void login_stillAcceptsAnEmail_becauseEveryAccountHasOne() {
+    // Eleven of thirty live accounts carry no phone at all. The address is the universal key and
+    // must never stop working.
+    User awa = existingUser("awa@avicare.io", null, "password123");
+    when(userRepository.findByEmailIgnoreCase("awa@avicare.io")).thenReturn(Optional.of(awa));
+    when(refreshTokenService.issue(7L)).thenReturn("refresh-raw");
+
+    assertThat(authService.login(new LoginRequest("awa@avicare.io", "password123")).accessToken())
+        .isNotBlank();
+    verify(userRepository, never()).findByPhoneDigits(any());
+  }
+
+  @Test
+  void login_refusesAnUnknownNumber_withTheSameErrorAsAnUnknownAddress() {
+    // Never reveal whether the number exists: a phone number is public, a password is not.
+    when(userRepository.findByPhoneDigits(any())).thenReturn(java.util.List.of());
+
+    assertThatThrownBy(() -> authService.login(new LoginRequest("771842787", "password123")))
+        .isInstanceOf(UnauthorizedException.class);
+  }
+
+  @Test
+  void login_refusesWhenANumberDesignatesSeveralAccounts() {
+    // A unique index makes this impossible going forward, but the code must not pick one at
+    // random if it ever happens: guessing which account someone meant is worse than refusing.
+    User one = existingUser("a@avicare.io", "+221771842787", "password123");
+    User two = existingUser("b@avicare.io", "+221771842787", "password123");
+    when(userRepository.findByPhoneDigits(any())).thenReturn(java.util.List.of(one, two));
+
+    assertThatThrownBy(() -> authService.login(new LoginRequest("771842787", "password123")))
+        .isInstanceOf(UnauthorizedException.class);
   }
 
   @Test

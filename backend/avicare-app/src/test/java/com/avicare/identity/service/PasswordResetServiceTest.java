@@ -45,7 +45,12 @@ class PasswordResetServiceTest {
 
   private PasswordResetService service() {
     return new PasswordResetService(
-        userRepository, codeRepository, encoder, whatsAppMessenger, refreshTokenService);
+        userRepository,
+        codeRepository,
+        encoder,
+        whatsAppMessenger,
+        refreshTokenService,
+        new PhoneLookup("221"));
   }
 
   private User user(String phone, boolean active) {
@@ -59,7 +64,7 @@ class PasswordResetServiceTest {
   }
 
   private void accountsMatching(User... users) {
-    when(userRepository.findByPhoneDigits(anyString())).thenReturn(List.of(users));
+    when(userRepository.findByPhoneDigits(any())).thenReturn(List.of(users));
   }
 
   private String sentCode() {
@@ -139,9 +144,10 @@ class PasswordResetServiceTest {
 
     service().requestCode("+221 77-000-00-01");
 
-    ArgumentCaptor<String> digits = ArgumentCaptor.captor();
+    ArgumentCaptor<java.util.Collection<String>> digits = ArgumentCaptor.captor();
     verify(userRepository).findByPhoneDigits(digits.capture());
-    assertThat(digits.getValue()).isEqualTo("221770000001");
+    // Les trois formes possibles, pour qu'un numéro tapé court trouve une ligne stockée en E.164.
+    assertThat(digits.getValue()).contains("221770000001");
   }
 
   private PasswordResetCode liveCode(String rawCode) {

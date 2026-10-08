@@ -3,8 +3,10 @@
  * language toggle, centered logo + tagline, labelled fields (email + password
  * with a show/hide eye), a big orange CTA, a forgot-password link and a footer.
  *
- * The backend authenticates on { email, password } (same contract as the web),
- * so the identifier stays an email even though the mock shows a phone — phone
+ * The backend authenticates on { email, password } (same contract as the web), but that
+ * field carries an IDENTIFIER since 2026-10-08: an address or a phone number. The wire name
+ * stays `email` because builds already on testers' phones send it. The mock always showed a
+ * phone; it took the server catching up for the screen to be allowed to agree — phone
  * login needs backend support (V2). Brand tokens + lucide icons throughout.
  */
 import { useState } from 'react';
@@ -20,7 +22,9 @@ import { saveTokens } from '@/auth/tokens';
 import { useLoginMutation } from '@/store/api/authApi';
 
 const loginSchema = z.object({
-  email: z.string().min(1, "L'adresse e-mail est requise").email('Adresse e-mail invalide'),
+  // An address or a phone number: the backend resolves either since 2026-10-08. No shape
+  // check here — refusing a number the server would have accepted is the worse error.
+  email: z.string().min(1, 'Adresse e-mail ou numéro requis'),
   password: z.string().min(1, 'Le mot de passe est requis'),
 });
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -79,20 +83,20 @@ export default function LoginScreen() {
             <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
           </View>
 
-          {/* Email */}
+          {/* Identifiant : adresse ou numéro */}
           <View style={styles.field}>
-            <Text style={styles.label}>Adresse e-mail</Text>
+            <Text style={styles.label}>Adresse e-mail ou numéro</Text>
             <Controller
               control={control}
               name="email"
               render={({ field: { onBlur, onChange, value } }) => (
                 <TextInput
                   style={[styles.input, errors.email && styles.inputError]}
-                  placeholder="vous@exemple.com"
+                  placeholder="vous@exemple.com ou 77 000 00 00"
                   placeholderTextColor={tokens.colors.field.disabled}
                   autoCapitalize="none"
-                  autoComplete="email"
-                  keyboardType="email-address"
+                  autoComplete="username"
+                  keyboardType="default"
                   onBlur={onBlur}
                   onChangeText={onChange}
                   value={value}

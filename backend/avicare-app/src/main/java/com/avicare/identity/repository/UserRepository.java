@@ -31,13 +31,18 @@ public interface UserRepository extends JpaRepository<User, Long> {
   List<User> search(@Param("q") String q, Pageable pageable);
 
   /**
-   * Accounts whose phone matches on digits only. Farmers type their number the way they say it —
-   * with spaces, a +221, or neither — while the stored value has whatever shape it was entered in.
+   * Accounts whose phone, reduced to digits, is one of {@code candidates}.
+   *
+   * <p>Farmers type their number the way they say it — with spaces, a +221, or neither — while the
+   * stored value is E.164 since V63. A single exact comparison therefore found nobody for the short
+   * form; {@link com.avicare.identity.service.PhoneLookup} builds the shapes to try.
    */
   @Query(
-      value = "SELECT * FROM users u WHERE regexp_replace(u.phone, '[^0-9]', '', 'g') = :digits",
+      value =
+          "SELECT * FROM users u WHERE u.phone IS NOT NULL AND btrim(u.phone) <> '' "
+              + "AND regexp_replace(u.phone, '[^0-9]', '', 'g') IN (:candidates)",
       nativeQuery = true)
-  List<User> findByPhoneDigits(@Param("digits") String digits);
+  List<User> findByPhoneDigits(@Param("candidates") java.util.Collection<String> candidates);
 
   long countByActiveTrue();
 
