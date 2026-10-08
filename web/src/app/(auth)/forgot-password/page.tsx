@@ -11,18 +11,18 @@ import {
   Box,
   Button,
   CircularProgress,
-  InputAdornment,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
-import { ArrowLeft, ArrowRight, MessageCircle, Phone } from "lucide-react";
+import { ArrowLeft, ArrowRight, MessageCircle } from "lucide-react";
 import {
   useConfirmPasswordResetMutation,
   useRequestPasswordResetMutation,
 } from "@/store/api/authApi";
 import { PasswordField } from "@/components/forms/PasswordField";
 import { apiErrorMessage } from "@/lib/apiError";
+import { PhoneField } from "@/components/PhoneField";
 
 const phoneSchema = z.object({
   phone: z.string().min(6, "Numéro de téléphone requis"),
@@ -111,23 +111,12 @@ export default function ForgotPasswordPage() {
               name="phone"
               control={phoneForm.control}
               render={({ field, fieldState }) => (
-                <TextField
-                  {...field}
+                <PhoneField
+                  value={field.value}
+                  onChange={field.onChange}
                   label="Numéro de téléphone"
-                  type="tel"
-                  autoComplete="tel"
-                  fullWidth
                   error={!!fieldState.error}
                   helperText={fieldState.error?.message}
-                  slotProps={{
-                    input: {
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <Phone size={18} />
-                        </InputAdornment>
-                      ),
-                    },
-                  }}
                 />
               )}
             />

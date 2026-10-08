@@ -23,6 +23,7 @@ import { hasAccessToken } from "@/lib/auth";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useRefreshSession } from "@/hooks/useRefreshSession";
 import { PasswordField } from "@/components/forms/PasswordField";
+import { PhoneField } from "@/components/PhoneField";
 
 const signupSchema = z
   .object({
@@ -156,7 +157,7 @@ export default function SignupPage() {
           name="phone"
           control={control}
           render={({ field, fieldState }) => (
-            <TextField {...field} label="Téléphone (optionnel)" type="tel" autoComplete="tel" fullWidth error={!!fieldState.error} helperText={fieldState.error?.message} />
+            <PhoneField value={field.value} onChange={field.onChange} label="Téléphone (optionnel)" error={!!fieldState.error} helperText={fieldState.error?.message} />
           )}
         />
         <Controller

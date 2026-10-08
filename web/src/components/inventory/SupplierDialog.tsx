@@ -28,6 +28,7 @@ import { useToast } from "@/components/feedback/ToastProvider";
 import { apiErrorMessage } from "@/lib/apiError";
 import { colors } from "@/theme/tokens";
 import type { Supplier } from "@/types";
+import { PhoneField } from "@/components/PhoneField";
 
 const TYPE_OPTIONS = ["FEED", "MEDICATION", "EQUIPMENT", "MIXED"];
 const TYPE_LABELS: Record<string, string> = {
@@ -138,7 +139,7 @@ function SupplierBody({
           />
           <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
             <TextField label="Personne contact" value={contact} onChange={(e) => setContact(e.target.value)} fullWidth />
-            <TextField label="Téléphone" value={phone} onChange={(e) => setPhone(e.target.value)} fullWidth />
+            <PhoneField value={phone} onChange={setPhone} />
           </Stack>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
             <TextField label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} fullWidth />

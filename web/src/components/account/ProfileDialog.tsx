@@ -29,6 +29,7 @@ import { ChangePasswordForm } from "@/components/account/ChangePasswordForm";
 import { DeleteAccountPanel } from "@/components/account/DeleteAccountPanel";
 import { logout } from "@/store/authActions";
 import { colors } from "@/theme/tokens";
+import { PhoneField } from "@/components/PhoneField";
 
 const schema = z.object({
   fullName: z.string().min(1, "Nom requis").max(200, "200 caractères maximum"),
@@ -142,16 +143,12 @@ export function ProfileDialog({ open, onClose }: { open: boolean; onClose: () =>
               name="phone"
               control={control}
               render={({ field, fieldState }) => (
-                <TextField
-                  {...field}
+                <PhoneField
+                  value={field.value}
+                  onChange={field.onChange}
                   label="Téléphone (WhatsApp)"
-                  type="tel"
-                  fullWidth
                   error={!!fieldState.error}
-                  helperText={
-                    fieldState.error?.message ??
-                    "Alertes WhatsApp — et seule façon de récupérer un mot de passe perdu. Ex : 221770000000"
-                  }
+                  helperText={fieldState.error?.message}
                 />
               )}
             />

@@ -28,6 +28,7 @@ import { apiErrorMessage } from "@/lib/apiError";
 import { colors } from "@/theme/tokens";
 import { SectionLabel } from "./HealthDialogParts";
 import type { Veterinarian } from "@/types";
+import { PhoneField } from "@/components/PhoneField";
 
 const schema = z.object({
   fullName: z.string().min(1, "Nom requis").max(150),
@@ -163,12 +164,7 @@ export function VeterinarianDialog({
                 name="phone"
                 control={control}
                 render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Téléphone"
-                    fullWidth
-                    slotProps={{ htmlInput: { inputMode: "tel" } }}
-                  />
+                  <PhoneField value={field.value} onChange={field.onChange} label="Téléphone" />
                 )}
               />
               <Controller

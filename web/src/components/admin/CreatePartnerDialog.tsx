@@ -15,6 +15,7 @@ import {
 import { useCreatePartnerMutation } from "@/store/api/adminApi";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useToast } from "@/components/feedback/ToastProvider";
+import { PhoneField } from "@/components/PhoneField";
 
 /** The types the backend accepts today. Adding one is a migration, not a UI change. */
 const TYPES = [
@@ -115,13 +116,7 @@ export function CreatePartnerDialog({
             onChange={(e) => setContactName(e.target.value)}
             fullWidth
           />
-          <TextField
-            label="Téléphone"
-            placeholder="221XXXXXXXXX"
-            value={contactPhone}
-            onChange={(e) => setContactPhone(e.target.value)}
-            fullWidth
-          />
+          <PhoneField value={contactPhone} onChange={setContactPhone} />
           <TextField
             label="Email"
             type="email"
