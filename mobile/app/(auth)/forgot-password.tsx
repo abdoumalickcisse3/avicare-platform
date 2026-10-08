@@ -34,6 +34,7 @@ import {
   useConfirmPasswordResetMutation,
   useRequestPasswordResetMutation,
 } from '@/store/api/authApi';
+import { PhoneInput } from '@/phone/PhoneInput';
 
 const phoneSchema = z.object({
   phone: z.string().min(6, 'Numéro de téléphone requis'),
@@ -136,20 +137,11 @@ export default function ForgotPasswordScreen() {
                   control={phoneForm.control}
                   name="phone"
                   render={({ field: { onBlur, onChange, value } }) => (
-                    <TextInput
-                      style={[
-                        styles.input,
-                        phoneForm.formState.errors.phone && styles.inputError,
-                      ]}
-                      accessibilityLabel="Numéro de téléphone"
-                      placeholder="+221 77 000 00 00"
-                      placeholderTextColor={tokens.colors.field.disabled}
-                      autoCapitalize="none"
-                      autoComplete="tel"
-                      keyboardType="phone-pad"
-                      onBlur={onBlur}
-                      onChangeText={onChange}
+                    <PhoneInput
                       value={value}
+                      onChange={onChange}
+                      label="Numéro de téléphone"
+                      hint={phoneForm.formState.errors.phone?.message}
                     />
                   )}
                 />
