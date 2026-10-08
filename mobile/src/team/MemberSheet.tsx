@@ -22,6 +22,7 @@ import { Chip } from './Chip';
 import { PermissionMatrix } from './PermissionMatrix';
 import { expandPermissions, matchesRoleDefaults } from './permissions';
 import type { AssignableFarmRole, Member, PermissionCatalog } from '@/types';
+import { PhoneInput } from '@/phone/PhoneInput';
 
 const ASSIGNABLE: AssignableFarmRole[] = ['MANAGER', 'FARMER', 'VETERINARIAN', 'BUYER'];
 
@@ -152,14 +153,7 @@ export function MemberSheet({
                 error={email.length > 0 && !emailValid ? 'Adresse e-mail invalide' : undefined}
                 helperText="C'est avec elle que le membre se connectera."
               />
-              <FormField
-                label="Téléphone"
-                value={phone}
-                onChangeText={setPhone}
-                keyboardType="phone-pad"
-                placeholder="77 000 00 00"
-                maxLength={30}
-              />
+              <PhoneInput value={phone} onChange={setPhone} label="Téléphone" />
             </>
           )}
 

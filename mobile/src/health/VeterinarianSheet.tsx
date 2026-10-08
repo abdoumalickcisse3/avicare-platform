@@ -14,6 +14,7 @@ import { tokens } from '@/theme';
 import { KeyboardSafeSheet, sheetBounds } from '@/components/ui';
 import { FormField } from '@/components/field/FormField';
 import type { Veterinarian, VeterinarianInput } from '@/types';
+import { PhoneInput } from '@/phone/PhoneInput';
 
 export type VeterinarianSheetProps = {
   open: boolean;
@@ -67,15 +68,7 @@ export function VeterinarianSheet({ open, vet, saving, onClose, onSubmit }: Vete
             placeholder="Dr Aminata Sow"
             maxLength={150}
           />
-          <FormField
-            label="Téléphone"
-            value={phone}
-            onChangeText={setPhone}
-            keyboardType="phone-pad"
-            placeholder="77 000 00 00"
-            maxLength={40}
-            helperText="Le numéro que vous composerez depuis le poulailler."
-          />
+          <PhoneInput value={phone} onChange={setPhone} label="Téléphone" />
           <FormField
             label="Spécialité"
             value={speciality}

@@ -16,6 +16,7 @@ import {
 } from '@/store/api/authApi';
 import { signOut } from '@/auth/signOut';
 import { DeleteAccountSheet } from '@/auth/DeleteAccountSheet';
+import { PhoneInput } from '@/phone/PhoneInput';
 
 export default function ProfilScreen() {
   const router = useRouter();
@@ -100,16 +101,7 @@ export default function ProfilScreen() {
           accessibilityLabel="Nom complet"
         />
 
-        <Text style={styles.label}>Téléphone (WhatsApp)</Text>
-        <TextInput
-          value={phone}
-          onChangeText={setPhone}
-          style={styles.input}
-          placeholder="221770000000"
-          placeholderTextColor={tokens.colors.field.textMuted}
-          keyboardType="phone-pad"
-          accessibilityLabel="Téléphone"
-        />
+        <PhoneInput value={phone} onChange={setPhone} label="Téléphone (WhatsApp)" />
         <Text style={styles.hint}>
           Alertes WhatsApp — et seule façon de récupérer un mot de passe perdu. Format :
           221XXXXXXXXX.

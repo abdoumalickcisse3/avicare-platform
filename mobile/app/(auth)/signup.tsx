@@ -18,6 +18,7 @@ import { saveTokens } from '@/auth/tokens';
 import { useRefreshSession } from '@/auth/useRefreshSession';
 import { useSignupMutation } from '@/store/api/authApi';
 import { useCreateFarmMutation } from '@/store/api/farmsApi';
+import { PhoneInput } from '@/phone/PhoneInput';
 
 const schema = z
   .object({
@@ -125,7 +126,7 @@ export default function SignupScreen() {
               control={control}
               name="phone"
               render={({ field: { onChange, value }, fieldState }) => (
-                <FormField label="Téléphone (optionnel)" placeholder="77 000 00 00" keyboardType="phone-pad" value={value} onChangeText={onChange} error={fieldState.error?.message} />
+                <PhoneInput value={value} onChange={onChange} label="Téléphone (optionnel)" hint={fieldState.error?.message} />
               )}
             />
             <Controller

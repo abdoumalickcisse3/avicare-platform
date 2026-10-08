@@ -19,6 +19,7 @@ import { Chip } from '@/team/Chip';
 import { CLIENT_TYPE_LABELS } from '@/lib/commercial';
 import type { ClientInput } from '@/store/api/clientsApi';
 import type { Client, ClientType } from '@/types';
+import { PhoneInput } from '@/phone/PhoneInput';
 
 const TYPES: ClientType[] = ['INDIVIDUAL', 'BUSINESS', 'WHOLESALER'];
 const digits = (s: string) => s.replace(/[^\d]/g, '');
@@ -111,15 +112,7 @@ export function ClientSheet({
             placeholder="Boutique Fatou"
             maxLength={200}
           />
-          <FormField
-            label="Téléphone"
-            value={phone}
-            onChangeText={setPhone}
-            keyboardType="phone-pad"
-            placeholder="77 000 00 00"
-            maxLength={30}
-            helperText="Le numéro que vous composerez pour relancer une facture."
-          />
+          <PhoneInput value={phone} onChange={setPhone} label="Téléphone" />
           <FormField
             label="Ville"
             value={city}

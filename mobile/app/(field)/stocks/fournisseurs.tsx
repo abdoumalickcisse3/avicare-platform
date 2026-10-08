@@ -18,6 +18,7 @@ import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { useCreateSupplierMutation, useGetSuppliersQuery } from '@/store/api/suppliersApi';
 import { useGetSupplierBalancesQuery } from '@/store/api/supplierLedgerApi';
 import { formatCurrency } from '@/lib/format';
+import { PhoneInput } from '@/phone/PhoneInput';
 
 function balanceColor(balanceXof: number): string {
   if (balanceXof > 0) return tokens.colors.error;
@@ -141,8 +142,7 @@ export default function FournisseursScreen() {
               <Text style={styles.sheetTitle}>Nouveau fournisseur</Text>
               <Text style={styles.fieldLabel}>Nom commercial *</Text>
               <TextInput value={name} onChangeText={setName} placeholder="Ex. Sénégal Aliments" accessibilityLabel="Nom commercial" style={styles.input} />
-              <Text style={styles.fieldLabel}>Téléphone</Text>
-              <TextInput value={phone} onChangeText={setPhone} placeholder="Optionnel" keyboardType="phone-pad" accessibilityLabel="Téléphone" style={styles.input} />
+              <PhoneInput value={phone} onChange={setPhone} label="Téléphone" />
               <View style={styles.switchRow}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.fieldLabel}>Prévenir par WhatsApp</Text>
