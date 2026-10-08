@@ -24,18 +24,24 @@ describe("LoginPage", () => {
 
     await user.click(screen.getByRole("button", { name: /se connecter/i }));
 
-    expect(await screen.findByText("Adresse e-mail invalide")).toBeInTheDocument();
+    expect(await screen.findByText("Adresse e-mail ou numéro requis")).toBeInTheDocument();
     expect(await screen.findByText("Mot de passe requis")).toBeInTheDocument();
   });
 
-  it("rejects a malformed email", async () => {
+  /**
+   * The email shape check was deliberately dropped on 2026-10-08: the field carries an identifier
+   * now, and a phone number has no '@'. Refusing a number the server would have accepted is a
+   * worse error than letting a typo reach the server, which answers "invalid credentials" anyway
+   * — and on a sign-in form that generic answer is the right one regardless.
+   */
+  it("laisse passer un numéro de téléphone, qui n'est pas une adresse", async () => {
     const user = userEvent.setup();
     renderWithProviders(<LoginPage />);
 
-    await user.type(screen.getByLabelText(/adresse e-mail/i), "not-an-email");
+    await user.type(screen.getByLabelText(/adresse e-mail ou numéro/i), "771842787");
     await user.type(screen.getByLabelText("Mot de passe"), "secret123");
     await user.click(screen.getByRole("button", { name: /se connecter/i }));
 
-    expect(await screen.findByText("Adresse e-mail invalide")).toBeInTheDocument();
+    expect(screen.queryByText(/invalide/i)).not.toBeInTheDocument();
   });
 });

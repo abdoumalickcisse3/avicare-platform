@@ -20,6 +20,8 @@ import com.avicare.identity.repository.UserRepository;
 import com.avicare.identity.spi.MembershipProvider;
 import com.avicare.identity.spi.StaffLoginAuditor;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -44,6 +46,7 @@ public class AuthService {
   private final JwtProperties jwtProperties;
   private final PasswordEncoder passwordEncoder;
   private final StaffLoginAuditor staffLoginAuditor;
+  private final PhoneLookup phoneLookup;
   private final IdentityMapper identityMapper;
   private final MembershipProvider membershipProvider;
   private final com.avicare.identity.spi.LoginAttemptListener loginAttempts;
@@ -72,13 +75,17 @@ public class AuthService {
     return issueTokens(saved);
   }
 
-  /** Authenticate by email + password and return a fresh token pair. */
+  /**
+   * Authenticate by identifier + password and return a fresh token pair.
+   *
+   * <p>The identifier is an email address or a phone number. The field on the wire is still called
+   * {@code email}: an iOS build already in testers' hands sends that name, and renaming it would
+   * lock those installs out of their own accounts. The name is now narrower than what it carries,
+   * which is the lesser of the two wrongs.
+   */
   @Transactional
   public AuthTokens login(LoginRequest request) {
-    User user =
-        userRepository
-            .findByEmailIgnoreCase(request.email())
-            .orElseThrow(() -> failedLogin(request.email()));
+    User user = resolveAccount(request.email()).orElseThrow(() -> failedLogin(request.email()));
 
     if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
       throw failedLogin(request.email());
@@ -94,6 +101,26 @@ public class AuthService {
       staffLoginAuditor.recordStaffLogin(user.getId(), user.getEmail());
     }
     return issueTokens(user);
+  }
+
+  /**
+   * The account an identifier designates, or empty.
+   *
+   * <p>An '@' settles it: addresses are unique and every one of the thirty live accounts has one,
+   * so the address stays the universal key and the phone is only ever an added door. A number
+   * matching several accounts resolves to none — a unique index forbids it, but guessing which
+   * person someone meant would be worse than refusing, and silence here leaks nothing: an unknown
+   * number and an ambiguous one fail exactly like a wrong password.
+   */
+  private Optional<User> resolveAccount(String identifier) {
+    if (identifier == null || identifier.isBlank()) {
+      return Optional.empty();
+    }
+    if (identifier.contains("@")) {
+      return userRepository.findByEmailIgnoreCase(identifier);
+    }
+    List<User> matches = userRepository.findByPhoneDigits(phoneLookup.candidates(identifier));
+    return matches.size() == 1 ? Optional.of(matches.get(0)) : Optional.empty();
   }
 
   /** Exchange a refresh token for a new pair (single-use rotation). */

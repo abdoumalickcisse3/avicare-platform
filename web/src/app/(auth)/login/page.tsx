@@ -24,7 +24,9 @@ import { apiErrorMessage } from "@/lib/apiError";
 import { PasswordField } from "@/components/forms/PasswordField";
 
 const loginSchema = z.object({
-  email: z.email("Adresse e-mail invalide"),
+  // An address or a phone number: the backend resolves either since 2026-10-08. No shape
+  // check here — refusing a number that the server would have accepted is the worse error.
+  email: z.string().min(1, "Adresse e-mail ou numéro requis"),
   password: z.string().min(1, "Mot de passe requis"),
 });
 
@@ -73,9 +75,8 @@ export default function LoginPage() {
             render={({ field, fieldState }) => (
               <TextField
                 {...field}
-                label="Adresse e-mail"
-                type="email"
-                autoComplete="email"
+                label="Adresse e-mail ou numéro"
+                autoComplete="username"
                 fullWidth
                 error={!!fieldState.error}
                 helperText={fieldState.error?.message}
