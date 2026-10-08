@@ -30,6 +30,7 @@ import { apiErrorMessage } from "@/lib/apiError";
 import { colors } from "@/theme/tokens";
 import { ASSIGNABLE_FARM_ROLES, FARM_ROLE_LABELS } from "@/constants/farmRoles";
 import type { FarmRole } from "@/types";
+import { PhoneField } from "@/components/PhoneField";
 
 const addMemberSchema = z.object({
   fullName: z.string().min(1, "Le nom complet est requis"),
@@ -227,10 +228,10 @@ export function AddMemberDialog({ open, onClose, farmId }: AddMemberDialogProps)
                   name="phone"
                   control={control}
                   render={({ field, fieldState }) => (
-                    <TextField
-                      {...field}
+                    <PhoneField
+                      value={field.value}
+                      onChange={field.onChange}
                       label="Numéro"
-                      fullWidth
                       error={!!fieldState.error}
                       helperText={fieldState.error?.message}
                     />

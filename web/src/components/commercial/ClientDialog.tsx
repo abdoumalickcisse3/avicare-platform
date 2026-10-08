@@ -26,6 +26,7 @@ import { useToast } from "@/components/feedback/ToastProvider";
 import { apiErrorMessage } from "@/lib/apiError";
 import { CLIENT_TYPE_LABELS, CLIENT_TYPE_OPTIONS } from "@/lib/commercial";
 import type { Client, ClientType } from "@/types";
+import { PhoneField } from "@/components/PhoneField";
 
 export function ClientDialog({
   open,
@@ -158,7 +159,7 @@ function ClientBody({
             />
           )}
           <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-            <TextField label="Téléphone" value={phone} onChange={(e) => setPhone(e.target.value)} fullWidth />
+            <PhoneField value={phone} onChange={setPhone} />
             <TextField label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} fullWidth />
           </Stack>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
