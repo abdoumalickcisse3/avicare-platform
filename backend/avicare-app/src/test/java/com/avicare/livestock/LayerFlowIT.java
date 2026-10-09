@@ -313,6 +313,8 @@ class LayerFlowIT {
             + password
             + "\",\"fullName\":\""
             + name
+            + "\",\"phone\":\""
+            + nextTestPhone()
             + "\"}";
     String json =
         mockMvc
