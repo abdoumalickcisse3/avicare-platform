@@ -211,7 +211,7 @@ class CrossFarmAccessIT {
                 .content(
                     "{\"email\":\""
                         + email
-                        + "\",\"password\":\"password123\",\"fullName\":\"Test\"}"))
+                        + "\",\"password\":\"password123\",\"fullName\":\"Test\",\"phone\":\"+221700000006\"}"))
         .andExpect(status().isCreated());
   }
 

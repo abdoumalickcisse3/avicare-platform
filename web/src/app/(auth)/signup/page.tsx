@@ -30,7 +30,9 @@ const signupSchema = z
     firstName: z.string().min(1, "Prénom requis"),
     lastName: z.string().min(1, "Nom requis"),
     email: z.email("Adresse e-mail invalide"),
-    phone: z.string().max(30, "30 caractères maximum").optional().or(z.literal("")),
+    // Obligatoire depuis le 2026-10-09 : un compte sans numéro est un compte que la
+    // plateforme ne peut pas prévenir quand un lot meurt.
+    phone: z.string().min(1, "Numéro requis pour les alertes").max(30, "30 caractères maximum"),
     password: z.string().min(8, "8 caractères minimum"),
     confirmPassword: z.string().min(1, "Veuillez confirmer le mot de passe"),
   })
@@ -94,7 +96,7 @@ export default function SignupPage() {
           fullName: `${v.firstName} ${v.lastName}`.trim(),
           email: v.email,
           password: v.password,
-          phone: v.phone ? v.phone : undefined,
+          phone: v.phone,
         }).unwrap();
         dispatch(setTokens(tokens));
         orch.current.signedUp = true;
@@ -157,7 +159,7 @@ export default function SignupPage() {
           name="phone"
           control={control}
           render={({ field, fieldState }) => (
-            <PhoneField value={field.value} onChange={field.onChange} label="Téléphone (optionnel)" error={!!fieldState.error} helperText={fieldState.error?.message} />
+            <PhoneField value={field.value} onChange={field.onChange} label="Téléphone (WhatsApp)" error={!!fieldState.error} helperText={fieldState.error?.message} />
           )}
         />
         <Controller

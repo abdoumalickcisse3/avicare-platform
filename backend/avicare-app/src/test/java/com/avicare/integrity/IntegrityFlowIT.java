@@ -342,7 +342,7 @@ class IntegrityFlowIT {
                 .content(
                     "{\"email\":\""
                         + email
-                        + "\",\"password\":\"password123\",\"fullName\":\"Owner\"}"))
+                        + "\",\"password\":\"password123\",\"fullName\":\"Owner\",\"phone\":\"+221700000005\"}"))
         .andExpect(status().isCreated());
     String json =
         mockMvc

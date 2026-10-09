@@ -57,7 +57,7 @@ class ActivityControllerIT {
                 .content(
                     "{\"email\":\""
                         + email
-                        + "\",\"password\":\"password123\",\"fullName\":\"T\"}"))
+                        + "\",\"password\":\"password123\",\"fullName\":\"T\",\"phone\":\"+221700000031\"}"))
         .andExpect(status().isCreated());
     String token =
         objectMapper

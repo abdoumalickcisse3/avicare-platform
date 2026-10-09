@@ -144,7 +144,7 @@ class AuthFlowIT {
             post("/api/v1/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
-                    "{\"email\":\"bob@avicare.io\",\"password\":\"password123\",\"fullName\":\"Bob\"}"))
+                    "{\"email\":\"bob@avicare.io\",\"password\":\"password123\",\"fullName\":\"Bob\",\"phone\":\"+221700000004\"}"))
         .andExpect(status().isCreated());
 
     mockMvc

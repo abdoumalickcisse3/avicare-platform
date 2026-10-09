@@ -33,6 +33,7 @@ it('creates the account + default-named farm, then routes to onboarding', async 
   fireEvent.changeText(screen.getByLabelText('Prénom'), 'Awa');
   fireEvent.changeText(screen.getByLabelText('Nom'), 'Diop');
   fireEvent.changeText(screen.getByLabelText('Adresse e-mail'), 'awa@example.com');
+  fireEvent.changeText(screen.getByLabelText('Téléphone (WhatsApp)'), '771842787');
   fireEvent.changeText(screen.getByLabelText('Mot de passe'), 'password123');
   fireEvent.changeText(screen.getByLabelText('Confirmation'), 'password123');
 

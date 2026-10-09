@@ -35,7 +35,8 @@ import { PhoneField } from "@/components/PhoneField";
 const addMemberSchema = z.object({
   fullName: z.string().min(1, "Le nom complet est requis"),
   email: z.email("Adresse e-mail invalide"),
-  phone: z.string().optional(),
+  // Obligatoire : c'est par ce numéro que le membre reçoit ses alertes WhatsApp.
+  phone: z.string().min(1, "Numéro requis pour les alertes"),
   role: z.enum(["MANAGER", "FARMER", "VETERINARIAN", "BUYER"]),
 });
 
@@ -115,7 +116,7 @@ export function AddMemberDialog({ open, onClose, farmId }: AddMemberDialogProps)
       const body = {
         fullName: values.fullName,
         email: values.email,
-        ...(values.phone ? { phone: values.phone } : {}),
+        phone: values.phone,
         role: values.role as FarmRole,
         ...(customize ? { permissions } : {}),
       };

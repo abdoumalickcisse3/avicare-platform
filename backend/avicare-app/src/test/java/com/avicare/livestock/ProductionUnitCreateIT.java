@@ -106,7 +106,7 @@ class ProductionUnitCreateIT {
                     .header("Authorization", "Bearer " + owner)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
-                        "{\"fullName\":\"Farmer\",\"email\":\"farmer@unit.io\",\"role\":\"FARMER\"}"))
+                        "{\"fullName\":\"Farmer\",\"email\":\"farmer@unit.io\",\"role\":\"FARMER\",\"phone\":\"+221700000010\"}"))
             .andExpect(status().isCreated())
             .andReturn()
             .getResponse()

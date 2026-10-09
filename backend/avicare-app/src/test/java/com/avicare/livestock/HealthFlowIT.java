@@ -202,7 +202,7 @@ class HealthFlowIT {
                     .header("Authorization", "Bearer " + owner)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
-                        "{\"fullName\":\"Vet\",\"email\":\"vet@health.io\",\"role\":\"VETERINARIAN\"}"))
+                        "{\"fullName\":\"Vet\",\"email\":\"vet@health.io\",\"role\":\"VETERINARIAN\",\"phone\":\"+221700000007\"}"))
             .andExpect(status().isCreated())
             .andReturn()
             .getResponse()

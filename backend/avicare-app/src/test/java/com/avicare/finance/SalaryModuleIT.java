@@ -240,7 +240,7 @@ class SalaryModuleIT {
                 .content(
                     "{\"email\":\""
                         + slug
-                        + "@co.io\",\"password\":\"password123\",\"fullName\":\"Owner\"}"))
+                        + "@co.io\",\"password\":\"password123\",\"fullName\":\"Owner\",\"phone\":\"+221700000003\"}"))
         .andExpect(status().isCreated());
     return relogin(slug);
   }

@@ -71,6 +71,8 @@ describe('MemberSheet', () => {
 
     await type(screen.getByPlaceholderText('Awa Ndiaye'), 'Moussa Fall');
     await type(screen.getByPlaceholderText('awa@exemple.sn'), 'moussa@test.sn');
+    // Obligatoire depuis le 2026-10-09 : sans numéro, ce membre ne recevrait aucune alerte.
+    await type(screen.getByLabelText('Téléphone (WhatsApp)'), '771842787');
     await press(screen.getByLabelText('Créer le compte'));
 
     expect(onCreate).toHaveBeenCalledWith(

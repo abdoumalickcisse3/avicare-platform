@@ -194,7 +194,7 @@ class LayerFlowIT {
                     .header("Authorization", "Bearer " + owner)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
-                        "{\"fullName\":\"Vet\",\"email\":\"vet@layer.io\",\"role\":\"VETERINARIAN\"}"))
+                        "{\"fullName\":\"Vet\",\"email\":\"vet@layer.io\",\"role\":\"VETERINARIAN\",\"phone\":\"+221700000008\"}"))
             .andExpect(status().isCreated())
             .andReturn()
             .getResponse()

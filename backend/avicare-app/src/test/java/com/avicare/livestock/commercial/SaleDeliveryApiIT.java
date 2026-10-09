@@ -270,7 +270,7 @@ class SaleDeliveryApiIT {
                 .content(
                     "{\"email\":\""
                         + slug
-                        + "@co.io\",\"password\":\"password123\",\"fullName\":\"U\"}"))
+                        + "@co.io\",\"password\":\"password123\",\"fullName\":\"U\",\"phone\":\"+221700000021\"}"))
         .andExpect(status().isCreated());
     return relogin(slug);
   }
