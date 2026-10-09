@@ -20,14 +20,25 @@ import { Eye, EyeOff } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { saveTokens } from '@/auth/tokens';
 import { useLoginMutation } from '@/store/api/authApi';
+import { PhoneInput } from '@/phone/PhoneInput';
 
 const loginSchema = z.object({
   // An address or a phone number: the backend resolves either since 2026-10-08. No shape
   // check here — refusing a number the server would have accepted is the worse error.
-  email: z.string().min(1, 'Adresse e-mail ou numéro requis'),
+  email: z.string().min(1, 'Identifiant requis'),
   password: z.string().min(1, 'Le mot de passe est requis'),
 });
 type LoginFormValues = z.infer<typeof loginSchema>;
+
+/**
+ * Which kind of identifier the person is typing.
+ *
+ * The server accepts either, but the SCREEN has to know: a phone field needs a country picker and
+ * an address does not. Without the choice the field can only guess a country, and guessing is the
+ * bug this whole thread started from — a Beninese worker typing 01 56 34 34 08 would be looked up
+ * as +221 156343408 and found nowhere.
+ */
+type IdentifierMode = 'email' | 'phone';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -35,8 +46,9 @@ export default function LoginScreen() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [lang, setLang] = useState<'FR' | 'WO'>('FR');
+  const [mode, setMode] = useState<IdentifierMode>('email');
 
-  const { control, handleSubmit, formState: { errors } } = useForm<LoginFormValues>({
+  const { control, handleSubmit, setValue, formState: { errors } } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
   });
@@ -83,25 +95,54 @@ export default function LoginScreen() {
             <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
           </View>
 
-          {/* Identifiant : adresse ou numéro */}
+          {/* Deux onglets plutôt qu'une liste : un geste au lieu de deux, avec des gants. */}
+          <View style={styles.modeRow} accessibilityRole="tablist">
+            {(['email', 'phone'] as const).map((m) => (
+              <Pressable
+                key={m}
+                onPress={() => {
+                  setMode(m);
+                  // The two shapes have nothing in common: carrying one over as the other would
+                  // leave a half-address in a phone field.
+                  setValue('email', '');
+                }}
+                style={[styles.modeBtn, mode === m && styles.modeBtnActive]}
+                accessibilityRole="button"
+                accessibilityState={{ selected: mode === m }}
+                accessibilityLabel={m === 'email' ? 'Identifiant par e-mail' : 'Identifiant par numéro'}
+              >
+                <Text style={[styles.modeText, mode === m && styles.modeTextActive]}>
+                  {m === 'email' ? 'E-mail' : 'Numéro'}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
           <View style={styles.field}>
-            <Text style={styles.label}>Adresse e-mail ou numéro</Text>
             <Controller
               control={control}
               name="email"
-              render={({ field: { onBlur, onChange, value } }) => (
-                <TextInput
-                  style={[styles.input, errors.email && styles.inputError]}
-                  placeholder="vous@exemple.com ou 77 000 00 00"
-                  placeholderTextColor={tokens.colors.field.disabled}
-                  autoCapitalize="none"
-                  autoComplete="username"
-                  keyboardType="default"
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  value={value}
-                />
-              )}
+              render={({ field: { onBlur, onChange, value } }) =>
+                mode === 'phone' ? (
+                  <PhoneInput value={value} onChange={onChange} label="Numéro de téléphone" />
+                ) : (
+                  <>
+                    <Text style={styles.label}>Adresse e-mail</Text>
+                    <TextInput
+                      style={[styles.input, errors.email && styles.inputError]}
+                      placeholder="vous@exemple.com"
+                      placeholderTextColor={tokens.colors.field.disabled}
+                      autoCapitalize="none"
+                      autoComplete="email"
+                      accessibilityLabel="Adresse e-mail"
+                      keyboardType="email-address"
+                      onBlur={onBlur}
+                      onChangeText={onChange}
+                      value={value}
+                    />
+                  </>
+                )
+              }
             />
             {errors.email ? <Text style={styles.error}>{errors.email.message}</Text> : null}
           </View>
@@ -118,6 +159,7 @@ export default function LoginScreen() {
                     style={styles.inputFlex}
                     placeholder="••••••••"
                     placeholderTextColor={tokens.colors.field.disabled}
+                    accessibilityLabel="Mot de passe"
                     secureTextEntry={!showPassword}
                     autoComplete="password"
                     onBlur={onBlur}
@@ -172,6 +214,27 @@ const styles = StyleSheet.create({
   brand: { alignItems: 'center', marginBottom: tokens.spacing[8] },
   logo: { height: 56, width: 200 },
   tagline: { ...tokens.typography.bodyLg, color: tokens.colors.field.textMuted, marginTop: tokens.spacing[2] },
+  modeRow: {
+    flexDirection: 'row',
+    gap: tokens.spacing[2],
+    marginBottom: tokens.spacing[3],
+  },
+  modeBtn: {
+    flex: 1,
+    minHeight: tokens.touch.field,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: tokens.radii.lg,
+    borderWidth: tokens.layout.borderWidth,
+    borderColor: tokens.colors.field.rule,
+    backgroundColor: tokens.colors.neutral[0],
+  },
+  modeBtnActive: {
+    backgroundColor: tokens.colors.primary[600],
+    borderColor: tokens.colors.primary[600],
+  },
+  modeText: { ...tokens.typography.button, color: tokens.colors.field.text },
+  modeTextActive: { color: tokens.colors.neutral[0] },
   field: { marginBottom: tokens.spacing[4] },
   label: { ...tokens.typography.label, fontSize: 13, letterSpacing: 0, color: tokens.colors.field.text, marginBottom: tokens.spacing[2] },
   input: {
