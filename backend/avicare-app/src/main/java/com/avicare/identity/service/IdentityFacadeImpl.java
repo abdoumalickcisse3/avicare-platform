@@ -38,6 +38,11 @@ public class IdentityFacadeImpl implements IdentityFacade {
   }
 
   @Override
+  public java.util.Optional<UserInfo> findByEmailIfPresent(String email) {
+    return userRepository.findByEmailIgnoreCase(email).map(identityMapper::toInfo);
+  }
+
+  @Override
   public boolean isActive(Long userId) {
     return loadById(userId).isActive();
   }

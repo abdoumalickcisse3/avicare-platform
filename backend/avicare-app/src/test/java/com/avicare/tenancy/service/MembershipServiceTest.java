@@ -41,6 +41,8 @@ class MembershipServiceTest {
   void createMemberAccount_provisionsUserAndPersistsMembership() {
     UserInfo provisioned =
         new UserInfo(5L, "worker@avicare.io", "Worker Name", null, UserRole.USER, true);
+    when(identityFacade.findByEmailIfPresent("worker@avicare.io"))
+        .thenReturn(java.util.Optional.empty());
     when(identityFacade.provisionUser(any(ProvisionUserCommand.class))).thenReturn(provisioned);
     when(userFarmRepository.existsByUserIdAndFarmId(5L, 3L)).thenReturn(false);
     when(userFarmRepository.save(any(UserFarm.class)))
@@ -59,6 +61,59 @@ class MembershipServiceTest {
     verify(userFarmRepository).save(any(UserFarm.class));
     assertThat(result.temporaryPassword()).isNotBlank();
     assertThat(result.member().email()).isEqualTo("worker@avicare.io");
+  }
+
+  /**
+   * The case that made this whole thread worth pulling: a farm owner being added to a neighbour's
+   * farm. Until 2026-10-09 it answered EMAIL_ALREADY_USED, so the only way through was a second
+   * account — and a second account is a second dashboard.
+   */
+  @Test
+  void createMemberAccount_attachesAnExistingAccount_insteadOfRefusingIt() {
+    UserInfo awa = new UserInfo(5L, "awa@avicare.io", "Awa Diop", null, UserRole.USER, true);
+    when(identityFacade.findByEmailIfPresent("awa@avicare.io"))
+        .thenReturn(java.util.Optional.of(awa));
+    when(userFarmRepository.existsByUserIdAndFarmId(5L, 3L)).thenReturn(false);
+    when(userFarmRepository.save(any(UserFarm.class)))
+        .thenAnswer(
+            inv -> {
+              UserFarm m = inv.getArgument(0);
+              m.setUserId(5L);
+              return m;
+            });
+    when(identityFacade.findById(5L)).thenReturn(awa);
+
+    CreateMemberResult result =
+        membershipService.createMemberAccount(
+            3L,
+            new CreateMemberRequest("Awa Diop", "awa@avicare.io", null, FarmRole.MANAGER, null));
+
+    // Nobody was created, and no password was reset: resetting hers would lock her out of her own
+    // farm to let her into this one.
+    verify(identityFacade, org.mockito.Mockito.never())
+        .provisionUser(any(ProvisionUserCommand.class));
+    assertThat(result.temporaryPassword()).isNull();
+    assertThat(result.accountWasCreated()).isFalse();
+    verify(userFarmRepository).save(any(UserFarm.class));
+  }
+
+  @Test
+  void createMemberAccount_refusesSomeoneAlreadyOnThisFarm() {
+    // This guard existed before but could never fire: the user had just been created, so it was
+    // dead code describing an intention. Attaching an existing account brings it to life.
+    UserInfo awa = new UserInfo(5L, "awa@avicare.io", "Awa Diop", null, UserRole.USER, true);
+    when(identityFacade.findByEmailIfPresent("awa@avicare.io"))
+        .thenReturn(java.util.Optional.of(awa));
+    when(userFarmRepository.existsByUserIdAndFarmId(5L, 3L)).thenReturn(true);
+
+    assertThatThrownBy(
+            () ->
+                membershipService.createMemberAccount(
+                    3L,
+                    new CreateMemberRequest(
+                        "Awa Diop", "awa@avicare.io", null, FarmRole.MANAGER, null)))
+        .isInstanceOf(com.avicare.common.api.exception.ConflictException.class);
+    verify(userFarmRepository, org.mockito.Mockito.never()).save(any(UserFarm.class));
   }
 
   @Test

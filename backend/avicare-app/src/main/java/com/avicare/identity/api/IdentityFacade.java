@@ -19,6 +19,13 @@ public interface IdentityFacade {
    */
   UserInfo findByEmail(String email);
 
+  /**
+   * The account holding this email, or empty — for callers whose job is to find out whether it
+   * exists. {@link #findByEmail} throws, which is right when absence is a fault and wrong when
+   * absence is the question.
+   */
+  java.util.Optional<UserInfo> findByEmailIfPresent(String email);
+
   boolean isActive(Long userId);
 
   /**

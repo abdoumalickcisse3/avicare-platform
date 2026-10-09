@@ -134,6 +134,15 @@ export default function FermesScreen() {
     try {
       const result = await createMember({ farmId: selectedFarmId, body }).unwrap();
       setMemberSheet({ open: false, member: null });
+      if (!result.temporaryPassword) {
+        // The address already had an account: it was attached, not created. Saying nothing here
+        // would look like the save failed — there is simply no password to hand over.
+        Alert.alert(
+          'Membre rattaché',
+          `${result.member.fullName} avait déjà un compte Jawdi. Cette personne accède désormais à la ferme avec son mot de passe habituel, et choisira entre ses fermes à la connexion.`,
+        );
+        return;
+      }
       setIssued({
         password: result.temporaryPassword,
         fullName: result.member.fullName,

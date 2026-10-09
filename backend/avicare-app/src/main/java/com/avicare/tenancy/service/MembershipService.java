@@ -17,6 +17,7 @@ import com.avicare.tenancy.dto.response.MemberResponse;
 import com.avicare.tenancy.repository.UserFarmRepository;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,12 +55,27 @@ public class MembershipService {
           "OWNER_NOT_ASSIGNABLE", "The OWNER role cannot be assigned to a member");
     }
     PermissionValidator.validate(request.permissions());
-    String tempPassword = TemporaryPasswordGenerator.generate();
-    UserInfo user =
-        identityFacade.provisionUser(
-            new ProvisionUserCommand(
-                request.fullName(), request.email(), request.phone(), tempPassword));
 
+    // The same person can belong to several farms with a different role in each — that is what
+    // user_farms has always modelled. Until now this method could not express it: it always
+    // provisioned a NEW account, so adding someone who already had one answered
+    // EMAIL_ALREADY_USED. A farm owner could not be made a manager of a neighbour's farm without
+    // inventing a second account, and a second account means a second dashboard.
+    //
+    // So an existing address attaches a membership instead of creating anyone. No temporary
+    // password is issued in that case: resetting the password of someone who already has one
+    // would lock them out of their OWN farm to let them into this one.
+    Optional<UserInfo> existing = identityFacade.findByEmailIfPresent(request.email());
+    String tempPassword = existing.isPresent() ? null : TemporaryPasswordGenerator.generate();
+    UserInfo user =
+        existing.orElseGet(
+            () ->
+                identityFacade.provisionUser(
+                    new ProvisionUserCommand(
+                        request.fullName(), request.email(), request.phone(), tempPassword)));
+
+    // Live at last: before, the user had just been created and could not already be a member.
+    // Now it guards the real case — adding someone who is already on THIS farm.
     if (userFarmRepository.existsByUserIdAndFarmId(user.id(), farmId)) {
       throw new ConflictException(
           "MEMBERSHIP_ALREADY_EXISTS", "User is already a member of this farm");

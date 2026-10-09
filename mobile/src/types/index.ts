@@ -1038,10 +1038,14 @@ export interface UpdateMemberInput {
   active?: boolean;
 }
 
-/** Creating a member returns the one-time password, shown once and never again. */
+/**
+ * Adding a member returns the one-time password, shown once and never again — or `null` when the
+ * address already had an account. That person was attached to this farm and keeps the password
+ * they already use; issuing a new one would cut them off from their own farms.
+ */
 export interface CreateMemberResult {
   member: Member;
-  temporaryPassword: string;
+  temporaryPassword: string | null;
 }
 
 /**

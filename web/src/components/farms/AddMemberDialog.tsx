@@ -67,6 +67,12 @@ export function AddMemberDialog({ open, onClose, farmId }: AddMemberDialogProps)
   const [customize, setCustomize] = useState(false);
   const [permissions, setPermissions] = useState<string[]>([]);
   const [temporaryPassword, setTemporaryPassword] = useState<string | null>(null);
+  /**
+   * Set when the address already belonged to an account: that person was attached to this farm
+   * and keeps the password they already use. Without this flag the dialog would sit on the form
+   * with no password to show, looking as if the save had failed.
+   */
+  const [attachedExisting, setAttachedExisting] = useState(false);
 
   const { control, handleSubmit, reset } = useForm<AddMemberForm>({
     resolver: zodResolver(addMemberSchema),
@@ -114,7 +120,11 @@ export function AddMemberDialog({ open, onClose, farmId }: AddMemberDialogProps)
         ...(customize ? { permissions } : {}),
       };
       const result = await createMember({ farmId, body }).unwrap();
-      setTemporaryPassword(result.temporaryPassword);
+      if (result.temporaryPassword) {
+        setTemporaryPassword(result.temporaryPassword);
+      } else {
+        setAttachedExisting(true);
+      }
     } catch (err) {
       showToast(apiErrorMessage(err), "error");
     }
@@ -138,7 +148,9 @@ export function AddMemberDialog({ open, onClose, farmId }: AddMemberDialogProps)
       maxWidth="sm"
       slotProps={{ paper: { sx: { borderRadius: `${16}px` } } }}
     >
-      {temporaryPassword ? (
+      {attachedExisting ? (
+        <ExistingAccountAttached onDone={handleDone} />
+      ) : temporaryPassword ? (
         <>
           <DialogTitle component="div" sx={{ pr: 6 }}>
             <Typography variant="h5" sx={{ fontWeight: 700 }}>
@@ -329,5 +341,39 @@ export function AddMemberDialog({ open, onClose, farmId }: AddMemberDialogProps)
         </Box>
       )}
     </Dialog>
+  );
+}
+
+/**
+ * Shown when the address already had a Jawdi account.
+ *
+ * <p>That person was attached to this farm, not created: they keep the password they already
+ * use, and will now see both farms behind one sign-in with a picker between them. Saying so
+ * matters — the owner who just invited them would otherwise wonder where the password went.
+ */
+function ExistingAccountAttached({ onDone }: { onDone: () => void }) {
+  return (
+    <>
+      <DialogTitle component="div" sx={{ pr: 6 }}>
+        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+          Membre rattaché
+        </Typography>
+      </DialogTitle>
+      <DialogContent>
+        <Typography variant="body1" sx={{ mb: 1 }}>
+          Cette personne avait déjà un compte Jawdi. Elle a été ajoutée à cette ferme et y accède
+          avec son mot de passe habituel.
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Aucun mot de passe temporaire n&apos;est créé : lui en imposer un nouveau lui ferait perdre
+          l&apos;accès à ses autres fermes. À sa prochaine connexion, elle choisira entre elles.
+        </Typography>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, py: 2 }}>
+        <Button onClick={onDone} variant="contained" color="primary">
+          Terminé
+        </Button>
+      </DialogActions>
+    </>
   );
 }

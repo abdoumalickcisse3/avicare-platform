@@ -93,7 +93,8 @@ export interface CreateMemberInput {
 
 export interface CreateMemberResult {
   member: Member;
-  temporaryPassword: string;
+  /** Absent when the address already had an account: that person keeps their own password. */
+  temporaryPassword: string | null;
 }
 
 /** Subscription lifecycle status (mirrors backend SubscriptionStatus). */
