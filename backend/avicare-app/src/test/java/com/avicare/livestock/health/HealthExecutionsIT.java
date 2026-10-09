@@ -170,7 +170,9 @@ class HealthExecutionsIT {
                 .content(
                     "{\"email\":\""
                         + email
-                        + "\",\"password\":\"password123\",\"fullName\":\"H\",\"phone\":\"+221700000023\"}"))
+                        + "\",\"password\":\"password123\",\"fullName\":\"H\",\"phone\":\""
+                        + nextTestPhone()
+                        + "\"}"))
         .andExpect(status().isCreated());
     String token =
         objectMapper
@@ -198,5 +200,17 @@ class HealthExecutionsIT {
             .getResponse()
             .getContentAsString();
     return objectMapper.readTree(json).get("data").get("id").asLong();
+  }
+
+  /**
+   * A distinct number per CALL. Required since 2026-10-09, unique since V64 — a helper invoked
+   * three times with one hard-coded number creates the first account and gets 409 on the second,
+   * which is exactly what a literal did here before.
+   */
+  private static final java.util.concurrent.atomic.AtomicInteger PHONE_SEQ =
+      new java.util.concurrent.atomic.AtomicInteger();
+
+  private static String nextTestPhone() {
+    return String.format("+2217%08d", PHONE_SEQ.incrementAndGet());
   }
 }
