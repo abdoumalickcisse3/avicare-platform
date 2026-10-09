@@ -229,6 +229,8 @@ class ModulePermissionIT {
                             + email
                             + "\",\"role\":\""
                             + role
+                            + "\",\"phone\":\""
+                            + nextTestPhone()
                             + "\"}"))
             .andExpect(status().isCreated())
             .andReturn()

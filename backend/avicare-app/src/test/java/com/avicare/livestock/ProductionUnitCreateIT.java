@@ -206,6 +206,8 @@ class ProductionUnitCreateIT {
                         + password
                         + "\",\"fullName\":\""
                         + name
+                        + "\",\"phone\":\""
+                        + nextTestPhone()
                         + "\"}"))
         .andExpect(status().isCreated());
   }
