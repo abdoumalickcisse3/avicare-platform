@@ -58,7 +58,7 @@ class AuthFlowIT {
     // 1. signup -> 201 + token pair
     String signupBody =
         """
-        {"email":"owner@avicare.io","password":"password123","fullName":"Awa Diop"}
+        {"email":"owner@avicare.io","password":"password123","fullName":"Awa Diop","phone":"+221770000001"}
         """;
     String signupJson =
         mockMvc

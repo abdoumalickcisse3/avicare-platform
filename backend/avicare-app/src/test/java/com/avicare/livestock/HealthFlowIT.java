@@ -369,6 +369,8 @@ class HealthFlowIT {
                         + password
                         + "\",\"fullName\":\""
                         + name
+                        + "\",\"phone\":\""
+                        + nextTestPhone()
                         + "\"}"))
         .andExpect(status().isCreated());
   }

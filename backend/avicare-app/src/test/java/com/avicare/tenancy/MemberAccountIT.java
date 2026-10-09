@@ -104,7 +104,10 @@ class MemberAccountIT {
                 .header("Authorization", "Bearer " + owner)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
-                    "{\"fullName\":\"Fake Owner\",\"email\":\"fakeowner@ferme.io\",\"role\":\"OWNER\"}"))
+                    "{\"fullName\":\"Fake Owner\",\"email\":\"fakeowner@ferme.io\",\"role\":\"OWNER\""
+                        + ",\"phone\":\""
+                        + nextTestPhone()
+                        + "\"}"))
         .andExpect(status().isUnprocessableEntity())
         .andExpect(jsonPath("$.code").value("OWNER_NOT_ASSIGNABLE"));
   }

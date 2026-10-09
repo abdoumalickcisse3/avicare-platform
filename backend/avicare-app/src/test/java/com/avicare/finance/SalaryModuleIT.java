@@ -301,6 +301,8 @@ class SalaryModuleIT {
                             + email
                             + "\",\"role\":\""
                             + role
+                            + "\",\"phone\":\""
+                            + nextTestPhone()
                             + "\"}"))
             .andExpect(status().isCreated())
             .andReturn()
