@@ -166,6 +166,42 @@ class AuthServiceTest {
         .isInstanceOf(UnauthorizedException.class);
   }
 
+  /**
+   * V64 made the number unique in the database. Without a check in the service the index is still
+   * enforced — by PostgreSQL, as a raw integrity violation that the error handler has no mapping
+   * for and turns into a 500. These two tests are the difference between a sentence and a crash.
+   */
+  @Test
+  void signup_refusesANumberAnotherAccountAlreadyHolds() {
+    when(userRepository.existsByEmailIgnoreCase("bintou@avicare.io")).thenReturn(false);
+    User awa = existingUser("awa@avicare.io", "+221771842787", "password123");
+    when(userRepository.findByPhoneDigits(any())).thenReturn(java.util.List.of(awa));
+
+    assertThatThrownBy(
+            () ->
+                authService.signup(
+                    new SignupRequest(
+                        "bintou@avicare.io", "password123", "Bintou Fall", "771842787")))
+        .isInstanceOf(ConflictException.class)
+        .hasMessageContaining("déjà associé");
+    verify(userRepository, never()).save(any(User.class));
+  }
+
+  @Test
+  void updateProfile_letsSomeoneKeepTheirOwnNumber() {
+    // The collision check must not fire on the only account that legitimately holds the number:
+    // its owner, saving their profile without touching the field.
+    User awa = existingUser("awa@avicare.io", "+221771842787", "password123");
+    when(userRepository.findById(7L)).thenReturn(Optional.of(awa));
+    when(userRepository.findByPhoneDigits(any())).thenReturn(java.util.List.of(awa));
+
+    authService.updateProfile(
+        7L,
+        new com.avicare.identity.dto.request.UpdateProfileRequest("Awa Diop", "771842787", null));
+
+    assertThat(awa.getPhone()).isEqualTo("771842787");
+  }
+
   @Test
   void signup_persistsHashedPassword_andReturnsTokens() {
     when(userRepository.existsByEmailIgnoreCase("awa@avicare.io")).thenReturn(false);

@@ -57,6 +57,7 @@ public class AuthService {
     if (userRepository.existsByEmailIgnoreCase(email)) {
       throw new ConflictException("EMAIL_ALREADY_USED", "Email is already registered");
     }
+    ensurePhoneIsFree(phone, null);
     User user = new User();
     user.setEmail(email);
     user.setPasswordHash(passwordEncoder.encode(rawPassword));
@@ -101,6 +102,35 @@ public class AuthService {
       staffLoginAuditor.recordStaffLogin(user.getId(), user.getEmail());
     }
     return issueTokens(user);
+  }
+
+  /**
+   * Refuses a number another account already holds.
+   *
+   * <p>V64 made {@code users.phone} unique on its digits, because sign-in accepts a number and an
+   * ambiguous one has no safe answer. Without this check the index is still enforced — by
+   * PostgreSQL, as a raw integrity violation, which {@code GlobalExceptionHandler} has no mapping
+   * for and turns into a 500. Signing up or editing a profile with a colleague's number would crash
+   * rather than explain. So the collision is caught here, in words.
+   *
+   * <p>Matching is on {@link PhoneLookup} candidates, not on the text: '+221 77 184 27 87' and
+   * '221771842787' are one number and must collide.
+   */
+  private void ensurePhoneIsFree(String phone, Long selfId) {
+    if (phone == null || phone.isBlank()) {
+      return;
+    }
+    List<String> candidates = phoneLookup.candidates(phone);
+    if (candidates.isEmpty()) {
+      return;
+    }
+    boolean takenBySomeoneElse =
+        userRepository.findByPhoneDigits(candidates).stream()
+            .anyMatch(other -> !other.getId().equals(selfId));
+    if (takenBySomeoneElse) {
+      throw new ConflictException(
+          "PHONE_ALREADY_USED", "Ce numéro est déjà associé à un autre compte");
+    }
   }
 
   /**
@@ -154,6 +184,7 @@ public class AuthService {
   @Transactional
   public UserResponse updateProfile(Long userId, UpdateProfileRequest request) {
     User user = loadUser(userId);
+    ensurePhoneIsFree(request.phone(), userId);
     user.setFullName(request.fullName());
     user.setPhone(request.phone());
     if (request.locale() != null && !request.locale().isBlank()) {
