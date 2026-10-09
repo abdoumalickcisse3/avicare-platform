@@ -315,7 +315,9 @@ class FinanceModuleIT {
                 .content(
                     "{\"email\":\""
                         + slug
-                        + "@co.io\",\"password\":\"password123\",\"fullName\":\"Owner\",\"phone\":\"+221700000002\"}"))
+                        + "@co.io\",\"password\":\"password123\",\"fullName\":\"Owner\",\"phone\":\""
+                        + nextTestPhone()
+                        + "\"}"))
         .andExpect(status().isCreated());
     return relogin(slug);
   }
@@ -402,5 +404,17 @@ class FinanceModuleIT {
             .getResponse()
             .getContentAsString();
     return objectMapper.readTree(json).get("data").get("accessToken").asText();
+  }
+
+  /**
+   * A distinct number per CALL. Required since 2026-10-09, unique since V64 — a helper invoked
+   * three times with one hard-coded number creates the first account and gets 409 on the second,
+   * which is exactly what a literal did here before.
+   */
+  private static final java.util.concurrent.atomic.AtomicInteger PHONE_SEQ =
+      new java.util.concurrent.atomic.AtomicInteger();
+
+  private static String nextTestPhone() {
+    return String.format("+2217%08d", PHONE_SEQ.incrementAndGet());
   }
 }

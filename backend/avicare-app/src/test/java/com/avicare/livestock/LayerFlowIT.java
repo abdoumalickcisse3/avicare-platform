@@ -194,7 +194,9 @@ class LayerFlowIT {
                     .header("Authorization", "Bearer " + owner)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
-                        "{\"fullName\":\"Vet\",\"email\":\"vet@layer.io\",\"role\":\"VETERINARIAN\",\"phone\":\"+221700000008\"}"))
+                        "{\"fullName\":\"Vet\",\"email\":\"vet@layer.io\",\"role\":\"VETERINARIAN\",\"phone\":\""
+                            + nextTestPhone()
+                            + "\"}"))
             .andExpect(status().isCreated())
             .andReturn()
             .getResponse()
@@ -335,5 +337,17 @@ class LayerFlowIT {
             .getResponse()
             .getContentAsString();
     return objectMapper.readTree(json).get("data").get("accessToken").asText();
+  }
+
+  /**
+   * A distinct number per CALL. Required since 2026-10-09, unique since V64 — a helper invoked
+   * three times with one hard-coded number creates the first account and gets 409 on the second,
+   * which is exactly what a literal did here before.
+   */
+  private static final java.util.concurrent.atomic.AtomicInteger PHONE_SEQ =
+      new java.util.concurrent.atomic.AtomicInteger();
+
+  private static String nextTestPhone() {
+    return String.format("+2217%08d", PHONE_SEQ.incrementAndGet());
   }
 }
