@@ -125,7 +125,7 @@ class MemberAccountIT {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"fullName":"Farmer Test","email":"farmer-perm@ferme.io","role":"FARMER","permissions":["poultry:read","bogus:write"]}
+                    {"fullName":"Farmer Test","email":"farmer-perm@ferme.io","phone":"+221770000042","role":"FARMER","permissions":["poultry:read","bogus:write"]}
                     """))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("INVALID_PERMISSION"));
