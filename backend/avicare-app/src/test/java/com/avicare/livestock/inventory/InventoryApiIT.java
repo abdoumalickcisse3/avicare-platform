@@ -459,7 +459,7 @@ class InventoryApiIT {
                 .content(
                     "{\"email\":\""
                         + email
-                        + "\",\"password\":\"password123\",\"fullName\":\"Owner\"}"))
+                        + "\",\"password\":\"password123\",\"fullName\":\"Owner\",\"phone\":\"+221700000027\"}"))
         .andExpect(status().isCreated());
     return relogin(slug);
   }

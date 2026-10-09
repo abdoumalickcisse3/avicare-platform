@@ -31,6 +31,8 @@ async function fillForm(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText(/prénom/i), "Awa");
   await user.type(screen.getByLabelText(/^nom$/i), "Diop");
   await user.type(screen.getByLabelText(/adresse e-mail/i), "awa@example.com");
+  // Obligatoire depuis le 2026-10-09 : sans numéro, la plateforme ne peut rien signaler.
+  await user.type(screen.getByLabelText(/téléphone/i), "771842787");
   await user.type(screen.getByLabelText("Mot de passe"), "password123");
   await user.type(screen.getByLabelText(/confirmation/i), "password123");
 }

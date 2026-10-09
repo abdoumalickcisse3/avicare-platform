@@ -79,7 +79,7 @@ class MixedRoleAcrossFarmsIT {
                 .header("Authorization", "Bearer " + bintou)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
-                    "{\"fullName\":\"Awa Diop\",\"email\":\"mix-awa@co.io\",\"role\":\"MANAGER\"}"))
+                    "{\"fullName\":\"Awa Diop\",\"email\":\"mix-awa@co.io\",\"role\":\"MANAGER\",\"phone\":\"+221700000035\"}"))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.data.temporaryPassword").doesNotExist());
 
@@ -152,7 +152,8 @@ class MixedRoleAcrossFarmsIT {
             post("/api/v1/farms/" + farm + "/users")
                 .header("Authorization", "Bearer " + bintou)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"fullName\":\"Awa\",\"email\":\"mix3-awa@co.io\",\"role\":\"FARMER\"}"))
+                .content(
+                    "{\"fullName\":\"Awa\",\"email\":\"mix3-awa@co.io\",\"role\":\"FARMER\",\"phone\":\"+221700000036\"}"))
         .andExpect(status().isConflict());
   }
 
@@ -165,7 +166,9 @@ class MixedRoleAcrossFarmsIT {
                 .header("Authorization", "Bearer " + ownerToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
-                    "{\"fullName\":\"Membre\",\"email\":\"" + email + "\",\"role\":\"MANAGER\"}"))
+                    "{\"fullName\":\"Membre\",\"email\":\""
+                        + email
+                        + "\",\"role\":\"MANAGER\",\"phone\":\"+221700000037\"}"))
         .andExpect(status().isCreated());
   }
 
@@ -177,7 +180,7 @@ class MixedRoleAcrossFarmsIT {
                 .content(
                     "{\"email\":\""
                         + slug
-                        + "@co.io\",\"password\":\"password123\",\"fullName\":\"Owner\"}"))
+                        + "@co.io\",\"password\":\"password123\",\"fullName\":\"Owner\",\"phone\":\"+221700000034\"}"))
         .andExpect(status().isCreated());
     return relogin(slug);
   }

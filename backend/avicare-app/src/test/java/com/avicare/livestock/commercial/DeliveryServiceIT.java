@@ -153,7 +153,7 @@ class DeliveryServiceIT {
                 .content(
                     "{\"email\":\""
                         + email
-                        + "\",\"password\":\"password123\",\"fullName\":\"T\"}"))
+                        + "\",\"password\":\"password123\",\"fullName\":\"T\",\"phone\":\"+221700000016\"}"))
         .andExpect(status().isCreated());
     String token =
         objectMapper

@@ -271,7 +271,7 @@ class StockMovementFlowIT {
                 .content(
                     "{\"email\":\""
                         + email
-                        + "\",\"password\":\"password123\",\"fullName\":\"T\"}"))
+                        + "\",\"password\":\"password123\",\"fullName\":\"T\",\"phone\":\"+221700000030\"}"))
         .andExpect(status().isCreated());
     String token =
         objectMapper

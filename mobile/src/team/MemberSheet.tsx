@@ -103,9 +103,11 @@ export function MemberSheet({
 
   const selected = catalog ? expandPermissions(permissions, catalog) : new Set<string>();
   const emailValid = EMAIL.test(email.trim());
+  // Le numéro est obligatoire à la création depuis le 2026-10-09 : c'est par lui que le membre
+  // recevra ses alertes. À l'édition il n'est pas modifiable ici, donc il ne bloque rien.
   const canSubmit = member
     ? !saving
-    : fullName.trim().length > 0 && emailValid && !saving;
+    : fullName.trim().length > 0 && emailValid && phone.trim().length > 0 && !saving;
 
   const submit = () => {
     if (!canSubmit) return;
@@ -153,7 +155,7 @@ export function MemberSheet({
                 error={email.length > 0 && !emailValid ? 'Adresse e-mail invalide' : undefined}
                 helperText="C'est avec elle que le membre se connectera."
               />
-              <PhoneInput value={phone} onChange={setPhone} label="Téléphone" />
+              <PhoneInput value={phone} onChange={setPhone} label="Téléphone (WhatsApp)" hint="Obligatoire : c'est par là que passent les alertes." />
             </>
           )}
 

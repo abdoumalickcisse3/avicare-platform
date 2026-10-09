@@ -138,7 +138,7 @@ class MemberAccountIT {
                 .content(
                     "{\"email\":\""
                         + slug
-                        + "@co.io\",\"password\":\"password123\",\"fullName\":\"Owner\"}"))
+                        + "@co.io\",\"password\":\"password123\",\"fullName\":\"Owner\",\"phone\":\"+221700000033\"}"))
         .andExpect(status().isCreated());
     return relogin(slug);
   }

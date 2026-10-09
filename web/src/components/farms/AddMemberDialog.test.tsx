@@ -100,6 +100,7 @@ describe("AddMemberDialog", () => {
 
     await user.type(screen.getByLabelText(/nom complet/i), "Awa Diop");
     await user.type(screen.getByLabelText(/adresse e-mail/i), "awa@f.io");
+    await user.type(screen.getByLabelText(/numéro/i), "771842787");
 
     await user.click(screen.getByRole("button", { name: /créer le compte/i }));
 
@@ -118,6 +119,7 @@ describe("AddMemberDialog", () => {
 
     await user.type(screen.getByLabelText(/nom complet/i), "Awa Diop");
     await user.type(screen.getByLabelText(/adresse e-mail/i), "awa@f.io");
+    await user.type(screen.getByLabelText(/numéro/i), "771842787");
 
     await user.click(screen.getByRole("button", { name: /créer le compte/i }));
 

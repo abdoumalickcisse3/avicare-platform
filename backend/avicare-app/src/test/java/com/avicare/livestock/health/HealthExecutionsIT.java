@@ -170,7 +170,7 @@ class HealthExecutionsIT {
                 .content(
                     "{\"email\":\""
                         + email
-                        + "\",\"password\":\"password123\",\"fullName\":\"H\"}"))
+                        + "\",\"password\":\"password123\",\"fullName\":\"H\",\"phone\":\"+221700000023\"}"))
         .andExpect(status().isCreated());
     String token =
         objectMapper

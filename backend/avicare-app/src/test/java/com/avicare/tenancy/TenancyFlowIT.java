@@ -84,7 +84,7 @@ class TenancyFlowIT {
                     .header("Authorization", "Bearer " + ownerAccess2)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
-                        "{\"fullName\":\"Vet\",\"email\":\"vet@farm.io\",\"role\":\"VETERINARIAN\"}"))
+                        "{\"fullName\":\"Vet\",\"email\":\"vet@farm.io\",\"role\":\"VETERINARIAN\",\"phone\":\"+221700000039\"}"))
             .andExpect(status().isCreated())
             .andReturn()
             .getResponse()

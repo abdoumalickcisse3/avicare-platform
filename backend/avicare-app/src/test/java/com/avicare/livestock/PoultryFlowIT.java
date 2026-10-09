@@ -150,7 +150,7 @@ class PoultryFlowIT {
                     .header("Authorization", "Bearer " + owner)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
-                        "{\"fullName\":\"Vet\",\"email\":\"vet@poultry.io\",\"role\":\"VETERINARIAN\"}"))
+                        "{\"fullName\":\"Vet\",\"email\":\"vet@poultry.io\",\"role\":\"VETERINARIAN\",\"phone\":\"+221700000009\"}"))
             .andExpect(status().isCreated())
             .andReturn()
             .getResponse()

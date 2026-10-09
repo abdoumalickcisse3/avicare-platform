@@ -128,6 +128,8 @@ class FarmProductionFocusIT {
                         + password
                         + "\",\"fullName\":\""
                         + name
+                        + "\",\"phone\":\""
+                        + nextTestPhone()
                         + "\"}"))
         .andExpect(status().isCreated());
   }
@@ -144,5 +146,16 @@ class FarmProductionFocusIT {
             .getResponse()
             .getContentAsString();
     return objectMapper.readTree(json).get("data").get("accessToken").asText();
+  }
+
+  /**
+   * A distinct number per account. Required since 2026-10-09, and unique since V64 — two test
+   * accounts sharing one would hit the index, not the validator, and fail for the wrong reason.
+   */
+  private static final java.util.concurrent.atomic.AtomicInteger PHONE_SEQ =
+      new java.util.concurrent.atomic.AtomicInteger();
+
+  private static String nextTestPhone() {
+    return String.format("+2217%08d", PHONE_SEQ.incrementAndGet());
   }
 }

@@ -222,7 +222,7 @@ class KillSwitchApiIT {
                 .content(
                     "{\"email\":\""
                         + slug
-                        + "@flags.io\",\"password\":\"password123\",\"fullName\":\"Owner\"}"))
+                        + "@flags.io\",\"password\":\"password123\",\"fullName\":\"Owner\",\"phone\":\"+221700000032\"}"))
         .andExpect(status().isCreated());
     return login(slug);
   }

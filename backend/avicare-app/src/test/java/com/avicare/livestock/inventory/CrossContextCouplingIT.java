@@ -330,7 +330,7 @@ class CrossContextCouplingIT {
                 .content(
                     "{\"email\":\""
                         + email
-                        + "\",\"password\":\"password123\",\"fullName\":\"T\"}"))
+                        + "\",\"password\":\"password123\",\"fullName\":\"T\",\"phone\":\"+221700000025\"}"))
         .andExpect(status().isCreated());
     String token =
         objectMapper
