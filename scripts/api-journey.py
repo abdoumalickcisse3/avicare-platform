@@ -106,9 +106,14 @@ class Journey:
         today = datetime.date.today().isoformat()
         yesterday = (datetime.date.today() - datetime.timedelta(days=1)).isoformat()
         email = f"parcours{stamp}@jawdi.test"
+        # Le numéro est obligatoire depuis le 2026-10-09, et unique depuis V64 : chaque compte du
+        # parcours en tire un distinct de l'horodatage, comme les adresses.
+        phone = lambda n: f"+2217{(stamp + n) % 100000000:08d}"
 
         self.section("Inscription")
-        self.call("POST", "/auth/signup", {"email": email, "password": PASSWORD, "fullName": "Éleveur Parcours"})
+        self.call("POST", "/auth/signup",
+                  {"email": email, "password": PASSWORD, "fullName": "Éleveur Parcours",
+                   "phone": phone(0)})
         payload, _ = self.call("POST", "/auth/login", {"email": email, "password": PASSWORD})
         self.tokens["farmer"] = self.unwrap(payload).get("accessToken")
         if not self.tokens["farmer"]:
@@ -302,7 +307,8 @@ class Journey:
 
         self.section("Isolation entre fermes")
         neighbour = f"voisin{stamp}@jawdi.test"
-        self.call("POST", "/auth/signup", {"email": neighbour, "password": PASSWORD, "fullName": "Voisin"})
+        self.call("POST", "/auth/signup",
+                  {"email": neighbour, "password": PASSWORD, "fullName": "Voisin", "phone": phone(1)})
         payload, _ = self.call("POST", "/auth/login", {"email": neighbour, "password": PASSWORD})
         self.tokens["neighbour"] = self.unwrap(payload).get("accessToken")
         for path in [f, f + "/dashboard", f + "/finance/summary", f + "/commercial/clients",
@@ -314,7 +320,9 @@ class Journey:
         self.call("GET", f + "/health/observations", expect=(400,), note="unitId manquant : 400, pas 500")
         self.call("GET", "/il-n-existe-pas", expect=(404,), note="adresse inconnue : 404, pas 500")
         self.call("POST", f + "/users",
-                  {"email": f"x{stamp}@jawdi.test", "fullName": "X", "role": "INEXISTANT"},
+                  # Un numéro valide, pour que le 400 porte bien sur le rôle et non sur un champ manquant.
+                  {"email": f"x{stamp}@jawdi.test", "fullName": "X", "role": "INEXISTANT",
+                   "phone": phone(2)},
                   expect=(400,), note="enum invalide : 400, pas 500")
         for path in ["/partner/me", "/partner/network", "/partner/network/farms"]:
             self.call("GET", path, expect=(403,), note="jeton éleveur sur le portail partenaire")
