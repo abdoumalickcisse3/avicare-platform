@@ -16,6 +16,7 @@
 | Symptôme rapporté | Runbook | Sévérité |
 |---|---|---|
 | « Je n'arrive plus à me connecter », « accès refusé » | [Un éleveur est bloqué](incidents/eleveur-bloque-connexion.md) | HIGH |
+| Le compte **staff** ne se connecte plus (console inaccessible) | [Le compte staff est bloqué](incidents/staff-bloque-connexion.md) | HIGH |
 | « J'ai eu une erreur ce matin », « ça n'a pas marché » | [Retrouver la requête d'un client](incidents/client-erreur-a-retrouver.md) | MEDIUM |
 | « Mon stock ne correspond pas », anomalie CRITICAL | [Stock ou solde incohérent](incidents/donnee-incoherente.md) | HIGH |
 | Pas de sauvegarde récente | [Sauvegarde manquée](ops/sauvegarde-manquee.md) | HIGH |
