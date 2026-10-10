@@ -56,11 +56,21 @@ export function PhoneField({
   };
 
   return (
-    <Stack direction="row" spacing={1} sx={{ width: fullWidth ? "100%" : undefined }}>
+    // `flex-start`, not the flex default: a row stretches its children to the tallest one, so the
+    // helper text appearing under the number would silently make the indicative 22px taller than
+    // the field it sits next to. Top-aligned, the message hangs below without moving anything.
+    <Stack
+      direction="row"
+      spacing={1}
+      sx={{ alignItems: "flex-start", width: fullWidth ? "100%" : undefined }}
+    >
       <Select
         value={current.iso}
         onChange={(e) => pick(e.target.value)}
-        size="medium"
+        // Same height as the field beside it. The theme puts every TextField on `size: "small"`
+        // (40px); a Select states its own size and would otherwise sit at MUI's 56px default,
+        // which is how the indicative ended up overhanging the number by 16px.
+        size="small"
         inputProps={{ "aria-label": `Indicatif pays : ${current.name}` }}
         renderValue={(iso) => {
           const c = COUNTRIES.find((x) => x.iso === iso) ?? current;
