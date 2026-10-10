@@ -51,6 +51,7 @@ it('sends the code and the new password, then confirms the change', async () => 
 
   await type(screen.getByLabelText('Code à 6 chiffres'), '123456');
   await type(screen.getByLabelText('Nouveau mot de passe'), 'nouveaupass');
+  await type(screen.getByLabelText('Confirmation du mot de passe'), 'nouveaupass');
   await press(screen.getByLabelText('Changer mon mot de passe'));
 
   expect(mockConfirm).toHaveBeenCalledWith({
@@ -81,7 +82,47 @@ it('says the code was refused rather than failing silently', async () => {
   await askForACode();
   await type(screen.getByLabelText('Code à 6 chiffres'), '000000');
   await type(screen.getByLabelText('Nouveau mot de passe'), 'nouveaupass');
+  await type(screen.getByLabelText('Confirmation du mot de passe'), 'nouveaupass');
   await press(screen.getByLabelText('Changer mon mot de passe'));
 
   expect(screen.getByText('Code incorrect ou expiré. Demandez-en un nouveau.')).toBeTruthy();
+});
+
+it('refuses a password that was not typed twice the same way', async () => {
+  await askForACode();
+
+  await type(screen.getByLabelText('Code à 6 chiffres'), '123456');
+  await type(screen.getByLabelText('Nouveau mot de passe'), 'nouveaupass');
+  await type(screen.getByLabelText('Confirmation du mot de passe'), 'nouveaupasse');
+  await press(screen.getByLabelText('Changer mon mot de passe'));
+
+  // Typed blind on a phone, a single field turns one slip into an account nobody can open —
+  // and the reset is the last door, so there is nothing behind it to undo the mistake.
+  expect(screen.getByText('Les mots de passe ne correspondent pas')).toBeTruthy();
+  expect(mockConfirm).not.toHaveBeenCalled();
+});
+
+it('will not submit until the password is confirmed', async () => {
+  await askForACode();
+
+  await type(screen.getByLabelText('Code à 6 chiffres'), '123456');
+  await type(screen.getByLabelText('Nouveau mot de passe'), 'nouveaupass');
+  await press(screen.getByLabelText('Changer mon mot de passe'));
+
+  expect(screen.getByText('Veuillez confirmer le mot de passe')).toBeTruthy();
+  expect(mockConfirm).not.toHaveBeenCalled();
+});
+
+it('lets the password be read back before it is sent', async () => {
+  await askForACode();
+
+  // Blind entry is what made the typo unrecoverable: on a phone keyboard the farmer must be able
+  // to check what they actually typed, exactly as the login screen already allows.
+  const reveal = screen.getByLabelText('Afficher le mot de passe');
+  expect(screen.getByLabelText('Nouveau mot de passe').props.secureTextEntry).toBe(true);
+
+  await press(reveal);
+
+  expect(screen.getByLabelText('Nouveau mot de passe').props.secureTextEntry).toBe(false);
+  expect(screen.getByLabelText('Masquer le mot de passe')).toBeTruthy();
 });
