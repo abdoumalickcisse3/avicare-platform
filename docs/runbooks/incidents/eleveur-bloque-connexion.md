@@ -22,6 +22,11 @@ au client.
 
 ## Diagnostic
 
+> **Si c'est toi qui es dehors, pas un client :** tout ce diagnostic passe par la console, et la
+> console exige un compte staff connecté. Le compte staff bloqué ferme donc ce chemin — va
+> directement à [le compte staff ne peut plus se connecter](staff-bloque-connexion.md), qui ne
+> suppose que SSH.
+
 1. **Console → Sécurité** (`/console/securite`), section « Adresses actuellement refusées ».
 2. Cherche l'adresse. Si la colonne « Par » indique `automatique`, c'est le blocage anti-force brute.
 3. Regarde le **compte visé** dans le journal en dessous :
@@ -60,6 +65,11 @@ authentification.
 
 Son application mobile rejoue probablement un mot de passe périmé. Fais-lui se **déconnecter puis
 reconnecter** sur le mobile. Sinon, réinitialise son mot de passe depuis Console → Utilisateurs.
+
+Vérifie aussi qu'il n'a pas réinitialisé son mot de passe lui-même sans réussir à en choisir un :
+un `consumed_at` dans `password_reset_codes` juste avant `users.updated_at` le dit en une requête
+(méthode détaillée dans [le runbook staff](staff-bloque-connexion.md#diagnostic)). Dans ce cas
+l'adresse n'a jamais été le problème, et débloquer ne changera rien.
 
 ### Si ça touche plusieurs fermes sans rapport
 
