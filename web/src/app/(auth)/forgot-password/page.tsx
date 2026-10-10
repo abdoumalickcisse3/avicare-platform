@@ -27,10 +27,16 @@ import { PhoneField } from "@/components/PhoneField";
 const phoneSchema = z.object({
   phone: z.string().min(6, "Numéro de téléphone requis"),
 });
-const codeSchema = z.object({
-  code: z.string().length(6, "Le code fait 6 chiffres"),
-  newPassword: z.string().min(8, "8 caractères minimum"),
-});
+const codeSchema = z
+  .object({
+    code: z.string().length(6, "Le code fait 6 chiffres"),
+    newPassword: z.string().min(8, "8 caractères minimum"),
+    confirmPassword: z.string().min(1, "Veuillez confirmer le mot de passe"),
+  })
+  .refine((d) => d.newPassword === d.confirmPassword, {
+    message: "Les mots de passe ne correspondent pas",
+    path: ["confirmPassword"],
+  });
 
 type PhoneForm = z.infer<typeof phoneSchema>;
 type CodeForm = z.infer<typeof codeSchema>;
@@ -41,6 +47,11 @@ type CodeForm = z.infer<typeof codeSchema>;
  * <p>WhatsApp rather than email: that is how the audience communicates, and the platform has no
  * SMTP. A farmer whose account has no phone number is not stranded — support resets it from the
  * back-office — and the screen says so rather than leaving them guessing.
+ *
+ * <p>The new password is typed twice. This screen is the last door: it sets a password without
+ * anyone having to know the previous one, so a typo here is not a rejected form, it is an account
+ * whose password nobody knows. For the platform's own staff account there is no administrator
+ * above it to repair that — which is exactly how it was locked out on 2026-10-08.
  */
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -57,7 +68,7 @@ export default function ForgotPasswordPage() {
   });
   const codeForm = useForm<CodeForm>({
     resolver: zodResolver(codeSchema),
-    defaultValues: { code: "", newPassword: "" },
+    defaultValues: { code: "", newPassword: "", confirmPassword: "" },
   });
 
   const onRequest = async (values: PhoneForm) => {
@@ -71,7 +82,11 @@ export default function ForgotPasswordPage() {
   const onConfirm = async (values: CodeForm) => {
     setError(null);
     try {
-      await confirmReset({ phone: phone as string, ...values }).unwrap();
+      await confirmReset({
+        phone: phone as string,
+        code: values.code,
+        newPassword: values.newPassword,
+      }).unwrap();
       setDone(true);
       setTimeout(() => router.replace("/login"), 1500);
     } catch (e) {
@@ -162,6 +177,20 @@ export default function ForgotPasswordPage() {
                 <PasswordField
                   {...field}
                   label="Nouveau mot de passe"
+                  autoComplete="new-password"
+                  fullWidth
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
+                />
+              )}
+            />
+            <Controller
+              name="confirmPassword"
+              control={codeForm.control}
+              render={({ field, fieldState }) => (
+                <PasswordField
+                  {...field}
+                  label="Confirmation"
                   autoComplete="new-password"
                   fullWidth
                   error={!!fieldState.error}

@@ -69,6 +69,7 @@ describe("ForgotPasswordPage", () => {
 
     await userEvent.type(await screen.findByLabelText("Code à 6 chiffres"), "123456");
     await userEvent.type(screen.getByLabelText("Nouveau mot de passe"), "NouveauPass1");
+    await userEvent.type(screen.getByLabelText("Confirmation"), "NouveauPass1");
     await userEvent.click(screen.getByRole("button", { name: /changer mon mot de passe/i }));
 
     expect(await screen.findByText(/Mot de passe modifié/)).toBeInTheDocument();
@@ -81,6 +82,7 @@ describe("ForgotPasswordPage", () => {
 
     await userEvent.type(await screen.findByLabelText("Code à 6 chiffres"), "000000");
     await userEvent.type(screen.getByLabelText("Nouveau mot de passe"), "NouveauPass1");
+    await userEvent.type(screen.getByLabelText("Confirmation"), "NouveauPass1");
     await userEvent.click(screen.getByRole("button", { name: /changer mon mot de passe/i }));
 
     expect(await screen.findByText(/Code invalide ou expiré/)).toBeInTheDocument();
@@ -102,5 +104,34 @@ describe("ForgotPasswordPage", () => {
     await userEvent.click(await screen.findByRole("button", { name: /changer de numéro/i }));
 
     expect(screen.getByLabelText("Numéro de téléphone")).toBeInTheDocument();
+  });
+
+  it("refuses to send a password that was not typed twice the same way", async () => {
+    const calls = mockApi();
+    renderWithProviders(<ForgotPasswordPage />);
+    await askForCode();
+
+    await userEvent.type(await screen.findByLabelText("Code à 6 chiffres"), "123456");
+    await userEvent.type(screen.getByLabelText("Nouveau mot de passe"), "NouveauPass1");
+    await userEvent.type(screen.getByLabelText("Confirmation"), "NouveauPass2");
+    await userEvent.click(screen.getByRole("button", { name: /changer mon mot de passe/i }));
+
+    // The reset is the one door with nobody behind it: a typo here sets a password nobody knows
+    // and, for the platform's own staff account, there is no administrator above to undo it.
+    expect(await screen.findByText(/Les mots de passe ne correspondent pas/)).toBeInTheDocument();
+    expect(calls.some((url) => url.includes("/confirm"))).toBe(false);
+  });
+
+  it("asks for the confirmation before it will submit anything", async () => {
+    const calls = mockApi();
+    renderWithProviders(<ForgotPasswordPage />);
+    await askForCode();
+
+    await userEvent.type(await screen.findByLabelText("Code à 6 chiffres"), "123456");
+    await userEvent.type(screen.getByLabelText("Nouveau mot de passe"), "NouveauPass1");
+    await userEvent.click(screen.getByRole("button", { name: /changer mon mot de passe/i }));
+
+    expect(await screen.findByText(/Veuillez confirmer le mot de passe/)).toBeInTheDocument();
+    expect(calls.some((url) => url.includes("/confirm"))).toBe(false);
   });
 });

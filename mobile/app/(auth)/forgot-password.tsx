@@ -7,6 +7,11 @@
  * no SMTP. A farmer whose account carries no number is not stranded — support resets it from the
  * back-office — and the screen says so instead of leaving them guessing.
  *
+ * The new password is typed twice and can be read back with the eye. On a phone it is entered
+ * blind, and this screen sets a password without anyone having to know the previous one: a typo
+ * is therefore not a rejected form but an account nobody can open. The platform's own staff
+ * account was locked out that way on 2026-10-08, with no administrator above it to repair it.
+ *
  * The confirmation after step 1 is deliberately non-committal: the server answers the same for a
  * known and an unknown number, and so does this screen, or it becomes a way to test whether an
  * account exists.
@@ -28,7 +33,7 @@ import { useRouter } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowLeft, CheckCircle2 } from 'lucide-react-native';
+import { ArrowLeft, CheckCircle2, Eye, EyeOff } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import {
   useConfirmPasswordResetMutation,
@@ -39,10 +44,16 @@ import { PhoneInput } from '@/phone/PhoneInput';
 const phoneSchema = z.object({
   phone: z.string().min(6, 'Numéro de téléphone requis'),
 });
-const codeSchema = z.object({
-  code: z.string().length(6, 'Le code fait 6 chiffres'),
-  newPassword: z.string().min(8, '8 caractères minimum'),
-});
+const codeSchema = z
+  .object({
+    code: z.string().length(6, 'Le code fait 6 chiffres'),
+    newPassword: z.string().min(8, '8 caractères minimum'),
+    confirmPassword: z.string().min(1, 'Veuillez confirmer le mot de passe'),
+  })
+  .refine((d) => d.newPassword === d.confirmPassword, {
+    message: 'Les mots de passe ne correspondent pas',
+    path: ['confirmPassword'],
+  });
 
 type PhoneValues = z.infer<typeof phoneSchema>;
 type CodeValues = z.infer<typeof codeSchema>;
@@ -55,6 +66,7 @@ export default function ForgotPasswordScreen() {
   const [phone, setPhone] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const phoneForm = useForm<PhoneValues>({
     resolver: zodResolver(phoneSchema),
@@ -62,7 +74,7 @@ export default function ForgotPasswordScreen() {
   });
   const codeForm = useForm<CodeValues>({
     resolver: zodResolver(codeSchema),
-    defaultValues: { code: '', newPassword: '' },
+    defaultValues: { code: '', newPassword: '', confirmPassword: '' },
   });
 
   const onRequest = async (v: PhoneValues) => {
@@ -78,7 +90,11 @@ export default function ForgotPasswordScreen() {
   const onConfirm = async (v: CodeValues) => {
     setError(null);
     try {
-      await confirmReset({ phone: phone as string, ...v }).unwrap();
+      await confirmReset({
+        phone: phone as string,
+        code: v.code,
+        newPassword: v.newPassword,
+      }).unwrap();
       setDone(true);
     } catch {
       setError('Code incorrect ou expiré. Demandez-en un nouveau.');
@@ -205,29 +221,76 @@ export default function ForgotPasswordScreen() {
 
               <View style={styles.field}>
                 <Text style={styles.label}>Nouveau mot de passe</Text>
+                <View
+                  style={[
+                    styles.inputWrap,
+                    codeForm.formState.errors.newPassword && styles.inputError,
+                  ]}
+                >
+                  <Controller
+                    control={codeForm.control}
+                    name="newPassword"
+                    render={({ field: { onBlur, onChange, value } }) => (
+                      <TextInput
+                        style={styles.inputFlex}
+                        accessibilityLabel="Nouveau mot de passe"
+                        placeholder="8 caractères minimum"
+                        placeholderTextColor={tokens.colors.field.disabled}
+                        autoCapitalize="none"
+                        secureTextEntry={!showPassword}
+                        onBlur={onBlur}
+                        onChangeText={onChange}
+                        value={value}
+                      />
+                    )}
+                  />
+                  <Pressable
+                    onPress={() => setShowPassword((v) => !v)}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'
+                    }
+                  >
+                    {showPassword ? (
+                      <EyeOff size={20} color={tokens.colors.field.textMuted} />
+                    ) : (
+                      <Eye size={20} color={tokens.colors.field.textMuted} />
+                    )}
+                  </Pressable>
+                </View>
+                {codeForm.formState.errors.newPassword ? (
+                  <Text style={styles.error}>
+                    {codeForm.formState.errors.newPassword.message}
+                  </Text>
+                ) : null}
+              </View>
+
+              <View style={styles.field}>
+                <Text style={styles.label}>Confirmation</Text>
                 <Controller
                   control={codeForm.control}
-                  name="newPassword"
+                  name="confirmPassword"
                   render={({ field: { onBlur, onChange, value } }) => (
                     <TextInput
                       style={[
                         styles.input,
-                        codeForm.formState.errors.newPassword && styles.inputError,
+                        codeForm.formState.errors.confirmPassword && styles.inputError,
                       ]}
-                      accessibilityLabel="Nouveau mot de passe"
-                      placeholder="8 caractères minimum"
+                      accessibilityLabel="Confirmation du mot de passe"
+                      placeholder="Retapez le mot de passe"
                       placeholderTextColor={tokens.colors.field.disabled}
                       autoCapitalize="none"
-                      secureTextEntry
+                      secureTextEntry={!showPassword}
                       onBlur={onBlur}
                       onChangeText={onChange}
                       value={value}
                     />
                   )}
                 />
-                {codeForm.formState.errors.newPassword ? (
+                {codeForm.formState.errors.confirmPassword ? (
                   <Text style={styles.error}>
-                    {codeForm.formState.errors.newPassword.message}
+                    {codeForm.formState.errors.confirmPassword.message}
                   </Text>
                 ) : null}
               </View>
@@ -291,6 +354,17 @@ const styles = StyleSheet.create({
     borderRadius: tokens.radii.lg,
     paddingHorizontal: tokens.spacing[4],
   },
+  inputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: tokens.touch.primaryButton,
+    backgroundColor: tokens.colors.neutral[0],
+    borderWidth: 1,
+    borderColor: tokens.colors.neutral[200],
+    borderRadius: tokens.radii.lg,
+    paddingHorizontal: tokens.spacing[4],
+  },
+  inputFlex: { flex: 1, ...tokens.typography.bodyLg, color: tokens.colors.field.text },
   inputError: { borderColor: tokens.colors.error },
   error: { ...tokens.typography.bodySm, color: tokens.colors.error, marginTop: tokens.spacing[1] },
   serverError: {
