@@ -17,6 +17,7 @@ import {
 import { useUpdateStockThresholdMutation } from "@/store/api/inventoryStockApi";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { apiErrorMessage } from "@/lib/apiError";
+import { articleLabelFor } from "@/lib/inventory";
 import { formatNumber } from "@/lib/format";
 import type { StockItem } from "@/types";
 
@@ -76,7 +77,7 @@ export function ThresholdDialog({
       <DialogTitle sx={{ fontWeight: 700, pb: 0.5 }}>Seuil d&apos;alerte</DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
-          {item.articleKey} · en stock {formatNumber(item.currentQuantity)}
+          {item.label ?? articleLabelFor(item.articleKey, undefined)} · en stock {formatNumber(item.currentQuantity)}
           {item.unit ? ` ${item.unit}` : ""}
         </Typography>
         <TextField

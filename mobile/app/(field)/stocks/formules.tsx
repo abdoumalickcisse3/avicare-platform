@@ -24,10 +24,14 @@ import {
   useGetAvailableFormulasQuery,
   useRecomputeFormulaCostMutation,
 } from '@/store/api/feedFormulasApi';
-import { useGetPlatformFormulaQuery, useGetPlatformFormulasQuery } from '@/store/api/inventoryCatalogApi';
+import {
+  useGetAllArticlesQuery,
+  useGetPlatformFormulaQuery,
+  useGetPlatformFormulasQuery,
+} from '@/store/api/inventoryCatalogApi';
 import { useCloneFeedFormulaMutation } from '@/store/api/feedFormulasApi';
 import { formatCurrency } from '@/lib/format';
-import { FEED_PHASE_LABELS } from '@/lib/inventory';
+import { FEED_PHASE_LABELS, articleLabelFor } from '@/lib/inventory';
 import type { FarmFeedFormula } from '@/types';
 
 export default function FormulesScreen() {
@@ -41,6 +45,8 @@ export default function FormulesScreen() {
   const arg = selectedFarmId === null ? skipToken : { farmId: selectedFarmId };
   const { data, isLoading } = useGetAvailableFormulasQuery(arg);
   const { data: templates = [] } = useGetPlatformFormulasQuery(arg);
+  // Le modèle ne transporte que des clés ; le nom lisible vit dans le catalogue.
+  const { data: articles } = useGetAllArticlesQuery(arg);
   const [clone, { isLoading: cloning }] = useCloneFeedFormulaMutation();
   const [recompute] = useRecomputeFormulaCostMutation();
   const [deactivate] = useDeactivateFeedFormulaMutation();
@@ -247,7 +253,7 @@ export default function FormulesScreen() {
                   ) : (
                     preview.ingredients.map((i) => (
                       <View key={`${i.articleSource}:${i.articleKey}`} style={styles.compositionRow}>
-                        <Text style={styles.compositionName}>{i.articleKey}</Text>
+                        <Text style={styles.compositionName}>{articleLabelFor(i.articleKey, articles)}</Text>
                         <Text style={styles.compositionPct}>{i.percentage} %</Text>
                       </View>
                     ))

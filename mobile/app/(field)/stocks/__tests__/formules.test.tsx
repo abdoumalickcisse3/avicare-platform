@@ -23,6 +23,14 @@ jest.mock('@/store/api/feedFormulasApi', () => ({
   useDeactivateFeedFormulaMutation: jest.fn(() => [jest.fn(() => ({ unwrap: () => Promise.resolve() })), { isLoading: false }]),
 }));
 jest.mock('@/store/api/inventoryCatalogApi', () => ({
+  // Le catalogue porte la traduction des clés plateforme : sans lui, l'écran affiche
+  // « corn_crushed » à quelqu'un qui a tout saisi en français.
+  useGetAllArticlesQuery: jest.fn(() => ({
+    data: [
+      { articleKey: 'corn_crushed', articleSource: 'INVENTORY', label: 'Maïs concassé', subcategory: null, unit: 'kg', typicalUnitPriceXof: 300, custom: false },
+      { articleKey: 'soja', articleSource: 'INVENTORY', label: 'Tourteau de soja', subcategory: null, unit: 'kg', typicalUnitPriceXof: 500, custom: true },
+    ],
+  })),
   useGetPlatformFormulasQuery: jest.fn(() => ({ data: [{ key: 'starter_std', label: 'Démarrage standard', targetBreedKeys: [], targetPhase: 'STARTER', targetAgeDaysMin: 0, targetAgeDaysMax: 21, ingredients: [], estimatedCostPer100kgXof: 20000 }] })),
   // The clone sheet reads the chosen template's composition; without this the screen throws.
   useGetPlatformFormulaQuery: jest.fn(() => ({
@@ -64,7 +72,10 @@ describe('Formules', () => {
     await press(screen.getByLabelText('Démarrage standard'));
 
     expect(screen.getByText('Composition')).toBeTruthy();
-    expect(screen.getByText('corn_crushed')).toBeTruthy();
+    // Le nom que l'éleveur reconnaît, pas la clé technique : 'corn_crushed' est un identifiant
+    // de la plateforme, et le catalogue en porte la traduction.
+    expect(screen.getByText('Maïs concassé')).toBeTruthy();
+    expect(screen.queryByText('corn_crushed')).toBeNull();
     expect(screen.getByText('60 %')).toBeTruthy();
   });
 });

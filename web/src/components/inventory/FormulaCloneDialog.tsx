@@ -18,11 +18,12 @@ import {
 import { X } from "lucide-react";
 import { useCloneFeedFormulaMutation } from "@/store/api/feedFormulasApi";
 import {
+  useGetAllArticlesQuery,
   useGetPlatformFormulaQuery,
   useGetPlatformFormulasQuery,
 } from "@/store/api/inventoryCatalogApi";
 import { useToast } from "@/components/feedback/ToastProvider";
-import { FEED_PHASE_LABELS } from "@/lib/inventory";
+import { FEED_PHASE_LABELS, articleLabelFor } from "@/lib/inventory";
 import { formatCurrency } from "@/lib/format";
 import { colors } from "@/theme/tokens";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -56,6 +57,8 @@ function FormulaCloneBody({
 }) {
   const { showToast } = useToast();
   const { data: templates = [] } = useGetPlatformFormulasQuery({ farmId });
+  // Le modèle ne transporte que des clés ; le nom lisible vit dans le catalogue.
+  const { data: articles } = useGetAllArticlesQuery({ farmId });
   const [clone, { isLoading }] = useCloneFeedFormulaMutation();
 
   const [sourceKey, setSourceKey] = useState(presetKey ?? "");
@@ -146,7 +149,7 @@ function FormulaCloneBody({
                         direction="row"
                         sx={{ justifyContent: "space-between", gap: 2 }}
                       >
-                        <Typography variant="body2">{i.articleKey}</Typography>
+                        <Typography variant="body2">{articleLabelFor(i.articleKey, articles)}</Typography>
                         <Typography variant="body2" sx={{ fontWeight: 600 }}>
                           {i.percentage} %
                         </Typography>

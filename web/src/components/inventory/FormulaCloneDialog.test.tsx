@@ -17,12 +17,24 @@ const DETAIL = {
   estimatedCostPer100kgXof: 34500,
 };
 
+/**
+ * Le catalogue porte la traduction des clés plateforme. Sans lui, l'aperçu affichait
+ * « corn_crushed » à quelqu'un qui a tout saisi en français.
+ */
+const ARTICLES = [
+  { articleKey: "corn_crushed", articleSource: "INVENTORY", label: "Maïs concassé", subcategory: null, unit: "kg", typicalUnitPriceXof: 300, custom: false },
+  { articleKey: "soybean_meal", articleSource: "INVENTORY", label: "Tourteau de soja", subcategory: null, unit: "kg", typicalUnitPriceXof: 500, custom: false },
+];
+
 function mockApi(detail: unknown = DETAIL) {
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: RequestInfo | URL) => {
       const url = input instanceof Request ? input.url : String(input);
-      const body = /feed-formulas\/[^/?]+$/.test(url.split("?")[0])
+      const path = url.split("?")[0];
+      const body = path.endsWith("/articles/all")
+        ? { data: ARTICLES }
+        : /feed-formulas\/[^/?]+$/.test(path)
         ? { data: detail }
         : { data: TEMPLATES };
       return new Response(JSON.stringify(body), {
@@ -48,9 +60,11 @@ describe("FormulaCloneDialog", () => {
     mockApi();
     render("demarrage_chair");
 
-    expect(await screen.findByText("corn_crushed")).toBeInTheDocument();
+    // Le nom que l'éleveur reconnaît, pas l'identifiant de la plateforme.
+    expect(await screen.findByText("Maïs concassé")).toBeInTheDocument();
+    expect(screen.queryByText("corn_crushed")).not.toBeInTheDocument();
     expect(screen.getByText("60 %")).toBeInTheDocument();
-    expect(screen.getByText("soybean_meal")).toBeInTheDocument();
+    expect(screen.getByText("Tourteau de soja")).toBeInTheDocument();
   });
 
   it("gives the cost at today's catalog prices", async () => {
