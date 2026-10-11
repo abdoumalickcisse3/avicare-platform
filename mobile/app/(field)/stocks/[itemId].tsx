@@ -79,7 +79,19 @@ export default function StockItemScreen() {
   const [updateThreshold, { isLoading: savingThreshold }] = useUpdateStockThresholdMutation();
   const [deactivate] = useDeactivateStockItemMutation();
 
-  const groups = useMemo(() => groupByMonth(movements), [movements]);
+  /**
+   * Les trois vues du web sur le même historique : tout, ce qui vient d'un bon d'achat, ce qu'un
+   * lot a consommé. Aucun appel de plus — `getMovementsByItem` porte déjà `purchaseOrderId` et
+   * `productionUnitId`, le filtre est côté client des deux côtés.
+   */
+  const [view, setView] = useState<'all' | 'purchases' | 'byUnit'>('all');
+  const shown = useMemo(() => {
+    if (view === 'purchases') return movements.filter((m) => m.purchaseOrderId != null);
+    if (view === 'byUnit') return movements.filter((m) => m.productionUnitId != null);
+    return movements;
+  }, [movements, view]);
+
+  const groups = useMemo(() => groupByMonth(shown), [shown]);
   const cover = useMemo(
     () => (item ? daysOfCover(item.currentQuantity, movements) : null),
     [item, movements],
@@ -169,6 +181,28 @@ export default function StockItemScreen() {
 
             {/* 3. Where it went. */}
             <Text style={styles.sectionTitle}>Historique</Text>
+            <View style={styles.viewTabs}>
+              {(
+                [
+                  ['all', 'Tout'],
+                  ['purchases', 'Achats'],
+                  ['byUnit', 'Par lot'],
+                ] as const
+              ).map(([key, label]) => (
+                <Pressable
+                  key={key}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Voir ${label}`}
+                  accessibilityState={{ selected: view === key }}
+                  onPress={() => setView(key)}
+                  style={[styles.viewTab, view === key && styles.viewTabOn]}
+                >
+                  <Text style={[styles.viewTabText, view === key && styles.viewTabTextOn]}>
+                    {label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
             {groups.length === 0 ? (
               <View style={styles.empty}>
                 <Package size={26} color={tokens.colors.primary[600]} />
@@ -325,6 +359,20 @@ const styles = StyleSheet.create({
   },
   primaryText: { ...tokens.typography.button, color: tokens.colors.action.accumulate.fg },
 
+  viewTabs: {
+    flexDirection: 'row',
+    gap: tokens.spacing[2],
+    marginBottom: tokens.spacing[3],
+  },
+  viewTab: {
+    paddingHorizontal: tokens.spacing[3],
+    paddingVertical: tokens.spacing[2],
+    borderRadius: tokens.radii.full,
+    backgroundColor: tokens.colors.neutral[100],
+  },
+  viewTabOn: { backgroundColor: tokens.colors.primary[600] },
+  viewTabText: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted },
+  viewTabTextOn: { color: tokens.colors.neutral[0], fontWeight: '700' },
   sectionTitle: {
     ...tokens.typography.headingMd,
     color: tokens.colors.field.text,

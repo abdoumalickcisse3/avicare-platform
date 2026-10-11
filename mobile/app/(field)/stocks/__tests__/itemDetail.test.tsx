@@ -183,4 +183,18 @@ describe('StockItemScreen', () => {
 
     expect(screen.getByLabelText('Seuil saisi')).toBeTruthy();
   });
+
+  it("sépare les entrées d'achat et la consommation par lot, comme le web", async () => {
+    // Trois vues sur le même historique, filtrées côté client : le web en fait des onglets,
+    // le mobile des puces. Aucun appel réseau de plus — les mouvements portent déjà
+    // `purchaseOrderId` et `productionUnitId`.
+    await render(<StockItemScreen />);
+
+    expect(screen.getByLabelText('Voir Achats')).toBeTruthy();
+    expect(screen.getByLabelText('Voir Par lot')).toBeTruthy();
+
+    await press(screen.getByLabelText('Voir Achats'));
+    expect(screen.getByLabelText('Voir Achats').props.accessibilityState.selected).toBe(true);
+    expect(screen.getByLabelText('Voir Tout').props.accessibilityState.selected).toBe(false);
+  });
 });
