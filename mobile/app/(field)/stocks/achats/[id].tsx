@@ -14,6 +14,7 @@ import { skipToken } from '@reduxjs/toolkit/query/react';
 import { ArrowLeft } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { useFarmAccess } from '@/auth/useSession';
+import { canManageFarm } from '@/auth/roles';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { ReceptionSheet } from '@/inventory/ReceptionSheet';
 import {
@@ -36,7 +37,7 @@ export default function AchatDetailScreen() {
   // Le backend garde chaque écriture sur le RÔLE (`InventoryAccess.WRITE_MANAGER`), pas sur la
   // permission : un membre à qui l'on aurait accordé `inventory:write` à la main verrait les
   // boutons et prendrait un 403.
-  const canWrite = isAdmin || farmRole === 'OWNER' || farmRole === 'MANAGER';
+  const canWrite = canManageFarm(farmRole, isAdmin);
 
   const { data: po, isLoading } = useGetPurchaseOrderQuery(
     selectedFarmId === null ? skipToken : { farmId: selectedFarmId, id: poId },

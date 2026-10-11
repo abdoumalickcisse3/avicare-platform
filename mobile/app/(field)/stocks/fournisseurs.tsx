@@ -14,6 +14,7 @@ import { ArrowLeft, ChevronRight, Phone, Plus, Truck } from 'lucide-react-native
 import { tokens } from '@/theme';
 import { KeyboardSafeSheet, SheetScroll, sheetBounds } from '@/components/ui';
 import { useFarmAccess } from '@/auth/useSession';
+import { canManageFarm } from '@/auth/roles';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { useCreateSupplierMutation, useGetSuppliersQuery } from '@/store/api/suppliersApi';
 import { useGetSupplierBalancesQuery } from '@/store/api/supplierLedgerApi';
@@ -31,7 +32,7 @@ export default function FournisseursScreen() {
   const { can, farmRole, isAdmin } = useFarmAccess();
   // Le backend garde sur le RÔLE, pas sur la permission : `inventory:write` coïncide par défaut,
   // mais devient faux dès qu'un propriétaire l'accorde à la main.
-  const canWrite = isAdmin || farmRole === 'OWNER' || farmRole === 'MANAGER';
+  const canWrite = canManageFarm(farmRole, isAdmin);
   const selectedFarmId = useSelector(selectSelectedFarmId);
 
   const { data: suppliers, isLoading } = useGetSuppliersQuery(

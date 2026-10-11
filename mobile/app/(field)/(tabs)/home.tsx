@@ -46,6 +46,7 @@ import { AnnouncementBanner } from '@/components/field/AnnouncementBanner';
 import { BenchmarkCard } from '@/components/field/BenchmarkCard';
 import { StockSummaryCard } from '@/components/field/StockSummaryCard';
 import { useFarmAccess } from '@/auth/useSession';
+import { canManageFarm } from '@/auth/roles';
 import { useListFarmsQuery } from '@/store/api/farmsApi';
 import { useGetDashboardQuery } from '@/store/api/dashboardApi';
 import { useGetFarmActivityQuery } from '@/store/api/activityApi';
@@ -212,7 +213,7 @@ function TrendChip({ trend, invert, onDark }: { trend: Trend; invert?: boolean; 
 export default function HomeScreen() {
   const router = useRouter();
   const selectedFarmId = useSelector(selectSelectedFarmId);
-  const { can } = useFarmAccess();
+  const { can, farmRole, isAdmin } = useFarmAccess();
   const { data: farms } = useListFarmsQuery();
   const farmId = selectedFarmId ?? undefined;
   const period = useSelector(selectPeriod);
@@ -245,17 +246,22 @@ export default function HomeScreen() {
     return out;
   }, [data, router]);
 
+  // Vente et Dépense visent des écritures de supervision (CommercialAccess / FinanceAccess
+  // WRITE_MANAGER) : le backend y demande un RÔLE. Sur la permission, un gérant perdait le
+  // raccourci « Dépense » — ses droits par défaut s'arrêtent à `finance:read` — alors qu'il a
+  // l'onglet Finance juste à côté. Les saisies d'élevage restent sur `poultry:write`, qui est
+  // bien la règle serveur pour elles.
   const quickActions = useMemo(() => {
     const all: Array<{ label: string; icon: LucideIcon; tint: string; onPress: () => void; show: boolean }> = [
       { label: 'Mortalité', icon: Skull, tint: tokens.colors.error, onPress: goElevage, show: can('poultry:write') },
       { label: 'Œufs', icon: Egg, tint: tokens.colors.accent[400], onPress: goElevage, show: can('poultry:write') },
       { label: 'Pesée', icon: Scale, tint: tokens.colors.info, onPress: goElevage, show: can('poultry:write') },
-      { label: 'Vente', icon: ShoppingCart, tint: tokens.colors.primary[500], onPress: () => router.push('/(field)/commerce/vente'), show: can('commercial:write') },
-      { label: 'Dépense', icon: Wallet, tint: tokens.colors.clients, onPress: () => router.push('/(field)/finance'), show: can('finance:write') },
+      { label: 'Vente', icon: ShoppingCart, tint: tokens.colors.primary[500], onPress: () => router.push('/(field)/commerce/vente'), show: canManageFarm(farmRole, isAdmin) },
+      { label: 'Dépense', icon: Wallet, tint: tokens.colors.clients, onPress: () => router.push('/(field)/finance'), show: canManageFarm(farmRole, isAdmin) },
       { label: 'Stock', icon: PackageOpen, tint: tokens.colors.accent[600], onPress: () => router.push('/(field)/(tabs)/stocks'), show: can('inventory:read') },
     ];
     return all.filter((a) => a.show).slice(0, 6);
-  }, [can, router]);
+  }, [can, farmRole, isAdmin, router]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>

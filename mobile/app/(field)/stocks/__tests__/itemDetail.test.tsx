@@ -162,6 +162,20 @@ describe('StockItemScreen', () => {
     expect(screen.queryByLabelText('Archiver cet article')).toBeNull();
   });
 
+  it("laisse l'ouvrier saisir un mouvement SANS la permission inventory:write", async () => {
+    // Le cas réel, et celui qui était cassé : les droits par défaut d'un FARMER portent
+    // `inventory:consume`, pas `inventory:write`. La garde lisait la permission, donc l'ouvrier
+    // ne pouvait pas enregistrer un mouvement depuis le téléphone — alors que le backend
+    // l'autorise par le rôle (`InventoryAccess.WRITE_FARMER`).
+    mockAccess.can = jest.fn(() => false);
+    mockAccess.farmRole = 'FARMER';
+
+    await render(<StockItemScreen />);
+
+    expect(screen.getByLabelText('Enregistrer un mouvement')).toBeTruthy();
+    expect(screen.queryByLabelText('Archiver cet article')).toBeNull();
+  });
+
   it('opens the threshold keypad on the threshold row', async () => {
     await render(<StockItemScreen />);
 

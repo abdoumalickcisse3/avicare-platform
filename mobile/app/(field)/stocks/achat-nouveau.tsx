@@ -22,6 +22,7 @@ import { skipToken } from '@reduxjs/toolkit/query/react';
 import { ArrowLeft, Check, ChevronDown, Minus, Package, Plus, Trash2 } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { useFarmAccess } from '@/auth/useSession';
+import { canManageFarm } from '@/auth/roles';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { useGetSuppliersQuery } from '@/store/api/suppliersApi';
 import { useGetStockItemsQuery } from '@/store/api/inventoryStockApi';
@@ -69,7 +70,7 @@ export default function AchatNouveauScreen() {
 
   const selectedFarmId = useSelector(selectSelectedFarmId);
   const { farmRole, isAdmin, session } = useFarmAccess();
-  const canWrite = isAdmin || farmRole === 'OWNER' || farmRole === 'MANAGER';
+  const canWrite = canManageFarm(farmRole, isAdmin);
 
   const arg = selectedFarmId === null ? skipToken : { farmId: selectedFarmId };
   const { data: suppliers } = useGetSuppliersQuery(arg);
