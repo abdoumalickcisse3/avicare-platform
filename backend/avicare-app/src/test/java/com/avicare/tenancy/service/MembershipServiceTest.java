@@ -28,19 +28,21 @@ class MembershipServiceTest {
 
   private UserFarmRepository userFarmRepository;
   private IdentityFacade identityFacade;
+  private MemberNotifier memberNotifier;
   private MembershipService membershipService;
 
   @BeforeEach
   void setUp() {
     userFarmRepository = Mockito.mock(UserFarmRepository.class);
     identityFacade = Mockito.mock(IdentityFacade.class);
-    membershipService = new MembershipService(userFarmRepository, identityFacade);
+    memberNotifier = Mockito.mock(MemberNotifier.class);
+    membershipService = new MembershipService(userFarmRepository, identityFacade, memberNotifier);
   }
 
   @Test
   void createMemberAccount_provisionsUserAndPersistsMembership() {
     UserInfo provisioned =
-        new UserInfo(5L, "worker@avicare.io", "Worker Name", null, UserRole.USER, true);
+        new UserInfo(5L, "worker@avicare.io", "Worker Name", "+221771111111", UserRole.USER, true);
     when(identityFacade.findByEmailIfPresent("worker@avicare.io"))
         .thenReturn(java.util.Optional.empty());
     when(identityFacade.provisionUser(any(ProvisionUserCommand.class))).thenReturn(provisioned);
@@ -61,6 +63,8 @@ class MembershipServiceTest {
     verify(userFarmRepository).save(any(UserFarm.class));
     assertThat(result.temporaryPassword()).isNotBlank();
     assertThat(result.member().email()).isEqualTo("worker@avicare.io");
+    // Compte créé : le message doit l'annoncer comme tel (accountCreated = true).
+    verify(memberNotifier).memberAdded(3L, provisioned, FarmRole.FARMER, true);
   }
 
   /**
@@ -70,7 +74,8 @@ class MembershipServiceTest {
    */
   @Test
   void createMemberAccount_attachesAnExistingAccount_insteadOfRefusingIt() {
-    UserInfo awa = new UserInfo(5L, "awa@avicare.io", "Awa Diop", null, UserRole.USER, true);
+    UserInfo awa =
+        new UserInfo(5L, "awa@avicare.io", "Awa Diop", "+221772222222", UserRole.USER, true);
     when(identityFacade.findByEmailIfPresent("awa@avicare.io"))
         .thenReturn(java.util.Optional.of(awa));
     when(userFarmRepository.existsByUserIdAndFarmId(5L, 3L)).thenReturn(false);
@@ -95,13 +100,16 @@ class MembershipServiceTest {
     assertThat(result.temporaryPassword()).isNull();
     assertThat(result.accountWasCreated()).isFalse();
     verify(userFarmRepository).save(any(UserFarm.class));
+    // Et on la prévient, en lui disant qu'elle garde son mot de passe (accountCreated = false).
+    verify(memberNotifier).memberAdded(3L, awa, FarmRole.MANAGER, false);
   }
 
   @Test
   void createMemberAccount_refusesSomeoneAlreadyOnThisFarm() {
     // This guard existed before but could never fire: the user had just been created, so it was
     // dead code describing an intention. Attaching an existing account brings it to life.
-    UserInfo awa = new UserInfo(5L, "awa@avicare.io", "Awa Diop", null, UserRole.USER, true);
+    UserInfo awa =
+        new UserInfo(5L, "awa@avicare.io", "Awa Diop", "+221772222222", UserRole.USER, true);
     when(identityFacade.findByEmailIfPresent("awa@avicare.io"))
         .thenReturn(java.util.Optional.of(awa));
     when(userFarmRepository.existsByUserIdAndFarmId(5L, 3L)).thenReturn(true);

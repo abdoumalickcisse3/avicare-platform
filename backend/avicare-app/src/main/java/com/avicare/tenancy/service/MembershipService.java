@@ -32,6 +32,7 @@ public class MembershipService {
 
   private final UserFarmRepository userFarmRepository;
   private final IdentityFacade identityFacade;
+  private final MemberNotifier memberNotifier;
 
   /** Enriches a membership row with identity fields via {@link IdentityFacade}. */
   private MemberResponse toResponse(UserFarm m) {
@@ -90,6 +91,11 @@ public class MembershipService {
             ? request.permissions()
             : request.role().defaultPermissions());
     UserFarm saved = userFarmRepository.save(membership);
+
+    // Après l'écriture, et sans pouvoir l'annuler : personne ne prévenait l'intéressé, qui
+    // découvrait la ferme dans son sélecteur sans savoir qui l'y avait mis.
+    memberNotifier.memberAdded(farmId, user, request.role(), tempPassword != null);
+
     return new CreateMemberResult(toResponse(saved), tempPassword);
   }
 
