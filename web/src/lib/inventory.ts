@@ -146,3 +146,29 @@ export function articleLabelFor(
   const readable = key.replace(/[_-]+/g, " ").trim();
   return readable.charAt(0).toUpperCase() + readable.slice(1);
 }
+
+/**
+ * Répartit la part manquante (ou excédentaire) proportionnellement, pour qu'un geste termine une
+ * formule arrêtée à 96 %. Rend la liste inchangée si elle est déjà à 100, ou si tout est à zéro
+ * et qu'il n'y a rien à mettre à l'échelle.
+ *
+ * Port du `normaliseTo100` mobile, à l'arithmétique près : le web tient ses parts en chaînes de
+ * saisie. Le backend accepte un total ≠ 100 (formule en cours de calibrage), donc ceci reste une
+ * commodité — jamais une condition pour enregistrer.
+ */
+export function spreadToHundred(percentages: number[]): number[] {
+  const total = percentages.reduce((s, p) => s + p, 0);
+  if (total === 100 || total <= 0) return percentages;
+  const scaled = percentages.map((p) => Math.round((p * 100) / total * 100) / 100);
+  const drift = Math.round((100 - scaled.reduce((s, p) => s + p, 0)) * 100) / 100;
+  if (drift === 0 || scaled.length === 0) return scaled;
+  // L'arrondi peut laisser un centime d'écart ; on le donne à la plus grosse ligne, où il ne
+  // se voit pas.
+  let largest = 0;
+  for (let i = 1; i < scaled.length; i += 1) {
+    if ((scaled[i] ?? 0) > (scaled[largest] ?? 0)) largest = i;
+  }
+  const out = [...scaled];
+  out[largest] = Math.round(((out[largest] ?? 0) + drift) * 100) / 100;
+  return out;
+}

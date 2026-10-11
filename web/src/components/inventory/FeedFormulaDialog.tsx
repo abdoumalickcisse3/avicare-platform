@@ -26,7 +26,7 @@ import { useGetAllArticlesQuery } from "@/store/api/inventoryCatalogApi";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { apiErrorMessage } from "@/lib/apiError";
 import { formatCurrency } from "@/lib/format";
-import { FEED_PHASE_LABELS } from "@/lib/inventory";
+import { FEED_PHASE_LABELS, spreadToHundred } from "@/lib/inventory";
 import { colors } from "@/theme/tokens";
 import type { ArticleSource, FeedFormula, FeedPhase } from "@/types";
 
@@ -141,6 +141,13 @@ function FeedFormulaBody({
     }
   };
 
+  /** Un geste pour finir une formule arrêtée à 96 % — le pendant du « Répartir » mobile. */
+  const spread = () =>
+    setIngredients((cur) => {
+      const next = spreadToHundred(cur.map((x) => pct(x.percentage)));
+      return cur.map((x, i) => ({ ...x, percentage: String(next[i] ?? 0) }));
+    });
+
   const loading = creating || updating;
   const sumOff = Math.abs(sumPct - 100) > 0.01;
 
@@ -239,7 +246,17 @@ function FeedFormulaBody({
           </Box>
 
           {sumOff && validIngredients.length > 0 && (
-            <Alert severity="warning" sx={{ py: 0.5 }}>
+            <Alert
+              severity="warning"
+              sx={{ py: 0.5 }}
+              action={
+                sumPct > 0 ? (
+                  <Button color="inherit" size="small" onClick={spread}>
+                    Répartir
+                  </Button>
+                ) : null
+              }
+            >
               La somme des pourcentages est de {sumPct.toFixed(1)} % (≠ 100 %). Vous pouvez
               enregistrer une formule en cours de calibrage.
             </Alert>
