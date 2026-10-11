@@ -23,6 +23,7 @@ import { ArrowLeft, Clock, Egg, Layers } from 'lucide-react-native';
 import { fontFamily, tokens } from '@/theme';
 import { FormField } from '@/components/field/FormField';
 import { useFarmAccess } from '@/auth/useSession';
+import { canManageFarm } from '@/auth/roles';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { useListTimeslotsQuery, useUpsertFarmSettingMutation } from '@/store/api/layerConfigApi';
 import { useGetGradesQuery, useGetTraySettingsQuery } from '@/store/api/eggProductionApi';
@@ -37,7 +38,7 @@ export default function LayerSettingsScreen() {
   const { can, farmRole, isAdmin } = useFarmAccess();
   // Le backend garde sur le RÔLE, pas sur la permission : `settings:write` coïncide par défaut,
   // mais devient faux dès qu'un propriétaire l'accorde à la main.
-  const canWrite = isAdmin || farmRole === 'OWNER' || farmRole === 'MANAGER';
+  const canWrite = canManageFarm(farmRole, isAdmin);
 
   const arg = farmId === null ? skipToken : { farmId };
   const { data: timeslots = [] } = useListTimeslotsQuery(farmId ?? skipToken);

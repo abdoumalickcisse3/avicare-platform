@@ -9,8 +9,9 @@ jest.mock('react-redux', () => ({
   useDispatch: jest.fn(() => jest.fn()),
   useStore: jest.fn(() => ({})),
 }));
+const mockAccess = { farmRole: 'OWNER', can: () => true, isAdmin: true, session: null };
 jest.mock('@/auth/useSession', () => ({
-  useFarmAccess: jest.fn(() => ({ farmRole: 'OWNER', can: () => true, isAdmin: true, session: null })),
+  useFarmAccess: jest.fn(() => mockAccess),
 }));
 jest.mock('@/store/api/purchaseOrdersApi', () => ({
   useGetPurchaseOrdersQuery: jest.fn(() => ({
@@ -30,4 +31,17 @@ describe('Bons d\'achat list', () => {
     expect(screen.getByText('Sénégal Aliments')).toBeTruthy();
     expect(screen.getByLabelText('Nouveau bon d\'achat')).toBeTruthy();
   });
+});
+
+it("montre le bon d'achat au gérant même sans la permission inventory:write", async () => {
+  // Un bon d'achat est `InventoryAccess.WRITE_MANAGER` : le backend y demande le RÔLE
+  // OWNER/MANAGER. Un gérant dont le propriétaire a restreint les permissions garde donc le
+  // droit d'en créer un — la garde lisait `can('inventory:write')` et le lui retirait.
+  mockAccess.farmRole = 'MANAGER';
+  mockAccess.isAdmin = false;
+  mockAccess.can = () => false;
+
+  await render(<AchatsScreen />);
+
+  expect(screen.getByLabelText("Nouveau bon d'achat")).toBeTruthy();
 });

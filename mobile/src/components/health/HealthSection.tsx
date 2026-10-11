@@ -31,6 +31,7 @@ import {
   useRemoveProgramMutation,
 } from '@/store/api/healthApi';
 import { useFarmAccess } from '@/auth/useSession';
+import { canManageFarm } from '@/auth/roles';
 import { formatNumber } from '@/lib/format';
 import { humanizeKey, severityChip } from '@/lib/health';
 import { TreatmentsSection } from './TreatmentsSection';
@@ -50,7 +51,7 @@ export function HealthSection({ farmId, unitId }: { farmId: number; unitId: numb
   const { can, isAdmin, farmRole } = useFarmAccess();
   const canWrite = can('health:write');
   // The server gates writes on the programme and deletes on the role, not on a permission.
-  const canManage = isAdmin || farmRole === 'OWNER' || farmRole === 'MANAGER';
+  const canManage = canManageFarm(farmRole, isAdmin);
   const canDeleteTreatment = isAdmin || farmRole === 'OWNER';
 
   const { data: vaccinations } = useGetVaccinationsQuery({ farmId, unitId });

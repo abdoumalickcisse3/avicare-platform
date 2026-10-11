@@ -24,6 +24,7 @@ import { skipToken } from '@reduxjs/toolkit/query/react';
 import { ArrowLeft, Bell, Package, Plus } from 'lucide-react-native';
 import { fontFamily, tokens } from '@/theme';
 import { useFarmAccess } from '@/auth/useSession';
+import { canManageFarm, canOperateFarm } from '@/auth/roles';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import {
   useDeactivateStockItemMutation,
@@ -49,17 +50,21 @@ export default function StockItemScreen() {
   const id = Number(itemId);
   const router = useRouter();
   const farmId = useSelector(selectSelectedFarmId);
-  const { can, farmRole, isAdmin } = useFarmAccess();
+  const { farmRole, isAdmin } = useFarmAccess();
   /**
    * Deux gardes, parce que le backend en a deux.
    *
-   * Enregistrer un mouvement de stock est un geste de terrain (`InventoryAccess.WRITE_FARMER`,
-   * donc la permission). Régler le seuil d'alerte et archiver l'article sont réservés au
-   * propriétaire et au gérant (`WRITE_MANAGER`, donc le rôle) — et le rôle n'est pas la
-   * permission dès qu'un propriétaire accorde `inventory:write` à la main.
+   * Enregistrer un mouvement de stock est un geste de terrain : `InventoryAccess.WRITE_FARMER`,
+   * c'est-à-dire le RÔLE OWNER/MANAGER/FARMER. Régler le seuil d'alerte et archiver l'article
+   * sont réservés au propriétaire et au gérant (`WRITE_MANAGER`).
+   *
+   * Les deux sont des rôles, jamais des permissions. Cette garde a longtemps lu
+   * `can('inventory:write')`, que l'ouvrier n'a pas — ses droits par défaut portent
+   * `inventory:consume` — alors que le backend l'autorise : il ne pouvait pas enregistrer un
+   * mouvement depuis le téléphone, qui est pourtant son outil.
    */
-  const canWrite = can('inventory:write');
-  const canManage = isAdmin || farmRole === 'OWNER' || farmRole === 'MANAGER';
+  const canWrite = canOperateFarm(farmRole, isAdmin);
+  const canManage = canManageFarm(farmRole, isAdmin);
 
   const [movementOpen, setMovementOpen] = useState(false);
   const [thresholdOpen, setThresholdOpen] = useState(false);

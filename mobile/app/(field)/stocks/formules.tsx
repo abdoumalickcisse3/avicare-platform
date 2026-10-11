@@ -17,6 +17,7 @@ import { ArrowLeft, Check, Copy, MoreVertical, Pencil, Wheat } from 'lucide-reac
 import { tokens } from '@/theme';
 import { KeyboardSafeSheet, SheetScroll, sheetBounds } from '@/components/ui';
 import { useFarmAccess } from '@/auth/useSession';
+import { canManageFarm } from '@/auth/roles';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import {
   useDeactivateFeedFormulaMutation,
@@ -34,7 +35,7 @@ export default function FormulesScreen() {
   const { can, farmRole, isAdmin } = useFarmAccess();
   // Le backend garde sur le RÔLE, pas sur la permission : `inventory:write` coïncide par défaut,
   // mais devient faux dès qu'un propriétaire l'accorde à la main.
-  const canWrite = isAdmin || farmRole === 'OWNER' || farmRole === 'MANAGER';
+  const canWrite = canManageFarm(farmRole, isAdmin);
   const selectedFarmId = useSelector(selectSelectedFarmId);
 
   const arg = selectedFarmId === null ? skipToken : { farmId: selectedFarmId };

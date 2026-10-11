@@ -12,6 +12,7 @@ import { skipToken } from '@reduxjs/toolkit/query/react';
 import { ArrowLeft, Plus } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { useFarmAccess } from '@/auth/useSession';
+import { canManageFarm } from '@/auth/roles';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { useGetPurchaseOrdersQuery } from '@/store/api/purchaseOrdersApi';
 import { PURCHASE_ORDER_STATUS_LABELS, purchaseOrderStatusColor } from '@/lib/commercial';
@@ -23,8 +24,9 @@ type Filter = 'active' | 'all';
 
 export default function AchatsScreen() {
   const router = useRouter();
-  const { can } = useFarmAccess();
-  const canWrite = can('inventory:write');
+  const { can, farmRole, isAdmin } = useFarmAccess();
+  // Purchase orders are InventoryAccess.WRITE_MANAGER server-side: OWNER / MANAGER, by role.
+  const canWrite = canManageFarm(farmRole, isAdmin);
   const selectedFarmId = useSelector(selectSelectedFarmId);
   const [filter, setFilter] = useState<Filter>('active');
 

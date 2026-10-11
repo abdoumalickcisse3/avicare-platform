@@ -21,7 +21,11 @@ function toBase64Url(json: string): string {
 const payload = {
   sub: '42',
   role: 'USER',
-  memberships: [{ farmId: 7, farmRole: 'FARMER', permissions: ['livestock:write'] }],
+  // Les droits par défaut réels d'un FARMER (cf. FarmRole.defaultPermissions côté backend).
+  // La fixture portait 'livestock:write', qui n'existe dans aucun vocabulaire : le backend ne
+  // connaît que 'livestock:read', et aucun endpoint ne le consulte. Une fixture fausse se fait
+  // lire comme une référence.
+  memberships: [{ farmId: 7, farmRole: 'FARMER', permissions: ['poultry:write'] }],
 };
 const token = `x.${toBase64Url(JSON.stringify(payload))}.y`;
 

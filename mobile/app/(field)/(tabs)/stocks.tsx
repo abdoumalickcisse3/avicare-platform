@@ -36,6 +36,7 @@ import {
   useGetStockValuationQuery,
 } from '@/store/api/inventoryStockApi';
 import { useFarmAccess } from '@/auth/useSession';
+import { canManageFarm } from '@/auth/roles';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { formatCurrency, formatNumber, formatRelative } from '@/lib/format';
 import type { ArticleSource, StockItem } from '@/types';
@@ -67,8 +68,9 @@ function isLow(i: StockItem): boolean {
 
 export default function StocksScreen() {
   const router = useRouter();
-  const { can } = useFarmAccess();
-  const canWrite = can('inventory:write');
+  const { can, farmRole, isAdmin } = useFarmAccess();
+  // Supervisory write: the backend asks for a ROLE (InventoryAccess.WRITE_MANAGER), not a permission.
+  const canWrite = canManageFarm(farmRole, isAdmin);
   const selectedFarmId = useSelector(selectSelectedFarmId);
   const [q, setQ] = useState('');
 

@@ -25,6 +25,7 @@ import { fontFamily, tokens } from '@/theme';
 import { FormField } from '@/components/field/FormField';
 import { Chip } from '@/team/Chip';
 import { useFarmAccess } from '@/auth/useSession';
+import { canManageFarm } from '@/auth/roles';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import {
   useCreateFeedFormulaMutation,
@@ -89,7 +90,7 @@ export default function FormulaEditorScreen() {
 
   if (farmId === null) return <Redirect href="/(field)" />;
   // Le backend garde sur le RÔLE (`InventoryAccess.WRITE_MANAGER`), pas sur la permission.
-  const canWrite = isAdmin || farmRole === 'OWNER' || farmRole === 'MANAGER';
+  const canWrite = canManageFarm(farmRole, isAdmin);
   if (!canWrite) return <Redirect href="/(field)/stocks/formules" />;
 
   const saving = creating || updating;

@@ -25,6 +25,7 @@ import { ArrowLeft, Handshake, KeyRound, Search, X } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { useFarmAccess } from '@/auth/useSession';
+import { canManageFarm } from '@/auth/roles';
 import {
   useDeclarePartnerMutation,
   useGetAvailablePartnersQuery,
@@ -72,7 +73,7 @@ export default function PartenairesScreen() {
   const router = useRouter();
   const farmId = useSelector(selectSelectedFarmId);
   const { farmRole, isAdmin } = useFarmAccess();
-  const canManage = isAdmin || farmRole === 'OWNER' || farmRole === 'MANAGER';
+  const canManage = canManageFarm(farmRole, isAdmin);
 
   const { data: mine = [] } = useGetMyPartnersQuery(farmId === null ? skipToken : { farmId });
   const [updateSharing] = useUpdateSharingMutation();

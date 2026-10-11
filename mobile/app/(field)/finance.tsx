@@ -21,6 +21,7 @@ import { Pencil, Plus, Receipt, Wallet } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { AppHeader } from '@/components/AppHeader';
 import { useFarmAccess } from '@/auth/useSession';
+import { canManageFarm } from '@/auth/roles';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { useGetCatalogQuery } from '@/store/api/catalogApi';
 import {
@@ -67,7 +68,7 @@ function currentPeriod(): string {
 export default function FinanceScreen() {
   const selectedFarmId = useSelector(selectSelectedFarmId);
   const { farmRole, isAdmin } = useFarmAccess();
-  const canManage = isAdmin || farmRole === 'OWNER' || farmRole === 'MANAGER';
+  const canManage = canManageFarm(farmRole, isAdmin);
 
   const [tab, setTab] = useState<Tab>('expenses');
   const [editing, setEditing] = useState<Expense | null>(null);

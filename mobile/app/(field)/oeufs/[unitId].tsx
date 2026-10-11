@@ -23,6 +23,7 @@ import { useDeleteCollectionMutation, useGetCollectionsQuery, useGetDailyProduct
 import { useGetDailyRecordsQuery } from '@/store/api/poultryBatchesApi';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { useFarmAccess } from '@/auth/useSession';
+import { canManageFarm } from '@/auth/roles';
 import { formatNumber } from '@/lib/format';
 import { summarizeAttrition } from '@/lib/flock';
 import type { EggCollection, PoultryDailyRecord } from '@/types';
@@ -59,7 +60,7 @@ export default function LayerDetailScreen() {
   // supprimer est un geste de supervision, réservé OWNER/MANAGER côté backend
   // (`LayerAccess.WRITE_MANAGER`). Gardée sur `poultry:write`, la corbeille s'offrait à un
   // ouvrier qui prenait un 403.
-  const canDelete = isAdmin || farmRole === 'OWNER' || farmRole === 'MANAGER';
+  const canDelete = canManageFarm(farmRole, isAdmin);
   const [deleteCollection] = useDeleteCollectionMutation();
   const [tab, setTab] = useState<Tab>('overview');
 

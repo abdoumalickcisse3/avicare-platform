@@ -38,6 +38,7 @@ import {
 } from '@/store/api/healthApi';
 import { useListBreedsQuery } from '@/store/api/breedsApi';
 import { useFarmAccess } from '@/auth/useSession';
+import { canManageFarm } from '@/auth/roles';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { ageLabel, humanizeKey, routeLabel } from '@/lib/health';
 import type { Treatment, Vaccine, VaccinationProgram, Veterinarian, VeterinarianInput } from '@/types';
@@ -56,7 +57,7 @@ export default function HealthLibraryScreen() {
   const selectedFarmId = useSelector(selectSelectedFarmId);
   const { isAdmin, farmRole } = useFarmAccess();
   // The backend gates catalog and directory writes on the role, not on a permission.
-  const canManage = isAdmin || farmRole === 'OWNER' || farmRole === 'MANAGER';
+  const canManage = canManageFarm(farmRole, isAdmin);
 
   const [section, setSection] = useState<Section>('vaccins');
   const [catalogSheet, setCatalogSheet] = useState<{
