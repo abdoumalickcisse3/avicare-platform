@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { skipToken } from '@reduxjs/toolkit/query/react';
-import { ArrowLeft, BookOpen, Check, Plus, X } from 'lucide-react-native';
+import { ArrowLeft, BookOpen, Check, Pencil, Plus, X } from 'lucide-react-native';
 import { tokens } from '@/theme';
 import { KeyboardSafeSheet, SheetScroll, sheetBounds } from '@/components/ui';
 import { useFarmAccess } from '@/auth/useSession';
@@ -58,6 +58,13 @@ export default function BibliothequeScreen() {
 
   const [filter, setFilter] = useState(ALL);
   const [sheetOpen, setSheetOpen] = useState(false);
+  /**
+   * L'article en cours de modification, ou null pour une création. Le catalogue est un upsert :
+   * c'est la CLÉ qui décide. En édition on garde celle de l'article — sinon renommer « Maïs »
+   * en « Maïs concassé » créerait un second article au lieu de corriger le premier, et le stock
+   * déjà saisi resterait accroché à l'ancien.
+   */
+  const [editing, setEditing] = useState<InventoryCatalogItem | null>(null);
   const [label, setLabel] = useState('');
   const [subcategory, setSubcategory] = useState('FEED');
   const [unit, setUnit] = useState('');
@@ -80,10 +87,20 @@ export default function BibliothequeScreen() {
   const canSubmit = label.trim() !== '' && unit.trim() !== '';
 
   const openSheet = () => {
+    setEditing(null);
     setLabel('');
     setSubcategory('FEED');
     setUnit('');
     setPrice('');
+    setSheetOpen(true);
+  };
+
+  const openEdit = (a: InventoryCatalogItem) => {
+    setEditing(a);
+    setLabel(a.label ?? '');
+    setSubcategory(a.subcategory ?? 'FEED');
+    setUnit(a.unit ?? '');
+    setPrice(a.typicalUnitPriceXof != null ? String(a.typicalUnitPriceXof) : '');
     setSheetOpen(true);
   };
 
@@ -92,10 +109,17 @@ export default function BibliothequeScreen() {
     const value: Record<string, unknown> = { label: label.trim(), subcategory, unit: unit.trim() };
     if (Number.isInteger(priceNum) && priceNum > 0) value.typical_unit_price_xof = priceNum;
     try {
-      await createArticle({ farmId: selectedFarmId, key: slugify(label.trim()), value }).unwrap();
+      const key = editing ? editing.articleKey : slugify(label.trim());
+      await createArticle({ farmId: selectedFarmId, key, value }).unwrap();
       setSheetOpen(false);
+      setEditing(null);
     } catch {
-      Alert.alert('Article', "L'article n'a pas pu être ajouté. Réessayez.");
+      Alert.alert(
+        'Article',
+        editing
+          ? "L'article n'a pas pu être modifié. Réessayez."
+          : "L'article n'a pas pu être ajouté. Réessayez.",
+      );
     }
   };
 
@@ -185,15 +209,26 @@ export default function BibliothequeScreen() {
                   </Text>
                 </View>
                 {a.custom && canWrite && (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Supprimer ${a.label}`}
-                    onPress={() => confirmDelete(a)}
-                    style={styles.deleteBtn}
-                  >
-                    <X size={14} color={tokens.colors.error} />
-                    <Text style={styles.deleteLabel}>Supprimer</Text>
-                  </Pressable>
+                  <View style={styles.cardActions}>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Modifier ${a.label}`}
+                      onPress={() => openEdit(a)}
+                      style={styles.editBtn}
+                    >
+                      <Pencil size={14} color={tokens.colors.field.textMuted} />
+                      <Text style={styles.editLabel}>Modifier</Text>
+                    </Pressable>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Supprimer ${a.label}`}
+                      onPress={() => confirmDelete(a)}
+                      style={styles.deleteBtn}
+                    >
+                      <X size={14} color={tokens.colors.error} />
+                      <Text style={styles.deleteLabel}>Supprimer</Text>
+                    </Pressable>
+                  </View>
                 )}
               </View>
             ))}
@@ -212,7 +247,7 @@ export default function BibliothequeScreen() {
           <Pressable style={styles.backdrop} accessibilityLabel="Fermer" onPress={() => setSheetOpen(false)} />
           <View style={styles.sheet}>
             <SheetScroll contentContainerStyle={styles.sheetContent}>
-              <Text style={styles.sheetTitle}>Nouvel article</Text>
+              <Text style={styles.sheetTitle}>{editing ? 'Modifier l’article' : 'Nouvel article'}</Text>
 
               <Text style={styles.fieldLabel}>Nom de l&apos;article</Text>
               <TextInput value={label} onChangeText={setLabel} placeholder="Ex. Maïs concassé" placeholderTextColor={tokens.colors.field.disabled} accessibilityLabel="Nom" style={styles.input} maxLength={80} />
@@ -311,6 +346,9 @@ const styles = StyleSheet.create({
   persoText: { ...tokens.typography.bodySm, fontSize: 10, fontWeight: '700', color: tokens.colors.primary[700] },
   meta: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, marginTop: 2 },
   price: { ...tokens.typography.numericSm, fontSize: 14, color: tokens.colors.primary[600] },
+  cardActions: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[4] },
+  editBtn: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[1], paddingVertical: tokens.spacing[2] },
+  editLabel: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted },
   deleteBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start' },
   deleteLabel: { ...tokens.typography.bodySm, color: tokens.colors.error, fontWeight: '600' },
 
