@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Jawdi — Nouveautés à tester (12 octobre 2026)</title>
+<style>
+  @page { size: A4; margin: 20mm 17mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+    color: #1c2b1e;
+    line-height: 1.52;
+    font-size: 12.2px;
+    margin: 0;
+  }
+  .cover {
+    padding-top: 14mm;
+    padding-bottom: 9mm;
+    border-bottom: 3px solid #2e7d32;
+    margin-bottom: 8mm;
+  }
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #2e7d32;
+    margin-bottom: 6px;
+  }
+  h1 { font-size: 26px; margin: 0 0 8px 0; color: #14361a; letter-spacing: -0.3px; }
+  .subtitle { font-size: 13.5px; color: #4c5c4e; margin: 0 0 14px 0; }
+  .meta { font-size: 11px; color: #7a8a7c; }
+  .context {
+    background: #f2f7f1;
+    border: 1px solid #d8e6d6;
+    border-radius: 8px;
+    padding: 13px 15px;
+    margin: 10px 0 14px 0;
+    font-size: 11.6px;
+  }
+  .context p { margin: 0 0 6px 0; }
+  .context p:last-child { margin-bottom: 0; }
+
+  table.where { width: 100%; border-collapse: collapse; margin: 10px 0 4px 0; font-size: 11.4px; }
+  table.where th, table.where td {
+    border: 1px solid #d8e6d6; padding: 8px 10px; text-align: left; vertical-align: top;
+  }
+  table.where th { background: #eef7ee; color: #14361a; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.5px; }
+  table.where td strong { color: #14361a; }
+
+  h2.part {
+    font-size: 13px; text-transform: uppercase; letter-spacing: 1px;
+    color: #2e7d32; margin: 6mm 0 3.5mm 0; padding-bottom: 5px;
+    border-bottom: 2px solid #2e7d32;
+  }
+  h2.part:first-of-type { margin-top: 8mm; }
+  h2.part { break-after: avoid; page-break-after: avoid; }
+
+  section.item { margin-bottom: 7mm; }
+  .item-head { display: flex; align-items: baseline; gap: 9px; margin-bottom: 7px; break-after: avoid; page-break-after: avoid; }
+  .item-num {
+    font-size: 12px; font-weight: 800; color: #fff; background: #2e7d32;
+    border-radius: 50%; width: 21px; height: 21px; flex: none;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  h3.item-title { font-size: 14.5px; margin: 0; color: #14361a; flex: 1; }
+  .tag {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 999px; flex: none; white-space: nowrap;
+  }
+  .tag.both { background: #14361a; color: #fff; }
+  .tag.web { background: #e3eefb; color: #1a4b82; border: 1px solid #c3dbf5; }
+  .tag.ios { background: #f6ecfb; color: #6a2d85; border: 1px solid #e4cdef; }
+
+  .cols { display: flex; gap: 12px; margin: 8px 0 9px 0; break-inside: avoid; page-break-inside: avoid; }
+  .col { flex: 1; border-radius: 8px; padding: 10px 12px; font-size: 11.3px; }
+  .col.before { background: #fbf3ea; border: 1px solid #ecd9be; }
+  .col.after { background: #eef7ee; border: 1px solid #c9e5c5; }
+  .col h4 { font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; margin: 0 0 5px 0; }
+  .col.before h4 { color: #9a5b1f; }
+  .col.after h4 { color: #256029; }
+  .col p { margin: 0; }
+
+  .check {
+    margin: 8px 0 0 0; font-size: 11.3px;
+    background: #f7faf6; border-left: 3px solid #2e7d32; padding: 8px 11px; border-radius: 0 6px 6px 0;
+  }
+  .check .lbl { color: #256029; text-transform: uppercase; font-size: 9.5px; letter-spacing: 0.5px; display: block; margin-bottom: 3px; }
+  .note {
+    font-size: 10.8px; color: #5a6a5c; background: #f7f7f5;
+    border-left: 3px solid #c9c9c0; padding: 7px 11px; margin-top: 7px; border-radius: 0 6px 6px 0;
+  }
+  .check, .note, .warn { break-inside: avoid; page-break-inside: avoid; }
+  ul.plain, ol.steps { margin: 4px 0; padding-left: 19px; }
+  ul.plain li, ol.steps li { margin-bottom: 3.5px; }
+  ol.install { margin: 6px 0; padding-left: 19px; font-size: 11.6px; }
+  ol.install li { margin-bottom: 4px; }
+
+  .warn {
+    background: #fdf6ec; border: 1px solid #efd9b4; border-radius: 8px;
+    padding: 12px 14px; font-size: 11.4px; margin: 8px 0;
+  }
+  .warn h4 { margin: 0 0 6px 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: #9a5b1f; }
+  .warn ul { margin: 0; padding-left: 19px; }
+  .warn li { margin-bottom: 4px; }
+
+  footer {
+    margin-top: 4mm; padding-top: 7px; border-top: 1px solid #d8e6d6;
+    font-size: 10px; color: #8a9a8c; display: flex; justify-content: space-between;
+  }
+  .pagebreak { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="eyebrow">Jawdi · Phase pilote · Note aux testeurs</div>
+  <h1>Ce qui a changé, et ce qu'on vous demande d'essayer</h1>
+  <p class="subtitle">Tout ce qui est arrivé dans l'application depuis le document du 24 septembre — côté ordinateur, et côté iPhone, que vous n'avez pas encore eu entre les mains.</p>
+  <p class="meta">Document préparé le 12 octobre 2026 · Web mis en ligne le 11 octobre · Application iPhone : version 1.0.0 (17), envoyée sur TestFlight le 11 octobre</p>
+</div>
+
+<div class="context">
+  <p><strong>Comment lire ce document.</strong> Chaque nouveauté porte une étiquette qui dit <em>où</em> elle se trouve : <span class="tag web">Ordinateur</span> pour le site <strong>app.jawdi.app</strong>, <span class="tag ios">iPhone</span> pour l'application, <span class="tag both">Les deux</span> quand le changement est partout.</p>
+  <p><strong>Les deux applications travaillent sur la même ferme.</strong> Ce que vous saisissez sur le téléphone apparaît sur l'ordinateur, et l'inverse. Vous vous connectez avec le même compte.</p>
+  <p><strong>Point important sur l'iPhone.</strong> L'application mobile n'a encore été testée par personne sur le terrain : elle vient d'arriver sur TestFlight. Votre premier passage dessus est donc un vrai premier passage — tout ce que vous trouverez d'étrange nous est utile, même ce qui vous paraît minuscule.</p>
+</div>
+
+<table class="where">
+  <tr>
+    <th style="width:22%">Où</th>
+    <th style="width:28%">Comment y accéder</th>
+    <th>État</th>
+  </tr>
+  <tr>
+    <td><strong>Ordinateur / navigateur</strong></td>
+    <td><strong>app.jawdi.app</strong><br>(Chrome, Safari, ou le téléphone via le navigateur)</td>
+    <td>En ligne depuis le 11 octobre au soir. Tout ce qui est listé plus bas y est déjà. <strong>Rien à installer.</strong></td>
+  </tr>
+  <tr>
+    <td><strong>Application iPhone</strong></td>
+    <td>Par <strong>TestFlight</strong> (voir la marche à suivre à la fin du document)</td>
+    <td>Version <strong>1.0.0 (17)</strong>, disponible depuis le 11 octobre au soir. <strong>Jamais encore testée par un éleveur.</strong></td>
+  </tr>
+  <tr>
+    <td><strong>Android</strong></td>
+    <td>—</td>
+    <td>Pas encore distribuée. En attendant, le site web fonctionne dans le navigateur du téléphone.</td>
+  </tr>
+</table>
+
+<h2 class="part">A · Se connecter, et travailler à plusieurs</h2>
+
+<section class="item">
+  <div class="item-head">
+    <span class="item-num">1</span>
+    <h3 class="item-title">Se connecter avec son numéro de téléphone</h3>
+    <span class="tag both">Les deux</span>
+  </div>
+  <div class="cols">
+    <div class="col before">
+      <h4>Avant</h4>
+      <p>Il fallait une adresse e-mail. Un ouvrier qui n'en a pas, ou qui ne s'en souvient pas, dépendait de quelqu'un d'autre pour entrer dans l'application.</p>
+    </div>
+    <div class="col after">
+      <h4>Maintenant</h4>
+      <p>L'écran de connexion propose deux onglets : <strong>E-mail</strong> ou <strong>Numéro</strong>. Le même mot de passe fonctionne dans les deux cas.</p>
+    </div>
+  </div>
+  <p>Partout où un numéro se saisit, un <strong>sélecteur de pays</strong> (drapeau + indicatif) est posé à côté du champ. Seize pays, le Sénégal en premier. Vous tapez le numéro comme vous le dites : <em>77 184 27 87</em>, et l'application le range en <em>+221 77 184 27 87</em>.</p>
+  <div class="check">
+    <b class="lbl">À essayer</b>
+    Connectez-vous une fois avec l'e-mail, déconnectez-vous, reconnectez-vous avec le numéro. Essayez aussi de coller un numéro complet avec le <em>+</em> : l'indicatif doit suivre tout seul, sans se dédoubler.
+  </div>
+  <div class="note">Pourquoi c'est arrivé : le 2 octobre, trois numéros béninois ont été lus comme sénégalais et dix-huit alertes WhatsApp sont parties dans le vide. Le pays n'est plus deviné, il est choisi — et le zéro du début est traité selon le pays (la France le retire, le Bénin le garde, parce que là-bas il fait partie du numéro).</div>
+</section>
+
+<section class="item">
+  <div class="item-head">
+    <span class="item-num">2</span>
+    <h3 class="item-title">Un numéro est maintenant obligatoire pour créer un compte</h3>
+    <span class="tag both">Les deux</span>
+  </div>
+  <div class="cols">
+    <div class="col before">
+      <h4>Avant</h4>
+      <p>Le numéro était optionnel. Résultat : <strong>onze des trente comptes</strong> de l'application n'en avaient aucun — et n'ont donc jamais reçu la moindre alerte WhatsApp, sans que personne ne le sache.</p>
+    </div>
+    <div class="col after">
+      <h4>Maintenant</h4>
+      <p>Créer un compte (le vôtre, ou celui d'un ouvrier) exige un numéro. C'est par là que passent les alertes : mortalité anormale, stock bas, facture en retard.</p>
+    </div>
+  </div>
+  <p>Si le numéro appartient déjà à quelqu'un, l'application le dit en une phrase claire au lieu de tomber en erreur.</p>
+  <div class="check">
+    <b class="lbl">À essayer</b>
+    Ajoutez un ouvrier depuis <em>Réglages &gt; Membres</em>. Puis essayez d'en ajouter un second avec le <strong>même numéro</strong> : vous devez voir un message compréhensible, pas un écran cassé.
+  </div>
+  <div class="note">Nous assumons la contrainte : un propriétaire qui ne connaît pas le numéro de son ouvrier ne peut plus lui créer de compte. L'autre choix était de continuer à créer des gens que la plateforme ne peut pas joindre.</div>
+</section>
+
+<section class="item">
+  <div class="item-head">
+    <span class="item-num">3</span>
+    <h3 class="item-title">Un seul compte peut tenir plusieurs fermes, avec des rôles différents</h3>
+    <span class="tag both">Les deux</span>
+  </div>
+  <div class="cols">
+    <div class="col before">
+      <h4>Avant</h4>
+      <p>Ajouter quelqu'un qui avait déjà un compte Jawdi répondait « cette adresse est déjà utilisée ». Pour être propriétaire chez soi <em>et</em> gestionnaire chez un voisin, il fallait deux comptes — donc deux mots de passe et deux tableaux de bord.</p>
+    </div>
+    <div class="col after">
+      <h4>Maintenant</h4>
+      <p>Une adresse déjà connue est <strong>rattachée</strong> à votre ferme avec le rôle que vous choisissez. La personne garde son compte, son mot de passe, et change de ferme avec le sélecteur en haut de l'écran.</p>
+    </div>
+  </div>
+  <div class="check">
+    <b class="lbl">À essayer</b>
+    Si deux d'entre vous testent ensemble : ajoutez le compte de l'autre à votre ferme comme <em>gestionnaire</em>. Il doit voir vos deux fermes dans son sélecteur, et n'avoir les droits de propriétaire que dans la sienne.
+  </div>
+  <div class="note">Dans ce cas, <strong>aucun mot de passe provisoire n'est émis</strong> : réinitialiser celui de quelqu'un qui en a déjà un le couperait de sa propre ferme pour le faire entrer dans la vôtre.</div>
+</section>
+
+<section class="item">
+  <div class="item-head">
+    <span class="item-num">4</span>
+    <h3 class="item-title">La personne qu'on ajoute est prévenue par WhatsApp</h3>
+    <span class="tag both">Les deux</span>
+  </div>
+  <div class="cols">
+    <div class="col before">
+      <h4>Avant</h4>
+      <p>Personne ne lui disait rien. Elle découvrait une ferme dans son application sans savoir qui l'avait ajoutée ni avec quels droits — et le mot de passe provisoire se transmettait de vive voix, donc souvent pas du tout.</p>
+    </div>
+    <div class="col after">
+      <h4>Maintenant</h4>
+      <p>Un message WhatsApp part vers son numéro. Il commence par <strong>le nom de votre ferme</strong>, dit avec quel rôle elle a été ajoutée, et où changer son mot de passe.</p>
+    </div>
+  </div>
+  <div class="note">Le message ne contient <strong>jamais</strong> de mot de passe : ça resterait lisible dans la conversation pour toujours. C'est à vous de transmettre le mot de passe provisoire. Si la ferme n'a pas de nom, rien n'est envoyé — plutôt que d'envoyer un numéro inconnu qui réclame quelque chose.</div>
+</section>
+
+<section class="item">
+  <div class="item-head">
+    <span class="item-num">5</span>
+    <h3 class="item-title">Mot de passe oublié : on le tape deux fois</h3>
+    <span class="tag both">Les deux</span>
+  </div>
+  <div class="cols">
+    <div class="col before">
+      <h4>Avant</h4>
+      <p>Le nouveau mot de passe ne se tapait qu'une seule fois, sans confirmation. Une faute de frappe invisible sur un clavier de téléphone, et la personne se retrouvait enfermée dehors — avec un mot de passe que plus personne ne connaît.</p>
+    </div>
+    <div class="col after">
+      <h4>Maintenant</h4>
+      <p>L'écran demande le mot de passe <strong>deux fois</strong> et refuse de continuer si les deux ne correspondent pas.</p>
+    </div>
+  </div>
+  <div class="check">
+    <b class="lbl">À essayer</b>
+    Faites un « mot de passe oublié » complet : le code arrive, puis vous saisissez le nouveau mot de passe deux fois. Vérifiez que le code ne fonctionne qu'une fois, et qu'il expire au bout de quinze minutes.
+  </div>
+</section>
+
+<h2 class="part">B · Stocks et aliment</h2>
+
+<section class="item">
+  <div class="item-head">
+    <span class="item-num">6</span>
+    <h3 class="item-title">Les articles choisis à l'inscription apparaissent enfin dans le stock</h3>
+    <span class="tag both">Les deux</span>
+  </div>
+  <div class="cols">
+    <div class="col before">
+      <h4>Avant</h4>
+      <p>Un éleveur qui venait de choisir ses articles à l'inscription ouvrait « Stocks » et tombait sur <strong>un écran vide</strong>. Les articles n'apparaissaient qu'au premier bon d'achat. Sur l'ordinateur comme sur le téléphone.</p>
+    </div>
+    <div class="col after">
+      <h4>Maintenant</h4>
+      <p>Tous les articles de votre catalogue sont listés, <strong>à zéro</strong>, dès l'ouverture de l'écran. Vous pouvez leur poser un seuil d'alerte avant même d'avoir rien acheté.</p>
+    </div>
+  </div>
+  <p>Même correction pour le <strong>sélecteur d'articles du bon d'achat sur le téléphone</strong>, qui était vide sur une ferme neuve : impossible d'enregistrer un achat.</p>
+  <div class="check">
+    <b class="lbl">À essayer</b>
+    Ouvrez « Stocks » : vous devez voir vos articles, nommés en français, même ceux dont vous n'avez jamais rien acheté. Les quantités déjà saisies ne doivent pas avoir bougé d'un gramme.
+  </div>
+</section>
+
+<section class="item">
+  <div class="item-head">
+    <span class="item-num">7</span>
+    <h3 class="item-title">Les articles portent leur nom, plus leur code technique</h3>
+    <span class="tag both">Les deux</span>
+  </div>
+  <div class="cols">
+    <div class="col before">
+      <h4>Avant</h4>
+      <p>Trois écrans affichaient <em>corn_crushed</em> ou <em>feed_starter_broiler</em> — des identifiants en anglais — à quelqu'un qui a tout saisi en français.</p>
+    </div>
+    <div class="col after">
+      <h4>Maintenant</h4>
+      <p>« Maïs concassé », « Démarrage poulet chair ». Dans l'aperçu d'un modèle de formule et dans la fenêtre du seuil d'alerte.</p>
+    </div>
+  </div>
+</section>
+
+<section class="item">
+  <div class="item-head">
+    <span class="item-num">8</span>
+    <h3 class="item-title">Une formule qui ne tombe pas à 100 % : le bouton « Répartir »</h3>
+    <span class="tag web">Ordinateur</span>
+  </div>
+  <p>Quand les parts d'une formule d'aliment totalisent 96,4 % au lieu de 100 %, l'ordinateur se contentait d'annoncer l'écart et vous laissiez recalculer à la main. Un bouton <strong>« Répartir »</strong> met désormais les parts à l'échelle proportionnellement, comme le fait déjà le téléphone.</p>
+  <div class="note">Le bouton ne vous force à rien : une formule dont le total n'est pas exactement 100 % reste enregistrable, comme avant — une formule en cours de calibrage est une situation normale.</div>
+</section>
+
+<section class="item">
+  <div class="item-head">
+    <span class="item-num">9</span>
+    <h3 class="item-title">Sur le téléphone, l'écran Stocks rattrape l'ordinateur</h3>
+    <span class="tag ios">iPhone</span>
+  </div>
+  <ul class="plain">
+    <li><strong>Quatre tuiles sous la liste</strong> — Bibliothèque, Fournisseurs, Bons d'achat, Formules — qui n'existaient que dans le menu latéral. Un éleveur n'avait aucun moyen visible d'atteindre son propre catalogue.</li>
+    <li><strong>Modifier un article</strong> : le téléphone savait créer et supprimer, pas corriger. Pour changer une unité, un prix ou une faute dans un libellé, il fallait supprimer puis recréer — et le stock déjà saisi restait accroché à l'ancien article. Renommer corrige maintenant l'article au lieu d'en créer un second.</li>
+    <li><strong>La fiche d'un article se filtre</strong> : tout l'historique, les entrées venues d'un bon d'achat, ou ce qu'une bande précise a consommé. On voit enfin quelle bande a mangé quoi.</li>
+    <li><strong>L'écran vide ne mentionne plus « l'application web »</strong> : il dit par où commencer, et le message d'une recherche sans résultat ne propose plus de commander de l'aliment alors que le stock est plein.</li>
+  </ul>
+</section>
+
+<h2 class="part">C · Jawdi IA, le conseiller</h2>
+
+<section class="item">
+  <div class="item-head">
+    <span class="item-num">10</span>
+    <h3 class="item-title">Le bouton et l'écran sont devenus la même personne</h3>
+    <span class="tag both">Les deux</span>
+  </div>
+  <p>Le bouton promettait quelqu'un, et l'écran qu'il ouvrait livrait une étincelle. Jawdi IA a maintenant <strong>un visage et un nom</strong>, sur le bouton comme sur chacune de ses réponses, sur l'ordinateur comme sur le téléphone.</p>
+  <p>Sur le téléphone, l'ouverture d'une conversation vide joue une petite arrivée (1,7 seconde) : l'avatar entre, une main salue, puis les phrases tombent une à une. Un ouvrier qui n'a jamais parlé à une machine n'a aucune raison de croire qu'il y a quelqu'un en face.</p>
+  <div class="note">Si votre téléphone est réglé pour réduire les animations, la scène est simplement déjà là. Et le <strong>« + » de l'accueil a disparu</strong> : il menait à l'onglet Élevage, que la barre du bas atteint déjà d'un geste. Il ne reste qu'un bouton flottant, et c'est Jawdi.</div>
+</section>
+
+<section class="item">
+  <div class="item-head">
+    <span class="item-num">11</span>
+    <h3 class="item-title">Jawdi peut lire ses réponses à voix haute</h3>
+    <span class="tag ios">iPhone</span>
+  </div>
+  <p>Un <strong>bouton haut-parleur</strong> sur chaque réponse, et sur chaque action qui attend votre confirmation. Deuxième appui : ça s'arrête. Rien n'est lu tout seul — la lecture automatique avait été retirée en août parce qu'elle parlait par-dessus les gens.</p>
+  <div class="check">
+    <b class="lbl">À essayer</b>
+    Posez une question, appuyez sur le haut-parleur, puis enchaînez sur une deuxième réponse immédiatement. Les deux doivent s'entendre (avant, la seconde restait muette).
+  </div>
+</section>
+
+<section class="item">
+  <div class="item-head">
+    <span class="item-num">12</span>
+    <h3 class="item-title">La dictée fonctionne même sans réseau, et dit quand elle échoue</h3>
+    <span class="tag ios">iPhone</span>
+  </div>
+  <div class="cols">
+    <div class="col before">
+      <h4>Avant</h4>
+      <p>Trois pannes silencieuses. La phrase dictée restait dans le champ sans jamais partir. La reconnaissance passait obligatoirement par Internet, donc échouait sèchement dans une ferme sans réseau. Et aucune de ces pannes ne s'affichait : le micro ne faisait simplement rien.</p>
+    </div>
+    <div class="col after">
+      <h4>Maintenant</h4>
+      <p>L'envoi se fait à la fin de la phrase même sans silence marqué. La reconnaissance démarre <strong>dans le téléphone</strong> et ne passe par le réseau qu'en secours. Et chaque échec donne une phrase qui dit quoi faire à la place.</p>
+    </div>
+  </div>
+  <div class="check">
+    <b class="lbl">À essayer — c'est le test le plus utile de ce document</b>
+    Mettez le téléphone en <strong>mode avion</strong>, ouvrez Jawdi, dictez « j'ai perdu douze poulets aujourd'hui ». Dites-nous ce qui s'affiche, même (surtout) si c'est un message d'erreur. Sept éleveurs sur dix-sept n'ont pas de réseau fiable : c'est le cas qui compte.
+  </div>
+</section>
+
+<h2 class="part">D · Fiabilité : ce que l'application ne cachait plus</h2>
+
+<section class="item">
+  <div class="item-head">
+    <span class="item-num">13</span>
+    <h3 class="item-title">Une saisie faite hors ligne n'est plus enregistrée deux fois</h3>
+    <span class="tag ios">iPhone</span>
+  </div>
+  <p>Une pesée ou une mortalité saisie sans réseau part dans une file d'attente et se renvoie quand le réseau revient. Si le renvoi se produisait deux fois, la saisie pouvait être comptée deux fois. Le serveur <strong>mémorise maintenant la première réponse</strong> et la redonne au renvoi, au lieu de réenregistrer.</p>
+  <p>Dans la même série : une coupure de réseau <strong>ne vous déconnecte plus</strong>, le bandeau de synchronisation dit la vérité (masqué quand tout est à jour, et il signale « hors ligne », « en attente » ou « en échec » au lieu d'afficher « tout est synchronisé » en permanence), et une saisie en file peut être relancée à la main.</p>
+  <div class="check">
+    <b class="lbl">À essayer</b>
+    Mode avion, saisissez une mortalité, laissez l'application, rallumez le réseau. Vérifiez sur l'ordinateur que la mortalité est là <strong>une seule fois</strong>.
+  </div>
+</section>
+
+<section class="item">
+  <div class="item-head">
+    <span class="item-num">14</span>
+    <h3 class="item-title">Un écran qui n'arrive pas à charger le dit, avec un bouton Réessayer</h3>
+    <span class="tag both">Les deux</span>
+  </div>
+  <p>Une requête en échec se lisait exactement comme « vous n'avez aucune donnée ». Les listes Commerce et Stocks de l'ordinateur affichent désormais l'erreur avec un bouton <strong>Réessayer</strong>, et les messages techniques sont traduits en français. Sur le téléphone, l'accueil ne reste plus à tourner indéfiniment : au bout de vingt secondes, il affiche une erreur et propose de réessayer.</p>
+</section>
+
+<section class="item">
+  <div class="item-head">
+    <span class="item-num">15</span>
+    <h3 class="item-title">Une liste trop longue annonce qu'elle est incomplète</h3>
+    <span class="tag both">Les deux</span>
+  </div>
+  <p>Les listes qui grandissent avec la vie de la ferme (ventes, factures, commandes, achats, dépenses) sont bornées pour rester rapides. Un écran montrait les 500 lignes les plus récentes <em>comme si c'était tout l'historique</em>. Un avertissement apparaît maintenant quand la liste est tronquée — et disparaît dès qu'un filtre la fait repasser entière.</p>
+  <div class="note">Aucune ferme pilote n'atteint ces bornes aujourd'hui : vous ne devriez donc <strong>jamais</strong> voir cet avertissement. Si vous le voyez, dites-le nous.</div>
+</section>
+
+<section class="item">
+  <div class="item-head">
+    <span class="item-num">16</span>
+    <h3 class="item-title">L'ouvrier peut enfin enregistrer un mouvement de stock depuis le téléphone</h3>
+    <span class="tag ios">iPhone</span>
+  </div>
+  <p>Cinq boutons du téléphone étaient gardés par une règle plus stricte que celle du serveur. Le cas qui mordait pour de bon : sur la fiche d'un article, l'ouvrier ne pouvait pas enregistrer un mouvement de stock — alors que le serveur l'y autorise, et que le téléphone est précisément son outil.</p>
+  <div class="check">
+    <b class="lbl">À essayer</b>
+    Connectez-vous avec un compte d'ouvrier (rôle « éleveur ») sur le téléphone, ouvrez un article de stock, et enregistrez une sortie d'aliment pour une bande.
+  </div>
+</section>
+
+<section class="item">
+  <div class="item-head">
+    <span class="item-num">17</span>
+    <h3 class="item-title">Les formulaires du bas de l'écran ne sont plus cachés par le clavier</h3>
+    <span class="tag ios">iPhone</span>
+  </div>
+  <p>Les feuilles de saisie remontent au-dessus du clavier et leur contenu défile. Avant, le champ qu'on remplissait pouvait se retrouver sous le clavier, et le bouton « Enregistrer » hors d'atteinte.</p>
+</section>
+
+<section class="item">
+  <div class="item-head">
+    <span class="item-num">18</span>
+    <h3 class="item-title">Trois autres corrections visibles</h3>
+    <span class="tag both">Les deux</span>
+  </div>
+  <ul class="plain">
+    <li><strong>Le poids s'écrit avec une virgule.</strong> « 2,4 kg » est accepté comme « 2.4 » — le clavier du téléphone donne une virgule, et elle était refusée.</li>
+    <li><strong>Le tableau de bord accepte la période « 90 jours »</strong>, qui renvoyait une erreur.</li>
+    <li><strong>Une ferme ne peut plus lire les bandes, les races ou les dépenses d'une autre ferme</strong> par un lien direct. Trouvé de notre côté, jamais arrivé en vrai, corrigé.</li>
+  </ul>
+</section>
+
+<h2 class="part">E · Côté téléphone uniquement : l'apparence et deux ajouts</h2>
+
+<section class="item">
+  <div class="item-head">
+    <span class="item-num">19</span>
+    <h3 class="item-title">Les chiffres sont présentés en bandes, plus en grilles de tuiles</h3>
+    <span class="tag ios">iPhone</span>
+  </div>
+  <p>Tous les écrans du téléphone — accueil, Ma Ferme, liste et fiche des bandes, Commerce, Sanitaire, Stocks, Finance — présentent leurs indicateurs en <strong>bandes à trait fin</strong> plutôt qu'en grilles de tuiles. Sur un téléphone tenu à une main en plein soleil, une bande se lit d'un balayage de l'œil ; quatre tuiles carrées demandent de chercher.</p>
+  <div class="check">
+    <b class="lbl">À essayer</b>
+    C'est de l'apparence, donc c'est votre avis qui tranche : est-ce que les chiffres qui comptent pour vous se lisent plus vite qu'avant, ou moins vite ? Dites-le franchement, c'est réversible.
+  </div>
+</section>
+
+<section class="item">
+  <div class="item-head">
+    <span class="item-num">20</span>
+    <h3 class="item-title">Un programme vaccinal se modifie depuis le téléphone</h3>
+    <span class="tag ios">iPhone</span>
+  </div>
+  <p>Dans <em>Réglages &gt; Sanitaire</em> : copier un programme de la plateforme en version personnelle, puis modifier son nom, les races visées, et chaque étape du calendrier (vaccin, âge, voie, obligatoire ou non). Le téléphone était en lecture seule.</p>
+</section>
+
+<section class="item">
+  <div class="item-head">
+    <span class="item-num">21</span>
+    <h3 class="item-title">Les notifications sur l'écran verrouillé de l'iPhone</h3>
+    <span class="tag ios">iPhone</span>
+  </div>
+  <p>L'application demande l'autorisation d'envoyer des notifications une fois que vous êtes connecté. Une alerte (mortalité anormale, stock bas…) arrive alors sur le téléphone même application fermée ; en appuyant dessus, l'application basculera sur la bonne ferme et ouvrira l'écran concerné. Une colonne <strong>Push</strong> apparaît dans <em>Réglages &gt; Notifications</em> pour choisir ce qui passe par ce canal.</p>
+  <div class="warn">
+    <h4>À vérifier en priorité — nous ne l'avons jamais vu fonctionner sur un vrai iPhone</h4>
+    <ul>
+      <li>Acceptez l'autorisation quand elle apparaît, puis dites-nous si une alerte arrive effectivement sur le téléphone.</li>
+      <li>Si rien n'arrive, ce n'est pas vous : ce canal n'a été testé que sur simulateur. Signalez-le simplement, les alertes WhatsApp continuent de partir en parallèle.</li>
+    </ul>
+  </div>
+</section>
+
+<div class="pagebreak"></div>
+<h2 class="part">F · Installer l'application sur votre iPhone</h2>
+
+<ol class="install">
+  <li>Vous recevez une <strong>invitation par e-mail</strong> (ou un lien par WhatsApp). Ouvrez-la depuis l'iPhone, pas depuis l'ordinateur.</li>
+  <li>Installez d'abord <strong>TestFlight</strong> depuis l'App Store — c'est l'application d'Apple qui sert à essayer les applications pas encore publiées. Elle est gratuite.</li>
+  <li>Rouvrez l'invitation, appuyez sur <strong>Accepter</strong>, puis sur <strong>Installer</strong> à côté de « Jawdi ».</li>
+  <li>Vérifiez en haut de l'écran TestFlight que c'est bien la version <strong>1.0.0 (17)</strong>. Si une version plus récente arrive pendant vos tests, TestFlight vous le dira — installez-la, et dites-nous à partir de quand vous l'avez.</li>
+  <li>Connectez-vous avec <strong>le même compte que sur l'ordinateur</strong>. Vous retrouverez votre ferme et vos données ; il n'y a rien à ressaisir.</li>
+</ol>
+
+<div class="note">TestFlight est une version d'essai : il est normal qu'elle expire au bout de quelques semaines et qu'il faille réinstaller. Vos données ne sont pas dans le téléphone, elles sont sur le serveur — une réinstallation ne perd rien, sauf une saisie encore en file d'attente qui n'aurait pas été envoyée.</div>
+
+<h2 class="part">G · Par quoi commencer, et comment nous remonter un souci</h2>
+
+<p><strong>Si vous n'avez qu'une heure, dans cet ordre :</strong></p>
+<ol class="steps">
+  <li><strong>Sur l'iPhone</strong> — installez, connectez-vous avec votre numéro, et faites une journée normale : une mortalité, une pesée, une sortie d'aliment. C'est le parcours que personne n'a encore joué sur un vrai téléphone.</li>
+  <li><strong>Sur l'iPhone, en mode avion</strong> — saisissez une mortalité, puis rallumez le réseau et vérifiez sur l'ordinateur qu'elle est là une seule fois.</li>
+  <li><strong>Sur l'iPhone</strong> — dictez une phrase à Jawdi IA, avec réseau puis sans réseau.</li>
+  <li><strong>Sur l'ordinateur</strong> — ouvrez « Stocks » et vérifiez que tous vos articles sont là, nommés en français.</li>
+  <li><strong>Les deux</strong> — ajoutez un ouvrier avec son numéro, et vérifiez qu'il reçoit bien le message WhatsApp, puis qu'il arrive à se connecter sur le téléphone.</li>
+</ol>
+
+<div class="warn">
+  <h4>Ce que nous savons déjà ne pas être vérifié</h4>
+  <ul>
+    <li><strong>Les notifications sur l'iPhone</strong> n'ont jamais été vues fonctionner sur un vrai téléphone (point 21).</li>
+    <li><strong>L'application iPhone dans son ensemble</strong> : version 1.0.0 (17), mise à disposition le 11 octobre, aucun éleveur ne s'en est encore servi sur le terrain.</li>
+    <li><strong>Android</strong> n'est pas distribué. Le site web dans le navigateur du téléphone reste le chemin pour un Android.</li>
+    <li><strong>L'inscription libre est fermée.</strong> Les nouveaux comptes se créent en ajoutant un membre depuis une ferme existante, pas depuis la page d'accueil du site.</li>
+  </ul>
+</div>
+
+<p style="margin-top:10px"><strong>Pour nous signaler quelque chose</strong>, par WhatsApp, au numéro qui vous a envoyé ce document. Quatre informations suffisent, et elles changent tout :</p>
+<ul class="plain">
+  <li><strong>Où</strong> : téléphone ou ordinateur, et sur quel écran.</li>
+  <li><strong>Quand</strong> : le jour et l'heure, même approximative — nous retrouvons la trace dans le serveur avec ça.</li>
+  <li><strong>Ce que vous attendiez</strong>, et ce qui s'est passé à la place.</li>
+  <li><strong>Une photo de l'écran</strong>, si c'est visible. Elle vaut dix lignes d'explication.</li>
+</ul>
+<p>Un « c'est bizarre mais je ne sais pas expliquer » est un retour utile. Ne le gardez pas pour vous en attendant de savoir le formuler.</p>
+
+<footer>
+  <span>Jawdi — Plateforme de gestion pour élevages avicoles</span>
+  <span>Phase pilote · 12 octobre 2026 · Web du 11/10 · iPhone 1.0.0 (17)</span>
+</footer>
+
+</body>
+</html>
