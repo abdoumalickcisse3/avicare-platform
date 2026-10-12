@@ -21,6 +21,7 @@ applicative : rien de tout ça ne tourne au runtime.
 
 from __future__ import annotations
 
+import base64
 import struct
 import sys
 from pathlib import Path
@@ -408,6 +409,44 @@ def main() -> None:
         f"{rows}\n];\n"
     )
     print("mobile    → src/brand/logoPaths.ts (lockup compact vectoriel)")
+
+    # Marque pour les documents imprimés (facture, bon de livraison). Trois
+    # moteurs de rendu différents — react-pdf, expo-print, impression navigateur
+    # — et aucun socle de code partagé entre web et mobile : on émet donc la même
+    # image encodée en data URI dans chaque app, générée ici pour qu'elles ne
+    # puissent pas diverger. Un PNG plutôt qu'un SVG : react-pdf et les moteurs
+    # d'impression des téléphones ne traitent pas l'inline SVG de la même façon.
+    mark_png = base64.b64encode(compose(kit["icon"], 128, None, 0.0).tobytes("png")).decode()
+    icon_vb = viewbox(kit["icon"])
+    icon_rows = "\n".join(f"  {{ fill: '{c}', d: '{d}' }}," for c, d in parse_paths(kit["icon"]))
+    doc = (
+        "/**\n"
+        " * GÉNÉRÉ par scripts/build-brand-assets.py — ne pas éditer à la main.\n"
+        " *\n"
+        " * L'icône Jawdi pour les documents que l'éleveur imprime et remet à SON\n"
+        " * client. Elle va en pied de page, jamais en en-tête : la facture\n"
+        " * appartient à la ferme, pas à Jawdi.\n"
+        " */\n\n"
+    )
+    png_export = f"export const BRAND_MARK_PNG = 'data:image/png;base64,{mark_png}';\n"
+    (ROOT / "mobile/src/brand/brandMark.ts").parent.mkdir(parents=True, exist_ok=True)
+    (ROOT / "mobile/src/brand/brandMark.ts").write_text(
+        doc.replace("*/\n\n", "*\n * Le PNG sert au HTML d'expo-print, qui rend mal l'inline SVG sur iOS.\n */\n\n")
+        + png_export
+    )
+    # Le web a deux moteurs : le DOM imprimé prend le PNG, react-pdf prend les
+    # tracés. Pas un luxe — react-pdf fait passer un data URI décodé à pdfkit
+    # comme un chemin de fichier et plante ; et le vectoriel est de toute façon
+    # meilleur à l'impression qu'un PNG de 128 px.
+    (ROOT / "web/src/theme/brandMark.ts").write_text(
+        doc
+        + png_export
+        + f"\nexport const BRAND_MARK_VIEWBOX = '{fmt(icon_vb[0])} {fmt(icon_vb[1])} {fmt(icon_vb[2])} {fmt(icon_vb[3])}';\n"
+        + f"export const BRAND_MARK_RATIO = {icon_vb[2] / icon_vb[3]:.4f};\n\n"
+        + "export const BRAND_MARK_PATHS: readonly { fill: string; d: string }[] = [\n"
+        + f"{icon_rows}\n];\n"
+    )
+    print(f"marque    → brandMark.ts (web + mobile, {len(mark_png) // 1024} Ko en data URI)")
 
     for rel, svg in targets.items():
         dest = ROOT / rel

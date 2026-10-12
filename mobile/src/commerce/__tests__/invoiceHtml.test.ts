@@ -91,4 +91,18 @@ describe('invoiceHtml', () => {
 
     expect(html).toContain('Comptant');
   });
+  it('signe le document en pied de page, jamais en en-tête', () => {
+    const html = invoiceHtml({ invoice: INVOICE, client: CLIENT, farmName: 'Ferme Complète' });
+
+    // La marque Jawdi est dans le pied de page...
+    const footer = html.slice(html.indexOf('class="footer"'));
+    expect(footer).toContain('data:image/png;base64,');
+    expect(footer).toContain('Jawdi');
+
+    // ...et l'en-tête reste au nom de la ferme : la facture lui appartient,
+    // c'est elle qui la remet à son client.
+    const header = html.slice(html.indexOf('class="header"'), html.indexOf('class="footer"'));
+    expect(header).toContain('Ferme Complète');
+    expect(header).not.toContain('Jawdi');
+  });
 });

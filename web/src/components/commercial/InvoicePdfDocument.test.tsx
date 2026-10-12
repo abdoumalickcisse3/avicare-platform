@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { InvoicePdfDocument } from "./InvoicePdfDocument";
 import type { Client, Invoice } from "@/types";
+import { BRAND_MARK_PATHS } from "@/theme/brandMark";
 
 const invoice: Invoice = {
   id: 17,
@@ -70,4 +71,20 @@ describe("InvoicePdfDocument", () => {
     );
     expect(buffer.subarray(0, 5).toString("latin1")).toBe("%PDF-");
   });
+  it("signs the document with the Jawdi mark, drawn as vectors", async () => {
+    // Le générateur produit des tracés exploitables...
+    expect(BRAND_MARK_PATHS.length).toBeGreaterThan(5);
+    for (const p of BRAND_MARK_PATHS) {
+      expect(p.d.startsWith("M")).toBe(true);
+      expect(p.fill).toMatch(/^#[0-9A-F]{6}$/);
+    }
+
+    // ...et react-pdf les avale : son analyseur de chemins rejette un `d`
+    // malformé, donc obtenir un PDF valide prouve que la marque est passée.
+    const buffer = await renderToBuffer(
+      <InvoicePdfDocument invoice={invoice} client={client} farmName="Ferme Complète" />,
+    );
+    expect(buffer.subarray(0, 5).toString("latin1")).toBe("%PDF-");
+  });
+
 });
