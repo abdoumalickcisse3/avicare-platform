@@ -379,7 +379,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       <Box sx={{ px: 3, py: 2.5 }}>
         <Box
           component="img"
-          src="/logo/logo.png"
+          src="/logo/logo-compact.svg"
           alt="Jawdi Platform"
           sx={{ height: 48, width: "auto", maxWidth: "100%", display: "block" }}
         />

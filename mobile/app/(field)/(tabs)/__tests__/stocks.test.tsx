@@ -157,12 +157,12 @@ describe('Stocks tab', () => {
     const lowStockMentions = screen.getAllByText('12 kg');
     expect(lowStockMentions).toHaveLength(2);
     for (const el of lowStockMentions) {
-      expect(el.props.style).toContainEqual(expect.objectContaining({ color: '#F8961E' }));
+      expect(el.props.style).toContainEqual(expect.objectContaining({ color: '#F2A31A' }));
       expect(el.props.style).not.toContainEqual(expect.objectContaining({ color: '#DC2626' }));
     }
 
     expect(screen.getByText(/6 j de retard/).props.style).toContainEqual(
-      expect.objectContaining({ color: '#F8961E' }),
+      expect.objectContaining({ color: '#F2A31A' }),
     );
   });
 

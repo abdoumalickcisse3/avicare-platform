@@ -18,9 +18,9 @@ describe('TicketRow', () => {
   });
 
   it('applique la couleur tint à la valeur quand elle est fournie', async () => {
-    await render(<TicketRow items={[{ key: 'a', value: '7', label: 'Débiteurs', tint: '#F8961E' }]} />);
+    await render(<TicketRow items={[{ key: 'a', value: '7', label: 'Débiteurs', tint: '#F2A31A' }]} />);
     expect(screen.getByText('7').props.style).toContainEqual(
-      expect.objectContaining({ color: '#F8961E' }),
+      expect.objectContaining({ color: '#F2A31A' }),
     );
   });
 

@@ -4,7 +4,7 @@
 // showing a real conversation: a user question and an assistant answer card
 // with a table, revealed with motion.
 import { Image } from "astro:assets";
-import logo from "../assets/logo.png";
+import logo from "../assets/logo-compact.svg";
 
 const nav = [
   { label: "Tableau de bord", ic: "grid" },
@@ -31,7 +31,7 @@ const rows = [
 
   <div class="hc-body">
     <aside class="hc-side">
-      <Image src={logo} alt="Jawdi Platform" width={120} height={40} class="hc-logo" loading="eager" />
+      <Image src={logo} alt="Jawdi Platform" width={120} height={43} class="hc-logo" loading="eager" />
       <nav class="hc-nav">
         {
           nav.map((n) => (

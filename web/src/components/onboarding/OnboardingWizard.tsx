@@ -243,7 +243,7 @@ function Rail({ index }: { index: number }) {
     >
       <Box
         component="img"
-        src="/logo/logo-dark.png"
+        src="/logo/logo-compact-white.svg"
         alt="Jawdi Platform"
         sx={{ height: 46, width: "auto", maxWidth: 140, display: "block" }}
       />
