@@ -8,6 +8,7 @@ import { useGetMyFarmsQuery } from "@/store/api/farmsApi";
 import { useCommercialGating } from "@/hooks/useCommercialGating";
 import { formatDate } from "@/lib/format";
 import { colors } from "@/theme/tokens";
+import { BRAND_MARK_PNG } from "@/theme/brandMark";
 
 interface Props {
   deliveryId: number;
@@ -216,12 +217,28 @@ export function PrintableDeliveryNote({ deliveryId }: Props) {
       </Stack>
 
       <Divider sx={{ mt: 4, mb: 2 }} />
+      {/* Marque Jawdi, discrète et en pied de page : le bon appartient à la
+          ferme, qui le remet à son client — l'outil ne s'invite pas en tête. */}
       <Typography
         variant="caption"
         color="text.secondary"
-        sx={{ display: "block", textAlign: "center" }}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 0.5,
+        }}
       >
         {farmName} — Document généré le {formatDate(new Date().toISOString())}
+        <Box
+          component="img"
+          src={BRAND_MARK_PNG}
+          alt=""
+          sx={{ height: 11, width: "auto", ml: 0.5, opacity: 0.75 }}
+        />
+        <Box component="span" sx={{ fontWeight: 700 }}>
+          Jawdi
+        </Box>
       </Typography>
     </Box>
   );

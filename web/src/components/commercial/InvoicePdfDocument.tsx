@@ -1,8 +1,9 @@
-import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import { Document, Page, Path, StyleSheet, Svg, Text, View } from "@react-pdf/renderer";
 import type { Client, Invoice } from "@/types";
 import { INVOICE_STATUS_META } from "@/lib/commercial";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { colors } from "@/theme/tokens";
+import { BRAND_MARK_PATHS, BRAND_MARK_VIEWBOX } from "@/theme/brandMark";
 
 /**
  * Real generated invoice PDF (react-pdf) — replaces the old browser
@@ -105,10 +106,19 @@ const s = StyleSheet.create({
     bottom: 28,
     left: 44,
     right: 44,
-    textAlign: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     fontSize: 8,
     color: colors.neutral[400],
   },
+  // Marque Jawdi, discrète et en pied de page : la facture appartient à la
+  // ferme, qui la remet à son propre client — l'outil ne s'invite pas en tête.
+  // Dessinée en vectoriel plutôt qu'en <Image> : react-pdf passe un data URI
+  // décodé à pdfkit comme s'il s'agissait d'un chemin de fichier, et le
+  // vectoriel reste net quelle que soit la résolution d'impression.
+  footerMark: { width: 8, height: 9, marginLeft: 6, marginRight: 3 },
+  footerMarkName: { fontFamily: "Helvetica-Bold", color: colors.neutral[500] },
 });
 
 /**
@@ -237,10 +247,18 @@ export function InvoicePdfDocument({ invoice, client, farmName }: Props) {
           </View>
         ) : null}
 
-        <Text style={s.footer} fixed>
-          {farmName} — Facture {invoice.invoiceNumber} · générée le{" "}
-          {formatDate(new Date().toISOString())}
-        </Text>
+        <View style={s.footer} fixed>
+          <Text>
+            {farmName} — Facture {invoice.invoiceNumber} · générée le{" "}
+            {formatDate(new Date().toISOString())}
+          </Text>
+          <Svg viewBox={BRAND_MARK_VIEWBOX} style={s.footerMark}>
+            {BRAND_MARK_PATHS.map((p, i) => (
+              <Path key={i} d={p.d} fill={p.fill} />
+            ))}
+          </Svg>
+          <Text style={s.footerMarkName}>Jawdi</Text>
+        </View>
       </Page>
     </Document>
   );

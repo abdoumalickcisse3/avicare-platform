@@ -13,6 +13,7 @@
  */
 import type { Client, Invoice } from '@/types';
 import { INVOICE_STATUS_LABELS } from '@/lib/commercial';
+import { BRAND_MARK_PNG } from '@/brand/brandMark';
 
 /** Échappe tout ce qui vient des données. */
 function esc(v: unknown): string {
@@ -109,6 +110,9 @@ export function invoiceHtml({
   .notes { margin-top: 22px; }
   .footer { position: fixed; bottom: 24px; left: 44px; right: 44px; text-align: center;
             font-size: 9px; color: #A8A29E; }
+  /* Marque Jawdi : discrète, en pied de page. Le document appartient à la ferme. */
+  .mark { height: 10px; width: auto; vertical-align: -1px; margin-left: 6px; opacity: .75; }
+  .markName { font-weight: bold; color: #78716C; }
 </style></head>
 <body>
   <div class="accent"></div>
@@ -153,6 +157,6 @@ export function invoiceHtml({
     </div></div>
 
   </div>
-  <div class="footer">${esc(farmName)} — Facture ${esc(invoice.invoiceNumber)} · générée le ${frDate(new Date().toISOString())}</div>
+  <div class="footer">${esc(farmName)} — Facture ${esc(invoice.invoiceNumber)} · générée le ${frDate(new Date().toISOString())}<img class="mark" src="${BRAND_MARK_PNG}" alt=""> <span class="markName">Jawdi</span></div>
 </body></html>`;
 }
