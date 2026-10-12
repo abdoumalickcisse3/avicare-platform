@@ -52,7 +52,7 @@ export function BrandPanel({
     >
       <Box
         component="img"
-        src="/logo/logo-dark.png"
+        src="/logo/logo-compact-white.svg"
         alt="Jawdi Platform"
         sx={{ height: 60, width: "auto", alignSelf: "flex-start" }}
       />

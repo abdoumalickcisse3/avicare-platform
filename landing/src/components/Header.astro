@@ -3,8 +3,8 @@
 // element on the site (client explicitly rejected floating panels for
 // content sections; the nav island is the exception, per prototype).
 import { Image } from "astro:assets";
-import logo from "../assets/logo.svg";
-import logoLight from "../assets/logo-dark.svg";
+import logo from "../assets/logo-compact.svg";
+import logoLight from "../assets/logo-compact-white.svg";
 
 // `solid` = header opaque (glass) dès le chargement, pour les pages dont le
 // haut n'est PAS un hero sombre (ex. l'article Ressources, fond clair). Par
@@ -30,14 +30,14 @@ const navLinks = [
   <div class="wrap nav">
     <a href="/" aria-label="Jawdi Platform — accueil" class="logo-link">
       {/* Deux logos permutés par CSS selon l'état du header : le logo clair
-          (logo-dark) au sommet sur le hero sombre, le logo sombre une fois le
+          (blanc) au sommet sur le hero sombre, le logo sombre une fois le
           fond glass posé. eager + priorité haute : au-dessus de la ligne de
           flottaison sur toutes les pages, lazy retarderait le LCP. */}
       <Image
         src={logoLight}
         alt="Jawdi Platform"
         width={150}
-        height={52}
+        height={53}
         class="logo-img logo-on-dark"
         loading="eager"
         fetchpriority="high"
@@ -46,7 +46,7 @@ const navLinks = [
         src={logo}
         alt="Jawdi Platform"
         width={150}
-        height={52}
+        height={53}
         class="logo-img logo-on-glass"
         loading="eager"
         fetchpriority="high"
@@ -148,7 +148,7 @@ const navLinks = [
     display: block;
     line-height: 0;
   }
-  /* Hauteur pilotée, largeur libre : le ratio natif du logo (2.89:1) est ainsi
+  /* Hauteur pilotée, largeur libre : le ratio natif du logo (2.81:1) est ainsi
      respecté sans déformation ni vide à droite. L'îlot fait 64px de haut avec
      10px de padding vertical → 44px utiles ; 42px laisse une marge d'air. */
   :global(.logo-img) {

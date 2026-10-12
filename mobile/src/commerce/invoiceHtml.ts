@@ -84,9 +84,9 @@ export function invoiceHtml({
   @page { size: A4; margin: 0; }
   body { margin: 0; font-family: Helvetica, Arial, sans-serif; font-size: 11px; color: #292524; line-height: 1.45; }
   .sheet { padding: 44px; }
-  .accent { height: 6px; background: #F8961E; }
+  .accent { height: 6px; background: #F2A31A; }
   .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
-  .farm { font-size: 19px; font-weight: bold; color: #2E6B2E; }
+  .farm { font-size: 19px; font-weight: bold; color: #2B733A; }
   .doclabel { font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: #78716C; margin-top: 2px; }
   .number { font-size: 15px; font-weight: bold; text-align: right; }
   .pill { display: inline-block; margin-top: 4px; padding: 3px 9px; border-radius: 10px; font-size: 10px; font-weight: bold;

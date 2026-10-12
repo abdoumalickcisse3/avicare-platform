@@ -3,8 +3,8 @@ import { colors } from "@/theme/tokens";
 
 /**
  * PWA web manifest — makes the dashboard installable (Add to Home Screen /
- * desktop install). Icons are generated on the fly at /icons/192 and /icons/512
- * (see app/icons/[size]/route.tsx). Colors come from the design system.
+ * desktop install). Icons are the real logo, rasterised from the brand kit by
+ * scripts/build-brand-assets.py. Colors come from the design system.
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
@@ -20,9 +20,9 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: colors.neutral[50],
     theme_color: colors.primary[700],
     icons: [
-      { src: "/icons/192", sizes: "192x192", type: "image/png", purpose: "any" },
-      { src: "/icons/512", sizes: "512x512", type: "image/png", purpose: "any" },
-      { src: "/icons/512", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      { src: "/icons/192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/icons/512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+      { src: "/icons/maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
   };
 }

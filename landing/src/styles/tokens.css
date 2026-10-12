@@ -48,15 +48,15 @@
 }
 
 :root {
-  --earth: #122b12;
-  --earth-800: #1b3f1b;
-  --earth-700: #245524;
-  --earth-600: #2e6b2e;
-  --leaf: #3d8b3d;
+  --earth: #083025;
+  --earth-800: #0c4434;
+  --earth-700: #1C5C37;
+  --earth-600: #2b733a;
+  --leaf: #3b8b3d;
   --leaf-300: #8bc68b;
   --leaf-100: #dceedc;
   --leaf-050: #f0f7f0;
-  --sun: #f8961e;
+  --sun: #f2a31a;
   --sun-600: #e67e0a;
   --sun-050: #fff4e6;
   --stone: #f6f5f2;

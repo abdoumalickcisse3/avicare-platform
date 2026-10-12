@@ -18,7 +18,7 @@ import FinalCta from "../components/FinalCta.astro";
 import AppSection from "../components/AppSection.astro";
 import { testimonials } from "../data/testimonials";
 import { faq } from "../data/faq";
-import logo from "../assets/logo.png";
+import logo from "../assets/logo-mark.png";
 
 const title = "Jawdi — Le logiciel de gestion d'élevage avicole en Afrique de l'Ouest";
 const description =
@@ -33,10 +33,11 @@ const jsonLd = {
       "@type": "Organization",
       name: "Jawdi Platform",
       url: siteUrl,
-      // logo.src is the hashed, real path astro:assets emits under /_astro
-      // at build time — resolving it here (instead of a hand-written path
-      // like /logo/logo.png) guarantees the URL always matches whatever
-      // file actually ships in dist/, with no risk of the two drifting.
+      // Raster plutôt que SVG : les moteurs de recherche attendent une image
+      // matricielle pour le logo d'une Organization. logo.src est le chemin
+      // haché que astro:assets émet sous /_astro à la construction — le
+      // résoudre ici (plutôt que d'écrire un chemin à la main) garantit que
+      // l'URL colle toujours au fichier réellement livré dans dist/.
       logo: new URL(logo.src, siteUrl).toString(),
       description: "Logiciel de gestion d'élevage avicole pensé au Sénégal, pour l'Afrique de l'Ouest.",
     },

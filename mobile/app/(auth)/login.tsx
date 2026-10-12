@@ -10,7 +10,7 @@
  * login needs backend support (V2). Brand tokens + lucide icons throughout.
  */
 import { useState } from 'react';
-import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
@@ -21,6 +21,7 @@ import { tokens } from '@/theme';
 import { saveTokens } from '@/auth/tokens';
 import { useLoginMutation } from '@/store/api/authApi';
 import { PhoneInput } from '@/phone/PhoneInput';
+import { JawdiLogo } from '@/components/ui';
 
 const loginSchema = z.object({
   // An address or a phone number: the backend resolves either since 2026-10-08. No shape
@@ -92,7 +93,7 @@ export default function LoginScreen() {
           <View style={styles.middle}>
           {/* Brand */}
           <View style={styles.brand}>
-            <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
+            <JawdiLogo height={56} />
           </View>
 
           {/* Deux onglets plutôt qu'une liste : un geste au lieu de deux, avec des gants. */}
@@ -212,7 +213,6 @@ const styles = StyleSheet.create({
   langTextActive: { color: tokens.colors.neutral[0] },
   middle: { flex: 1, justifyContent: 'center' },
   brand: { alignItems: 'center', marginBottom: tokens.spacing[8] },
-  logo: { height: 56, width: 200 },
   tagline: { ...tokens.typography.bodyLg, color: tokens.colors.field.textMuted, marginTop: tokens.spacing[2] },
   modeRow: {
     flexDirection: 'row',

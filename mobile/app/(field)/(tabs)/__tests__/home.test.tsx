@@ -89,7 +89,7 @@ describe('Home', () => {
     );
     // Overdue payments: money to collect, not itself a failure — accent orange, not error red.
     expect(screen.getByText('25 000 F').props.style).toContainEqual(
-      expect.objectContaining({ color: '#F8961E' }),
+      expect.objectContaining({ color: '#F2A31A' }),
     );
     expect(screen.getByText('25 000 F').props.style).not.toContainEqual(
       expect.objectContaining({ color: '#DC2626' }),

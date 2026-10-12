@@ -5,10 +5,11 @@
  * token is stored, otherwise login) and doubles as the app's initial route.
  */
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, ImageBackground, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ImageBackground, StyleSheet, Text, View } from 'react-native';
 import { Redirect } from 'expo-router';
 import { getAccessToken } from '@/auth/tokens';
 import { tokens } from '@/theme';
+import { JawdiLogo } from '@/components/ui';
 
 export default function Splash() {
   const [target, setTarget] = useState<'/(field)' | '/(auth)/login' | null>(null);
@@ -33,7 +34,7 @@ export default function Splash() {
       <View style={styles.overlay} />
 
       <View style={styles.center}>
-        <Image source={require('../assets/logo-dark.png')} style={styles.logo} resizeMode="contain" />
+        <JawdiLogo height={76} tone="white" />
       </View>
 
       <View style={styles.bottom}>
@@ -47,10 +48,9 @@ export default function Splash() {
 
 const styles = StyleSheet.create({
   bg: { flex: 1 },
-  // Green brand wash over the photo (primary[900] = #122B12 → rgb(18,43,18)).
-  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(18,43,18,0.55)' },
+  // Green brand wash over the photo (primary[900] = #083025 → rgb(8,48,37)).
+  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(8,48,37,0.55)' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  logo: { height: 76, width: 250 },
   bottom: { position: 'absolute', left: 0, right: 0, bottom: tokens.spacing[12], alignItems: 'center', gap: tokens.spacing[3] },
   status: { ...tokens.typography.label, fontSize: 11, letterSpacing: 2, color: 'rgba(255,255,255,0.85)' },
   version: { ...tokens.typography.bodySm, fontSize: 11, color: 'rgba(255,255,255,0.6)' },

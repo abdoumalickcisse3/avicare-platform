@@ -19,10 +19,10 @@ export const aurora = {
   onSurface: "#17301c",
   onVariant: "rgba(23,48,28,0.60)",
   // Brand.
-  primary: "#3d8b3d",
-  primaryDeep: "#245524",
+  primary: "#3b8b3d",
+  primaryDeep: "#1C5C37",
   onPrimary: "#ffffff",
-  secondary: "#f8961e",
+  secondary: "#f2a31a",
   amber: "#c46505",
   danger: "#dc2626",
   sans: "var(--font-sans)",

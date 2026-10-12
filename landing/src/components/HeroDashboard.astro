@@ -5,7 +5,7 @@
 // egg-production line draws in, and the Jawdi IA nav dot pulses.
 import { Image } from "astro:assets";
 import Kpi from "./Kpi.astro";
-import logo from "../assets/logo.png";
+import logo from "../assets/logo-compact.svg";
 
 const nav = [
   { label: "Tableau de bord", ic: "grid", active: true },
@@ -36,7 +36,7 @@ const activity = [
 
   <div class="hd-body">
     <aside class="hd-side">
-      <Image src={logo} alt="Jawdi Platform" width={120} height={40} class="hd-logo" loading="eager" />
+      <Image src={logo} alt="Jawdi Platform" width={120} height={43} class="hd-logo" loading="eager" />
       <nav class="hd-nav">
         {
           nav.map((n) => (
@@ -109,13 +109,13 @@ const activity = [
           <svg class="hd-svg" viewBox="0 0 420 110" preserveAspectRatio="none" aria-hidden="true">
             <defs>
               <linearGradient id="hdArea" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#3D8B3D" stop-opacity=".22"></stop>
-                <stop offset="1" stop-color="#3D8B3D" stop-opacity="0"></stop>
+                <stop offset="0" stop-color="#3B8B3D" stop-opacity=".22"></stop>
+                <stop offset="1" stop-color="#3B8B3D" stop-opacity="0"></stop>
               </linearGradient>
             </defs>
             <path class="hd-area" d="M0,82 C60,76 110,44 170,50 C230,56 250,22 320,18 C360,15 390,26 420,20 L420,110 L0,110 Z" fill="url(#hdArea)"></path>
-            <path class="hd-line" d="M0,82 C60,76 110,44 170,50 C230,56 250,22 320,18 C360,15 390,26 420,20" fill="none" stroke="#3D8B3D" stroke-width="2.4" stroke-linecap="round"></path>
-            <circle class="hd-tip" cx="420" cy="20" r="4" fill="#F8961E"></circle>
+            <path class="hd-line" d="M0,82 C60,76 110,44 170,50 C230,56 250,22 320,18 C360,15 390,26 420,20" fill="none" stroke="#3B8B3D" stroke-width="2.4" stroke-linecap="round"></path>
+            <circle class="hd-tip" cx="420" cy="20" r="4" fill="#F2A31A"></circle>
           </svg>
           <div class="hd-stats">
             <div><span>Total période</span><b>270</b></div>

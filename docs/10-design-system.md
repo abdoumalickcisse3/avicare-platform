@@ -61,18 +61,18 @@ Jawdi Platform = **outil sérieux d'éleveur professionnel africain**, pas un jo
 --color-primary-200: #B8DDB8;
 --color-primary-300: #8BC68B;
 --color-primary-400: #5EAA5E;
---color-primary-500: #3D8B3D;  /* ← main */
---color-primary-600: #2E6B2E;
---color-primary-700: #245524;
---color-primary-800: #1B3F1B;
---color-primary-900: #122B12;
+--color-primary-500: #3B8B3D;  /* ← main */
+--color-primary-600: #2B733A;
+--color-primary-700: #1C5C37;
+--color-primary-800: #0C4434;
+--color-primary-900: #083025;
 
 /* ACCENT — Orange Sénégal (drapeau + terre), pour CTAs forts et highlights */
 --color-accent-50:  #FFF4E6;
 --color-accent-100: #FFE1B8;
 --color-accent-200: #FFCB85;
 --color-accent-300: #FFB04D;
---color-accent-400: #F8961E;  /* ← main accent */
+--color-accent-400: #F2A31A;  /* ← main accent */
 --color-accent-500: #E67E0A;
 --color-accent-600: #C46505;
 --color-accent-700: #9C4F03;
@@ -270,7 +270,7 @@ Jawdi Platform = **outil sérieux d'éleveur professionnel africain**, pas un jo
 ┌─────────────────────────────────────────────────────────┐
 │  PRIMARY (CTA principal — orange)                       │
 │  bg: accent-400 → hover accent-500                      │
-│  text: earth #122B12 (PAS blanc — cf. note ci-dessous)  │
+│  text: earth #083025 (PAS blanc — cf. note ci-dessous)  │
 │  height: 40px (default), 32px (sm), 48px (lg)           │
 │  radius: 8px                                            │
 │  padding: 0 16px                                        │
@@ -374,10 +374,10 @@ export const avicareTheme = createTheme({
     primary: {
       50: '#F0F7F0',
       // ... (toute la scale)
-      main: '#3D8B3D',
+      main: '#3B8B3D',
     },
     secondary: {
-      main: '#F8961E',  // orange accent
+      main: '#F2A31A',  // orange accent
     },
     success: { main: '#16A34A' },
     warning: { main: '#D97706' },
@@ -418,7 +418,7 @@ export const avicareTheme = createTheme({
           padding: '8px 16px',
         },
         containedPrimary: {
-          backgroundColor: '#F8961E',  // primary CTA = orange
+          backgroundColor: '#F2A31A',  // primary CTA = orange
           '&:hover': { backgroundColor: '#E67E0A' },
         },
       },
@@ -519,12 +519,12 @@ export const avicareTheme = createTheme({
 - Texte large (≥18px) : ratio ≥ 3:1
 - Vérifier `neutral-500` sur `neutral-0` : 4.6:1 ✅
 - **CTA orange — ratios mesurés (2026-07-17)**. Les combinaisons naïves échouent toutes :
-  - `accent-400` (#F8961E) et blanc, **dans les deux sens** : **2.24:1** ❌
+  - `accent-400` (#F2A31A) et blanc, **dans les deux sens** : **2.09:1** ❌
     (le contraste est symétrique — inverser texte et fond ne change rien. Une note antérieure
     annonçait 2.9:1 pour orange-sur-blanc et 2.24:1 pour blanc-sur-orange : c'était la même
     paire, donc le 2.9 était faux.)
   - blanc et `accent-500` (#E67E0A) : **2.86:1** ❌
-  → **Règle retenue** : fond `accent-400` + texte **`earth` #122B12** = **6.79:1** ✅ (AAA),
+  → **Règle retenue** : fond `accent-400` + texte **`earth` #083025** = **6.87:1** ✅ (AAA),
   et **5.33:1** ✅ sur `accent-500` au survol. L'orange de marque reste inchangé.
 
 ### Focus states

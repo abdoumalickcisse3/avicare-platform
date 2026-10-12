@@ -1,6 +1,6 @@
 ---
 import { Image } from "astro:assets";
-import logoDark from "../assets/logo-dark.svg";
+import logoWhite from "../assets/logo-compact-white.svg";
 
 const partnerEmail = import.meta.env.PUBLIC_PARTNER_EMAIL || "hello@jawdi.app";
 const year = new Date().getFullYear();
@@ -11,7 +11,7 @@ const year = new Date().getFullYear();
     <div class="fgrid">
       <div>
         <a href="/" aria-label="Jawdi Platform — accueil">
-          <Image src={logoDark} alt="Jawdi Platform" width={500} height={173} class="logo-d" />
+          <Image src={logoWhite} alt="Jawdi Platform" width={500} height={178} class="logo-d" />
         </a>
         <p class="about">
           La gestion d'élevage avicole pensée pour l'Afrique de l'Ouest — du poussin à la marge.

@@ -1,4 +1,5 @@
 export { Card } from './Card';
+export { JawdiLogo } from './JawdiLogo';
 export { KpiCard } from './KpiCard';
 export { QuickAction } from './QuickAction';
 export { PrimaryButton } from './PrimaryButton';
