@@ -4,6 +4,8 @@
  * selector; the full web `Farm` shape carries settings this app never
  * reads).
  */
+import { Buffer } from 'buffer';
+
 import { baseApi } from './baseApi';
 
 /** Backend wraps every payload in { data, meta }; unwrap to the data field. */
@@ -27,6 +29,12 @@ export interface Farm {
   createdAt?: string;
   /** Métier focus tokens: "broiler" / "layer". */
   productionFocus?: string[];
+  /** Identifiant fiscal, imprimé sur les factures. */
+  ninea?: string | null;
+  /** Registre du commerce, imprimé sur les factures. */
+  rccm?: string | null;
+  /** Quand le logo a changé — nul quand la ferme n'en a pas. */
+  logoUpdatedAt?: string | null;
 }
 
 /**
@@ -48,6 +56,8 @@ export interface FarmInput {
   timezone?: string;
   currency?: string;
   productionFocus?: string[];
+  ninea?: string | null;
+  rccm?: string | null;
 }
 
 export const farmsApi = baseApi.injectEndpoints({
@@ -82,6 +92,33 @@ export const farmsApi = baseApi.injectEndpoints({
       ],
     }),
     /**
+     * Le logo de la ferme, en data URI, pour l'imprimer sur ses factures.
+     *
+     * L'endpoint est authentifié : impossible de le pointer depuis une balise
+     * <img> du HTML d'impression, qui partirait sans jeton. On descend donc les
+     * octets et on les encode — ce qui a l'avantage de rendre la facture
+     * imprimable HORS LIGNE une fois le logo en cache, et beaucoup d'éleveurs
+     * n'ont pas de réseau au poulailler.
+     *
+     * `version` est l'horodatage du logo : il n'entre pas dans l'URL mais dans
+     * la clé de cache, si bien qu'un remplacement crée une nouvelle entrée sans
+     * invalidation manuelle.
+     *
+     * Poser le logo reste l'affaire du web (geste d'installation) : le mobile
+     * ne fait que le lire.
+     */
+    getFarmLogo: build.query<string, { id: number; version: string }>({
+      query: ({ id }) => ({
+        url: `/api/v1/farms/${id}/logo`,
+        responseHandler: async (response: Response) => {
+          const type = response.headers.get('Content-Type') ?? 'image/png';
+          const base64 = Buffer.from(await response.arrayBuffer()).toString('base64');
+          return `data:${type};base64,${base64}`;
+        },
+      }),
+      providesTags: (_r, _e, { id }) => [{ type: 'Farm', id }],
+    }),
+    /**
      * Soft delete (`@SQLDelete` sets `deleted_at`), OWNER only, and the server applies no
      * further guard: a farm with live flocks goes just as quietly as an empty one.
      */
@@ -97,5 +134,6 @@ export const {
   useGetFarmQuery,
   useCreateFarmMutation,
   useUpdateFarmMutation,
+  useGetFarmLogoQuery,
   useDeleteFarmMutation,
 } = farmsApi;

@@ -853,6 +853,8 @@ export interface InvoiceItem {
   quantity: number;
   unitPriceXof: number;
   lineTotalXof: number;
+  /** Précision libre sur la ligne, imprimée sous le libellé. */
+  notes: string | null;
 }
 
 /** Ce qui a engendré la facture (miroir de InvoiceSourceType côté backend). */
@@ -874,6 +876,8 @@ export interface Invoice {
   totalXof: number;
   amountPaidXof: number;
   outstandingXof: number;
+  /** Mention libre de l'émetteur, imprimée sous les lignes. */
+  notes?: string | null;
   items?: InvoiceItem[];
 }
 

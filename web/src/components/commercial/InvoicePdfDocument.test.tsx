@@ -2,6 +2,13 @@ import { describe, expect, it } from "vitest";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { InvoicePdfDocument } from "./InvoicePdfDocument";
 import type { Client, Invoice } from "@/types";
+
+const FARM = {
+  name: "Ferme Complète",
+  location: "Thiès",
+  ninea: "008492019 2V2",
+  rccm: "SN-KLK-2021-A-1402",
+};
 import { BRAND_MARK_PATHS } from "@/theme/brandMark";
 
 const invoice: Invoice = {
@@ -56,7 +63,7 @@ const client: Client = {
 describe("InvoicePdfDocument", () => {
   it("renders a valid, non-empty PDF (French text and Œ ligature included)", async () => {
     const buffer = await renderToBuffer(
-      <InvoicePdfDocument invoice={invoice} client={client} farmName="Ferme Complète" />,
+      <InvoicePdfDocument invoice={invoice} client={client} farm={FARM} />,
     );
     // A real PDF starts with the "%PDF-" magic bytes...
     expect(buffer.subarray(0, 5).toString("latin1")).toBe("%PDF-");
@@ -67,7 +74,7 @@ describe("InvoicePdfDocument", () => {
   it("renders without a client (Comptant / cash sale)", async () => {
     const cashInvoice: Invoice = { ...invoice, clientId: null };
     const buffer = await renderToBuffer(
-      <InvoicePdfDocument invoice={cashInvoice} farmName="Ferme Complète" />,
+      <InvoicePdfDocument invoice={cashInvoice} farm={FARM} />,
     );
     expect(buffer.subarray(0, 5).toString("latin1")).toBe("%PDF-");
   });
@@ -82,7 +89,7 @@ describe("InvoicePdfDocument", () => {
     // ...et react-pdf les avale : son analyseur de chemins rejette un `d`
     // malformé, donc obtenir un PDF valide prouve que la marque est passée.
     const buffer = await renderToBuffer(
-      <InvoicePdfDocument invoice={invoice} client={client} farmName="Ferme Complète" />,
+      <InvoicePdfDocument invoice={invoice} client={client} farm={FARM} />,
     );
     expect(buffer.subarray(0, 5).toString("latin1")).toBe("%PDF-");
   });
