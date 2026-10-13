@@ -331,8 +331,8 @@ def write_ico(svg: str, dest: Path, sizes=(16, 32, 48)) -> None:
 # --------------------------------------------------------------------------- #
 
 
-def build() -> dict[str, str]:
-    """Produit le kit de marque et retourne {nom: contenu SVG}."""
+def build() -> tuple[dict[str, str], dict[str, list[tuple[str, str]]]]:
+    """Produit le kit de marque. Retourne {nom: SVG} et les zones du lockup horizontal."""
     kit: dict[str, str] = {}
     horizontal = read_lockup("horizontal")
     vertical = read_lockup("vertical")
@@ -360,12 +360,12 @@ def build() -> dict[str, str]:
     kit["wordmark"] = emit(wordmark, "Jawdi", KIT / "wordmark.svg")
     kit["wordmark-white"] = emit(recolor(wordmark, WHITE), "Jawdi", KIT / "wordmark-white.svg")
 
-    return kit
+    return kit, horizontal
 
 
 def main() -> None:
     svg_only = "--svg" in sys.argv
-    kit = build()
+    kit, zones = build()
     print(f"kit SVG   → {KIT.relative_to(ROOT)} ({len(kit)} fichiers)")
     if svg_only:
         return
@@ -392,8 +392,31 @@ def main() -> None:
     # que <JawdiLogo /> rend en vectoriel — net à toute densité, sans nouvelle
     # dépendance ni configuration de bundler.
     vb = viewbox(kit["logo-horizontal-compact"])
-    rows = "\n".join(
-        f"  {{ fill: '{c}', d: '{d}' }}," for c, d in parse_paths(kit["logo-horizontal-compact"])
+    # Les groupes partagent CE viewBox : superposés, ils se recalent tout seuls.
+    # Le lockup compact commence pile à l'origine (l'icône touche les bords haut
+    # et gauche), donc les coordonnées brutes sont déjà bonnes — on le vérifie
+    # plutôt que de l'espérer.
+    if (vb[0], vb[1]) != (0, 0):
+        raise SystemExit(f"viewBox du lockup compact décalé ({vb[0]}, {vb[1]}) : décaler les groupes")
+
+    def rows_of(paths: list[tuple[str, str]]) -> str:
+        return "\n".join(f"  {{ fill: '{c}', d: '{d}' }}," for c, d in paths)
+
+    icon, wordmark = zones["icon"], zones["wordmark"]
+    sun = [(c, d) for c, d in icon if c == SUN]
+    if len(sun) != 1:
+        raise SystemExit(f"soleil introuvable dans l'icône ({len(sun)} tracés orange)")
+    rows = rows_of(icon + wordmark)
+    groups = (
+        "\n/** Le soleil seul : il se lève au démarrage. */\n"
+        "export const logoSunPaths: readonly { fill: string; d: string }[] = [\n"
+        f"{rows_of(sun)}\n];\n"
+        "\n/** L'icône sans le soleil. */\n"
+        "export const logoIconPaths: readonly { fill: string; d: string }[] = [\n"
+        f"{rows_of([p for p in icon if p not in sun])}\n];\n"
+        "\n/** Le mot « Jawdi » seul. */\n"
+        "export const logoWordmarkPaths: readonly { fill: string; d: string }[] = [\n"
+        f"{rows_of(wordmark)}\n];\n"
     )
     (ROOT / "mobile/src/brand/logoPaths.ts").parent.mkdir(parents=True, exist_ok=True)
     (ROOT / "mobile/src/brand/logoPaths.ts").write_text(
@@ -406,6 +429,7 @@ def main() -> None:
         f"export const logoAspectRatio = {vb[2] / vb[3]:.4f};\n\n"
         "export const logoPaths: readonly { fill: string; d: string }[] = [\n"
         f"{rows}\n];\n"
+        + groups
     )
     print("mobile    → src/brand/logoPaths.ts (lockup compact vectoriel)")
 
