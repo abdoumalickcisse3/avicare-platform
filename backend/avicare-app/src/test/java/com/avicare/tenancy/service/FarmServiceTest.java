@@ -13,6 +13,7 @@ import com.avicare.tenancy.domain.Farm;
 import com.avicare.tenancy.domain.UserFarm;
 import com.avicare.tenancy.dto.request.CreateFarmRequest;
 import com.avicare.tenancy.mapper.TenancyMapper;
+import com.avicare.tenancy.repository.FarmLogoRepository;
 import com.avicare.tenancy.repository.FarmRepository;
 import com.avicare.tenancy.repository.UserFarmRepository;
 import java.util.Optional;
@@ -26,6 +27,7 @@ import org.mockito.Mockito;
 class FarmServiceTest {
 
   private FarmRepository farmRepository;
+  private FarmLogoRepository farmLogoRepository;
   private UserFarmRepository userFarmRepository;
   private ParametersFacade parametersFacade;
   private SubscriptionFacade subscriptionFacade;
@@ -34,6 +36,8 @@ class FarmServiceTest {
   @BeforeEach
   void setUp() {
     farmRepository = Mockito.mock(FarmRepository.class);
+    farmLogoRepository = Mockito.mock(FarmLogoRepository.class);
+    lenient().when(farmLogoRepository.findUpdatedAt(any())).thenReturn(Optional.empty());
     userFarmRepository = Mockito.mock(UserFarmRepository.class);
     parametersFacade = Mockito.mock(ParametersFacade.class);
     subscriptionFacade = Mockito.mock(SubscriptionFacade.class);
@@ -43,7 +47,12 @@ class FarmServiceTest {
     TenancyMapper mapper = Mappers.getMapper(TenancyMapper.class);
     farmService =
         new FarmService(
-            farmRepository, userFarmRepository, mapper, parametersFacade, subscriptionFacade);
+            farmRepository,
+            farmLogoRepository,
+            userFarmRepository,
+            mapper,
+            parametersFacade,
+            subscriptionFacade);
   }
 
   @Test

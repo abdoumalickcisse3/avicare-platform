@@ -11,6 +11,7 @@ import com.avicare.tenancy.dto.request.CreateFarmRequest;
 import com.avicare.tenancy.dto.request.UpdateFarmRequest;
 import com.avicare.tenancy.dto.response.FarmResponse;
 import com.avicare.tenancy.mapper.TenancyMapper;
+import com.avicare.tenancy.repository.FarmLogoRepository;
 import com.avicare.tenancy.repository.FarmRepository;
 import com.avicare.tenancy.repository.UserFarmRepository;
 import java.util.List;
@@ -39,6 +40,7 @@ public class FarmService {
   static final Set<String> ALLOWED_FOCUS = Set.of("broiler", "layer");
 
   private final FarmRepository farmRepository;
+  private final FarmLogoRepository farmLogoRepository;
   private final UserFarmRepository userFarmRepository;
   private final TenancyMapper tenancyMapper;
   private final ParametersFacade parametersFacade;
@@ -114,6 +116,8 @@ public class FarmService {
     if (request.currency() != null && !request.currency().isBlank()) {
       farm.setCurrency(request.currency());
     }
+    farm.setNinea(request.ninea());
+    farm.setRccm(request.rccm());
     if (request.productionFocus() != null) {
       writeFocus(farmId, request.productionFocus());
     }
@@ -146,7 +150,11 @@ public class FarmService {
         b.createdBy(),
         b.active(),
         b.createdAt(),
-        readFocus(farm.getId()));
+        readFocus(farm.getId()),
+        farm.getNinea(),
+        farm.getRccm(),
+        // L'horodatage seul, jamais les octets : voir FarmResponse.
+        farmLogoRepository.findUpdatedAt(farm.getId()).orElse(null));
   }
 
   @SuppressWarnings("unchecked")

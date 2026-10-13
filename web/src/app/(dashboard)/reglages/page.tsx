@@ -13,6 +13,7 @@ import {
   ArrowRight,
   Bell,
   Bird,
+  BadgeCheck,
   Handshake,
   Package,
   Receipt,
@@ -65,6 +66,12 @@ const CATEGORIES: SettingCategory[] = [
     name: "Notifications",
     description: "Alertes par catégorie : cloche in-app et WhatsApp.",
     icon: Bell,
+  },
+  {
+    slug: "identite",
+    name: "Identité",
+    description: "Votre logo et vos mentions légales, tels qu'ils s'impriment sur vos factures.",
+    icon: BadgeCheck,
   },
   {
     slug: "partenaires",

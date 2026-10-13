@@ -16,4 +16,8 @@ public record UpdateFarmRequest(
     @Size(max = 50) String timezone,
     @Size(max = 3) String currency,
     /** Métier focus tokens (broiler/layer), Décision 17. Null = leave unchanged. */
-    List<String> productionFocus) {}
+    List<String> productionFocus,
+    /** Identifiant fiscal, imprimé sur la facture. Remplacé tel quel, null l'efface. */
+    @Size(max = 50) String ninea,
+    /** Registre du commerce, imprimé sur la facture. Remplacé tel quel, null l'efface. */
+    @Size(max = 50) String rccm) {}

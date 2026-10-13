@@ -73,6 +73,7 @@ import com.avicare.subscription.api.SubscriptionFacade;
 import com.avicare.subscription.repository.SubscriptionChangeRequestRepository;
 import com.avicare.subscription.repository.SubscriptionModuleRepository;
 import com.avicare.subscription.repository.SubscriptionRepository;
+import com.avicare.tenancy.repository.FarmLogoRepository;
 import com.avicare.tenancy.repository.FarmRepository;
 import com.avicare.tenancy.repository.UserFarmRepository;
 import java.security.KeyPair;
@@ -115,6 +116,7 @@ class DashboardControllerIT {
   @MockitoBean private UserRepository userRepository;
   @MockitoBean private RefreshTokenRepository refreshTokenRepository;
   @MockitoBean private FarmRepository farmRepository;
+  @MockitoBean private FarmLogoRepository farmLogoRepository;
   @MockitoBean private com.avicare.notification.push.PushDeviceRepository pushDeviceRepository;
   @MockitoBean private com.avicare.livestock.closure.UnitClosureRepository unitClosureRepository;
   @MockitoBean private PartnerRepository partnerRepository;

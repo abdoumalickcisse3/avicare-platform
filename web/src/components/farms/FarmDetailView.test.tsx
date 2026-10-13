@@ -32,6 +32,9 @@ const farm: Farm = {
   active: true,
   createdAt: "2026-01-01T00:00:00",
   productionFocus: [],
+  ninea: null,
+  rccm: null,
+  logoUpdatedAt: null,
 };
 
 beforeEach(() => {
