@@ -15,11 +15,10 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { ArrowRight, Handshake, Mail } from "lucide-react";
+import { ArrowRight, Mail } from "lucide-react";
 import { usePartnerLoginMutation } from "@/store/api/partnerApi";
 import { partnerTokenStorage } from "@/lib/partnerStorage";
 import { PasswordField } from "@/components/forms/PasswordField";
-import { colors } from "@/theme/tokens";
 
 const loginSchema = z.object({
   email: z.email("Adresse e-mail invalide"),
@@ -62,21 +61,11 @@ export default function PartnerLoginPage() {
       <Stack spacing={3} sx={{ width: "100%", maxWidth: 420 }}>
         <Box sx={{ textAlign: "center" }}>
           <Box
-            sx={{
-              width: 56,
-              height: 56,
-              borderRadius: 2,
-              mx: "auto",
-              mb: 1.5,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              bgcolor: colors.primary[50],
-              color: colors.primary[600],
-            }}
-          >
-            <Handshake size={28} />
-          </Box>
+            component="img"
+            src="/logo/logo-compact.svg"
+            alt="Jawdi"
+            sx={{ height: 44, width: "auto", mx: "auto", mb: 2, display: "block" }}
+          />
           <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
             Portail partenaire
           </Typography>

@@ -18,7 +18,7 @@ import {
   Tabs,
   Typography,
 } from '@mui/material';
-import { Handshake, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { useState } from 'react';
 import {
   useGetNetworkDashboardQuery,
@@ -30,6 +30,7 @@ import { partnerTokenStorage } from '@/lib/partnerStorage';
 import NetworkAlerts from './NetworkAlerts';
 import { NetworkFarmDialog } from './NetworkFarmDialog';
 import RestockForecast from './RestockForecast';
+import { PartnerLogo } from './PartnerLogo';
 import type { NetworkFarmRow, PartnerProfile, RiskLevel } from '@/types';
 import { colors } from '@/theme/tokens';
 
@@ -88,20 +89,7 @@ export default function NetworkDashboard() {
         }}
       >
         <Stack direction="row" sx={{ alignItems: 'center', gap: 1.5 }}>
-          <Box
-            sx={{
-              width: 44,
-              height: 44,
-              borderRadius: 2,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              bgcolor: colors.primary[50],
-              color: colors.primary[600],
-            }}
-          >
-            <Handshake size={22} />
-          </Box>
+          <PartnerLogo name={me?.name} logoUrl={me?.logoUrl} size={44} />
           <Box>
             <Typography variant="h5" sx={{ fontWeight: 700 }}>
               {me?.name ?? 'Mon réseau'}
