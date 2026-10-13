@@ -49,7 +49,8 @@ public class FarmLogoService {
   public FarmLogo get(Long farmId) {
     return farmLogoRepository
         .findById(farmId)
-        .orElseThrow(() -> new NotFoundException("FARM_LOGO_NOT_FOUND", "Cette ferme n'a pas de logo."));
+        .orElseThrow(
+            () -> new NotFoundException("FARM_LOGO_NOT_FOUND", "Cette ferme n'a pas de logo."));
   }
 
   @Transactional
@@ -127,7 +128,8 @@ public class FarmLogoService {
 
     BufferedImage out = new BufferedImage(tw, th, BufferedImage.TYPE_INT_ARGB);
     Graphics2D g = out.createGraphics();
-    g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+    g.setRenderingHint(
+        RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
     g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
     g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
     g.drawImage(source, 0, 0, tw, th, null);
