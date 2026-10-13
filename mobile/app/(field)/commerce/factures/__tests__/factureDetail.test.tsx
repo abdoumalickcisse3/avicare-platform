@@ -36,9 +36,22 @@ jest.mock('expo-haptics', () => ({
 jest.mock('@/auth/useSession', () => ({
   useFarmAccess: jest.fn(() => ({ farmRole: 'OWNER', can: () => true, isAdmin: true, session: null })),
 }));
-// L'écran sort maintenant un PDF : nom de la ferme, moteur d'impression, feuille de partage.
+// L'écran sort maintenant un PDF : identité de la ferme, moteur d'impression, feuille de partage.
+// La ferme porte son NINEA et son logo, qui s'impriment en tête de la facture.
 jest.mock('@/store/api/farmsApi', () => ({
-  useListFarmsQuery: jest.fn(() => ({ data: [{ id: 7, name: 'Ferme Complète' }] })),
+  useListFarmsQuery: jest.fn(() => ({
+    data: [
+      {
+        id: 7,
+        name: 'Ferme Complète',
+        location: 'Thiès',
+        ninea: '008492019 2V2',
+        rccm: null,
+        logoUpdatedAt: '2026-10-13T02:00:00',
+      },
+    ],
+  })),
+  useGetFarmLogoQuery: jest.fn(() => ({ data: 'data:image/png;base64,AAAA' })),
 }));
 const mockPrintToFile = jest.fn(async (_a: { html: string }) => ({ uri: 'file:///tmp/f.pdf' }));
 const mockPrintAsync = jest.fn(async (_a: { html: string }) => undefined);
@@ -140,8 +153,13 @@ describe('Facture detail', () => {
     expect(mockPrintToFile).toHaveBeenCalled();
     const html = mockPrintToFile.mock.calls[0]?.[0]?.html ?? '';
     expect(html).toContain('F-001');
-    expect(html).toContain('Ferme Complète');
     expect(html).toContain('Awa Diop');
+    // L'identité de la ferme arrive jusqu'au document : c'est ce qui prouve le
+    // branchement, pas le seul fait que l'impression ait été appelée.
+    expect(html).toContain('Ferme Complète');
+    expect(html).toContain('Thiès');
+    expect(html).toContain('NINEA : 008492019 2V2');
+    expect(html).toContain('src="data:image/png;base64,AAAA"');
     expect(mockShare).toHaveBeenCalledWith(
       'file:///tmp/f.pdf',
       expect.objectContaining({ mimeType: 'application/pdf' }),

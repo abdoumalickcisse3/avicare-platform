@@ -22,7 +22,7 @@ import { tokens } from '@/theme';
 import { useFarmAccess } from '@/auth/useSession';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
 import { useCancelInvoiceMutation, useGetInvoiceQuery } from '@/store/api/invoicesApi';
-import { useListFarmsQuery } from '@/store/api/farmsApi';
+import { useGetFarmLogoQuery, useListFarmsQuery } from '@/store/api/farmsApi';
 import { invoiceHtml } from '@/commerce/invoiceHtml';
 import { useGetClientsQuery } from '@/store/api/clientsApi';
 import { useGetPaymentsQuery } from '@/store/api/paymentsApi';
@@ -74,7 +74,16 @@ export default function FactureDetailScreen() {
       : (clients?.find((c) => c.id === invoice?.clientId)?.displayName ?? 'Client');
   const canPay = canCollect && !!invoice && invoice.outstandingXof > 0;
   const client = clients?.find((c) => c.id === invoice?.clientId) ?? null;
-  const farmName = farms?.find((f) => f.id === selectedFarmId)?.name ?? 'Ma ferme';
+  const farm = farms?.find((f) => f.id === selectedFarmId);
+  const farmName = farm?.name ?? 'Ma ferme';
+
+  // Le logo descend en data URI et reste en cache : la facture s'imprime donc
+  // aussi hors ligne, ce qui compte au poulailler. Il se pose depuis le web.
+  const { data: farmLogo } = useGetFarmLogoQuery(
+    selectedFarmId === null || !farm?.logoUpdatedAt
+      ? skipToken
+      : { id: selectedFarmId, version: farm.logoUpdatedAt },
+  );
 
   /**
    * D'où vient cette facture. Le web le montre dans un fil « source → facture → paiements » ; ici
@@ -101,7 +110,17 @@ export default function FactureDetailScreen() {
     if (!invoice || sharing) return;
     setSharing(true);
     try {
-      const html = invoiceHtml({ invoice, client, farmName });
+      const html = invoiceHtml({
+        invoice,
+        client,
+        issuer: {
+          name: farmName,
+          location: farm?.location,
+          ninea: farm?.ninea,
+          rccm: farm?.rccm,
+          logo: farmLogo,
+        },
+      });
       const { uri } = await Print.printToFileAsync({ html });
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(uri, {

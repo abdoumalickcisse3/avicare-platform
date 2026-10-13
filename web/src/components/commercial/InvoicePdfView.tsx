@@ -7,7 +7,7 @@ import { AppBar, Box, Button, CircularProgress, Toolbar, Typography } from "@mui
 import { ArrowLeft, Download } from "lucide-react";
 import { useGetInvoiceQuery } from "@/store/api/invoicesApi";
 import { useGetClientQuery } from "@/store/api/clientsApi";
-import { useGetMyFarmsQuery } from "@/store/api/farmsApi";
+import { useGetFarmLogoQuery, useGetMyFarmsQuery } from "@/store/api/farmsApi";
 import { useCommercialGating } from "@/hooks/useCommercialGating";
 import { InvoicePdfDocument } from "./InvoicePdfDocument";
 
@@ -52,8 +52,16 @@ export function InvoicePdfView({ invoiceId }: Props) {
     { skip: skip || invoice?.clientId == null },
   );
   const { data: farms } = useGetMyFarmsQuery();
+  const farm = farms?.find((f) => f.id === farmId);
 
-  const farmName = farms?.find((f) => f.id === farmId)?.name ?? "—";
+  // Le logo descend en data URI : react-pdf embarque l'image dans le document,
+  // il ne va pas la chercher au moment du rendu — et l'endpoint est authentifié.
+  const { data: logo } = useGetFarmLogoQuery(
+    { id: farmId as number, version: farm?.logoUpdatedAt ?? "" },
+    { skip: !farm?.logoUpdatedAt },
+  );
+
+  const issuer = farm ?? { name: "—", location: null, ninea: null, rccm: null };
 
   const handleDownload = async () => {
     if (!invoice) return;
@@ -61,7 +69,7 @@ export function InvoicePdfView({ invoiceId }: Props) {
     try {
       const { pdf } = await import("@react-pdf/renderer");
       const blob = await pdf(
-        <InvoicePdfDocument invoice={invoice} client={client} farmName={farmName} />,
+        <InvoicePdfDocument invoice={invoice} client={client} farm={issuer} logo={logo} />,
       ).toBlob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -102,7 +110,7 @@ export function InvoicePdfView({ invoiceId }: Props) {
       <Box sx={{ flex: 1, minHeight: 0 }}>
         {invoice ? (
           <PDFViewer style={{ width: "100%", height: "100%", border: 0 }} showToolbar>
-            <InvoicePdfDocument invoice={invoice} client={client} farmName={farmName} />
+            <InvoicePdfDocument invoice={invoice} client={client} farm={issuer} logo={logo} />
           </PDFViewer>
         ) : (
           <Box sx={{ display: "grid", placeItems: "center", height: "100%" }}>

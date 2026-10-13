@@ -39,7 +39,7 @@ const CLIENT = {
 
 describe('invoiceHtml', () => {
   it('porte tout ce qui fait une facture', () => {
-    const html = invoiceHtml({ invoice: INVOICE, client: CLIENT, farmName: 'Ferme Complète' });
+    const html = invoiceHtml({ invoice: INVOICE, client: CLIENT, issuer: { name: 'Ferme Complète' } });
 
     expect(html).toContain('Ferme Complète');
     expect(html).toContain('F-2026-007');
@@ -50,8 +50,10 @@ describe('invoiceHtml', () => {
     expect(html).toContain('05/09/2026');
     expect(html).toContain('05/10/2026');
     // Les trois totaux.
-    expect(html).toMatch(/Total \(HT\)[\s\S]*?42/);
-    expect(html).toMatch(/Reste dû[\s\S]*?30/);
+    expect(html).toMatch(/Total<[\s\S]*?42/);
+    expect(html).toMatch(/RESTE DÛ[\s\S]*?30/);
+    // Et le reste dû en toutes lettres, qui fait foi contre les chiffres.
+    expect(html).toContain('Trente mille francs CFA');
   });
 
   it("échappe ce qui vient du serveur plutôt que de l'injecter", () => {
@@ -63,7 +65,7 @@ describe('invoiceHtml', () => {
         items: [{ ...INVOICE.items![0], articleLabelSnapshot: '<script>x</script>' }],
       } as unknown as Invoice,
       client: { ...CLIENT, displayName: 'Ets Diop & <b>Fils</b>' } as unknown as Client,
-      farmName: 'Ferme',
+      issuer: { name: 'Ferme' },
     });
 
     expect(html).toContain('Ets Diop &amp; &lt;b&gt;Fils&lt;/b&gt;');
@@ -75,24 +77,70 @@ describe('invoiceHtml', () => {
     const html = invoiceHtml({
       invoice: { ...INVOICE, dueDate: null } as unknown as Invoice,
       client: CLIENT,
-      farmName: 'Ferme',
+      issuer: { name: 'Ferme' },
     });
 
-    expect(html).toContain('Émission :');
-    expect(html).not.toContain('Échéance :');
+    expect(html).toContain("Date d'émission");
+    expect(html).not.toContain("Date d'échéance");
   });
 
   it('dit « Comptant » sur une vente sans client', () => {
     const html = invoiceHtml({
       invoice: { ...INVOICE, clientId: null } as unknown as Invoice,
       client: null,
-      farmName: 'Ferme',
+      issuer: { name: 'Ferme' },
     });
 
     expect(html).toContain('Comptant');
   });
+  it("porte l'identité de la ferme en tête : logo, lieu et mentions légales", () => {
+    const html = invoiceHtml({
+      invoice: INVOICE,
+      client: CLIENT,
+      issuer: {
+        name: 'Ferme Complète',
+        location: 'Thiès',
+        ninea: '008492019 2V2',
+        rccm: 'SN-KLK-2021-A-1402',
+        logo: 'data:image/png;base64,AAAA',
+      },
+    });
+
+    const header = html.slice(html.indexOf('class="header"'), html.indexOf('class="footer"'));
+    expect(header).toContain('Thiès');
+    expect(header).toContain('NINEA : 008492019 2V2');
+    expect(header).toContain('RC : SN-KLK-2021-A-1402');
+    expect(header).toContain('src="data:image/png;base64,AAAA"');
+  });
+
+  it("n'affiche ni logo ni mentions quand la ferme n'en a pas, sans laisser de trou", () => {
+    const html = invoiceHtml({ invoice: INVOICE, client: CLIENT, issuer: { name: 'Ferme Nue' } });
+
+    const header = html.slice(html.indexOf('class="header"'), html.indexOf('class="footer"'));
+    expect(header).toContain('Ferme Nue');
+    expect(header).not.toContain('class="logo"');
+    expect(header).not.toContain('NINEA');
+  });
+
+  it('signale une facture en retard, et se tait sur une facture payée', () => {
+    const late = invoiceHtml({
+      invoice: { ...INVOICE, dueDate: '2020-01-01' } as unknown as Invoice,
+      client: CLIENT,
+      issuer: { name: 'Ferme' },
+    });
+    expect(late).toMatch(/En retard de \d+ j/);
+
+    // Rappeler une échéance sur un document soldé ne ferait qu'inquiéter le client.
+    const paid = invoiceHtml({
+      invoice: { ...INVOICE, dueDate: '2020-01-01', status: 'PAID' } as unknown as Invoice,
+      client: CLIENT,
+      issuer: { name: 'Ferme' },
+    });
+    expect(paid).not.toContain('En retard');
+  });
+
   it('signe le document en pied de page, jamais en en-tête', () => {
-    const html = invoiceHtml({ invoice: INVOICE, client: CLIENT, farmName: 'Ferme Complète' });
+    const html = invoiceHtml({ invoice: INVOICE, client: CLIENT, issuer: { name: 'Ferme Complète' } });
 
     // La marque Jawdi est dans le pied de page...
     const footer = html.slice(html.indexOf('class="footer"'));
