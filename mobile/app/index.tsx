@@ -1,15 +1,18 @@
 /**
  * Splash / entry route (`/`) — Stitch "Splash Screen - AviCare Mobile"
  * reference: a full-bleed farm photo under a green brand wash, the centered
- * Jawdi logo, and a bottom status line. Decides where to go (field app if a
- * token is stored, otherwise login) and doubles as the app's initial route.
+ * logo Jawdi qui s'assemble, et une ligne d'état en bas. Décide où aller (l'app
+ * terrain si un jeton est stocké, sinon la connexion) et sert de route initiale.
+ *
+ * Le logo s'anime : c'est le seul moment où l'éleveur regarde l'écran sans rien
+ * avoir à y faire, donc le seul endroit où la marque peut prendre son temps.
  */
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, ImageBackground, StyleSheet, Text, View } from 'react-native';
 import { Redirect } from 'expo-router';
 import { getAccessToken } from '@/auth/tokens';
 import { tokens } from '@/theme';
-import { JawdiLogo } from '@/components/ui';
+import { AnimatedJawdiLogo } from '@/components/ui';
 
 export default function Splash() {
   const [target, setTarget] = useState<'/(field)' | '/(auth)/login' | null>(null);
@@ -34,7 +37,7 @@ export default function Splash() {
       <View style={styles.overlay} />
 
       <View style={styles.center}>
-        <JawdiLogo height={76} tone="white" />
+        <AnimatedJawdiLogo height={76} tone="white" />
       </View>
 
       <View style={styles.bottom}>
