@@ -17,7 +17,9 @@ import org.mapstruct.Mapping;
 public interface TenancyMapper {
 
   // production_focus is not a Farm column — it lives in farm_settings, set by FarmService.
+  // logoUpdatedAt lives in farm_logos, read by FarmService.
   @Mapping(target = "productionFocus", ignore = true)
+  @Mapping(target = "logoUpdatedAt", ignore = true)
   FarmResponse toResponse(Farm farm);
 
   FarmInfo toInfo(Farm farm);

@@ -45,6 +45,16 @@ export interface Farm {
   createdAt: string;
   /** Métier focus tokens (broiler/layer), Décision 17. */
   productionFocus: string[];
+  /** Identifiant fiscal, imprimé sur les factures. */
+  ninea: string | null;
+  /** Registre du commerce, imprimé sur les factures. */
+  rccm: string | null;
+  /**
+   * Quand le logo a changé — `null` quand la ferme n'en a pas. Les octets ne
+   * transitent jamais ici : cet horodatage sert à savoir qu'un logo existe et à
+   * composer son URL, qui est ainsi immuable et cacheable indéfiniment.
+   */
+  logoUpdatedAt: string | null;
 }
 
 /** Payload for farm create/update (subset of backend fields exposed in V1 UI). */
@@ -54,6 +64,8 @@ export interface FarmInput {
   location?: string;
   capacity?: number;
   productionFocus?: string[];
+  ninea?: string | null;
+  rccm?: string | null;
 }
 
 /** Tenant-level role inside a farm (mirrors backend FarmRole enum). */

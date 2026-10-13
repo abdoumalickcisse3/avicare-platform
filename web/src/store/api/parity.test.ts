@@ -276,6 +276,11 @@ function urlsOf(roots: string[]): Map<string, string[]> {
  */
 const KNOWN_DIVERGENCES: { url: string; side: "web" | "mobile"; why: string }[] = [
   {
+    url: "/api/v1/farms/:x/logo",
+    side: "web",
+    why: "Poser le logo de l'exploitation est un geste d'installation, fait une fois et assis : le téléphone est l'outil de terrain. Le mobile LIT ce même endpoint pour imprimer le logo sur ses factures — c'est l'écriture, réservée au propriétaire, qui n'a pas d'écran mobile. Choix assumé le 2026-10-13, à rouvrir si un éleveur demande à le faire depuis son téléphone (il faudrait alors expo-image-picker, donc un nouveau build).",
+  },
+  {
     url: "/api/v1/farms/:x/assistant",
     side: "web",
     why: "Fragment de base (`${base(farmId)}/chat`), pas un appel : /chat et /confirm existent des deux côtés.",
