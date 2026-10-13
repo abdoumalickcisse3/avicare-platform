@@ -29,7 +29,7 @@ const ALERTS = [
 ];
 
 /** Route the three portal GETs by url; anything else answers an empty envelope. */
-function mockNetworkFetch(farms: unknown = FARMS, alerts: unknown = []) {
+function mockNetworkFetch(farms: unknown = FARMS, alerts: unknown = [], me: unknown = ME) {
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: RequestInfo | URL) => {
@@ -45,7 +45,7 @@ function mockNetworkFetch(farms: unknown = FARMS, alerts: unknown = []) {
           ? { data: alerts }
           : url.includes("/network")
             ? { data: NETWORK }
-            : { data: ME };
+            : { data: me };
       return new Response(JSON.stringify(body), {
         status: 200,
         headers: { "Content-Type": "application/json" },
@@ -144,5 +144,23 @@ describe("NetworkDashboard", () => {
     // Twice: the follow-up level and the active flag both ride on the activity scope.
     expect(within(dialog).getAllByText(/ne partage pas son activité/i)).toHaveLength(2);
     expect(within(dialog).getByText("2.5 %")).toBeInTheDocument();
+  });
+  it("montre au partenaire sa propre marque, pas une icône générique", async () => {
+    // `logoUrl` existait sur le profil depuis toujours sans être affiché nulle
+    // part : le provendier voyait une poignée de main à la place de son logo.
+    mockNetworkFetch(FARMS, [], { ...ME, logoUrl: "https://exemple.test/provende.png" });
+    renderWithProviders(<NetworkDashboard />);
+
+    const logo = await screen.findByRole("img", { name: "Provende du Sahel" });
+    expect(logo).toHaveAttribute("src", "https://exemple.test/provende.png");
+  });
+
+  it("se rabat sur l'initiale quand le partenaire n'a pas de logo", async () => {
+    mockNetworkFetch();
+    renderWithProviders(<NetworkDashboard />);
+
+    expect(await screen.findByText("Provende du Sahel")).toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "Provende du Sahel" })).not.toBeInTheDocument();
+    expect(screen.getByText("P")).toBeInTheDocument();
   });
 });
