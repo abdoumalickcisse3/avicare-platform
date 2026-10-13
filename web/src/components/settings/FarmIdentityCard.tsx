@@ -35,7 +35,7 @@ const MAX_BYTES = 2 * 1024 * 1024;
  * réglage d'usage courant.
  */
 export function FarmIdentityCard({ farmId }: { farmId: number }) {
-  const { data: farm } = useGetFarmQuery(farmId);
+  const { data: farm, isLoading: loadingFarm } = useGetFarmQuery(farmId);
   const { data: logo, isFetching: loadingLogo } = useGetFarmLogoQuery(
     { id: farmId, version: farm?.logoUpdatedAt ?? "" },
     { skip: !farm?.logoUpdatedAt },
@@ -50,7 +50,23 @@ export function FarmIdentityCard({ farmId }: { farmId: number }) {
   const [ninea, setNinea] = useState<string | null>(null);
   const [rccm, setRccm] = useState<string | null>(null);
 
-  if (!farm) return null;
+  // Un `null` muet pendant le chargement donne l'impression d'un écran cassé :
+  // l'en-tête s'affiche, et dessous il n'y a rien. On montre l'attente.
+  if (!farm) {
+    return (
+      <Card>
+        <CardContent sx={{ display: "flex", justifyContent: "center", py: 6 }}>
+          {loadingFarm ? (
+            <CircularProgress />
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              Les informations de cette ferme n&apos;ont pas pu être chargées.
+            </Typography>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
 
   // Les champs suivent la ferme jusqu'à la première frappe, puis l'utilisateur.
   const nineaValue = ninea ?? farm.ninea ?? "";
