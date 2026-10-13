@@ -2,10 +2,10 @@ package com.avicare.tenancy.controller;
 
 import com.avicare.common.api.response.ApiResponse;
 import com.avicare.common.tenancy.context.TenancyContext;
+import com.avicare.tenancy.domain.FarmLogo;
 import com.avicare.tenancy.dto.request.CreateFarmRequest;
 import com.avicare.tenancy.dto.request.UpdateFarmRequest;
 import com.avicare.tenancy.dto.response.FarmResponse;
-import com.avicare.tenancy.domain.FarmLogo;
 import com.avicare.tenancy.service.FarmLogoService;
 import com.avicare.tenancy.service.FarmService;
 import jakarta.validation.Valid;
