@@ -23,6 +23,15 @@ function articleLabel(key: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+/**
+ * The name the farmer recognises. The backend resolves the catalog label on read; falling back
+ * to a prettified key ("Feed layer") only when the catalog no longer knows it — the web picker
+ * has always shown the real label, this one used to show the key.
+ */
+function itemLabel(item: { articleKey: string; label?: string | null }): string {
+  return item.label ?? articleLabel(item.articleKey);
+}
+
 function toNum(v: string): number {
   const n = v.trim() ? Number(v.trim().replace(',', '.')) : NaN;
   return Number.isFinite(n) ? n : NaN;
@@ -45,8 +54,25 @@ export function FeedSourceSection({
   const [formula, setFormula] = useState<{ key?: string; id?: number; label: string } | null>(null);
   const [totalKg, setTotalKg] = useState('');
 
+  /**
+   * Articles to pick from, those that actually hold something first.
+   *
+   * A pilot farm took 105 kg out of the platform's "Ponte", which had never received a single
+   * entry, while its own "Pondeuse" held 150 kg — the chips read alike and showed no quantity.
+   * Sorting what is in stock to the front, with its quantity on the chip, makes the right one
+   * obvious without hiding any.
+   */
   const feedItems = useMemo(
-    () => (stockItems ?? []).filter((i) => i.active && i.articleSource === 'INVENTORY'),
+    () =>
+      (stockItems ?? [])
+        .filter((i) => i.active && i.articleSource === 'INVENTORY')
+        .slice()
+        .sort((a, b) => {
+          const aHas = a.currentQuantity > 0;
+          const bHas = b.currentQuantity > 0;
+          if (aHas !== bHas) return aHas ? -1 : 1;
+          return itemLabel(a).localeCompare(itemLabel(b), 'fr');
+        }),
     [stockItems],
   );
   const formulaOptions = useMemo<Array<{ key?: string; id?: number; label: string }>>(
@@ -109,7 +135,10 @@ export function FeedSourceSection({
                     onPress={() => { setArticleKey(i.articleKey); emit('article', i.articleKey, qty, formula, totalKg); }}
                     accessibilityRole="button"
                   >
-                    <Text style={[styles.pickText, on && styles.pickTextOn]}>{articleLabel(i.articleKey)}</Text>
+                    <Text testID="feed-article-label" style={[styles.pickText, on && styles.pickTextOn]}>{itemLabel(i)}</Text>
+                    <Text style={[styles.pickQty, i.currentQuantity <= 0 && styles.pickQtyEmpty]}>
+                      {formatNumber(i.currentQuantity)} {i.unit ?? 'kg'}
+                    </Text>
                   </Pressable>
                 );
               })}
@@ -196,6 +225,8 @@ const styles = StyleSheet.create({
   pickChipOn: { backgroundColor: tokens.colors.primary[50], borderColor: tokens.colors.primary[600] },
   pickText: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted },
   pickTextOn: { color: tokens.colors.primary[700], fontWeight: '600' },
+  pickQty: { ...tokens.typography.bodySm, color: tokens.colors.field.textMuted, fontVariant: ['tabular-nums'] },
+  pickQtyEmpty: { color: tokens.colors.warning },
   qtyRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[2], borderWidth: 1, borderColor: tokens.colors.neutral[300], borderRadius: tokens.radii.md, paddingHorizontal: tokens.spacing[3], backgroundColor: tokens.colors.neutral[50] },
   qtyInput: { flex: 1, ...tokens.typography.bodyLg, color: tokens.colors.field.text, minHeight: tokens.touch.field },
   unit: { ...tokens.typography.bodyMd, color: tokens.colors.field.textMuted },
