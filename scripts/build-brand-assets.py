@@ -54,6 +54,10 @@ LOCKUPS = {
         "file": "lockup-horizontal.ai",
         # L'icône est la colonne de gauche ; la baseline, la bande basse à droite.
         "zone": lambda r: "icon" if r["x1"] < 200 else ("baseline" if r["y0"] > 150 else "wordmark"),
+        # Cinq lettres, pas six : dans le lockup horizontal la hampe de la
+        # marque EST le « J » du mot, qui se lit donc « J » + « awdi ». Le
+        # wordmark complet ne vit que dans le lockup vertical.
+        "expected": {"icon": 14, "wordmark": 5, "baseline": 51},
     },
     "vertical": {
         "file": "lockup-vertical.ai",
@@ -61,9 +65,11 @@ LOCKUPS = {
         # classe sur le bord HAUT : la courbe du « J » de l'icône plonge jusqu'à
         # y=311, soit plus bas que le sommet du wordmark (y=301).
         "zone": lambda r: "icon" if r["y0"] < 286 else ("baseline" if r["y0"] > 460 else "wordmark"),
+        # Ici la marque est posée au-dessus du mot, qui porte donc son propre
+        # « J » : six tracés.
+        "expected": {"icon": 14, "wordmark": 6, "baseline": 51},
     },
 }
-EXPECTED = {"icon": 14, "wordmark": 6, "baseline": 51}
 
 
 # --------------------------------------------------------------------------- #
@@ -165,9 +171,10 @@ def read_lockup(name: str) -> dict[str, list[tuple[str, str]]]:
         zones[conf["zone"](rel)].append((color, d))
 
     for zone, paths in zones.items():
-        if len(paths) != EXPECTED[zone]:
+        if len(paths) != conf["expected"][zone]:
             raise SystemExit(
-                f"{conf['file']} : zone « {zone} » = {len(paths)} tracés, {EXPECTED[zone]} attendus. "
+                f"{conf['file']} : zone « {zone} » = {len(paths)} tracés, "
+                f"{conf['expected'][zone]} attendus. "
                 "Les seuils de découpe ne collent plus à la source — revoir LOCKUPS."
             )
 
@@ -357,7 +364,10 @@ def build() -> tuple[dict[str, str], dict[str, list[tuple[str, str]]]]:
     kit["icon"] = emit(icon, "Jawdi", KIT / "icon.svg")
     kit["icon-white"] = emit(recolor(icon, WHITE), "Jawdi", KIT / "icon-white.svg")
 
-    wordmark = horizontal["wordmark"]
+    # Le mot entier vient du lockup VERTICAL : c'est le seul où il porte son
+    # propre « J ». Dans l'horizontal, ce « J » est la hampe de la marque, et le
+    # zonage n'y rend que « awdi » — inutilisable comme logotype isolé.
+    wordmark = vertical["wordmark"]
     kit["wordmark"] = emit(wordmark, "Jawdi", KIT / "wordmark.svg")
     kit["wordmark-white"] = emit(recolor(wordmark, WHITE), "Jawdi", KIT / "wordmark-white.svg")
 
@@ -415,7 +425,7 @@ def main() -> None:
         "\n/** L'icône sans le soleil. */\n"
         "export const logoIconPaths: readonly { fill: string; d: string }[] = [\n"
         f"{rows_of([p for p in icon if p not in sun])}\n];\n"
-        "\n/** Le mot « Jawdi » seul. */\n"
+        "\n/** Le « awdi » du lockup : son « J » est la hampe de la marque. */\n"
         "export const logoWordmarkPaths: readonly { fill: string; d: string }[] = [\n"
         f"{rows_of(wordmark)}\n];\n"
     )
