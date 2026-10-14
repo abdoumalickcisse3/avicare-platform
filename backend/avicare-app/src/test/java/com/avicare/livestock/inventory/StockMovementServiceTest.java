@@ -40,6 +40,7 @@ class StockMovementServiceTest {
   @Mock StockItemRepository stockItemRepository;
   @Mock FinanceFacade financeFacade;
   @Mock InventoryCatalogService inventoryCatalogService;
+  @Mock StockShortagePolicy stockShortagePolicy;
   @Captor ArgumentCaptor<Long> amountCaptor;
 
   StockMovementService service;
@@ -53,7 +54,11 @@ class StockMovementServiceTest {
   void setUp() {
     service =
         new StockMovementService(
-            stockMovementRepository, stockItemRepository, financeFacade, inventoryCatalogService);
+            stockMovementRepository,
+            stockItemRepository,
+            financeFacade,
+            inventoryCatalogService,
+            stockShortagePolicy);
     when(stockMovementRepository.save(any(StockMovement.class)))
         .thenAnswer(
             invocation -> {

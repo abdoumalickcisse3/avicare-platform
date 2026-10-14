@@ -37,10 +37,11 @@ import org.springframework.transaction.annotation.Transactional;
  * Direct (cash) sales (Sprint B5-2, Décision D22). A sale is immediate: it is created {@code
  * COMPLETED} and decrements PRODUCT stock right away — either via {@link LivestockFacade}
  * (PRODUCTION lines, D27 blocking) or via {@link StockMovementService} (INVENTORY/TREATMENT lines,
- * D18/D19 non-blocking) — atomically per line. The client is optional (null = walk-in cash sale).
- * Sale numbers are minted {@code V-YYYY-NNN} per farm per year (D24); amounts are HT only (D25).
- * The client balance is NOT touched here (only by payments, B5-4, D26). Cancelling a sale reverses
- * the stock symmetrically. RBAC is enforced at the controller layer (B5-5).
+ * la vente est exclue de la garde ADR-018) — atomically per line. The client is optional (null =
+ * walk-in cash sale). Sale numbers are minted {@code V-YYYY-NNN} per farm per year (D24); amounts
+ * are HT only (D25). The client balance is NOT touched here (only by payments, B5-4, D26).
+ * Cancelling a sale reverses the stock symmetrically. RBAC is enforced at the controller layer
+ * (B5-5).
  */
 @Service
 @RequiredArgsConstructor

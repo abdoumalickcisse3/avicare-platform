@@ -47,8 +47,8 @@ import tools.jackson.databind.ObjectMapper;
  * Cross-context coupling (Décision D18) on a real PostgreSQL (Testcontainers, V1–V19): an optional
  * StockConsumption on a daily record / vaccination / treatment atomically creates an OUT stock
  * movement with the right reason + backref. Covers the non-coupled path (retrocompat), rollback on
- * an invalid article, the negative-stock warning (D19), and multi-movement consistency. CI-only
- * where Docker is unavailable.
+ * an invalid article, the refusal of a consumption with no stock (ADR-018), and multi-movement
+ * consistency. CI-only where Docker is unavailable.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
@@ -87,6 +87,7 @@ class CrossContextCouplingIT {
       throws Exception {
     long farmId = createFarm();
     long unitId = seedUnit(farmId);
+    stockUp(farmId, ArticleSource.INVENTORY, "feed_starter_broiler", "200");
 
     var rec =
         dailyRecordService.record(
@@ -102,12 +103,12 @@ class CrossContextCouplingIT {
                 null),
             1L);
 
-    // stock auto-created then decremented to -50 (D19: negative allowed)
+    // 200 reçus, 50 distribués → 150
     assertThat(
             stockItemService
                 .createOrGet(farmId, ArticleSource.INVENTORY, "feed_starter_broiler", 1L)
                 .getCurrentQuantity())
-        .isEqualByComparingTo("-50");
+        .isEqualByComparingTo("150");
 
     List<StockMovement> movements = stockMovementService.listForProductionUnit(unitId);
     assertThat(movements).hasSize(1);
@@ -221,6 +222,7 @@ class CrossContextCouplingIT {
   void treatment_withConsumption_backrefAndReason() throws Exception {
     long farmId = createFarm();
     long unitId = seedUnit(farmId);
+    stockUp(farmId, ArticleSource.TREATMENT, "amoxicillin_50", "10");
 
     var treat =
         treatmentService.record(
@@ -273,17 +275,42 @@ class CrossContextCouplingIT {
             null),
         1L);
 
-    // two daily records consuming 50 then 60 → 100 - 110 = -10 (D19)
+    // two daily records consuming 50 then 40 → 100 - 90 = 10
     consumeFeed(unitId, "50");
-    consumeFeed(unitId, "60");
+    consumeFeed(unitId, "40");
 
     assertThat(
             stockItemService
                 .createOrGet(farmId, ArticleSource.INVENTORY, "feed_starter_broiler", 1L)
                 .getCurrentQuantity())
-        .isEqualByComparingTo("-10");
+        .isEqualByComparingTo("10");
     // 1 IN + 2 OUT on the stock item
     assertThat(stockMovementService.listForStockItem(farmId, stock.getId())).hasSize(3);
+  }
+
+  /**
+   * La demande du pilote, de bout en bout : on ne consomme pas ce qu'on n'a pas. Le refus arrive en
+   * 422 et la saisie journalière entière est annulée — rien ne doit rester à moitié écrit.
+   */
+  @Test
+  void dailyRecord_consumingMoreThanTheStockHolds_isRefusedAndRollsBackEverything()
+      throws Exception {
+    long farmId = createFarm();
+    long unitId = seedUnit(farmId);
+    stockUp(farmId, ArticleSource.INVENTORY, "feed_starter_broiler", "10");
+
+    assertThatThrownBy(() -> consumeFeed(unitId, "25"))
+        .isInstanceOf(BusinessRuleException.class)
+        .extracting(e -> ((BusinessRuleException) e).getCode())
+        .isEqualTo("STOCK_INSUFFICIENT");
+
+    // Le stock n'a pas bougé, et aucune fiche journalière n'a été créée.
+    assertThat(
+            stockItemService
+                .createOrGet(farmId, ArticleSource.INVENTORY, "feed_starter_broiler", 1L)
+                .getCurrentQuantity())
+        .isEqualByComparingTo("10");
+    assertThat(dailyRecordService.listForUnit(unitId)).isEmpty();
   }
 
   /**
@@ -330,6 +357,7 @@ class CrossContextCouplingIT {
   void removingTheFeedFromADailyRecord_givesTheWholeQuantityBack() throws Exception {
     long farmId = createFarm();
     long unitId = seedUnit(farmId);
+    stockUp(farmId, ArticleSource.INVENTORY, "feed_starter_broiler", "100");
 
     consumeFeedOn(unitId, LocalDate.now(), "50");
     dailyRecordService.record(
@@ -342,7 +370,7 @@ class CrossContextCouplingIT {
             stockItemService
                 .createOrGet(farmId, ArticleSource.INVENTORY, "feed_starter_broiler", 1L)
                 .getCurrentQuantity())
-        .isEqualByComparingTo("0");
+        .isEqualByComparingTo("100");
   }
 
   /**
@@ -374,7 +402,7 @@ class CrossContextCouplingIT {
                     "amoxicillin_50", ArticleSource.TREATMENT, new BigDecimal("5"), null)),
             1L);
     var stock = stockItemService.createOrGet(farmId, ArticleSource.TREATMENT, "amoxicillin_50", 1L);
-    assertThat(stock.getCurrentQuantity()).isEqualByComparingTo("-5");
+    assertThat(stock.getCurrentQuantity()).isEqualByComparingTo("5");
 
     treatmentService.delete(treat.getId(), 1L);
 
@@ -382,9 +410,9 @@ class CrossContextCouplingIT {
             stockItemService
                 .createOrGet(farmId, ArticleSource.TREATMENT, "amoxicillin_50", 1L)
                 .getCurrentQuantity())
-        .isEqualByComparingTo("0");
-    // Both lines survive the deletion — the outflow and its credit still explain the zero.
-    assertThat(stockMovementService.listForStockItem(farmId, stock.getId())).hasSize(2);
+        .isEqualByComparingTo("10");
+    // Les trois lignes survivent : la réception, la sortie, et le crédit qui l'annule.
+    assertThat(stockMovementService.listForStockItem(farmId, stock.getId())).hasSize(3);
   }
 
   // --- helpers --------------------------------------------------------
@@ -415,6 +443,30 @@ class CrossContextCouplingIT {
             null,
             new StockConsumption(
                 "feed_starter_broiler", ArticleSource.INVENTORY, new BigDecimal(qty), null),
+            null),
+        1L);
+  }
+
+  /**
+   * Constituer du stock avant de le consommer. Depuis ADR-018 une sortie à découvert est refusée :
+   * un test qui consomme sans avoir rien reçu ne teste plus le couplage, il teste la garde.
+   */
+  private void stockUp(long farmId, ArticleSource source, String articleKey, String qty) {
+    var item = stockItemService.createOrGet(farmId, source, articleKey, 1L);
+    stockMovementService.recordMovement(
+        farmId,
+        new StockMovementCommand(
+            item.getId(),
+            MovementType.IN,
+            new BigDecimal(qty),
+            MovementReason.RECEPTION_PURCHASE,
+            LocalDate.now(),
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
             null),
         1L);
   }

@@ -33,7 +33,7 @@ public interface StockItemRepository extends JpaRepository<StockItem, Long> {
   Optional<StockItem> findByFarmIdAndIdForUpdate(
       @Param("farmId") Long farmId, @Param("id") Long id);
 
-  /** Active stocks of a farm whose quantity has gone negative (Décision 19 fallout). */
+  /** Active stocks of a farm whose quantity has gone negative (hérité, ou garde levée). */
   List<StockItem> findByFarmIdAndActiveTrueAndCurrentQuantityLessThanOrderByArticleKey(
       Long farmId, BigDecimal threshold);
 

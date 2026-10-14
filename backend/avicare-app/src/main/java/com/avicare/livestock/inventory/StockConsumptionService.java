@@ -22,8 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
  * Cross-context orchestrator that turns an optional {@link StockConsumption} into a stock movement
  * (Sprint B4-5, Décision D18). Reusable by any source action that draws from stock — daily feed,
  * vaccination, treatment today; sales etc. later. The caller runs inside its own transaction, so
- * this method joins it (Propagation.REQUIRED): if the consumption fails (unknown article…), the
- * whole source action rolls back. Stock may go negative (Décision 19, non-blocking).
+ * this method joins it (Propagation.REQUIRED): if the consumption fails (article inconnu, stock
+ * insuffisant…), the whole source action rolls back. Depuis ADR-018 une consommation qui ferait
+ * passer le stock sous zéro est refusée en 422.
  */
 @Service
 @RequiredArgsConstructor
