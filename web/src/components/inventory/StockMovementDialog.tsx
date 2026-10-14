@@ -52,16 +52,28 @@ export function StockMovementDialog({
   onClose,
   farmId,
   preselectStockItemId,
+  preselectType,
+  preselectQuantity,
 }: {
   open: boolean;
   onClose: () => void;
   farmId: number;
   preselectStockItemId?: number;
+  /** Ouvre la fenêtre sur ce geste — utilisé par la réparation d'un stock insuffisant. */
+  preselectType?: MovementType;
+  /** Quantité pré-remplie, à corriger par l'utilisateur ; absente, le champ reste vide. */
+  preselectQuantity?: number;
 }) {
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       {open && (
-        <StockMovementBody onClose={onClose} farmId={farmId} preselectStockItemId={preselectStockItemId} />
+        <StockMovementBody
+          onClose={onClose}
+          farmId={farmId}
+          preselectStockItemId={preselectStockItemId}
+          preselectType={preselectType}
+          preselectQuantity={preselectQuantity}
+        />
       )}
     </Dialog>
   );
@@ -71,19 +83,23 @@ function StockMovementBody({
   onClose,
   farmId,
   preselectStockItemId,
+  preselectType,
+  preselectQuantity,
 }: {
   onClose: () => void;
   farmId: number;
   preselectStockItemId?: number;
+  preselectType?: MovementType;
+  preselectQuantity?: number;
 }) {
   const { showToast } = useToast();
   const { data: stockItems = [] } = useGetStockItemsQuery({ farmId });
   const [recordMovement, { isLoading }] = useRecordMovementMutation();
 
-  const [type, setType] = useState<MovementType>("IN");
+  const [type, setType] = useState<MovementType>(preselectType ?? "IN");
   const [selectedId, setSelectedId] = useState<number | null>(preselectStockItemId ?? null);
-  const [qty, setQty] = useState("");
-  const [reason, setReason] = useState<string>(REASONS_BY_TYPE.IN[0]);
+  const [qty, setQty] = useState(preselectQuantity != null ? String(preselectQuantity) : "");
+  const [reason, setReason] = useState<string>(REASONS_BY_TYPE[preselectType ?? "IN"][0]);
   const [movementDate, setMovementDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [unitPrice, setUnitPrice] = useState("");
   const [notes, setNotes] = useState("");

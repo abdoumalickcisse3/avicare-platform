@@ -9,6 +9,8 @@ export interface ApiError {
   detail?: string;
   code?: string;
   traceId?: string;
+  /** Membres d'extension RFC 7807 : de quoi réparer l'erreur, quand le backend en fournit. */
+  properties?: Record<string, unknown>;
 }
 
 const NETWORK_MESSAGE = "Pas de connexion. Vérifiez votre réseau puis réessayez.";
