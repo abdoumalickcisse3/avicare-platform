@@ -70,8 +70,8 @@ public class InventoryFacadeImpl implements InventoryFacade {
     // Consumption is recorded in quantities, never in XOF, so it is valued here through the
     // shared rule — the same one the end-of-cycle report uses, so the two never disagree.
     long consumedValueXof =
-        stockMovementService.outMovementsForFarmBetween(farmId, from, to).stream()
-            .map(StockValuation::valueOf)
+        stockMovementService.consumptionMovementsForFarmBetween(farmId, from, to).stream()
+            .map(StockValuation::netValueOf)
             .filter(java.util.Objects::nonNull)
             .mapToLong(Long::longValue)
             .sum();

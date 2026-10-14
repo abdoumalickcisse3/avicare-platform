@@ -435,6 +435,23 @@ public interface HealthFacade {
 > `livestock/controller`, DTOs dans `livestock/inventory/dto` — pas de façade
 > `InventoryFacade` en V1 (le couplage est *consommé* par inventory, pas exposé).
 
+> **Le journal de stock est en ajout seul** (correctif d'octobre 2026, pilote
+> Saint Antoine de Padoue). Une ligne de `stock_movements` ne se modifie ni ne se
+> supprime : annuler une consommation, c'est écrire un mouvement `IN` compensatoire
+> (`reason=ERROR_CORRECTION`) qui **garde le backref source**, via
+> `StockConsumptionService#reverseConsumptions`. Deux appelants :
+> - la saisie journalière, qui est un **upsert** — sans reprise, une correction
+>   débitait le stock une seconde fois (« 1 sac » corrigé en « 2 » en sortait 3) ;
+> - la suppression d'un traitement / d'une vaccination, qui laissait la quantité
+>   baissée **et** effaçait la ligne du journal par cascade FK (V66 met ces FK en
+>   `ON DELETE SET NULL` : la ligne survit à la disparition de sa source).
+>
+> Conséquence pour tout ce qui totalise la consommation : lire par
+> `findConsumptionMovements*` (sorties **+** reprises) et valoriser par
+> `StockValuation.netValueOf`, sinon le coût compte une quantité rendue. Un `IN`
+> est une reprise **si et seulement si** il porte un backref source — une entrée
+> manuelle ne peut pas en porter (cf. `StockMovementRequest`).
+
 **Responsabilité** : stocks, mouvements, fournisseurs, achats, formules d'aliment.
 
 **Entités** :

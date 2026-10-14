@@ -1,5 +1,6 @@
 package com.avicare.livestock.inventory;
 
+import com.avicare.livestock.domain.MovementType;
 import com.avicare.livestock.domain.StockMovement;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -24,6 +25,19 @@ public final class StockValuation {
    * but filled the day outflows get priced, which makes every caller exact without a rewrite —
    * otherwise quantity times the article's typical price. {@code null} when no price is known.
    */
+  /**
+   * Value of a consumption movement with its sign: positive for what left stock, negative for a
+   * reversal credit. A corrected entry leaves both rows in the journal, so anything that totals
+   * consumption has to subtract the credit or it charges the farm for a quantity it gave back.
+   */
+  public static Long netValueOf(StockMovement m) {
+    Long value = valueOf(m);
+    if (value == null) {
+      return null;
+    }
+    return m.getMovementType() == MovementType.IN ? -value : value;
+  }
+
   public static Long valueOf(StockMovement m) {
     if (m.getTotalValueXof() != null) {
       return m.getTotalValueXof();

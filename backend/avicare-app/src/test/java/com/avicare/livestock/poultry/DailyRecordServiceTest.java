@@ -141,4 +141,66 @@ class DailyRecordServiceTest {
     service.record(UNIT, cmd(null, null), USER);
     verify(stockConsumptionService, never()).applyConsumption(anyLong(), any(), any(), anyLong());
   }
+
+  /**
+   * A daily record is an upsert on (unit, date). Re-saving one used to debit the stock a second
+   * time — a farm that corrected "1 bag of charcoal" into "2 bags" ended up with 3 taken out and a
+   * stock at −1. The previous consumption has to be given back before the new one is applied.
+   */
+  private DailyRecord existingRecord() {
+    DailyRecord rec = new DailyRecord();
+    rec.setId(77L);
+    rec.setRecordDate(DAY);
+    rec.setMortalityCount(0);
+    when(dailyRecordRepository.findByProductionUnitIdAndRecordDate(UNIT, DAY))
+        .thenReturn(Optional.of(rec));
+    return rec;
+  }
+
+  @Test
+  void correctingARecordGivesBackWhatTheFirstSaveTookOut() {
+    existingRecord();
+    StockConsumption fc =
+        new StockConsumption("charbon", ArticleSource.INVENTORY, new BigDecimal("2"), null);
+
+    service.record(UNIT, cmd(fc, null), USER);
+
+    ArgumentCaptor<ConsumptionSource> src = ArgumentCaptor.forClass(ConsumptionSource.class);
+    verify(stockConsumptionService).reverseConsumptions(eq(FARM), src.capture(), eq(USER));
+    assertThat(src.getValue().dailyRecordId()).isEqualTo(77L);
+    assertThat(src.getValue().productionUnitId()).isEqualTo(UNIT);
+  }
+
+  @Test
+  void correctingARecordGivesTheStockBackBeforeTakingTheNewQuantity() {
+    existingRecord();
+    StockConsumption fc =
+        new StockConsumption("charbon", ArticleSource.INVENTORY, new BigDecimal("2"), null);
+
+    service.record(UNIT, cmd(fc, null), USER);
+
+    org.mockito.InOrder order = org.mockito.Mockito.inOrder(stockConsumptionService);
+    order.verify(stockConsumptionService).reverseConsumptions(eq(FARM), any(), eq(USER));
+    order.verify(stockConsumptionService).applyConsumption(eq(FARM), eq(fc), any(), eq(USER));
+  }
+
+  @Test
+  void removingTheFeedFromARecordStillGivesTheStockBack() {
+    existingRecord();
+
+    service.record(UNIT, cmd(null, null), USER);
+
+    verify(stockConsumptionService).reverseConsumptions(eq(FARM), any(), eq(USER));
+    verify(stockConsumptionService, never()).applyConsumption(anyLong(), any(), any(), anyLong());
+  }
+
+  @Test
+  void aFirstSaveHasNothingToGiveBack() {
+    StockConsumption fc =
+        new StockConsumption("charbon", ArticleSource.INVENTORY, new BigDecimal("2"), null);
+
+    service.record(UNIT, cmd(fc, null), USER);
+
+    verify(stockConsumptionService, never()).reverseConsumptions(anyLong(), any(), anyLong());
+  }
 }

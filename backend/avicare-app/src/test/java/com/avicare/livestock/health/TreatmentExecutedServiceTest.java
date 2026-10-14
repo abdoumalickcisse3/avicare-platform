@@ -10,6 +10,7 @@ import com.avicare.common.api.exception.ValidationException;
 import com.avicare.livestock.domain.ProductionUnit;
 import com.avicare.livestock.domain.TreatmentExecuted;
 import com.avicare.livestock.domain.Veterinarian;
+import com.avicare.livestock.inventory.ConsumptionSource;
 import com.avicare.livestock.inventory.StockConsumptionService;
 import com.avicare.livestock.repository.LifecycleEventRepository;
 import com.avicare.livestock.repository.TreatmentExecutedRepository;
@@ -33,6 +34,7 @@ class TreatmentExecutedServiceTest {
   private LivestockService livestockService;
   private HealthCatalogService healthCatalogService;
   private VeterinarianRepository veterinarianRepository;
+  private StockConsumptionService stockConsumptionService;
   private TreatmentExecutedService service;
 
   @BeforeEach
@@ -41,6 +43,7 @@ class TreatmentExecutedServiceTest {
     livestockService = Mockito.mock(LivestockService.class);
     healthCatalogService = Mockito.mock(HealthCatalogService.class);
     veterinarianRepository = Mockito.mock(VeterinarianRepository.class);
+    stockConsumptionService = Mockito.mock(StockConsumptionService.class);
     service =
         new TreatmentExecutedService(
             treatmentRepository,
@@ -48,7 +51,7 @@ class TreatmentExecutedServiceTest {
             livestockService,
             healthCatalogService,
             veterinarianRepository,
-            Mockito.mock(StockConsumptionService.class));
+            stockConsumptionService);
     when(treatmentRepository.save(any(TreatmentExecuted.class))).thenAnswer(i -> i.getArgument(0));
   }
 
@@ -124,5 +127,40 @@ class TreatmentExecutedServiceTest {
 
     assertThatThrownBy(() -> service.record(9L, cmd("amoxicillin_50", 3L), 1L))
         .isInstanceOf(ValidationException.class);
+  }
+
+  /**
+   * Deleting a treatment used to cascade-delete its stock movement while leaving the quantity down:
+   * a medication stuck at a negative with an empty journal, impossible to explain to the farmer.
+   * The medication it consumed has to be given back first.
+   */
+  @Test
+  void deletingATreatmentGivesBackTheMedicationItConsumed() {
+    TreatmentExecuted t = new TreatmentExecuted();
+    t.setId(3L);
+    t.setProductionUnit(unit(7L));
+    when(treatmentRepository.findById(3L)).thenReturn(Optional.of(t));
+
+    service.delete(3L, 42L);
+
+    org.mockito.ArgumentCaptor<ConsumptionSource> src =
+        org.mockito.ArgumentCaptor.forClass(ConsumptionSource.class);
+    Mockito.verify(stockConsumptionService)
+        .reverseConsumptions(Mockito.eq(7L), src.capture(), Mockito.eq(42L));
+    assertThat(src.getValue().treatmentExecutedId()).isEqualTo(3L);
+  }
+
+  @Test
+  void deletingATreatmentGivesTheStockBackBeforeTheRowIsGone() {
+    TreatmentExecuted t = new TreatmentExecuted();
+    t.setId(3L);
+    t.setProductionUnit(unit(7L));
+    when(treatmentRepository.findById(3L)).thenReturn(Optional.of(t));
+
+    service.delete(3L, 42L);
+
+    org.mockito.InOrder order = Mockito.inOrder(stockConsumptionService, treatmentRepository);
+    order.verify(stockConsumptionService).reverseConsumptions(anyLong(), any(), anyLong());
+    order.verify(treatmentRepository).delete(t);
   }
 }

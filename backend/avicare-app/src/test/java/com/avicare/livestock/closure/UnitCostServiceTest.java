@@ -47,7 +47,7 @@ class UnitCostServiceTest {
   @Test
   void valuesConsumption_atTheArticlePrice() {
     StockItem feed = item(1L, 400); // 400 XOF per kg
-    when(stockMovementRepository.findOutMovementsForUnit(42L))
+    when(stockMovementRepository.findConsumptionMovementsForUnit(42L))
         .thenReturn(List.of(out(feed, "150", null), out(feed, "50", null)));
 
     UnitCostService.FeedCost cost = service.feedCost(42L);
@@ -61,7 +61,7 @@ class UnitCostServiceTest {
   void articleWithoutPrice_countsAsUnvalued_andAddsNothing() {
     StockItem feed = item(1L, 400);
     StockItem maize = item(2L, null); // never priced
-    when(stockMovementRepository.findOutMovementsForUnit(42L))
+    when(stockMovementRepository.findConsumptionMovementsForUnit(42L))
         .thenReturn(List.of(out(feed, "100", null), out(maize, "300", null)));
 
     UnitCostService.FeedCost cost = service.feedCost(42L);
@@ -74,7 +74,7 @@ class UnitCostServiceTest {
   @Test
   void movementCarryingItsOwnValue_winsOverTheArticlePrice() {
     StockItem feed = item(1L, 400);
-    when(stockMovementRepository.findOutMovementsForUnit(42L))
+    when(stockMovementRepository.findConsumptionMovementsForUnit(42L))
         .thenReturn(List.of(out(feed, "100", 35_000L))); // priced at 350 when it left
 
     UnitCostService.FeedCost cost = service.feedCost(42L);
@@ -85,7 +85,7 @@ class UnitCostServiceTest {
 
   @Test
   void noConsumption_yieldsZeroAndEmptyCoverage() {
-    when(stockMovementRepository.findOutMovementsForUnit(42L)).thenReturn(List.of());
+    when(stockMovementRepository.findConsumptionMovementsForUnit(42L)).thenReturn(List.of());
 
     UnitCostService.FeedCost cost = service.feedCost(42L);
 
@@ -97,7 +97,7 @@ class UnitCostServiceTest {
   @Test
   void sameArticleValuedOnce_andUnvaluedOnce_countsAsValued() {
     StockItem feed = item(1L, null);
-    when(stockMovementRepository.findOutMovementsForUnit(42L))
+    when(stockMovementRepository.findConsumptionMovementsForUnit(42L))
         .thenReturn(List.of(out(feed, "100", 20_000L), out(feed, "50", null)));
 
     UnitCostService.FeedCost cost = service.feedCost(42L);
@@ -110,11 +110,46 @@ class UnitCostServiceTest {
   @Test
   void fractionalQuantity_isRoundedToWholeXof() {
     StockItem vitamin = item(1L, 1_250);
-    when(stockMovementRepository.findOutMovementsForUnit(42L))
+    when(stockMovementRepository.findConsumptionMovementsForUnit(42L))
         .thenReturn(List.of(out(vitamin, "0.750", null)));
 
     UnitCostService.FeedCost cost = service.feedCost(42L);
 
     assertThat(cost.costXof()).isEqualTo(938L); // 937.5 rounded half-up
+  }
+
+  private static StockMovement reversal(StockItem item, String qty) {
+    StockMovement m = new StockMovement();
+    m.setStockItem(item);
+    m.setMovementType(MovementType.IN);
+    m.setQuantity(new BigDecimal(qty));
+    m.setDailyRecordId(42L); // what makes it a reversal and not a purchase
+    return m;
+  }
+
+  /**
+   * A corrected daily record leaves three rows in the journal — the first outflow, its credit, and
+   * the corrected outflow. The batch must be charged for what it finally used, not for the sum of
+   * everything that ever moved.
+   */
+  @Test
+  void aCorrectedConsumptionCostsOnlyWhatWasFinallyUsed() {
+    StockItem charcoal = item(1L, 6_100);
+    when(stockMovementRepository.findConsumptionMovementsForUnit(42L))
+        .thenReturn(
+            List.of(out(charcoal, "1", null), reversal(charcoal, "1"), out(charcoal, "2", null)));
+
+    UnitCostService.FeedCost cost = service.feedCost(42L);
+
+    assertThat(cost.costXof()).isEqualTo(12_200L); // 2 bags, never 3
+  }
+
+  @Test
+  void aFullyReversedConsumptionCostsNothing() {
+    StockItem charcoal = item(1L, 6_100);
+    when(stockMovementRepository.findConsumptionMovementsForUnit(42L))
+        .thenReturn(List.of(out(charcoal, "1", null), reversal(charcoal, "1")));
+
+    assertThat(service.feedCost(42L).costXof()).isZero();
   }
 }

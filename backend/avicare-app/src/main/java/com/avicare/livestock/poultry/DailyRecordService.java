@@ -61,6 +61,7 @@ public class DailyRecordService {
             .findByProductionUnitIdAndRecordDate(unitId, cmd.recordDate())
             .orElseGet(DailyRecord::new);
     int oldMortality = rec.getId() != null ? rec.getMortalityCount() : 0;
+    boolean isCorrection = rec.getId() != null;
 
     rec.setProductionUnit(unit);
     rec.setRecordDate(cmd.recordDate());
@@ -102,6 +103,16 @@ public class DailyRecordService {
             "water_l", saved.getWaterL()));
     snapshot.setCreatedBy(userId);
     lifecycleEventRepository.save(snapshot);
+
+    // This method is an upsert: a second save of the same (unit, date) corrects the first one.
+    // Give back whatever that first save took out of stock before applying the new quantity —
+    // otherwise the correction debits the stock twice (a farm that fixed "1 bag" into "2" had 3
+    // taken out). Unconditional on the correction path: removing the feed line altogether must
+    // give the stock back too.
+    if (isCorrection) {
+      stockConsumptionService.reverseConsumptions(
+          unit.getFarmId(), ConsumptionSource.dailyRecord(unitId, saved.getId()), userId);
+    }
 
     // D18 optional coupling: draw the feed from stock (same transaction).
     if (cmd.feedConsumption() != null) {

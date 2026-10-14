@@ -286,7 +286,123 @@ class CrossContextCouplingIT {
     assertThat(stockMovementService.listForStockItem(farmId, stock.getId())).hasSize(3);
   }
 
+  /**
+   * The charcoal incident, end to end. A daily record is an upsert: a farm saved "1 bag", then
+   * corrected it to "2 bags" two minutes later, and the platform took 3 out of a stock of 2 —
+   * leaving −1. The correction must give the first bag back before taking the corrected quantity.
+   */
+  @Test
+  void correctingADailyRecord_debitsOnlyTheCorrectedQuantity() throws Exception {
+    long farmId = createFarm();
+    long unitId = seedUnit(farmId);
+    var stock =
+        stockItemService.createOrGet(farmId, ArticleSource.INVENTORY, "feed_starter_broiler", 1L);
+    stockMovementService.recordMovement(
+        farmId,
+        new StockMovementCommand(
+            stock.getId(),
+            MovementType.IN,
+            new BigDecimal("2"),
+            MovementReason.RECEPTION_PURCHASE,
+            LocalDate.now(),
+            null,
+            null,
+            null,
+            null,
+            6100,
+            null,
+            null),
+        1L);
+
+    consumeFeedOn(unitId, LocalDate.now(), "1"); // first save
+    consumeFeedOn(unitId, LocalDate.now(), "2"); // same day → correction, not a second meal
+
+    assertThat(
+            stockItemService
+                .createOrGet(farmId, ArticleSource.INVENTORY, "feed_starter_broiler", 1L)
+                .getCurrentQuantity())
+        .isEqualByComparingTo("0");
+    // Nothing was deleted to get there: purchase, first outflow, its credit, corrected outflow.
+    assertThat(stockMovementService.listForStockItem(farmId, stock.getId())).hasSize(4);
+  }
+
+  @Test
+  void removingTheFeedFromADailyRecord_givesTheWholeQuantityBack() throws Exception {
+    long farmId = createFarm();
+    long unitId = seedUnit(farmId);
+
+    consumeFeedOn(unitId, LocalDate.now(), "50");
+    dailyRecordService.record(
+        unitId,
+        new DailyRecordCommand(
+            LocalDate.now(), 0, new BigDecimal("50"), BigDecimal.ZERO, null, null, null),
+        1L);
+
+    assertThat(
+            stockItemService
+                .createOrGet(farmId, ArticleSource.INVENTORY, "feed_starter_broiler", 1L)
+                .getCurrentQuantity())
+        .isEqualByComparingTo("0");
+  }
+
+  /**
+   * The Vigosine incident. Deleting a treatment used to cascade-delete its movement row while the
+   * quantity stayed down: a negative stock with an empty journal, impossible to explain.
+   */
+  @Test
+  void deletingATreatment_givesTheMedicationBack_andKeepsTheJournal() throws Exception {
+    long farmId = createFarm();
+    long unitId = seedUnit(farmId);
+
+    var treat =
+        treatmentService.record(
+            unitId,
+            new TreatmentCommand(
+                "amoxicillin_50",
+                LocalDate.now(),
+                3,
+                BigDecimal.ONE,
+                "mg/L",
+                "WATER",
+                1000,
+                null,
+                "FARMER",
+                null,
+                null,
+                null,
+                new StockConsumption(
+                    "amoxicillin_50", ArticleSource.TREATMENT, new BigDecimal("5"), null)),
+            1L);
+    var stock = stockItemService.createOrGet(farmId, ArticleSource.TREATMENT, "amoxicillin_50", 1L);
+    assertThat(stock.getCurrentQuantity()).isEqualByComparingTo("-5");
+
+    treatmentService.delete(treat.getId(), 1L);
+
+    assertThat(
+            stockItemService
+                .createOrGet(farmId, ArticleSource.TREATMENT, "amoxicillin_50", 1L)
+                .getCurrentQuantity())
+        .isEqualByComparingTo("0");
+    // Both lines survive the deletion — the outflow and its credit still explain the zero.
+    assertThat(stockMovementService.listForStockItem(farmId, stock.getId())).hasSize(2);
+  }
+
   // --- helpers --------------------------------------------------------
+
+  private void consumeFeedOn(long unitId, LocalDate day, String qty) {
+    dailyRecordService.record(
+        unitId,
+        new DailyRecordCommand(
+            day,
+            0,
+            new BigDecimal(qty),
+            BigDecimal.ZERO,
+            null,
+            new StockConsumption(
+                "feed_starter_broiler", ArticleSource.INVENTORY, new BigDecimal(qty), null),
+            null),
+        1L);
+  }
 
   private void consumeFeed(long unitId, String qty) {
     dailyRecordService.record(
