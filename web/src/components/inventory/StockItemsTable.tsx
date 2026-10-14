@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import {
   Box,
+  Button,
   Chip,
   Table,
   TableBody,
@@ -21,7 +22,19 @@ const mono = {
   fontVariantNumeric: "tabular-nums",
 } as const;
 
-export function StockItemsTable({ items }: { items: StockItem[] }) {
+export function StockItemsTable({
+  items,
+  onRegularise,
+}: {
+  items: StockItem[];
+  /**
+   * Compter le magasin pour une ligne négative. Depuis ADR-018 une sortie ne peut plus creuser
+   * le solde, mais les lignes déjà négatives restent : l'inventaire est le seul moyen de les
+   * ramener au vrai, et sans ce bouton l'éleveur voit le faux chiffre sans savoir qu'il peut le
+   * corriger lui-même.
+   */
+  onRegularise?: (stockItemId: number) => void;
+}) {
   const router = useRouter();
 
   return (
@@ -34,6 +47,7 @@ export function StockItemsTable({ items }: { items: StockItem[] }) {
             <TableCell>État</TableCell>
             <TableCell align="right">Prix unit.</TableCell>
             <TableCell align="right">Valeur</TableCell>
+            <TableCell />
           </TableRow>
         </TableHead>
         <TableBody>
@@ -74,6 +88,21 @@ export function StockItemsTable({ items }: { items: StockItem[] }) {
                 </TableCell>
                 <TableCell align="right" sx={mono}>
                   {value != null ? formatCurrency(value) : "—"}
+                </TableCell>
+                <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
+                  {state === "NEGATIVE" && onRegularise && (
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="warning"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRegularise(item.id);
+                      }}
+                    >
+                      Régulariser
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             );

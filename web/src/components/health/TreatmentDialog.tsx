@@ -31,6 +31,7 @@ import { useToast } from "@/components/feedback/ToastProvider";
 import { useInventoryGating } from "@/hooks/useInventoryGating";
 import { StockConsumptionSection } from "@/components/inventory/StockConsumptionSection";
 import { apiErrorMessage } from "@/lib/apiError";
+import { useStockShortage } from "@/components/inventory/useStockShortage";
 import { humanizeKey, projectWithdrawal } from "@/lib/health";
 import { colors } from "@/theme/tokens";
 import { SectionLabel, today } from "./HealthDialogParts";
@@ -79,6 +80,8 @@ export function TreatmentDialog({
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const { showToast } = useToast();
+  // Un refus « stock insuffisant » ouvre la réparation au lieu d'un simple message (ADR-018).
+  const shortage = useStockShortage(farmId);
   const { data: catalog = [] } = useGetTreatmentCatalogQuery({ farmId }, { skip: !open });
   const { data: vets = [] } = useGetVeterinariansQuery({ farmId }, { skip: !open });
   const { hasInventory } = useInventoryGating();
@@ -158,6 +161,7 @@ export function TreatmentDialog({
       showToast("Traitement enregistré.", "success");
       onClose();
     } catch (err) {
+      if (shortage.handle(err)) return;
       showToast(apiErrorMessage(err), "error");
     }
   };
@@ -410,6 +414,7 @@ export function TreatmentDialog({
           </Button>
         </DialogActions>
       </Box>
+      {shortage.dialog}
     </Dialog>
   );
 }

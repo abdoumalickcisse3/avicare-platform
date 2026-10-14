@@ -24,6 +24,7 @@ import { useToast } from "@/components/feedback/ToastProvider";
 import { useInventoryGating } from "@/hooks/useInventoryGating";
 import { FeedSourceSection } from "@/components/inventory/FeedSourceSection";
 import { apiErrorMessage } from "@/lib/apiError";
+import { useStockShortage } from "@/components/inventory/useStockShortage";
 import type { FeedFormulaRef, StockConsumption } from "@/types";
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -55,6 +56,8 @@ export function LayerDailyEntryDialog({
   existingDates: string[];
 }) {
   const { showToast } = useToast();
+  // Un refus « stock insuffisant » ouvre la réparation au lieu d'un simple message (ADR-018).
+  const shortage = useStockShortage(farmId);
   const { hasInventory } = useInventoryGating();
   const [createRecord, { isLoading }] = useCreateDailyRecordMutation();
   const [consumption, setConsumption] = useState<StockConsumption | null>(null);
@@ -91,6 +94,7 @@ export function LayerDailyEntryDialog({
       showToast(isUpdate ? "Suivi mis à jour." : "Suivi enregistré.", "success");
       onClose();
     } catch (err) {
+      if (shortage.handle(err)) return;
       showToast(apiErrorMessage(err), "error");
     }
   };
@@ -207,6 +211,7 @@ export function LayerDailyEntryDialog({
           </Button>
         </DialogActions>
       </Box>
+      {shortage.dialog}
     </Dialog>
   );
 }

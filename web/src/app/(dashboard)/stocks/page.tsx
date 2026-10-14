@@ -46,6 +46,9 @@ export default function StocksOverviewPage() {
   const { farmId, hasFarm, isLoading: gatingLoading, hasInventory } = useInventoryGating();
   const [search, setSearch] = useState("");
   const [moveOpen, setMoveOpen] = useState(false);
+  // Compter le magasin pour une ligne négative : le seul moyen de ramener au vrai un solde
+  // hérité d'avant la garde ADR-018.
+  const [regularising, setRegularising] = useState<number | null>(null);
 
   const skip = !hasFarm || !hasInventory;
   const { data: items, isLoading, error, refetch } = useGetStockItemsQuery(
@@ -146,7 +149,7 @@ export default function StocksOverviewPage() {
 
       {!isLoading && !error && filtered.length > 0 && (
         <Box sx={{ mb: 4 }}>
-          <StockItemsTable items={filtered} />
+          <StockItemsTable items={filtered} onRegularise={setRegularising} />
         </Box>
       )}
 
@@ -194,6 +197,15 @@ export default function StocksOverviewPage() {
 
       {farmId && (
         <StockMovementDialog open={moveOpen} onClose={() => setMoveOpen(false)} farmId={farmId} />
+      )}
+      {farmId && regularising != null && (
+        <StockMovementDialog
+          open
+          onClose={() => setRegularising(null)}
+          farmId={farmId}
+          preselectStockItemId={regularising}
+          preselectType="ADJUSTMENT"
+        />
       )}
     </Box>
   );
