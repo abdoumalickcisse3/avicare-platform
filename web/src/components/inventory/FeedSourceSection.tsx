@@ -26,6 +26,9 @@ import type {
 
 type Mode = "none" | "article" | "formula";
 
+/** A catalog article carrying what the farm currently holds of it. */
+type ArticleOption = InventoryCatalogItem & { currentQuantity: number };
+
 interface FormulaOption {
   label: string;
   kind: "Plateforme" | "Ferme";
@@ -53,7 +56,7 @@ interface Props {
  */
 export function FeedSourceSection({ farmId, open, onChange }: Props) {
   const [mode, setMode] = useState<Mode>("none");
-  const [article, setArticle] = useState<InventoryCatalogItem | null>(null);
+  const [article, setArticle] = useState<ArticleOption | null>(null);
   const [qty, setQty] = useState("");
   const [formula, setFormula] = useState<FormulaOption | null>(null);
   const [totalKg, setTotalKg] = useState("");
@@ -62,10 +65,26 @@ export function FeedSourceSection({ farmId, open, onChange }: Props) {
   const { data: stockItems = [] } = useGetStockItemsQuery({ farmId }, { skip: !open });
   const { data: available } = useGetAvailableFormulasQuery({ farmId }, { skip: !open });
 
-  const feedArticles = useMemo(
-    () => articles.filter((a) => a.articleSource === "INVENTORY"),
-    [articles],
-  );
+  /**
+   * Articles to pick from, those that actually hold something first.
+   *
+   * A pilot farm took 105 kg out of the platform's "Ponte", which had never received a single
+   * entry, while its own "Pondeuse" held 150 kg — the two read alike and the list showed neither
+   * quantity until after the choice. Putting what is in stock at the top, with its quantity on
+   * the row, makes the right article the obvious one without removing any from the list.
+   */
+  const feedArticles = useMemo<ArticleOption[]>(() => {
+    const stockOf = (key: string) => findStockByArticle(stockItems, key)?.currentQuantity ?? 0;
+    return articles
+      .filter((a) => a.articleSource === "INVENTORY")
+      .map((a) => ({ ...a, currentQuantity: stockOf(a.articleKey) }))
+      .sort((a, b) => {
+        const aHas = a.currentQuantity > 0;
+        const bHas = b.currentQuantity > 0;
+        if (aHas !== bHas) return aHas ? -1 : 1;
+        return a.label.localeCompare(b.label, "fr");
+      });
+  }, [articles, stockItems]);
 
   const formulaOptions = useMemo<FormulaOption[]>(() => {
     const platform = (available?.platformFormulas ?? []).map((p) => ({
@@ -155,6 +174,7 @@ export function FeedSourceSection({ farmId, open, onChange }: Props) {
         <Stack spacing={2} sx={{ pt: 1 }}>
           <Autocomplete
             options={feedArticles}
+            groupBy={(o) => (o.currentQuantity > 0 ? "En stock" : "Stock à zéro")}
             getOptionLabel={(o) => o.label}
             value={article}
             onChange={(_e, v) => {
@@ -162,6 +182,28 @@ export function FeedSourceSection({ farmId, open, onChange }: Props) {
               emit("article", v, qty, formula, totalKg);
             }}
             isOptionEqualToValue={(o, v) => o.articleKey === v.articleKey}
+            renderOption={({ key, ...props }, o) => (
+              <Box
+                component="li"
+                key={key}
+                {...props}
+                sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}
+              >
+                <span>{o.label}</span>
+                <Typography
+                  component="span"
+                  variant="caption"
+                  sx={{
+                    fontFamily: "var(--font-mono)",
+                    fontVariantNumeric: "tabular-nums",
+                    color: o.currentQuantity > 0 ? colors.neutral[600] : colors.warning.dark,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {formatQty(o.currentQuantity, o.unit)}
+                </Typography>
+              </Box>
+            )}
             renderInput={(params) => (
               <TextField {...params} label="Article à décompter" size="small" />
             )}
