@@ -4,7 +4,6 @@ import com.avicare.common.api.exception.BusinessRuleException;
 import com.avicare.common.api.exception.NotFoundException;
 import com.avicare.common.api.exception.ValidationException;
 import com.avicare.finance.api.FinanceFacade;
-import com.avicare.livestock.domain.MovementReason;
 import com.avicare.livestock.domain.MovementType;
 import com.avicare.livestock.domain.StockItem;
 import com.avicare.livestock.domain.StockMovement;
@@ -58,6 +57,18 @@ public class StockMovementService {
 
   @Transactional
   public StockMovement recordMovement(Long farmId, StockMovementCommand cmd, Long userId) {
+    return recordMovement(farmId, cmd, userId, StockShortageCheck.ENFORCED);
+  }
+
+  /**
+   * Même enregistrement, en choisissant si la garde ADR-018 s'applique.
+   *
+   * <p>Seul du code serveur peut demander {@link StockShortageCheck#SKIPPED_FOR_SALE} : la
+   * surcharge à trois arguments, celle que traverse la requête HTTP, impose toujours la garde.
+   */
+  @Transactional
+  public StockMovement recordMovement(
+      Long farmId, StockMovementCommand cmd, Long userId, StockShortageCheck shortageCheck) {
     if (cmd.quantity() == null) {
       throw new ValidationException("STOCK_QUANTITY_REQUIRED", "quantity is required");
     }
@@ -91,11 +102,11 @@ public class StockMovementService {
           cmd.movementType() == MovementType.IN
               ? before.add(magnitude)
               : before.subtract(magnitude);
-      // La garde ne vise que la CONSOMMATION. Une vente en est exclue : refuser une vente déjà
-      // encaissée ferait perdre la recette au lieu d'améliorer la donnée, et vendre plus de
-      // sujets que la bande n'en porte est déjà refusé en amont (décision 27).
+      // La garde ne vise que la CONSOMMATION. L'exclusion tient à l'appelant et jamais au motif :
+      // celui-ci vient de la requête, et l'écran de mouvement manuel propose « Vente » parmi ses
+      // sorties — s'y fier ouvrirait la garde à qui coche la bonne case.
       if (cmd.movementType() == MovementType.OUT
-          && cmd.reason() != MovementReason.SALE
+          && shortageCheck == StockShortageCheck.ENFORCED
           && after.signum() < 0
           && stockShortagePolicy.isBlockingFor(farmId)) {
         throw shortage(farmId, item, before, magnitude);

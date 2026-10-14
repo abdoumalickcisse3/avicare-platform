@@ -179,6 +179,19 @@ class InventoryApiIT {
                 .asDouble())
         .isEqualTo(100.0);
 
+    // Se déclarer « vente » ne contourne pas la garde : l'écran manuel propose ce motif, et
+    // l'exclusion de la vente tient à l'appelant côté serveur, pas au motif reçu.
+    mockMvc
+        .perform(
+            post(inv + "/movements")
+                .header("Authorization", "Bearer " + owner)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    String.format(
+                        "{\"stockItemId\":%d,\"movementType\":\"OUT\",\"quantity\":150,\"reason\":\"SALE\"}",
+                        stockItemId)))
+        .andExpect(status().isUnprocessableEntity());
+
     // La ferme peut lever la garde par le réglage générique — réservé OWNER/MANAGER. La même
     // sortie passe alors, et c'est ainsi qu'un solde négatif reste atteignable pour les fermes
     // qui le veulent (et que l'alerte plus bas a encore un sens).

@@ -24,6 +24,7 @@ import com.avicare.livestock.domain.StockMovement;
 import com.avicare.livestock.inventory.StockItemService;
 import com.avicare.livestock.inventory.StockMovementCommand;
 import com.avicare.livestock.inventory.StockMovementService;
+import com.avicare.livestock.inventory.StockShortageCheck;
 import com.avicare.livestock.repository.DeliveryRepository;
 import com.avicare.livestock.repository.OrderRepository;
 import java.math.BigDecimal;
@@ -70,7 +71,8 @@ class DeliveryServiceTest {
     StockItem stockItem = new StockItem();
     stockItem.setId(55L);
     when(stockItemService.createOrGet(any(), any(), any(), any())).thenReturn(stockItem);
-    when(stockMovementService.recordMovement(any(), any(StockMovementCommand.class), any()))
+    when(stockMovementService.recordMovement(
+            any(), any(StockMovementCommand.class), any(), any(StockShortageCheck.class)))
         .thenReturn(new StockMovement());
   }
 
@@ -99,7 +101,8 @@ class DeliveryServiceTest {
     // D21: one OUT movement (reason SALE) per line.
     ArgumentCaptor<StockMovementCommand> captor =
         ArgumentCaptor.forClass(StockMovementCommand.class);
-    verify(stockMovementService, times(2)).recordMovement(eq(7L), captor.capture(), eq(42L));
+    verify(stockMovementService, times(2))
+        .recordMovement(eq(7L), captor.capture(), eq(42L), eq(StockShortageCheck.SKIPPED_FOR_SALE));
     assertThat(captor.getAllValues())
         .allSatisfy(
             c -> {
@@ -163,7 +166,8 @@ class DeliveryServiceTest {
 
     ArgumentCaptor<StockMovementCommand> captor =
         ArgumentCaptor.forClass(StockMovementCommand.class);
-    verify(stockMovementService, times(2)).recordMovement(eq(7L), captor.capture(), eq(42L));
+    verify(stockMovementService, times(2))
+        .recordMovement(eq(7L), captor.capture(), eq(42L), eq(StockShortageCheck.SKIPPED_FOR_SALE));
     assertThat(captor.getAllValues())
         .allSatisfy(c -> assertThat(c.movementType()).isEqualTo(MovementType.IN));
     verify(orderService).reopenForRedelivery(eq(7L), eq(11L), eq(42L));

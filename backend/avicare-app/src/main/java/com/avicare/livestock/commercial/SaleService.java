@@ -19,6 +19,7 @@ import com.avicare.livestock.inventory.InventoryCatalogService;
 import com.avicare.livestock.inventory.StockItemService;
 import com.avicare.livestock.inventory.StockMovementCommand;
 import com.avicare.livestock.inventory.StockMovementService;
+import com.avicare.livestock.inventory.StockShortageCheck;
 import com.avicare.livestock.repository.ClientRepository;
 import com.avicare.livestock.repository.SaleRepository;
 import java.math.BigDecimal;
@@ -296,7 +297,8 @@ public class SaleService {
                 unitPriceXof,
                 note,
                 null),
-            userId);
+            userId,
+            StockShortageCheck.SKIPPED_FOR_SALE);
     movement.setSaleId(saleId);
   }
 
