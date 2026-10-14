@@ -193,6 +193,7 @@ class CrossContextCouplingIT {
   void vaccination_withConsumption_backrefAndReason() throws Exception {
     long farmId = createFarm();
     long unitId = seedUnit(farmId);
+    stockUp(farmId, ArticleSource.TREATMENT, "amoxicillin_50", "20");
 
     var vacc =
         vaccinationService.record(
@@ -381,6 +382,7 @@ class CrossContextCouplingIT {
   void deletingATreatment_givesTheMedicationBack_andKeepsTheJournal() throws Exception {
     long farmId = createFarm();
     long unitId = seedUnit(farmId);
+    stockUp(farmId, ArticleSource.TREATMENT, "amoxicillin_50", "10");
 
     var treat =
         treatmentService.record(
