@@ -154,7 +154,9 @@ class StockMovementFlowIT {
                     1L))
         .isInstanceOf(ValidationException.class);
 
-    assertThat(stockMovementService.listForStockItem(farmId, feed.getId())).hasSize(4);
+    // Trois lignes au journal : l'entrée, la sortie de 30, l'inventaire. La sortie de 100 a été
+    // refusée et n'en laisse aucune — un refus n'est pas un mouvement.
+    assertThat(stockMovementService.listForStockItem(farmId, feed.getId())).hasSize(3);
   }
 
   @Test
