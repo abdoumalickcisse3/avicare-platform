@@ -112,15 +112,25 @@ Contact en cas de blocage : +221 70 475 69 96 (WhatsApp) ou malick.cisse@nlogics
 
 ## Captures d'écran — fait
 
-Taille réelle exigée par App Store Connect pour la catégorie « iPhone 6,5 pouces » (confirmée dans
-l'UI live, pas dans la doc Apple générique) : une image parmi 1242×2688, 2688×1242, 1284×2778 ou
-2778×1284. La note précédente (6,9″, 1320×2868) était erronée — corrigée ici.
+**Taille.** App Store Connect exige depuis 2025 le gabarit « iPhone à Dynamic Island »,
+**1206×2622** (6,3 pouces) ; 1179×2556 est l'autre valeur acceptée de cette classe. Le 6,9 pouces
+(1320×2868) reste accepté mais n'est plus obligatoire, et le 6,5 pouces (1284×2778) n'est plus
+qu'un repli. Les compositions livrées ici couvrent les deux premiers :
 
-13 captures réelles prises sur appareil (`docs/brand/screen/IMG_6446.PNG`–`IMG_6458.PNG`,
-1170×2532, même ratio 19,5:9 que 1284×2778) ont servi de source. 8 compositions finales à
-1284×2778 — habillage vert de marque (`tokens.primary[800]`/`[700]`), typographie Outfit,
-accroche + sous-titre par écran, cadre de téléphone avec ombre — sont dans
-`docs/mobile/app-store-screenshots/01-…` à `08-…`, prêtes à téléverser telles quelles :
+| Dossier | Taille | Statut Apple |
+|---|---|---|
+| `app-store-screenshots/iphone-6.3/` | 1206×2622 | **exigé** — c'est ce jeu qu'on téléverse |
+| `app-store-screenshots/iphone-6.9/` | 1320×2868 | accepté, grand format |
+
+**Fabrication.** `scripts/build-app-store-screenshots.py` les régénère d'un geste. Les visuels
+étaient montés à la main : irreproductibles, et ils portaient un faux logo (un « J » dessiné puis
+le mot JAWDI en texte) au lieu de la marque du designer. Le script compose en CSS via Chrome
+headless, prend le logo officiel dans `docs/brand/logo/` et la police Outfit dans
+`landing/src/fonts/` — aucun appel réseau, donc le même rendu dans six mois. Changer une accroche
+se fait dans la liste `SCREENS` en tête de fichier, pas dans un éditeur d'images.
+
+**Sources.** 13 captures réelles prises sur appareil (`docs/brand/screen/IMG_6446.PNG`–`IMG_6458.PNG`,
+1170×2532). Huit sont retenues, dans l'ordre d'une journée d'élevage :
 
 1. Accueil — vue d'ensemble de la ferme
 2. Élevage — liste des lots
@@ -131,8 +141,11 @@ accroche + sous-titre par écran, cadre de téléphone avec ombre — sont dans
 7. Finance (dépenses)
 8. Commerce — vente directe
 
-Note : les écrans de démarrage et de connexion (IMG_6446/6447) portent encore l'ancien logo
-clipart et n'ont pas été retenus pour éviter une incohérence de marque avec la nouvelle icône
+Les captures de démarrage et de connexion (IMG_6446/6447) **ne sont pas retenues** : elles datent
+d'avant le déploiement de la marque et montrent l'ancien logo clipart. L'application, elle, affiche
+le logo officiel depuis les PR #448-#451 — ces deux images sont périmées, pas l'écran. Un écran de
+connexion ne vend rien de toute façon ; si on veut l'ajouter un jour, il faut une capture fraîche
+prise sur appareil, pas une recomposition.
 « marque au fer » déjà en place.
 
 ## Icône — fait

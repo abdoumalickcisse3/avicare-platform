@@ -126,7 +126,7 @@ génère et les gère seul (`eas credentials`), il n'y a pas de certificat à fa
 | Sous-titre | 30 caractères — c'est lui qui vend, pas la description |
 | Mots-clés | 100 caractères, séparés par des virgules, sans espaces |
 | Description | 4 000 caractères — le référentiel produit (`docs/brand/`) en fournit la matière |
-| Captures d'écran | **iPhone 6,9″ obligatoires** (1320×2868). Pas d'iPad si `supportsTablet: false` |
+| Captures d'écran | **iPhone 6,3″ obligatoires** (1206×2622) ; 6,9″ (1320×2868) accepté en plus. Les deux jeux sont prêts dans `app-store-screenshots/`. Pas d'iPad si `supportsTablet: false` |
 | URL de confidentialité | `https://jawdi.app/confidentialite/` — déjà en ligne |
 | Catégorie | Économie et entreprise (il n'existe pas de catégorie agriculture) |
 | Classification | 4+ |
