@@ -37,7 +37,7 @@ import tools.jackson.databind.ObjectMapper;
 
 /**
  * Stock movements + low-stock alerts on a real PostgreSQL (Testcontainers, V1–V16): atomic cascade
- * to current_quantity with before/after snapshots, negative quantity allowed on OUT (D19),
+ * to current_quantity with before/after snapshots, refusal of an outflow below zero (ADR-018),
  * ADJUSTMENT-to-target semantics, cross-module backref persistence, valuation, and compute-on-read
  * alerts. CI-only where Docker is unavailable.
  */
@@ -67,11 +67,12 @@ class StockMovementFlowIT {
   @Autowired private StockItemService stockItemService;
   @Autowired private StockMovementService stockMovementService;
   @Autowired private InventoryAlertService inventoryAlertService;
+  @Autowired private StockShortagePolicy stockShortagePolicy;
   @Autowired private BreedRepository breedRepository;
   @Autowired private ProductionUnitRepository productionUnitRepository;
 
   @Test
-  void movements_cascadeSnapshots_negativeAllowed_adjustmentToTarget() throws Exception {
+  void movements_cascadeSnapshots_outflowRefusedBelowZero_adjustmentToTarget() throws Exception {
     long farmId = createFarm();
     StockItem feed =
         stockItemService.createOrGet(farmId, ArticleSource.INVENTORY, "feed_layer", 1L);
@@ -98,13 +99,20 @@ class StockMovementFlowIT {
     assertThat(stockItemService.get(farmId, feed.getId()).getCurrentQuantity())
         .isEqualByComparingTo("20");
 
-    // OUT 100 → 20 -> -80 (D19, no exception)
-    StockMovement neg =
-        stockMovementService.recordMovement(
-            farmId, cmd(feed.getId(), MovementType.OUT, "100", MovementReason.LOSS, null), 1L);
-    assertThat(neg.getQuantityAfter()).isEqualByComparingTo("-80");
+    // OUT 100 sur 20 → refusé (ADR-018), et le solde ne bouge pas
+    assertThatThrownBy(
+            () ->
+                stockMovementService.recordMovement(
+                    farmId,
+                    cmd(feed.getId(), MovementType.OUT, "100", MovementReason.LOSS, null),
+                    1L))
+        .isInstanceOf(BusinessRuleException.class)
+        .extracting(e -> ((BusinessRuleException) e).getCode())
+        .isEqualTo("STOCK_INSUFFICIENT");
+    assertThat(stockItemService.get(farmId, feed.getId()).getCurrentQuantity())
+        .isEqualByComparingTo("20");
 
-    // ADJUSTMENT to counted target 60 → -80 -> 60, magnitude 140
+    // L'inventaire, lui, reste libre : ADJUSTMENT vers 60 → 20 -> 60, magnitude 40
     StockMovement adj =
         stockMovementService.recordMovement(
             farmId,
@@ -116,7 +124,7 @@ class StockMovementFlowIT {
                 null),
             1L);
     assertThat(adj.getQuantityAfter()).isEqualByComparingTo("60");
-    assertThat(adj.getQuantity()).isEqualByComparingTo("140");
+    assertThat(adj.getQuantity()).isEqualByComparingTo("40");
 
     // no-op adjustment (target == current) → 422
     assertThatThrownBy(
@@ -202,6 +210,11 @@ class StockMovementFlowIT {
 
     // feed: threshold 100, IN 60 → 60 (low, 40% below). corn: OUT 10 → -10 (negative, no
     // threshold).
+    //
+    // Le négatif n'est plus atteignable par accident depuis ADR-018 : on éteint la garde pour
+    // cette ferme, ce qui est précisément le cas où l'alerte doit encore servir — avec les
+    // négatifs hérités d'avant la garde.
+    stockShortagePolicy.setBlockingFor(farmId, false);
     stockItemService.updateThreshold(farmId, feed.getId(), new BigDecimal("100"), 1L);
     stockMovementService.recordMovement(
         farmId,

@@ -24,9 +24,9 @@ import lombok.ToString;
  * {@code quantity} is always the positive magnitude of the change; {@link #movementType} carries
  * the direction and {@code quantityBefore}/{@code quantityAfter} snapshot the stock around it. The
  * service applies the change to {@code StockItem.currentQuantity} atomically; {@code quantityAfter}
- * may be negative (Décision 19). The optional {@code *Id} columns are cross-module soft references
- * (lot / daily record / vaccination / treatment) kept for traceability — no JPA association, no
- * cross-context validation in V1. Timestamps DB-owned (trigger).
+ * may be negative (soldes hérités, ou garde ADR-018 levée). The optional {@code *Id} columns are
+ * cross-module soft references (lot / daily record / vaccination / treatment) kept for traceability
+ * — no JPA association, no cross-context validation in V1. Timestamps DB-owned (trigger).
  */
 @Entity
 @Table(name = "stock_movements")

@@ -8,7 +8,8 @@ import java.util.List;
 /**
  * Compute-on-read stock alerts for a farm (Sprint B4-2, no notification table — V1; pattern from
  * the health AlertService). Low-stock items are at/below their alert threshold; negative-stock
- * items have gone below zero (Décision 19 fallout); recent movements give a short overview.
+ * items have gone below zero — soldes hérités d'avant ADR-018, ou fermes ayant levé la garde ;
+ * recent movements give a short overview.
  */
 public record StockAlertsResponse(
     List<LowStockItem> lowStockItems,

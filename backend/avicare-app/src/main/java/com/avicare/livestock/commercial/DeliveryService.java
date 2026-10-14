@@ -32,11 +32,11 @@ import org.springframework.transaction.annotation.Transactional;
  * that is being prepared ({@code IN_PROGRESS}, per the D23 state machine): it snapshots the order
  * lines in full (no partial delivery in V1, D23), decrements PRODUCT stock per line — via {@link
  * LivestockFacade} for PRODUCTION lines (D27 blocking) or via {@link StockMovementService} for
- * INVENTORY/TREATMENT lines (D18/D19 non-blocking) — and marks the order DELIVERED, all atomically.
- * Delivery numbers are minted {@code LIV-YYYY-NNN} per farm per year (D24); amounts are HT only
- * (D25). The client balance is NOT touched here (only by payments, B5-4, D26). Cancelling a
- * delivery reverses the stock and reopens the order for re-delivery. RBAC is at the controller
- * layer (B5-5).
+ * INVENTORY/TREATMENT lines (la livraison est exclue de la garde ADR-018) — and marks the order
+ * DELIVERED, all atomically. Delivery numbers are minted {@code LIV-YYYY-NNN} per farm per year
+ * (D24); amounts are HT only (D25). The client balance is NOT touched here (only by payments, B5-4,
+ * D26). Cancelling a delivery reverses the stock and reopens the order for re-delivery. RBAC is at
+ * the controller layer (B5-5).
  */
 @Service
 @RequiredArgsConstructor

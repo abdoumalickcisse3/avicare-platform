@@ -1,5 +1,6 @@
 package com.avicare.common.api.exception;
 
+import java.util.Map;
 import org.springframework.http.HttpStatus;
 
 /**
@@ -14,5 +15,14 @@ public class BusinessRuleException extends BusinessException {
 
   public BusinessRuleException(String code, String message) {
     super(code, message, HttpStatus.UNPROCESSABLE_ENTITY);
+  }
+
+  /**
+   * Même refus, accompagné de quoi le réparer. Les propriétés partent telles quelles dans le
+   * corps RFC 7807 : un écran peut s'en servir pour proposer le geste qui débloque plutôt que de
+   * renvoyer l'utilisateur à un message et à son impasse.
+   */
+  public BusinessRuleException(String code, String message, Map<String, Object> properties) {
+    super(code, message, HttpStatus.UNPROCESSABLE_ENTITY, properties);
   }
 }

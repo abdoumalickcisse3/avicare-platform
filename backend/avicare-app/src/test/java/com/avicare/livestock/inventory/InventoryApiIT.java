@@ -152,7 +152,43 @@ class InventoryApiIT {
                 m.path("purchaseOrderId").asLong() == poId
                     && m.get("movementType").asText().equals("IN"));
 
-    // Manual OUT large enough to drive the stock negative (D19 non-blocking).
+    // Une sortie plus grosse que le stock est refusée (ADR-018), avec de quoi la réparer.
+    String shortage =
+        mockMvc
+            .perform(
+                post(inv + "/movements")
+                    .header("Authorization", "Bearer " + owner)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        String.format(
+                            "{\"stockItemId\":%d,\"movementType\":\"OUT\",\"quantity\":150,\"reason\":\"LOSS\"}",
+                            stockItemId)))
+            .andExpect(status().isUnprocessableEntity())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    JsonNode problem = objectMapper.readTree(shortage);
+    assertThat(problem.get("code").asText()).isEqualTo("STOCK_INSUFFICIENT");
+    assertThat(problem.path("properties").get("stockItemId").asLong()).isEqualTo(stockItemId);
+    assertThat(problem.path("properties").get("available").asDouble()).isEqualTo(100.0);
+    assertThat(problem.path("properties").get("requested").asDouble()).isEqualTo(150.0);
+    // Rien n'a bougé.
+    assertThat(
+            data(getOk(inv + "/stock-items/" + stockItemId, owner))
+                .get("currentQuantity")
+                .asDouble())
+        .isEqualTo(100.0);
+
+    // La ferme peut lever la garde par le réglage générique — réservé OWNER/MANAGER. La même
+    // sortie passe alors, et c'est ainsi qu'un solde négatif reste atteignable pour les fermes
+    // qui le veulent (et que l'alerte plus bas a encore un sens).
+    mockMvc
+        .perform(
+            put("/api/v1/farms/" + farmId + "/settings/inventory.block_negative_stock")
+                .header("Authorization", "Bearer " + owner)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"value\":{\"blocking\":false}}"))
+        .andExpect(status().isOk());
     postOk(
         inv + "/movements",
         owner,

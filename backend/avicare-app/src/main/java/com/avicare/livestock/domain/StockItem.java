@@ -23,9 +23,10 @@ import lombok.ToString;
  * duplicated). {@code unit} and {@code typicalUnitPriceXof} are a snapshot taken from the catalog
  * at creation.
  *
- * <p>{@code currentQuantity} MAY be negative (Décision 19 — insufficient stock is a non-blocking
- * warning, never a hard stop). Soft-deleted via {@code active=false}. Timestamps DB-owned
- * (trigger).
+ * <p>{@code currentQuantity} peut encore être négatif, mais ce n'est plus une sortie possible :
+ * depuis ADR-018 une consommation à découvert est refusée. Restent les soldes hérités d'avant la
+ * garde, les fermes qui l'ont levée par réglage, et les ventes, qui en sont exclues. Soft-deleted
+ * via {@code active=false}. Timestamps DB-owned (trigger).
  */
 @Entity
 @Table(name = "stock_items")
