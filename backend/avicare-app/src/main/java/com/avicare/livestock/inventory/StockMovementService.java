@@ -171,11 +171,13 @@ public class StockMovementService {
   }
 
   /**
-   * Stock outflows of the farm over a window — valued by the caller through {@link StockValuation}.
+   * What the farm consumed over a window — outflows and the reversals that cancel them, valued by
+   * the caller through {@link StockValuation#netValueOf}.
    */
   @Transactional(readOnly = true)
-  public List<StockMovement> outMovementsForFarmBetween(Long farmId, LocalDate from, LocalDate to) {
-    return stockMovementRepository.findOutMovementsForFarmBetween(farmId, from, to);
+  public List<StockMovement> consumptionMovementsForFarmBetween(
+      Long farmId, LocalDate from, LocalDate to) {
+    return stockMovementRepository.findConsumptionMovementsForFarmBetween(farmId, from, to);
   }
 
   @Transactional(readOnly = true)

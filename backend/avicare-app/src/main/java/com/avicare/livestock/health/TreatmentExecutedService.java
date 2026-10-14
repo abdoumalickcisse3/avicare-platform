@@ -136,9 +136,19 @@ public class TreatmentExecutedService {
         .orElseThrow(() -> NotFoundException.of("TreatmentExecuted", id));
   }
 
+  /**
+   * Delete a treatment, giving back to stock whatever medication it consumed. The credit comes
+   * first and on purpose: the movement rows carry this treatment's id, so once the row is gone they
+   * can no longer be found. Until this existed, deleting a treatment left the medication at a lower
+   * quantity with nothing in the journal to explain it.
+   */
   @Transactional
-  public void delete(Long id) {
-    treatmentRepository.delete(get(id));
+  public void delete(Long id, Long userId) {
+    TreatmentExecuted treatment = get(id);
+    ProductionUnit unit = treatment.getProductionUnit();
+    stockConsumptionService.reverseConsumptions(
+        unit.getFarmId(), ConsumptionSource.treatment(unit.getId(), id), userId);
+    treatmentRepository.delete(treatment);
   }
 
   private Veterinarian resolveVet(Long vetId, Long unitFarmId) {

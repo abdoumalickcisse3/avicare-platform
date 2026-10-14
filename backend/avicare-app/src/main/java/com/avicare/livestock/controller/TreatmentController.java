@@ -92,7 +92,7 @@ public class TreatmentController {
   @PreAuthorize(HealthAccess.ADMIN_ADVANCED_OWNER)
   public void delete(@PathVariable Long farmId, @PathVariable Long id) {
     getInFarm(farmId, id);
-    treatmentService.delete(id);
+    treatmentService.delete(id, TenancyContext.currentUserId());
   }
 
   private void assertUnitInFarm(Long farmId, Long unitId) {

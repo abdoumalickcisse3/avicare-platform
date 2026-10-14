@@ -131,8 +131,17 @@ public class VaccinationService {
         .orElseThrow(() -> NotFoundException.of("Vaccination", id));
   }
 
+  /**
+   * Delete a vaccination, giving back to stock whatever vaccine it consumed — credit first, since
+   * the movement rows are found through this vaccination's id and become unreachable once the row
+   * is deleted. Mirrors {@code TreatmentExecutedService#delete}.
+   */
   @Transactional
-  public void delete(Long id) {
-    vaccinationRepository.delete(get(id));
+  public void delete(Long id, Long userId) {
+    Vaccination vaccination = get(id);
+    ProductionUnit unit = vaccination.getProductionUnit();
+    stockConsumptionService.reverseConsumptions(
+        unit.getFarmId(), ConsumptionSource.vaccination(unit.getId(), id), userId);
+    vaccinationRepository.delete(vaccination);
   }
 }

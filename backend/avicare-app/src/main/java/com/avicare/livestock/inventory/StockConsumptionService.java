@@ -6,8 +6,14 @@ import com.avicare.livestock.domain.MovementReason;
 import com.avicare.livestock.domain.MovementType;
 import com.avicare.livestock.domain.StockItem;
 import com.avicare.livestock.domain.StockMovement;
+import com.avicare.livestock.repository.StockMovementRepository;
 import com.avicare.subscription.api.SubscriptionFacade;
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,10 +30,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class StockConsumptionService {
 
   static final String MODULE_INVENTORY = "module.inventory";
+  static final String REVERSAL_NOTE = "Reversal of a corrected or deleted entry";
 
   private final StockItemService stockItemService;
   private final StockMovementService stockMovementService;
   private final SubscriptionFacade subscriptionFacade;
+  private final StockMovementRepository stockMovementRepository;
 
   /**
    * Apply a consumption as an {@code OUT} movement, inferring the reason and backref from {@code
@@ -71,6 +79,69 @@ public class StockConsumptionService {
             consumption.notes(),
             null);
     return stockMovementService.recordMovement(farmId, cmd, userId);
+  }
+
+  /**
+   * Undo whatever the source action already took out of stock, by posting one compensating {@code
+   * IN} per article. Called when a daily record is re-saved (it is an upsert — without this, the
+   * second save debits the stock a second time) and when a vaccination or treatment is deleted (its
+   * movement row used to be cascade-deleted, leaving the quantity down and nothing to explain it).
+   *
+   * <p>Nothing is ever deleted: the journal is append-only, so the credit is a movement of its own.
+   * It carries the same backref as the outflow it cancels, which makes the operation idempotent — a
+   * second call nets the credit against the debit and writes nothing. Each credit is dated like the
+   * outflow it cancels, so a correction does not move cost from one period into another.
+   *
+   * <p>No module check here, unlike {@link #applyConsumption}: this undoes a write the platform
+   * itself made, and must keep working even if the inventory module was switched off since.
+   */
+  @Transactional
+  public void reverseConsumptions(Long farmId, ConsumptionSource source, Long userId) {
+    Map<Long, BigDecimal> netByItem = new LinkedHashMap<>();
+    Map<Long, LocalDate> dateByItem = new HashMap<>();
+    for (StockMovement m : movementsOf(source)) {
+      Long itemId = m.getStockItem().getId();
+      if (m.getMovementType() == MovementType.OUT) {
+        netByItem.merge(itemId, m.getQuantity(), BigDecimal::add);
+        dateByItem.merge(itemId, m.getMovementDate(), (a, b) -> b.isAfter(a) ? b : a);
+      } else if (m.getMovementType() == MovementType.IN) {
+        netByItem.merge(itemId, m.getQuantity().negate(), BigDecimal::add);
+      }
+    }
+    for (Map.Entry<Long, BigDecimal> e : netByItem.entrySet()) {
+      if (e.getValue().signum() <= 0) {
+        continue;
+      }
+      stockMovementService.recordMovement(
+          farmId,
+          new StockMovementCommand(
+              e.getKey(),
+              MovementType.IN,
+              e.getValue(),
+              MovementReason.ERROR_CORRECTION,
+              dateByItem.getOrDefault(e.getKey(), LocalDate.now()),
+              source.productionUnitId(),
+              source.dailyRecordId(),
+              source.vaccinationId(),
+              source.treatmentExecutedId(),
+              null,
+              REVERSAL_NOTE,
+              null),
+          userId);
+    }
+  }
+
+  private List<StockMovement> movementsOf(ConsumptionSource source) {
+    if (source.vaccinationId() != null) {
+      return stockMovementRepository.findByVaccinationId(source.vaccinationId());
+    }
+    if (source.treatmentExecutedId() != null) {
+      return stockMovementRepository.findByTreatmentExecutedId(source.treatmentExecutedId());
+    }
+    if (source.dailyRecordId() != null) {
+      return stockMovementRepository.findByDailyRecordId(source.dailyRecordId());
+    }
+    return List.of();
   }
 
   private static MovementReason reasonFor(ConsumptionSource source) {

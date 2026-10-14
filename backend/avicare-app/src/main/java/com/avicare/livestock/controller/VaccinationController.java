@@ -78,7 +78,7 @@ public class VaccinationController {
   @PreAuthorize(HealthAccess.WRITE_BASIC_MANAGER)
   public void delete(@PathVariable Long farmId, @PathVariable Long id) {
     getInFarm(farmId, id);
-    vaccinationService.delete(id);
+    vaccinationService.delete(id, TenancyContext.currentUserId());
   }
 
   private void assertUnitInFarm(Long farmId, Long unitId) {

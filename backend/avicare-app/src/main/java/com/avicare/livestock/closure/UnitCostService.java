@@ -1,5 +1,6 @@
 package com.avicare.livestock.closure;
 
+import com.avicare.livestock.domain.MovementType;
 import com.avicare.livestock.domain.StockMovement;
 import com.avicare.livestock.inventory.StockValuation;
 import com.avicare.livestock.repository.StockMovementRepository;
@@ -36,7 +37,7 @@ public class UnitCostService {
   @Transactional(readOnly = true)
   public FeedCost feedCost(Long productionUnitId) {
     List<StockMovement> movements =
-        stockMovementRepository.findOutMovementsForUnit(productionUnitId);
+        stockMovementRepository.findConsumptionMovementsForUnit(productionUnitId);
 
     long total = 0;
     Set<Long> consumed = new HashSet<>();
@@ -44,12 +45,18 @@ public class UnitCostService {
 
     for (StockMovement m : movements) {
       Long itemId = m.getStockItem().getId();
-      consumed.add(itemId);
+      boolean isOutflow = m.getMovementType() == MovementType.OUT;
+      if (isOutflow) {
+        // Coverage counts what the batch actually drew; a reversal credit only moves the total.
+        consumed.add(itemId);
+      }
 
-      Long value = StockValuation.valueOf(m);
+      Long value = StockValuation.netValueOf(m);
       if (value != null) {
         total += value;
-        valued.add(itemId);
+        if (isOutflow) {
+          valued.add(itemId);
+        }
       }
     }
     return new FeedCost(total, consumed.size(), valued.size());
