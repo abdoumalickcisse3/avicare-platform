@@ -28,6 +28,7 @@ import com.avicare.livestock.inventory.InventoryCatalogService;
 import com.avicare.livestock.inventory.StockItemService;
 import com.avicare.livestock.inventory.StockMovementCommand;
 import com.avicare.livestock.inventory.StockMovementService;
+import com.avicare.livestock.inventory.StockShortageCheck;
 import com.avicare.livestock.repository.ClientRepository;
 import com.avicare.livestock.repository.SaleRepository;
 import java.math.BigDecimal;
@@ -97,7 +98,8 @@ class SaleServiceTest {
     StockItem stockItem = new StockItem();
     stockItem.setId(55L);
     when(stockItemService.createOrGet(any(), any(), any(), any())).thenReturn(stockItem);
-    when(stockMovementService.recordMovement(any(), any(StockMovementCommand.class), any()))
+    when(stockMovementService.recordMovement(
+            any(), any(StockMovementCommand.class), any(), any(StockShortageCheck.class)))
         .thenReturn(new StockMovement());
   }
 
@@ -130,7 +132,8 @@ class SaleServiceTest {
     // D21: one OUT movement (reason SALE) per line.
     ArgumentCaptor<StockMovementCommand> captor =
         ArgumentCaptor.forClass(StockMovementCommand.class);
-    verify(stockMovementService, times(2)).recordMovement(eq(7L), captor.capture(), eq(42L));
+    verify(stockMovementService, times(2))
+        .recordMovement(eq(7L), captor.capture(), eq(42L), eq(StockShortageCheck.SKIPPED_FOR_SALE));
     assertThat(captor.getAllValues())
         .allSatisfy(
             c -> {
@@ -183,7 +186,7 @@ class SaleServiceTest {
 
     assertThatExceptionOfType(ValidationException.class)
         .isThrownBy(() -> service.create(7L, cmd, 42L));
-    verify(stockMovementService, never()).recordMovement(any(), any(), any());
+    verify(stockMovementService, never()).recordMovement(any(), any(), any(), any());
   }
 
   @Test
@@ -323,7 +326,8 @@ class SaleServiceTest {
 
     ArgumentCaptor<StockMovementCommand> captor =
         ArgumentCaptor.forClass(StockMovementCommand.class);
-    verify(stockMovementService, times(2)).recordMovement(eq(7L), captor.capture(), eq(42L));
+    verify(stockMovementService, times(2))
+        .recordMovement(eq(7L), captor.capture(), eq(42L), eq(StockShortageCheck.SKIPPED_FOR_SALE));
     assertThat(captor.getAllValues())
         .allSatisfy(c -> assertThat(c.movementType()).isEqualTo(MovementType.IN));
   }

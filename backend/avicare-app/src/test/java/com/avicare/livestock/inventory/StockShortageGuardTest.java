@@ -206,24 +206,48 @@ class StockShortageGuardTest {
   void doesNotBlockASale_thatGuardBelongsToProduction() {
     charcoal("0");
 
-    StockMovementCommand sale =
-        new StockMovementCommand(
-            ITEM,
-            MovementType.OUT,
-            new BigDecimal("1"),
-            MovementReason.SALE,
-            LocalDate.of(2026, 10, 14),
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null);
-
-    assertThat(service.recordMovement(FARM, sale, USER).getQuantityAfter())
+    assertThat(
+            service
+                .recordMovement(FARM, saleOut("1"), USER, StockShortageCheck.SKIPPED_FOR_SALE)
+                .getQuantityAfter())
         .isEqualByComparingTo("-1");
     verify(stockShortagePolicy, never()).isBlockingFor(anyLong());
+  }
+
+  /**
+   * L'exclusion de la vente tient à l'APPELANT, jamais au motif envoyé.
+   *
+   * <p>Le motif vient de la requête : l'écran de mouvement manuel propose « Vente » dans sa liste
+   * de sorties, et rien n'empêche un client d'en poster un. Si la garde se fiait au motif, il
+   * suffirait de cocher « Vente » pour passer outre — l'exclusion pensée pour protéger une recette
+   * deviendrait la porte dérobée de tout le reste.
+   */
+  @Test
+  void aManualOutflowClaimingToBeASaleIsStillRefused() {
+    charcoal("0");
+    when(stockShortagePolicy.isBlockingFor(FARM)).thenReturn(true);
+    when(inventoryCatalogService.listAllAvailableArticles(FARM)).thenReturn(List.of());
+
+    assertThatThrownBy(() -> service.recordMovement(FARM, saleOut("1"), USER))
+        .isInstanceOf(BusinessRuleException.class)
+        .extracting(e -> ((BusinessRuleException) e).getCode())
+        .isEqualTo("STOCK_INSUFFICIENT");
+  }
+
+  private StockMovementCommand saleOut(String quantity) {
+    return new StockMovementCommand(
+        ITEM,
+        MovementType.OUT,
+        new BigDecimal(quantity),
+        MovementReason.SALE,
+        LocalDate.of(2026, 10, 14),
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null);
   }
 
   @Test
