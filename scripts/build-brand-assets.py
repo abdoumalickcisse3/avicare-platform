@@ -215,6 +215,16 @@ def recolor(paths: list[tuple[str, str]], color: str) -> list[tuple[str, str]]:
     return [(color, d) for c, d in paths if c.upper() != WHITE]
 
 
+def swap_color(paths: list[tuple[str, str]], old: str, new: str) -> list[tuple[str, str]]:
+    """Repeint une seule couleur du dessin, les autres intactes.
+
+    Sert la variante sombre de l'icône : sur une plaque foncée, le « J » en DEEP disparaît
+    tandis que les collines, la terre et le soleil tiennent très bien. Recolorer tout en blanc
+    (`recolor`) réglerait la lisibilité en perdant la marque ; ici on ne touche qu'au tracé qui
+    pose problème."""
+    return [(new if c.upper() == old.upper() else c, d) for c, d in paths]
+
+
 def alpha_box(svg: str, scale: float = 4.0) -> tuple[float, float, float, float]:
     """Bbox des pixels opaques, en unités du viewBox d'origine."""
     doc = pymupdf.open(stream=svg.encode(), filetype="svg")
@@ -363,6 +373,10 @@ def build() -> tuple[dict[str, str], dict[str, list[tuple[str, str]]]]:
     icon = horizontal["icon"]
     kit["icon"] = emit(icon, "Jawdi", KIT / "icon.svg")
     kit["icon-white"] = emit(recolor(icon, WHITE), "Jawdi", KIT / "icon-white.svg")
+    # Variante sombre : l'inversion exacte de l'icône claire — plaque verte, « J » blanc —
+    # au lieu d'une plaque blanche et d'un « J » vert. Les découpes de la vache et de la poule
+    # laissent voir la plaque, qui contraste encore avec les collines et la terre.
+    kit["icon-dark"] = emit(swap_color(icon, DEEP, WHITE), "Jawdi", KIT / "icon-dark.svg")
 
     # Le mot entier vient du lockup VERTICAL : c'est le seul où il porte son
     # propre « J ». Dans l'horizontal, ce « J » est la hampe de la marque, et le
@@ -502,6 +516,9 @@ def main() -> None:
         "landing/src/assets/logo-mark.png": lambda: compose(kit["icon"], 512, PLATE, 0.10),
         # Expo / stores.
         "mobile/assets/icon.png": lambda: compose(kit["icon"], 1024, PLATE, 0.16),
+        # iOS 18 ne réutilise pas l'icône claire en mode sombre : sans cette variante, la
+        # plaque blanche reste une tache sur un écran d'accueil noir (app.json → ios.icon).
+        "mobile/assets/icon-dark.png": lambda: compose(kit["icon-dark"], 1024, DEEP, 0.16),
         "mobile/assets/splash-icon.png": lambda: compose(kit["icon"], 1024, None, 0.22),
         "mobile/assets/favicon.png": lambda: compose(kit["icon"], 48, PLATE, 0.10),
         # Icône adaptative Android : avant-plan dans la zone sûre (66 % centraux),
