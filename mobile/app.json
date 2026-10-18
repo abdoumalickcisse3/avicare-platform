@@ -9,7 +9,11 @@
     "userInterfaceStyle": "light",
     "ios": {
       "bundleIdentifier": "app.jawdi.mobile",
-      "supportsTablet": false,
+      "icon": {
+      "light": "./assets/icon.png",
+      "dark": "./assets/icon-dark.png"
+    },
+    "supportsTablet": false,
       "config": {
         "usesNonExemptEncryption": false
       },
