@@ -1,3 +1,4 @@
+import type { StoredProblem } from '@/lib/stockShortage';
 import type { MutationStatus, QueuedMutation, SqlDriver } from './types';
 
 // Raw shape of a `mutation_queue` row as returned by SqlDriver.all/run —
@@ -12,8 +13,19 @@ type MutationRow = {
   status: MutationStatus;
   attempts: number;
   last_error: string | null;
+  last_problem: string | null;
   created_at: string;
 };
+
+/** Une colonne illisible ne doit pas faire tomber l'écran de file : on perd le geste, pas la liste. */
+function parseProblem(raw: string | null): StoredProblem | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as StoredProblem;
+  } catch {
+    return null;
+  }
+}
 
 function toQueuedMutation(row: MutationRow): QueuedMutation {
   return {
@@ -26,13 +38,14 @@ function toQueuedMutation(row: MutationRow): QueuedMutation {
     status: row.status,
     attempts: row.attempts,
     lastError: row.last_error,
+    lastProblem: parseProblem(row.last_problem),
     createdAt: row.created_at,
   };
 }
 
 export function createQueue(driver: SqlDriver) {
   return {
-    enqueue(m: Omit<QueuedMutation, 'id' | 'status' | 'attempts' | 'lastError' | 'createdAt'>): void {
+    enqueue(m: Omit<QueuedMutation, 'id' | 'status' | 'attempts' | 'lastError' | 'lastProblem' | 'createdAt'>): void {
       driver.run(
         `INSERT INTO mutation_queue (client_ref, farm_id, kind, endpoint, payload, status, attempts, last_error, created_at)
          VALUES (?, ?, ?, ?, ?, 'PENDING', 0, NULL, ?)`,
@@ -56,14 +69,23 @@ export function createQueue(driver: SqlDriver) {
     // attempts is owned solely by bumpAttempts — markFailed only records the
     // terminal state, it must never touch the counter (avoids double-count
     // when the sync engine calls bumpAttempts on retryable errors).
-    markFailed(id: number, message: string): void {
-      driver.run(`UPDATE mutation_queue SET status = 'FAILED', last_error = ? WHERE id = ?`, [message, id]);
+    // `problem` porte les propriétés RFC 7807 du refus, quand il en a : c'est ce qui permet à
+    // l'écran de file de proposer la correction plutôt qu'un « Réessayer » qui échouera pareil.
+    markFailed(id: number, message: string, problem?: StoredProblem | null): void {
+      driver.run(`UPDATE mutation_queue SET status = 'FAILED', last_error = ?, last_problem = ? WHERE id = ?`, [
+        message,
+        problem ? JSON.stringify(problem) : null,
+        id,
+      ]);
     },
 
     // A manual retry starts a fresh budget: leaving attempts at the ceiling would park the row
     // FAILED again after a single failure, so "Réessayer" would be one try, not a retry.
     markPending(id: number): void {
-      driver.run(`UPDATE mutation_queue SET status = 'PENDING', last_error = NULL, attempts = 0 WHERE id = ?`, [id]);
+      driver.run(
+        `UPDATE mutation_queue SET status = 'PENDING', last_error = NULL, last_problem = NULL, attempts = 0 WHERE id = ?`,
+        [id],
+      );
     },
 
     clearAll(): void {

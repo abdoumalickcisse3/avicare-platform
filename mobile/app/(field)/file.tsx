@@ -21,12 +21,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { tokens } from '@/theme';
 import { KIND_LABELS } from '@/sync/kindLabels';
+import { StockShortageSheet } from '@/inventory/StockShortageSheet';
+import { stockShortage, type StockShortage } from '@/lib/stockShortage';
 import { queue, subscribe, syncEngine } from '@/sync';
 import type { MutationKind, QueuedMutation } from '@/sync/types';
 
 export default function QueueScreen() {
   const router = useRouter();
   const [items, setItems] = useState<QueuedMutation[]>(() => queue.listAll());
+  // La saisie en cours de réparation : son id, l'article qui bloque, et la ferme où corriger.
+  const [repairing, setRepairing] = useState<{ id: number; farmId: number; shortage: StockShortage } | null>(null);
 
   useEffect(() => subscribe(() => setItems(queue.listAll())), []);
 
@@ -38,6 +42,15 @@ export default function QueueScreen() {
     // Fire-and-forget: drain() classifies every transport failure internally
     // and never rejects, but guard against an unhandled rejection anyway.
     syncEngine.drain().catch(() => undefined);
+  }
+
+  // Le stock corrigé, la saisie repart d'elle-même : c'est tout l'intérêt du geste. Laisser
+  // l'éleveur appuyer une seconde fois sur « Réessayer » serait lui demander de comprendre
+  // pourquoi la correction ne suffisait pas.
+  function repaired(): void {
+    const target = repairing;
+    setRepairing(null);
+    if (target) retry(target.id);
   }
 
   // Deleting drops the only copy of an entry the farmer typed in the field (a mortality count, a
@@ -90,6 +103,22 @@ export default function QueueScreen() {
                       the screen, so it is shown verbatim, never masked. */}
                   <Text style={styles.error}>{m.lastError ?? 'Rejet sans détail'}</Text>
                   <View style={styles.actions}>
+                    {/* Un manque de stock se répare ; « Réessayer » seul rejouerait le même
+                        refus, et « Supprimer » jetterait la saisie. Le bouton n'apparaît que
+                        quand le serveur a dit QUEL article et de combien. */}
+                    {(() => {
+                      const shortage = stockShortage(m.lastProblem);
+                      return shortage ? (
+                        <TouchableOpacity
+                          style={[styles.actionButton, styles.repairButton]}
+                          onPress={() => setRepairing({ id: m.id, farmId: m.farmId, shortage })}
+                          accessibilityRole="button"
+                          accessibilityLabel="Corriger le stock"
+                        >
+                          <Text style={styles.repairLabel}>Corriger le stock</Text>
+                        </TouchableOpacity>
+                      ) : null;
+                    })()}
                     <TouchableOpacity
                       style={[styles.actionButton, styles.retryButton]}
                       onPress={() => retry(m.id)}
@@ -128,6 +157,16 @@ export default function QueueScreen() {
           ) : null}
         </ScrollView>
       )}
+
+      {repairing ? (
+        <StockShortageSheet
+          open
+          shortage={repairing.shortage}
+          farmId={repairing.farmId}
+          onClose={() => setRepairing(null)}
+          onRepaired={repaired}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -205,6 +244,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: tokens.spacing[3],
+  },
+  // La correction prend l'habit du geste répété (vert plein) et non celui de la validation :
+  // sur cette ligne, c'est elle qui débloque, « Réessayer » n'étant qu'un second essai.
+  repairButton: {
+    backgroundColor: tokens.colors.action.accumulate.bg,
+    borderColor: tokens.colors.action.accumulate.border,
+  },
+  repairLabel: {
+    ...tokens.typography.button,
+    color: tokens.colors.action.accumulate.fg,
   },
   retryButton: {
     backgroundColor: tokens.colors.action.commit.bg,

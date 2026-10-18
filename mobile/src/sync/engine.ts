@@ -1,3 +1,4 @@
+import type { StoredProblem } from '@/lib/stockShortage';
 import type { createQueue } from './queue';
 import type { MutationKind, QueuedMutation } from './types';
 
@@ -33,6 +34,15 @@ const MAX_BACKOFF_MS = 5 * 60 * 1000;
 // many mutations are retryable so the caller can decide when to call again.
 export function backoffMs(attempts: number): number {
   return Math.min(2 ** attempts * 1000, MAX_BACKOFF_MS);
+}
+
+/** Le code et les propriétés du problème, quand le corps est bien du RFC 7807. */
+function problemOf(response: TransportResponse): StoredProblem | null {
+  const body = response.body;
+  if (!body || typeof body !== 'object') return null;
+  const { code, properties } = body as StoredProblem;
+  if (typeof code !== 'string') return null;
+  return { code, properties: properties ?? undefined };
 }
 
 function detailOf(response: TransportResponse): string | null {
@@ -142,7 +152,12 @@ export function createEngine(deps: EngineDeps) {
           // Terminal: an ordinary 4xx (403/422/...) will never succeed on
           // replay. Mark it FAILED and keep draining so it does not block
           // every mutation queued behind it.
-          queue.markFailed(next.id, detailOf(response) ?? `HTTP ${response.status}`);
+          //
+          // Le problème est rangé à côté du message : certains refus se réparent (un stock
+          // insuffisant se comble par une entrée), et l'écran de file ne peut proposer ce geste
+          // que s'il sait de quel article et de quelle quantité on parle. Sans ça, « Réessayer »
+          // rejoue le même échec et « Supprimer » jette la saisie — les deux perdent la donnée.
+          queue.markFailed(next.id, detailOf(response) ?? `HTTP ${response.status}`, problemOf(response));
           result.failed += 1;
           continue;
         }

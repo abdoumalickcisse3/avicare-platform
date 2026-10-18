@@ -52,6 +52,13 @@ jest.mock('@/sync', () => {
   };
 });
 
+// Le préfixe `mock` est la seule façon pour une fabrique jest.mock() de voir une variable
+// extérieure (garde-fou de Babel contre les mocks non initialisés).
+const mockRecordMovement = jest.fn(() => ({ unwrap: () => Promise.resolve({}) }));
+jest.mock('@/store/api/inventoryStockApi', () => ({
+  useRecordMovementMutation: () => [mockRecordMovement, { isLoading: false }],
+}));
+
 // eslint-disable-next-line import/first
 import { queue, syncEngine } from '@/sync';
 // eslint-disable-next-line import/first
@@ -142,4 +149,86 @@ describe('QueueScreen', () => {
     await render(<QueueScreen />);
     expect(screen.getByText(/tout est synchronisé/i)).toBeTruthy();
   });
+
+  const SHORTAGE = {
+    code: 'STOCK_INSUFFICIENT',
+    properties: {
+      stockItemId: 9,
+      articleLabel: 'Aliment démarrage',
+      unit: 'sac',
+      available: -2,
+      requested: 3,
+    },
+  };
+
+  it('propose de corriger le stock quand le refus est réparable', async () => {
+    const id = enqueueMortality('ref-1');
+    queue.markFailed(id, 'Stock insuffisant : il reste -2 sac de Aliment démarrage.', SHORTAGE);
+
+    await render(<QueueScreen />);
+
+    expect(screen.getByLabelText('Corriger le stock')).toBeTruthy();
+  });
+
+  it('ne le propose pas sur un refus ordinaire — il n’y aurait rien à corriger', async () => {
+    const id = enqueueMortality('ref-1');
+    queue.markFailed(id, 'Le module Inventaire est inactif');
+
+    await render(<QueueScreen />);
+
+    expect(screen.queryByLabelText('Corriger le stock')).toBeNull();
+  });
+
+  it('entre la quantité manquante, pas la quantité demandée', async () => {
+    // Sur une ligne à −2 qui doit en sortir 3, entrer 3 laisserait le solde à −2 et la saisie
+    // serait refusée une seconde fois.
+    const id = enqueueMortality('ref-1');
+    queue.markFailed(id, 'Stock insuffisant', SHORTAGE);
+
+    await render(<QueueScreen />);
+    await press(screen.getByLabelText('Corriger le stock'));
+    await press(screen.getByLabelText("Je l'ai reçu, l'achat n'a pas été saisi"));
+    await press(screen.getByLabelText('Enregistrer la correction'));
+
+    expect(mockRecordMovement).toHaveBeenCalledWith({
+      farmId: 7,
+      body: { stockItemId: 9, movementType: 'IN', quantity: 5, reason: 'RECEPTION_PURCHASE' },
+    });
+  });
+
+  it('remet la saisie en file une fois le stock corrigé', async () => {
+    const id = enqueueMortality('ref-1');
+    queue.markFailed(id, 'Stock insuffisant', SHORTAGE);
+
+    await render(<QueueScreen />);
+    await press(screen.getByLabelText('Corriger le stock'));
+    await press(screen.getByLabelText("Je l'ai reçu, l'achat n'a pas été saisi"));
+    await press(screen.getByLabelText('Enregistrer la correction'));
+
+    // Le geste entier : corriger le stock ET relancer la saisie. S'arrêter au mouvement
+    // laisserait l'éleveur devant la même ligne rouge, à deviner qu'il doit réessayer.
+    expect(queue.listFailed()).toHaveLength(0);
+    expect(queue.countPending()).toBe(1);
+    expect(syncEngine.drain).toHaveBeenCalled();
+  });
+
+  it('part du comptage à vide quand on choisit l’inventaire', async () => {
+    const id = enqueueMortality('ref-1');
+    queue.markFailed(id, 'Stock insuffisant', SHORTAGE);
+
+    await render(<QueueScreen />);
+    await press(screen.getByLabelText('Corriger le stock'));
+    await press(screen.getByLabelText("Je compte ce qu'il y a dans le magasin"));
+
+    // Rien de pré-rempli : tout l'intérêt de ce geste est que quelqu'un compte.
+    expect(screen.getByLabelText('Quantité saisie')).toHaveTextContent('0 sac');
+    await press(screen.getByLabelText('4'));
+    await press(screen.getByLabelText('Enregistrer la correction'));
+
+    expect(mockRecordMovement).toHaveBeenCalledWith({
+      farmId: 7,
+      body: { stockItemId: 9, movementType: 'ADJUSTMENT', quantity: 4, reason: 'INVENTORY_PHYSICAL' },
+    });
+  });
+
 });

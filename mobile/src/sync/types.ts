@@ -1,3 +1,5 @@
+import type { StoredProblem } from '@/lib/stockShortage';
+
 export type MutationKind =
   | 'DAILY_RECORD'
   | 'MORTALITY'
@@ -26,6 +28,12 @@ export type QueuedMutation = {
   status: MutationStatus;
   attempts: number;
   lastError: string | null;
+  /**
+   * Le problème RFC 7807 du dernier refus, réduit à ce qui permet d'agir : son code et ses
+   * propriétés. Le message seul ne suffit pas — « il reste 0 sac de X » se lit, mais ne dit pas
+   * à l'écran QUEL article corriger ni de combien.
+   */
+  lastProblem: StoredProblem | null;
   createdAt: string;
 };
 
