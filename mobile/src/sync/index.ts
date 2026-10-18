@@ -24,7 +24,7 @@ import { createSqliteDriver } from './driver';
 import { createQueue } from './queue';
 import { createEngine, type TransportResponse } from './engine';
 import { requestHeaders } from './requestHeaders';
-import { QUEUE_SCHEMA } from './schema';
+import { QUEUE_SCHEMA, migrateQueue } from './schema';
 import type { MutationKind, QueuedMutation } from './types';
 
 const API_URL = resolveApiUrl();
@@ -79,6 +79,7 @@ export function isSyncing(): boolean {
 // --- queue --------------------------------------------------------------
 const driver = createSqliteDriver();
 driver.exec(QUEUE_SCHEMA);
+migrateQueue(driver);
 
 const rawQueue = createQueue(driver);
 
