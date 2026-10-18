@@ -35,6 +35,9 @@ import { NavProvider } from '@/navigation/NavContext';
 import { startSyncTriggers } from '@/sync/triggers';
 import { subscribeAuthInvalidated } from '@/sync';
 import { usePushNotifications } from '@/push/usePushNotifications';
+import { PrimaryButton } from '@/components/ui';
+import { LogOut } from 'lucide-react-native';
+import { signOut } from '@/auth/signOut';
 
 type GuardStatus = 'loading' | 'unauthenticated' | 'forbidden' | 'authorized';
 
@@ -110,6 +113,21 @@ export default function FieldLayout() {
           Cette application est réservée aux équipes de terrain (propriétaire, gestionnaire,
           éleveur, vétérinaire). Utilisez l&apos;application web pour accéder à votre compte.
         </Text>
+        {/* Sans ce bouton l'écran est un cul-de-sac : la session est ouverte, aucun onglet n'est
+            monté, et rien ne permet de rejoindre un autre compte — il faut désinstaller l'app.
+            C'est précisément le compte qui n'a RIEN à faire ici qui s'y retrouve enfermé. */}
+        <View style={styles.exit}>
+          <PrimaryButton
+            label="Changer de compte"
+            icon={LogOut}
+            role="danger"
+            size="primary"
+            onPress={async () => {
+              await signOut();
+              router.replace('/(auth)/login');
+            }}
+          />
+        </View>
       </View>
     );
   }
@@ -139,6 +157,7 @@ const styles = StyleSheet.create({
   authorized: {
     flex: 1,
   },
+  exit: { marginTop: tokens.spacing[6], alignSelf: 'stretch' },
   centered: {
     flex: 1,
     alignItems: 'center',
