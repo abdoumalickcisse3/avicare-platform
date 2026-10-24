@@ -1,0 +1,78 @@
+---
+// Bande partenaires. Une seule entrée aujourd'hui (ASMI Services) : une rangée
+// de logos à une case paraîtrait vide, donc le traitement est centré et assumé
+// plutôt qu'étalé sur une grille.
+//
+// Le logo est posé sur une pastille BLANCHE et non à même la section : son
+// lettrage « ASMI SERVICES » est noir et devient illisible dès que le fond
+// fonce. La pastille le garde lisible quelle que soit la section qui l'entoure.
+//
+// Fichier source détouré depuis le logo fourni par le partenaire : le blanc
+// relié au bord a été rendu transparent, les blancs intérieurs du sigle
+// conservés (un détourage « tout le blanc » aurait percé le sigle).
+import { Image } from "astro:assets";
+import asmi from "../assets/partners/asmi-services.png";
+
+const partenaires = [{ nom: "ASMI Services", logo: asmi }];
+---
+
+<!-- Fond pierre et non `.panel` seul : `.panel` est blanc, et une pastille
+     blanche sur du blanc ne se lit plus — seule sa bordure la trahissait. -->
+<section class="panel panel-stone reveal partners">
+  <div class="pt">
+    <div class="eyebrow">Ils nous accompagnent</div>
+    <ul class="pt-list">
+      {
+        partenaires.map((p) => (
+          <li class="pt-item">
+            <Image src={p.logo} alt={p.nom} width={320} densities={[1, 2]} loading="lazy" />
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style is:global>
+  .partners {
+    padding-top: 56px;
+    padding-bottom: 56px;
+  }
+  .pt {
+    text-align: center;
+  }
+  .pt-list {
+    list-style: none;
+    margin: 22px 0 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 18px;
+  }
+  .pt-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    /* Le logo porte déjà sa propre marge interne une fois détouré ; une
+       pastille plus serrée l'habille sans le faire flotter. */
+    padding: 16px 26px;
+  }
+  .pt-item img {
+    display: block;
+    width: 200px;
+    height: auto;
+  }
+
+  @media (max-width: 560px) {
+    .pt-item {
+      padding: 18px 24px;
+    }
+    .pt-item img {
+      width: 160px;
+    }
+  }
+</style>

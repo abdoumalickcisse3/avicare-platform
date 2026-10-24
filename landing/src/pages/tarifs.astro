@@ -4,7 +4,7 @@
 // .phero centré, bandeau pilote + 4 PricingCard (Pro Volaille en `pop`,
 // badge surchargé "Recommandé" ; Sur mesure en 4e carte, badge neutre
 // "Indicatif · à venir"), CompareTable, témoignages (données partagées
-// avec l'accueil, déjà assainies — voir data/testimonials.ts), FAQ
+// avec l'accueil — voir data/enquete.ts), FAQ
 // tarifs (propre à cette page, distincte de la FAQ accueil), FinalCta.
 //
 // Écarts volontaires vis-à-vis du texte du brief/doc de design :
@@ -51,11 +51,10 @@ import Highlight from "../components/Highlight.astro";
 import SectionHead from "../components/SectionHead.astro";
 import PricingCard from "../components/PricingCard.astro";
 import CompareTable from "../components/CompareTable.astro";
-import TestimonialCard from "../components/TestimonialCard.astro";
+import FieldProof from "../components/FieldProof.astro";
 import Faq from "../components/Faq.astro";
 import FinalCta from "../components/FinalCta.astro";
 import { plans } from "../data/plans";
-import { testimonials } from "../data/testimonials";
 import type { FaqItem } from "../data/faq";
 import type { CompareRow } from "../components/CompareTable.astro";
 
@@ -167,15 +166,7 @@ const jsonLd = {
     </p>
   </section>
 
-  <section class="panel reveal">
-    <SectionHead eyebrow="Ils l'utilisent">
-      La marge, <Highlight>ça se voit venir</Highlight>.
-    </SectionHead>
-    <div class="quotes">
-      {testimonials.map((t) => <TestimonialCard {...t} />)}
-    </div>
-    <p class="note">* Témoignages illustratifs — à remplacer par de vrais retours du pilote.</p>
-  </section>
+  <FieldProof />
 
   <Faq
     id="faq-tarifs"
