@@ -111,6 +111,12 @@ jobs:
       # Landing bakes the public URLs at build time. Override via repo Variables
       # (Settings → Secrets and variables → Actions → Variables) if the domain
       # differs from the defaults below.
+      #
+      # PUBLIC_APP_STORE_URL / PUBLIC_PLAY_STORE_URL restent vides tant que
+      # l'app n'est pas publiée : la landing affiche alors « Bientôt sur l'App
+      # Store et Google Play » et n'émet AUCUN lien (voir StoreLinks.astro).
+      # Le jour de la publication, poser les deux Variables du dépôt et
+      # redéployer suffit — rien à modifier dans le code.
       - name: Build & push landing
         uses: docker/build-push-action@v7
         with:
@@ -128,6 +134,8 @@ jobs:
             PUBLIC_PARTNER_EMAIL=${{ vars.PUBLIC_PARTNER_EMAIL || 'malick.cisse@nlogicsolutions.com' }}
             PUBLIC_CONTACT_PHONE=${{ vars.PUBLIC_CONTACT_PHONE || '+221 70 475 69 96' }}
             PUBLIC_GA_ID=${{ vars.PUBLIC_GA_ID }}
+            PUBLIC_APP_STORE_URL=${{ vars.PUBLIC_APP_STORE_URL }}
+            PUBLIC_PLAY_STORE_URL=${{ vars.PUBLIC_PLAY_STORE_URL }}
           tags: |
             ${{ env.LANDING_IMAGE }}:latest
             ${{ env.LANDING_IMAGE }}:${{ github.sha }}
