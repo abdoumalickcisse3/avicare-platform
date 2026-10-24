@@ -1,0 +1,148 @@
+---
+// Preuve terrain — remplace les trois témoignages inventés qui occupaient
+// cette place (voir l'en-tête de `data/enquete.ts`).
+//
+// Composition volontairement différente des autres sections : un split
+// asymétrique (le propos à gauche, les chiffres empilés à droite, séparés par
+// des filets) au lieu de la rangée de cartes bordées qui rythme tout le reste
+// de la page. Une section de preuve qui ressemble à toutes les autres ne se
+// remarque pas.
+//
+// Fond sombre : les chiffres sont le point culminant de l'argumentaire, ils
+// méritent le contraste. Le logo partenaire, lui, reste sur fond clair — son
+// texte est noir (voir Partners.astro).
+// Chiffres écrits en dur dans le HTML, et PAS via <Kpi> / le compteur animé.
+// <Kpi> sert « 0 » dans le HTML et laisse le JS écrire la vraie valeur au
+// défilement : sur la section dont tout l'intérêt est l'exactitude, un visiteur
+// sans JS, un moteur de recherche ou un simple échec de script lirait « 0/17 ».
+// Une animation ne vaut pas ce risque-là sur ces chiffres-ci.
+import Highlight from "./Highlight.astro";
+import { faitsEnquete, REPONDANTS, PERIODE_ENQUETE } from "../data/enquete";
+---
+
+<section class="panel panel-dark reveal">
+  <div class="fp">
+    <div class="fp-intro">
+      <div class="eyebrow">Enquête terrain</div>
+      <h2>
+        On est allés <Highlight>leur demander</Highlight>.
+      </h2>
+      <p class="fp-lead">
+        Avant d'écrire la première ligne de Jawdi, nous avons interrogé des éleveurs au Sénégal.
+        Voilà ce qu'ils ont répondu — chiffres bruts, rien d'arrondi.
+      </p>
+      <p class="fp-src">
+        Enquête menée {PERIODE_ENQUETE} auprès de {REPONDANTS} éleveurs.
+      </p>
+    </div>
+
+    <ul class="fp-list">
+      {
+        faitsEnquete.map((f) => (
+          <li class="fp-row">
+            <div class="fp-num">
+              <span class="fp-n">{f.n}</span>
+              <span class="fp-d">/{REPONDANTS}</span>
+            </div>
+            <p class="fp-lab">{f.libelle}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style is:global>
+  .fp {
+    display: grid;
+    grid-template-columns: 0.85fr 1.15fr;
+    gap: 64px;
+    align-items: start;
+  }
+  /* `.eyebrow` est réglé sur --earth-700, pensé pour les fonds clairs : sur ce
+     vert il tombe à 1.39:1. Chaque section sombre porte son propre override
+     (même convention que `.hero .eyebrow`) — --leaf-300 remonte à 5.57:1. */
+  .fp .eyebrow {
+    color: var(--leaf-300);
+  }
+  .fp-intro h2 {
+    margin-top: 14px;
+    font-size: clamp(1.9rem, 3.4vw, 2.6rem);
+  }
+  .fp-lead {
+    margin-top: 18px;
+    color: #cfe3c6;
+    max-width: 38ch;
+  }
+  .fp-src {
+    margin-top: 20px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.7;
+    color: #9bb795;
+  }
+
+  .fp-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .fp-row {
+    display: grid;
+    /* Colonne de chiffres à largeur fixe : les numérateurs s'alignent sur leur
+       droite, donc "13/17" et "7/17" partagent la même barre de fraction. */
+    grid-template-columns: 148px 1fr;
+    gap: 28px;
+    align-items: baseline;
+    padding: 22px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+  }
+  .fp-row:last-child {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  }
+  .fp-num {
+    text-align: right;
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .fp-n {
+    font-size: clamp(2.4rem, 4.6vw, 3.4rem);
+    font-weight: 600;
+    color: var(--sun);
+    letter-spacing: -0.02em;
+  }
+  .fp-d {
+    font-size: 1.05rem;
+    font-weight: 500;
+    /* #7fa178 tombait à 3.84:1 sur --earth-800 — sous AA pour du texte de
+       cette taille. Ce ton-ci tient 5.07:1 tout en restant nettement en
+       retrait du numérateur. */
+    color: #9bb795;
+  }
+  .fp-lab {
+    font-size: 1.05rem;
+    line-height: 1.5;
+    color: #eaf3e4;
+  }
+
+  @media (max-width: 920px) {
+    .fp {
+      grid-template-columns: 1fr;
+      gap: 36px;
+    }
+    .fp-row {
+      /* Sur téléphone la colonne fixe mangerait la moitié de la largeur :
+         le chiffre passe au-dessus de son libellé, aligné à gauche. */
+      grid-template-columns: 1fr;
+      gap: 4px;
+      padding: 18px 0;
+    }
+    .fp-num {
+      text-align: left;
+    }
+    .fp-lead {
+      max-width: none;
+    }
+  }
+</style>

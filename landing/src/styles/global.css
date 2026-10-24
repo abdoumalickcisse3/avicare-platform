@@ -324,18 +324,6 @@ a {
   gap: 16px;
   margin-top: 40px;
 }
-.quotes {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-top: 40px;
-}
-.quotes + .note {
-  margin-top: 18px;
-  font-size: 12.5px;
-  color: var(--ink-soft);
-  font-family: var(--mono);
-}
 .price-banner {
   display: inline-flex;
   align-items: center;
@@ -364,7 +352,7 @@ a {
  * `.fine-note` genuinely disagreed between /tarifs (margin-top:16px;
  * max-width:none) and /a-propos (margin-top:20px). Canonical value
  * chosen: margin-top 16px (matches the ~16-18px rhythm of nearby
- * annotation text such as `.quotes + .note`), no `max-width:none` —
+ * annotation text nearby), no `max-width:none` —
  * `.panel > *` already caps children at --wrap, so the override had no
  * visible effect at any real viewport width and was just an unexplained
  * one-off. Color uses --ink-soft, not --ink-faint (Fix 3 — AA contrast).
@@ -433,7 +421,6 @@ a {
   }
   .feat,
   .steps,
-  .quotes,
   .split {
     grid-template-columns: 1fr;
   }

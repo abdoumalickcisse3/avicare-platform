@@ -2,7 +2,7 @@
 // Page d'accueil — ordre des sections identique au prototype
 // (docs/superpowers/specs/assets/landing-prototype.html, #p-home) :
 // Hero, Problème, StatsBand, Solution, PhotoBand, Comment ça marche,
-// Parcours (DualPath), Témoignages, Tarifs, Faq, FinalCta.
+// Parcours (DualPath), Preuve terrain, Partenaires, Faq, FinalCta.
 import Base from "../layouts/Base.astro";
 import Highlight from "../components/Highlight.astro";
 import Hero from "../components/Hero.astro";
@@ -12,11 +12,11 @@ import FeatureCard from "../components/FeatureCard.astro";
 import PhotoBand from "../components/PhotoBand.astro";
 import StepCard from "../components/StepCard.astro";
 import DualPath from "../components/DualPath.astro";
-import TestimonialCard from "../components/TestimonialCard.astro";
+import FieldProof from "../components/FieldProof.astro";
+import Partners from "../components/Partners.astro";
 import Faq from "../components/Faq.astro";
 import FinalCta from "../components/FinalCta.astro";
 import AppSection from "../components/AppSection.astro";
-import { testimonials } from "../data/testimonials";
 import { faq } from "../data/faq";
 import logo from "../assets/logo-mark.png";
 
@@ -226,15 +226,9 @@ const jsonLd = {
     <DualPath />
   </section>
 
-  <section class="panel reveal">
-    <SectionHead eyebrow="Ils l'utilisent">
-      La marge, <Highlight>ça se voit venir</Highlight>.
-    </SectionHead>
-    <div class="quotes">
-      {testimonials.map((t) => <TestimonialCard {...t} />)}
-    </div>
-    <p class="note">* Témoignages illustratifs — à remplacer par de vrais retours du pilote.</p>
-  </section>
+  <FieldProof />
+
+  <Partners />
 
   <AppSection />
 
