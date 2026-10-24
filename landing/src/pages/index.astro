@@ -2,7 +2,7 @@
 // Page d'accueil — ordre des sections identique au prototype
 // (docs/superpowers/specs/assets/landing-prototype.html, #p-home) :
 // Hero, Problème, StatsBand, Solution, PhotoBand, Comment ça marche,
-// Parcours (DualPath), Preuve terrain, Partenaires, Faq, FinalCta.
+// Parcours (DualPath), Preuve terrain, Faq, FinalCta.
 import Base from "../layouts/Base.astro";
 import Highlight from "../components/Highlight.astro";
 import Hero from "../components/Hero.astro";
@@ -13,7 +13,6 @@ import PhotoBand from "../components/PhotoBand.astro";
 import StepCard from "../components/StepCard.astro";
 import DualPath from "../components/DualPath.astro";
 import FieldProof from "../components/FieldProof.astro";
-import Partners from "../components/Partners.astro";
 import Faq from "../components/Faq.astro";
 import FinalCta from "../components/FinalCta.astro";
 import AppSection from "../components/AppSection.astro";
@@ -151,8 +150,6 @@ const jsonLd = {
   </section>
 
   <FieldProof />
-
-  <Partners />
 
   <AppSection />
 

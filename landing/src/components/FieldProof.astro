@@ -9,14 +9,17 @@
 // remarque pas.
 //
 // Fond sombre : les chiffres sont le point culminant de l'argumentaire, ils
-// méritent le contraste. Le logo partenaire, lui, reste sur fond clair — son
-// texte est noir (voir Partners.astro).
+// méritent le contraste. Le logo partenaire, lui, est posé sur une pastille
+// blanche — son lettrage est noir et disparaîtrait sur ce vert.
+//
 // Chiffres écrits en dur dans le HTML, et PAS via <Kpi> / le compteur animé.
 // <Kpi> sert « 0 » dans le HTML et laisse le JS écrire la vraie valeur au
 // défilement : sur la section dont tout l'intérêt est l'exactitude, un visiteur
 // sans JS, un moteur de recherche ou un simple échec de script lirait « 0/17 ».
 // Une animation ne vaut pas ce risque-là sur ces chiffres-ci.
+import { Image } from "astro:assets";
 import Highlight from "./Highlight.astro";
+import asmi from "../assets/partners/asmi-services.png";
 import { faitsEnquete, REPONDANTS, PERIODE_ENQUETE } from "../data/enquete";
 ---
 
@@ -34,6 +37,13 @@ import { faitsEnquete, REPONDANTS, PERIODE_ENQUETE } from "../data/enquete";
       <p class="fp-src">
         Enquête menée {PERIODE_ENQUETE} auprès de {REPONDANTS} éleveurs.
       </p>
+
+      <div class="fp-partner">
+        <p class="fp-partner-l">Ils nous accompagnent</p>
+        <div class="fp-partner-chip">
+          <Image src={asmi} alt="ASMI Services" width={300} densities={[1, 2]} loading="lazy" />
+        </div>
+      </div>
     </div>
 
     <ul class="fp-list">
@@ -80,6 +90,36 @@ import { faitsEnquete, REPONDANTS, PERIODE_ENQUETE } from "../data/enquete";
     font-size: 12px;
     line-height: 1.7;
     color: #9bb795;
+  }
+
+  /* Le partenaire vient occuper le bas de la colonne de gauche, qui restait
+     vide sur grand écran, et évite une bande dédiée de 341 px pour un seul
+     logo. Pastille blanche obligatoire : le lettrage « ASMI SERVICES » est
+     noir et disparaîtrait sur ce vert. */
+  .fp-partner {
+    margin-top: 40px;
+    padding-top: 26px;
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+  }
+  .fp-partner-l {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #9bb795;
+    margin-bottom: 14px;
+  }
+  .fp-partner-chip {
+    display: inline-flex;
+    align-items: center;
+    background: var(--paper);
+    border-radius: 14px;
+    padding: 13px 20px;
+  }
+  .fp-partner-chip img {
+    display: block;
+    width: 150px;
+    height: auto;
   }
 
   .fp-list {
