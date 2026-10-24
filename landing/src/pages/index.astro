@@ -8,7 +8,7 @@ import Highlight from "../components/Highlight.astro";
 import Hero from "../components/Hero.astro";
 import StatsBand from "../components/StatsBand.astro";
 import SectionHead from "../components/SectionHead.astro";
-import FeatureCard from "../components/FeatureCard.astro";
+import ModuleShowcase from "../components/ModuleShowcase.astro";
 import PhotoBand from "../components/PhotoBand.astro";
 import StepCard from "../components/StepCard.astro";
 import DualPath from "../components/DualPath.astro";
@@ -110,88 +110,12 @@ const jsonLd = {
     >
       Une seule plateforme, <Highlight>du poussin à la marge</Highlight>.
     </SectionHead>
-    <div class="feat">
-      <FeatureCard
-        title="Élevage"
-        description="Suivez chaque bande au jour le jour&nbsp;: effectif, mortalité, aliment, pesées. Chair et pondeuses."
-        miniLabel="Effectif réconcilié"
-        miniValue="auto"
-      >
-        <Fragment slot="icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
-            <path d="M4 20c0-4 3-7 7-7 1.5 0 2.8.5 3.8 1.3"></path>
-            <path d="M14 8a3 3 0 1 0-.1 0Z"></path>
-            <path d="M17 6c2 0 3 1.5 3 3.5 0 3-2.4 5.5-6 5.5"></path>
-          </svg>
-        </Fragment>
-      </FeatureCard>
-      <FeatureCard
-        title="Sanitaire"
-        description="Vaccins, traitements, calendrier vaccinal par souche et délais d'attente viande &amp; œufs maîtrisés."
-        miniLabel="Prochaine vaccination"
-        miniValue="J-3"
-      >
-        <Fragment slot="icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
-            <path d="M4.8 12.5 9 8.3a3 3 0 0 1 4.2 0l1.5 1.5"></path>
-            <path d="m14 4 6 6"></path>
-            <path d="m18 8-8.5 8.5a3 3 0 0 1-4.2 0 3 3 0 0 1 0-4.2Z"></path>
-          </svg>
-        </Fragment>
-      </FeatureCard>
-      <FeatureCard
-        title="Stocks"
-        description="Aliment, formules décomposées à la saisie, bons d'achat et alertes de rupture — sans surprise."
-        miniLabel="Aliment démarrage"
-        miniValue="12 sacs"
-      >
-        <Fragment slot="icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round">
-            <path d="m3.3 7 8.7 5 8.7-5"></path>
-            <path d="M12 12v9"></path>
-            <path d="m3 7 9-4 9 4v10l-9 4-9-4Z"></path>
-          </svg>
-        </Fragment>
-      </FeatureCard>
-      <FeatureCard
-        title="Ventes"
-        description="Clients &amp; compte-courant, commandes, factures et encours — votre commerce enfin en ordre."
-        miniLabel="Encours clients"
-        miniValue="3 alertes"
-      >
-        <Fragment slot="icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4Z"></path>
-            <path d="M4 6h16"></path>
-            <path d="M8 10a4 4 0 0 0 8 0"></path>
-          </svg>
-        </Fragment>
-      </FeatureCard>
-      <FeatureCard
-        title="Finance"
-        description="Dépenses, revenu par lot et compte de résultat — en temps réel, pas à la fin de l'année."
-        miniLabel="Revenu / lot"
-        miniValue="+18%"
-      >
-        <Fragment slot="icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 3v18h18"></path>
-            <path d="m7 15 3-4 3 2 5-7"></path>
-          </svg>
-        </Fragment>
-      </FeatureCard>
-      <div class="fcard wide">
-        <div>
-          <h3>Tout est relié.</h3>
-          <p style="flex:none;margin-top:8px">
-            Une pesée nourrit la courbe de croissance. Un sac d'aliment sorti nourrit les
-            dépenses. Une vente nourrit la marge. Vous saisissez une fois — Jawdi calcule le
-            reste.
-          </p>
-        </div>
-        <a class="btn btn-ghost" href="/fonctionnalites">Explorer les fonctionnalités →</a>
-      </div>
-    </div>
+    <ModuleShowcase />
+    <p class="mods-more">
+      Tout est relié&nbsp;: une pesée nourrit la courbe de croissance, un sac d'aliment sorti
+      nourrit les dépenses, une vente nourrit la marge. Vous saisissez une fois.
+      <a href="/fonctionnalites">Voir le détail de chaque module</a>
+    </p>
   </section>
 
   <PhotoBand
@@ -241,6 +165,26 @@ const jsonLd = {
 </Base>
 
 <style is:global>
+  /* ---- la phrase de liaison sous la vitrine des modules ---- */
+  .mods-more {
+    margin-top: 34px;
+    padding-top: 22px;
+    border-top: 1px solid var(--line);
+    font-size: 1rem;
+    color: var(--ink-soft);
+    max-width: 74ch;
+  }
+  .mods-more a {
+    color: var(--earth-700);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    white-space: nowrap;
+  }
+  .mods-more a:hover {
+    color: var(--leaf);
+  }
+
   /* ---- pains (Problème) ---- */
   .pain {
     display: grid;
