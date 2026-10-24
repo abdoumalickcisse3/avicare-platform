@@ -1,0 +1,287 @@
+---
+// Section « La solution » — l'app elle-même, module par module.
+//
+// Remplace six cartes bordées qui DÉCRIVAIENT les modules (986 px, la section
+// la plus haute et la plus générique de la page) par les écrans eux-mêmes. Les
+// cinq maquettes existaient déjà dans le dépôt — codées en HTML/CSS, avec des
+// valeurs tirées du spec — et n'étaient montées nulle part.
+//
+// La forme vient du produit : une colonne de modules à gauche, l'écran à
+// droite. C'est la navigation de Jawdi. Un éleveur qui voit cette section voit
+// déjà l'application qu'il va ouvrir.
+//
+// AUCUN JAVASCRIPT. Le site n'embarque qu'un seul script (CountUp) et ce n'est
+// pas une section de présentation qui va en ajouter un deuxième : la bascule
+// repose sur un groupe de boutons radio et le sélecteur `:checked ~`. Gratuit
+// en poids, navigable aux flèches du clavier, et le premier module reste
+// affiché si le CSS lui-même n'arrive pas.
+import MockupElevage from "./mockups/MockupElevage.astro";
+import MockupSanitaire from "./mockups/MockupSanitaire.astro";
+import MockupStocks from "./mockups/MockupStocks.astro";
+import MockupVentes from "./mockups/MockupVentes.astro";
+import MockupFinance from "./mockups/MockupFinance.astro";
+
+const modules = [
+  {
+    cle: "elevage",
+    nom: "Élevage",
+    phrase:
+      "Effectif, mortalité, aliment, pesées. La courbe de croissance se compare toute seule à l'objectif de la souche.",
+    icone: [
+      "M4 20c0-4 3-7 7-7 1.5 0 2.8.5 3.8 1.3",
+      "M14 8a3 3 0 1 0-.1 0Z",
+      "M17 6c2 0 3 1.5 3 3.5 0 3-2.4 5.5-6 5.5",
+    ],
+  },
+  {
+    cle: "sanitaire",
+    nom: "Sanitaire",
+    phrase:
+      "Vaccins et traitements datés, calendrier par souche, délais d'attente viande et œufs tenus pour vous.",
+    icone: [
+      "M4.8 12.5 9 8.3a3 3 0 0 1 4.2 0l1.5 1.5",
+      "m14 4 6 6",
+      "m18 8-8.5 8.5a3 3 0 0 1-4.2 0 3 3 0 0 1 0-4.2Z",
+    ],
+  },
+  {
+    cle: "stocks",
+    nom: "Stocks",
+    phrase:
+      "Vos formules décomposées à la saisie : chaque sac sorti sait d'où il vient et ce qu'il coûte.",
+    icone: ["m3.3 7 8.7 5 8.7-5", "M12 12v9", "m3 7 9-4 9 4v10l-9 4-9-4Z"],
+  },
+  {
+    cle: "ventes",
+    nom: "Ventes",
+    phrase:
+      "Commandes, factures, encours client. Vous savez qui vous doit quoi, sans chercher dans un cahier.",
+    icone: ["M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4Z", "M4 6h16", "M8 10a4 4 0 0 0 8 0"],
+  },
+  {
+    cle: "finance",
+    nom: "Finance",
+    phrase:
+      "Revenus, dépenses, marge — par lot et pour la ferme, recalculés à chaque saisie du quotidien.",
+    icone: ["M3 3v18h18", "m7 15 3-4 3 2 5-7"],
+  },
+];
+---
+
+<div class="mods">
+  {
+    modules.map((m, i) => (
+      <input
+        class="mods-radio"
+        type="radio"
+        name="mods"
+        id={`mod-${m.cle}`}
+        checked={i === 0}
+        aria-label={`Voir le module ${m.nom}`}
+      />
+    ))
+  }
+
+  <div class="mods-nav">
+    {
+      modules.map((m) => (
+        <label class="mods-tab" for={`mod-${m.cle}`}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            {m.icone.map((d) => (
+              <path d={d} />
+            ))}
+          </svg>
+          <span>{m.nom}</span>
+        </label>
+      ))
+    }
+  </div>
+
+  <div class="mods-stage">
+    {
+      modules.map((m) => (
+        <div class="mods-panel" data-mod={m.cle}>
+          <p class="mods-phrase">{m.phrase}</p>
+          <div class="mods-shot">
+            {m.cle === "elevage" && <MockupElevage />}
+            {m.cle === "sanitaire" && <MockupSanitaire />}
+            {m.cle === "stocks" && <MockupStocks />}
+            {m.cle === "ventes" && <MockupVentes />}
+            {m.cle === "finance" && <MockupFinance />}
+          </div>
+        </div>
+      ))
+    }
+  </div>
+</div>
+
+<style>
+  .mods {
+    display: grid;
+    grid-template-columns: 232px 1fr;
+    gap: 44px;
+    margin-top: 44px;
+    align-items: start;
+  }
+
+  /* Hors écran mais focusable : masquer avec `display:none` retirerait la
+     navigation au clavier, qui est précisément ce qui rend cette bascule
+     utilisable sans JavaScript. */
+  .mods-radio {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .mods-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    border-left: 1px solid var(--line);
+  }
+  .mods-tab {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 13px 16px;
+    margin-left: -1px;
+    border-left: 2px solid transparent;
+    color: var(--ink-soft);
+    font-weight: 600;
+    font-size: 15.5px;
+    cursor: pointer;
+    transition:
+      color 0.15s ease,
+      border-color 0.15s ease,
+      background 0.15s ease;
+  }
+  .mods-tab svg {
+    width: 19px;
+    height: 19px;
+    flex: none;
+    opacity: 0.75;
+  }
+  .mods-tab:hover {
+    color: var(--ink);
+    background: var(--stone);
+  }
+
+  /* Les panneaux se superposent dans la même cellule de grille : la scène
+     prend la hauteur du plus grand écran et ne saute plus d'un module à
+     l'autre. `visibility` plutôt que `display` pour garder cette hauteur ;
+     les panneaux cachés sortent quand même de l'arbre d'accessibilité. */
+  .mods-stage {
+    display: grid;
+    /* `start` et non l'étirement par défaut : sans ça la grille force chaque
+       panneau à la hauteur de la cellule, et toutes les maquettes se
+       retrouvent déformées à la même taille. */
+    align-items: start;
+    min-width: 0;
+  }
+  .mods-panel {
+    grid-area: 1 / 1;
+    visibility: hidden;
+    min-width: 0;
+  }
+  .mods-phrase {
+    font-size: 1.08rem;
+    line-height: 1.5;
+    color: var(--ink-soft);
+    max-width: 52ch;
+    margin-bottom: 22px;
+  }
+  /* Hauteur fixe assumée : les cinq écrans vont de 455 px à 1011 px de haut.
+     Laisser la scène prendre la hauteur du plus grand gonflait la section à
+     1522 px (pire que les six cartes remplacées) ; la laisser suivre le module
+     actif faisait sauter toute la page à chaque clic. On cadre donc, et le
+     fondu du bas dit qu'il y a une suite — une fenêtre sur l'app, pas une
+     capture tronquée par accident. Les écrans plus courts que le cadre ne
+     touchent pas la zone de fondu : rien n'est estompé pour eux. */
+  .mods-shot {
+    display: flex;
+    justify-content: flex-start;
+    min-width: 0;
+    height: 660px;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(to bottom, #000 82%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 82%, transparent 100%);
+  }
+  .mods-shot > * {
+    align-self: flex-start;
+  }
+
+  /* Un couple de règles par module : l'onglet actif, et son panneau. */
+  #mod-elevage:checked ~ .mods-nav .mods-tab[for="mod-elevage"],
+  #mod-sanitaire:checked ~ .mods-nav .mods-tab[for="mod-sanitaire"],
+  #mod-stocks:checked ~ .mods-nav .mods-tab[for="mod-stocks"],
+  #mod-ventes:checked ~ .mods-nav .mods-tab[for="mod-ventes"],
+  #mod-finance:checked ~ .mods-nav .mods-tab[for="mod-finance"] {
+    color: var(--earth);
+    border-left-color: var(--sun);
+    background: var(--stone);
+  }
+  #mod-elevage:checked ~ .mods-nav .mods-tab[for="mod-elevage"] svg,
+  #mod-sanitaire:checked ~ .mods-nav .mods-tab[for="mod-sanitaire"] svg,
+  #mod-stocks:checked ~ .mods-nav .mods-tab[for="mod-stocks"] svg,
+  #mod-ventes:checked ~ .mods-nav .mods-tab[for="mod-ventes"] svg,
+  #mod-finance:checked ~ .mods-nav .mods-tab[for="mod-finance"] svg {
+    opacity: 1;
+    color: var(--leaf);
+  }
+  #mod-elevage:checked ~ .mods-stage .mods-panel[data-mod="elevage"],
+  #mod-sanitaire:checked ~ .mods-stage .mods-panel[data-mod="sanitaire"],
+  #mod-stocks:checked ~ .mods-stage .mods-panel[data-mod="stocks"],
+  #mod-ventes:checked ~ .mods-stage .mods-panel[data-mod="ventes"],
+  #mod-finance:checked ~ .mods-stage .mods-panel[data-mod="finance"] {
+    visibility: visible;
+  }
+
+  /* Le clavier doit voir où il est : l'anneau se pose sur l'onglet, pas sur
+     l'input invisible. */
+  #mod-elevage:focus-visible ~ .mods-nav .mods-tab[for="mod-elevage"],
+  #mod-sanitaire:focus-visible ~ .mods-nav .mods-tab[for="mod-sanitaire"],
+  #mod-stocks:focus-visible ~ .mods-nav .mods-tab[for="mod-stocks"],
+  #mod-ventes:focus-visible ~ .mods-nav .mods-tab[for="mod-ventes"],
+  #mod-finance:focus-visible ~ .mods-nav .mods-tab[for="mod-finance"] {
+    outline: 3px solid var(--leaf-100);
+    outline-offset: -3px;
+  }
+
+  @media (max-width: 920px) {
+    .mods {
+      grid-template-columns: 1fr;
+      gap: 26px;
+    }
+    /* La colonne devient une rangée qui défile : cinq onglets ne tiennent pas
+       en largeur sur un téléphone, et les empiler coûterait un demi-écran. */
+    .mods-nav {
+      flex-direction: row;
+      gap: 6px;
+      overflow-x: auto;
+      border-left: 0;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+    .mods-nav::-webkit-scrollbar {
+      display: none;
+    }
+    .mods-tab {
+      margin-left: 0;
+      border-left: 0;
+      border-bottom: 2px solid var(--line);
+      border-radius: 8px 8px 0 0;
+      padding: 10px 14px;
+      white-space: nowrap;
+    }
+    #mod-elevage:checked ~ .mods-nav .mods-tab[for="mod-elevage"],
+    #mod-sanitaire:checked ~ .mods-nav .mods-tab[for="mod-sanitaire"],
+    #mod-stocks:checked ~ .mods-nav .mods-tab[for="mod-stocks"],
+    #mod-ventes:checked ~ .mods-nav .mods-tab[for="mod-ventes"],
+    #mod-finance:checked ~ .mods-nav .mods-tab[for="mod-finance"] {
+      border-left-color: transparent;
+      border-bottom-color: var(--sun);
+    }
+  }
+</style>
