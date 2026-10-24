@@ -1,0 +1,211 @@
+---
+// Pastilles App Store / Play Store — source unique pour les trois endroits qui
+// les affichaient (AppSection, /app, /jawdi-ia), chacun avec sa propre copie
+// des SVG et sa propre façon de gérer l'absence d'URL.
+//
+// Règle : SANS URL, AUCUN LIEN N'EST ÉMIS. Les trois versions écrivaient
+// `href={url || "#"}`, ce qui produisait un lien cliquable qui ne mène nulle
+// part — /jawdi-ia ajoutait bien `aria-disabled`, mais cet attribut n'empêche
+// pas la navigation, il ne fait que l'annoncer. Ici l'élément devient un
+// <span> : rien à cliquer, rien à tabuler, rien à annoncer de faux.
+//
+// Les URL viennent de PUBLIC_APP_STORE_URL / PUBLIC_PLAY_STORE_URL, injectées
+// à la construction de l'image (voir les build-args du job landing dans
+// .github/workflows/deploy.yml). Le jour de la publication sur les stores, on
+// pose les deux Variables du dépôt et on redéploie — rien à toucher ici.
+// Les styles vivent ICI, avec le balisage, et non plus chez les appelants.
+// Deux raisons :
+//   1. AppSection déclarait ses règles dans un <style> SCOPÉ ; dès que le
+//      balisage a quitté ce fichier, les pastilles sont redevenues du texte nu.
+//   2. `.store-pill` existait en deux versions contradictoires — sombre sur
+//      fond clair (accueil), blanche sur fond sombre (/app) — dont l'une était
+//      déclarée `is:global`. Deux apparences opposées sous le même nom de
+//      classe, c'était une collision qui n'attendait que la bonne page.
+// D'où `tone` : on nomme le fond sur lequel la pastille est posée.
+export interface Props {
+  /** `pill` = pastille compacte (accueil, /app) · `btn` = bouton à deux lignes (/jawdi-ia). */
+  variant?: "pill" | "btn";
+  /**
+   * Classe additionnelle sur la rangée, pour ce qui relève de la page
+   * appelante (centrage, marge). La mise en flex de base est portée par
+   * `.store-row` ci-dessous : une classe d'appelant déclarée dans un <style>
+   * SCOPÉ ne s'appliquerait pas à ce balisage, et la rangée s'effondrerait.
+   */
+  rowClass?: string;
+  /** `onLight` = pastille sombre sur fond clair · `onDark` = pastille blanche sur fond sombre. */
+  tone?: "onLight" | "onDark";
+  /** /app habille sa pastille Play d'une variante discrète. */
+  altPlay?: boolean;
+}
+
+const { variant = "pill", rowClass, tone = "onLight", altPlay = false } = Astro.props;
+
+const rowClasses = ["store-row", rowClass].filter(Boolean).join(" ");
+
+const appStoreUrl = import.meta.env.PUBLIC_APP_STORE_URL || "";
+const playStoreUrl = import.meta.env.PUBLIC_PLAY_STORE_URL || "";
+
+const base =
+  variant === "btn" ? "store-btn" : `store-pill store-pill--${tone === "onDark" ? "dark" : "light"}`;
+
+const boutiques = [
+  {
+    cle: "apple",
+    url: appStoreUrl,
+    classe: base,
+    aria: "Télécharger Jawdi sur l'App Store",
+    court: "App Store",
+    sur: "Télécharger sur",
+    nom: "l'App Store",
+  },
+  {
+    cle: "google",
+    url: playStoreUrl,
+    classe: altPlay ? `${base} alt` : base,
+    aria: "Télécharger Jawdi sur Google Play",
+    court: "Play Store",
+    sur: "Disponible sur",
+    nom: "Google Play",
+  },
+];
+---
+
+<div class={rowClasses}>
+  {
+    boutiques.map((b) => {
+      // Astro rend l'élément nommé par la variable : <a> quand on a une URL,
+      // <span> sinon. C'est ce qui garantit qu'aucun href mort n'est émis.
+      const Tag = b.url ? "a" : "span";
+      const attrs = b.url
+        ? { href: b.url, target: "_blank", rel: "noopener" }
+        : { "data-store-pending": "", title: "Bientôt disponible" };
+      return (
+        <Tag class={b.classe} aria-label={b.aria} {...attrs}>
+          {b.cle === "apple" ? (
+            <svg
+              viewBox="0 0 24 24"
+              width={variant === "btn" ? 24 : 20}
+              height={variant === "btn" ? 24 : 20}
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path d="M16.4 12.9c0-2 1.6-3 1.7-3-.9-1.4-2.4-1.5-2.9-1.6-1.2-.1-2.4.7-3 .7-.6 0-1.6-.7-2.6-.7-1.3 0-2.6.8-3.3 2-1.4 2.4-.4 6 1 8 .7 1 1.4 2 2.5 2 1 0 1.3-.6 2.5-.6s1.5.6 2.5.6 1.7-1 2.4-2c.7-1.1 1-2.1 1-2.2-.1 0-2.3-.9-2.3-3.4Z" />
+              <path d="M14.6 6.6c.5-.7.9-1.6.8-2.6-.8 0-1.8.6-2.4 1.2-.5.6-1 1.5-.8 2.4.9.1 1.8-.4 2.4-1Z" />
+            </svg>
+          ) : (
+            <svg
+              viewBox="0 0 24 24"
+              width={variant === "btn" ? 22 : 18}
+              height={variant === "btn" ? 22 : 18}
+              aria-hidden="true"
+            >
+              <path d="M3.6 2.3 13.4 12 3.6 21.7c-.4-.2-.6-.6-.6-1.1V3.4c0-.5.2-.9.6-1.1Z" fill="#34d399" />
+              <path d="m16.5 8.9 2.9 1.6c1 .6 1 1.4 0 2l-2.9 1.6L13.7 12l2.8-3.1Z" fill="#fbbf24" />
+              <path d="M4.6 2.1c.4-.2.9-.1 1.3.1l10 5.5-2.5 2.8L4.6 2.1Z" fill="#60a5fa" />
+              <path d="m13.4 13.5 2.5 2.8-10 5.5c-.4.2-.9.3-1.3.1l8.8-8.4Z" fill="#f87171" />
+            </svg>
+          )}
+          {variant === "btn" ? (
+            <span>
+              <em>{b.sur}</em>
+              <b>{b.nom}</b>
+            </span>
+          ) : (
+            b.court
+          )}
+        </Tag>
+      );
+    })
+  }
+</div>
+
+<style>
+  .store-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+  }
+  /* Scopé : ces règles n'ont à s'appliquer qu'au balisage de ce composant,
+     qui est désormais le seul à produire des pastilles de boutique. */
+  .store-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 12px 22px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 15px;
+    transition:
+      transform 0.15s ease,
+      background 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+  /* Posée sur une surface claire (la carte « App mobile » de l'accueil). */
+  .store-pill--light {
+    background: var(--earth-700);
+    color: #fff;
+  }
+  a.store-pill--light:hover {
+    transform: translateY(-2px);
+    background: var(--earth-800);
+  }
+  /* Posée sur une surface sombre (la hero de /app). */
+  .store-pill--dark {
+    background: #fff;
+    color: var(--earth);
+  }
+  a.store-pill--dark:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px -12px rgba(0, 0, 0, 0.5);
+  }
+  .store-pill--dark.alt {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+  }
+
+  .store-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 11px;
+    padding: 11px 20px;
+    border-radius: 14px;
+    background: var(--earth);
+    color: #fff;
+    border: 1px solid var(--earth-700);
+    transition:
+      transform 0.15s ease,
+      background 0.15s ease;
+  }
+  a.store-btn:hover {
+    transform: translateY(-2px);
+    background: var(--earth-800);
+  }
+  .store-btn svg {
+    flex: none;
+  }
+  .store-btn span {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+    text-align: left;
+  }
+  .store-btn em {
+    font-style: normal;
+    font-size: 11px;
+    color: #cfe3c6;
+  }
+  .store-btn b {
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  /* État « pas encore publiée » : l'élément est un <span>, donc ni cliquable ni
+     tabulable. Le survol ne doit rien promettre non plus — d'où les `a.` sur
+     toutes les règles :hover ci-dessus. */
+  [data-store-pending] {
+    opacity: 0.6;
+    cursor: default;
+  }
+</style>

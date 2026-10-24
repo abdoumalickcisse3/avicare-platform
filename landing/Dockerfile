@@ -21,12 +21,19 @@ ARG PUBLIC_CONTACT_PHONE=+221 70 475 69 96
 # Mesure d'audience : sans valeur, aucun script n'est émis. Pas de défaut ici — un build de
 # préversion ne doit pas alimenter les statistiques de production.
 ARG PUBLIC_GA_ID=
+# Boutiques : volontairement sans défaut. Tant qu'elles sont vides, la landing
+# affiche « Bientôt sur l'App Store et Google Play » et n'émet aucun lien —
+# jamais de lien mort (voir src/components/StoreLinks.astro).
+ARG PUBLIC_APP_STORE_URL=
+ARG PUBLIC_PLAY_STORE_URL=
 ENV PUBLIC_SITE_URL=$PUBLIC_SITE_URL \
     PUBLIC_APP_SIGNUP_URL=$PUBLIC_APP_SIGNUP_URL \
     PUBLIC_APP_LOGIN_URL=$PUBLIC_APP_LOGIN_URL \
     PUBLIC_PARTNER_EMAIL=$PUBLIC_PARTNER_EMAIL \
     PUBLIC_CONTACT_PHONE=$PUBLIC_CONTACT_PHONE \
-    PUBLIC_GA_ID=$PUBLIC_GA_ID
+    PUBLIC_GA_ID=$PUBLIC_GA_ID \
+    PUBLIC_APP_STORE_URL=$PUBLIC_APP_STORE_URL \
+    PUBLIC_PLAY_STORE_URL=$PUBLIC_PLAY_STORE_URL
 RUN npm run build
 
 # ---- Runtime: static files behind nginx ----
