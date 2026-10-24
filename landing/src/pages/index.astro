@@ -80,7 +80,6 @@ const jsonLd = {
     </SectionHead>
     <div class="pain">
       <div class="c">
-        <div class="n">01</div>
         <h3>Mortalité subie</h3>
         <p>
           On la constate à la vente, jamais avant. Aucune tendance, aucune alerte, aucune leçon
@@ -88,12 +87,10 @@ const jsonLd = {
         </p>
       </div>
       <div class="c">
-        <div class="n">02</div>
         <h3>Aliment non tracé</h3>
         <p set:html="Sacs sortis au jugé, formule recalculée de tête à chaque changement de prix&nbsp;: sans suivi, impossible de savoir ce que consomme vraiment votre bande." />
       </div>
       <div class="c">
-        <div class="n">03</div>
         <h3>Marge invisible</h3>
         <p set:html="Des ventes, des dépenses, des dettes — mais nulle part le chiffre qui compte&nbsp;: ce qui reste dans votre poche." />
       </div>
@@ -186,24 +183,24 @@ const jsonLd = {
   .pain {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    margin-top: 40px;
+    /* Sans boîte, c'est l'écart qui sépare les colonnes : il doit respirer. */
+    gap: 36px;
+    margin-top: 44px;
   }
+  /* Ni cartes, ni numéros.
+     Les numéros 01/02/03 annonçaient une séquence : premier, puis deuxième,
+     puis troisième. Or ces trois constats ne s'enchaînent pas, ils coexistent
+     — le marqueur ne disait rien, il décorait. Les titres portent déjà le sens.
+     Et la page alignait quatre rangées de cartes bordées : celle-ci passe en
+     colonnes à filet, ce qui la rapproche visuellement de la section preuve
+     plutôt que de la énième grille de cartes. */
   .pain .c {
-    background: var(--paper);
-    border: 1px solid var(--line);
-    border-radius: 18px;
-    padding: 24px;
-  }
-  .pain .n {
-    font-family: var(--mono);
-    font-size: 11.5px;
-    color: var(--ink-soft);
-    letter-spacing: 0.1em;
+    border-top: 2px solid var(--earth-700);
+    padding-top: 20px;
   }
   .pain h3 {
     font-size: 1.12rem;
-    margin-top: 10px;
+    margin-top: 0;
   }
   .pain p {
     margin-top: 9px;
