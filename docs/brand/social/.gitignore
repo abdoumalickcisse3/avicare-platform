@@ -1,0 +1,4 @@
+# Calques de vérification : zone sûre + emplacement de l'avatar en surimpression.
+# Outil de contrôle, pas un livrable — se regénère par
+# `scripts/build-social-assets.py --guides`.
+bannieres/reperes/
