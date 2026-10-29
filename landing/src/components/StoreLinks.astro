@@ -22,6 +22,8 @@
 //      déclarée `is:global`. Deux apparences opposées sous le même nom de
 //      classe, c'était une collision qui n'attendait que la bonne page.
 // D'où `tone` : on nomme le fond sur lequel la pastille est posée.
+import { etatBoutiques } from "../lib/boutiques";
+
 export interface Props {
   /** `pill` = pastille compacte (accueil, /app) · `btn` = bouton à deux lignes (/jawdi-ia). */
   variant?: "pill" | "btn";
@@ -42,8 +44,14 @@ const { variant = "pill", rowClass, tone = "onLight", altPlay = false } = Astro.
 
 const rowClasses = ["store-row", rowClass].filter(Boolean).join(" ");
 
-const appStoreUrl = import.meta.env.PUBLIC_APP_STORE_URL || "";
-const playStoreUrl = import.meta.env.PUBLIC_PLAY_STORE_URL || "";
+const { appStore: appStoreUrl, playStore: playStoreUrl, androidApk: apkUrl } = etatBoutiques(
+  import.meta.env,
+);
+
+// Tant que Google Play n'a rien, la voie Android est le téléchargement direct — et une seule
+// pastille Android s'affiche. Deux auraient demandé au lecteur de choisir entre « Play Store
+// (bientôt) » et « APK », ce qui n'est pas un choix mais une hésitation.
+const viaApk = Boolean(apkUrl) && !playStoreUrl;
 
 const base =
   variant === "btn" ? "store-btn" : `store-pill store-pill--${tone === "onDark" ? "dark" : "light"}`;
@@ -58,15 +66,25 @@ const boutiques = [
     sur: "Télécharger sur",
     nom: "l'App Store",
   },
-  {
-    cle: "google",
-    url: playStoreUrl,
-    classe: altPlay ? `${base} alt` : base,
-    aria: "Télécharger Jawdi sur Google Play",
-    court: "Play Store",
-    sur: "Disponible sur",
-    nom: "Google Play",
-  },
+  viaApk
+    ? {
+        cle: "android",
+        url: apkUrl,
+        classe: altPlay ? `${base} alt` : base,
+        aria: "Télécharger Jawdi pour Android (fichier APK)",
+        court: "Android (APK)",
+        sur: "Télécharger pour",
+        nom: "Android",
+      }
+    : {
+        cle: "google",
+        url: playStoreUrl,
+        classe: altPlay ? `${base} alt` : base,
+        aria: "Télécharger Jawdi sur Google Play",
+        court: "Play Store",
+        sur: "Disponible sur",
+        nom: "Google Play",
+      },
 ];
 ---
 
@@ -81,7 +99,19 @@ const boutiques = [
         : { "data-store-pending": "", title: "Bientôt disponible" };
       return (
         <Tag class={b.classe} aria-label={b.aria} {...attrs}>
-          {b.cle === "apple" ? (
+          {b.cle === "android" ? (
+            /* Le robot Android, et surtout PAS le triangle coloré de Google Play : cette
+               pastille ne mène pas au Play Store, et en porter la marque serait faux. */
+            <svg
+              viewBox="0 0 24 24"
+              width={variant === "btn" ? 22 : 18}
+              height={variant === "btn" ? 22 : 18}
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path d="M6 9h12v7.5a1.5 1.5 0 0 1-1.5 1.5H15v2.2a1.3 1.3 0 0 1-2.6 0V18h-.8v2.2a1.3 1.3 0 0 1-2.6 0V18H7.5A1.5 1.5 0 0 1 6 16.5V9Zm-1.7.1a1.3 1.3 0 0 1 1.3 1.3v4.3a1.3 1.3 0 0 1-2.6 0v-4.3a1.3 1.3 0 0 1 1.3-1.3Zm15.4 0a1.3 1.3 0 0 1 1.3 1.3v4.3a1.3 1.3 0 0 1-2.6 0v-4.3a1.3 1.3 0 0 1 1.3-1.3ZM8.6 4.2 7.8 2.8a.3.3 0 0 1 .5-.3l.8 1.5a6.4 6.4 0 0 1 5.8 0l.8-1.5a.3.3 0 0 1 .5.3l-.8 1.4A5.6 5.6 0 0 1 18 8.2H6a5.6 5.6 0 0 1 2.6-4ZM9.4 6.5a.6.6 0 1 0 0-1.2.6.6 0 0 0 0 1.2Zm5.2 0a.6.6 0 1 0 0-1.2.6.6 0 0 0 0 1.2Z" />
+            </svg>
+          ) : b.cle === "apple" ? (
             <svg
               viewBox="0 0 24 24"
               width={variant === "btn" ? 24 : 20}

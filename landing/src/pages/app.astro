@@ -1,4 +1,5 @@
 ---
+import { etatBoutiques, phraseAVenir } from "../lib/boutiques";
 // Dedicated mobile-app page (/app) — presents the Jawdi mobile app with a coded
 // phone hero, highlights, real screenshots and store CTAs.
 import Base from "../layouts/Base.astro";
@@ -13,9 +14,11 @@ import mobileTeam from "../assets/screens/mobile-team.png";
 import iaDiagnostic from "../assets/screens/ia-mobile-diagnostic.png";
 
 const signupUrl = import.meta.env.PUBLIC_APP_SIGNUP_URL || "#";
-const appStoreUrl = import.meta.env.PUBLIC_APP_STORE_URL || "";
-const playStoreUrl = import.meta.env.PUBLIC_PLAY_STORE_URL || "";
-const storesLive = Boolean(appStoreUrl || playStoreUrl);
+const boutiques = etatBoutiques(import.meta.env);
+const aVenir = phraseAVenir(boutiques);
+// L'encart d'installation n'a de sens que quand le fichier existe vraiment, et seulement tant
+// qu'Android passe par le téléchargement direct : depuis le Play Store, il n'y a rien à expliquer.
+const apkDirect = Boolean(boutiques.androidApk) && !boutiques.playStore;
 const siteUrl = Astro.site ? Astro.site.toString().replace(/\/$/, "") : "https://jawdi.app";
 
 const title = "L'app Jawdi — toute votre ferme dans votre poche";
@@ -80,8 +83,27 @@ const rows = [
           Saisissez sur le terrain, suivez vos marges, dictez à Jawdi IA. L'app Jawdi met votre
           élevage, vos stocks et vos ventes au bout des doigts — même sans réseau.
         </p>
-        {!storesLive && <p class="app-soon">Bientôt sur l'App Store et Google Play</p>}
+        {aVenir && <p class="app-soon">{aVenir}</p>}
         <StoreLinks rowClass="app-btns" tone="onDark" altPlay />
+        {
+          apkDirect && (
+            <details class="app-apk">
+              <summary>Comment installer le fichier Android ?</summary>
+              <ol>
+                <li>Touchez « Android (APK) » : votre téléphone télécharge le fichier.</li>
+                <li>
+                  Ouvrez-le. Android affiche un avertissement, parce que l'application ne vient
+                  pas du Play Store. Touchez <b>Paramètres</b>, puis autorisez cette source.
+                </li>
+                <li>Revenez en arrière et touchez <b>Installer</b>.</li>
+              </ol>
+              <p>
+                Jawdi n'est pas encore sur le Play Store : cette version ne se met donc pas à jour
+                toute seule. Nous vous enverrons le nouveau fichier à chaque version.
+              </p>
+            </details>
+          )
+        }
       </div>
       <div class="app-hero-phone" data-float>
         <div class="app-bz">
@@ -203,6 +225,36 @@ const rows = [
     font-family: var(--mono);
     font-size: 12.5px;
     color: #a9c6a0;
+  }
+  /* Encart d'installation Android : posé sous les pastilles, replié par défaut —
+     il ne concerne que les visiteurs Android et ne doit pas peser sur la page. */
+  .app-apk {
+    margin-top: 18px;
+    max-width: 46ch;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 14px;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.04);
+    color: #d6e6d0;
+    font-size: 14px;
+    line-height: 1.55;
+  }
+  .app-apk summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: #fff;
+  }
+  .app-apk ol {
+    margin: 12px 0 0;
+    padding-left: 20px;
+  }
+  .app-apk li + li {
+    margin-top: 6px;
+  }
+  .app-apk p {
+    margin: 12px 0 0;
+    color: #a9c6a0;
+    font-size: 13px;
   }
   .app-btns {
     display: flex;

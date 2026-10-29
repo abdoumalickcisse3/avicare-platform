@@ -1,4 +1,5 @@
 ---
+import { etatBoutiques, phraseAVenir } from "../lib/boutiques";
 // Jawdi IA — page de présentation du conseiller IA. Design volontairement plus
 // premium/sombre que le reste du site (hero "console IA") tout en restant sur
 // la marque (vert + orange). Illustrée par de vraies captures produit.
@@ -18,9 +19,7 @@ import mobileFinance from "../assets/screens/mobile-finance.png";
 import mobileMenu from "../assets/screens/mobile-menu.png";
 
 const signupUrl = import.meta.env.PUBLIC_APP_SIGNUP_URL || "#";
-const appStoreUrl = import.meta.env.PUBLIC_APP_STORE_URL || "";
-const playStoreUrl = import.meta.env.PUBLIC_PLAY_STORE_URL || "";
-const storesLive = Boolean(appStoreUrl || playStoreUrl);
+const aVenir = phraseAVenir(etatBoutiques(import.meta.env));
 const siteUrl = Astro.site ? Astro.site.toString().replace(/\/$/, "") : "https://jawdi.app";
 
 const title = "Jawdi IA — le conseiller d'élevage qui connaît votre ferme";
@@ -218,7 +217,7 @@ const phones = [
     </div>
 
     <div class="ia-stores">
-      {!storesLive && <p class="ia-stores-soon">Bientôt sur l'App Store et Google Play</p>}
+      {aVenir && <p class="ia-stores-soon">{aVenir}</p>}
       <StoreLinks rowClass="store-btns" variant="btn" />
     </div>
   </section>

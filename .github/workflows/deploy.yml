@@ -113,10 +113,13 @@ jobs:
       # differs from the defaults below.
       #
       # PUBLIC_APP_STORE_URL / PUBLIC_PLAY_STORE_URL restent vides tant que
-      # l'app n'est pas publiée : la landing affiche alors « Bientôt sur l'App
-      # Store et Google Play » et n'émet AUCUN lien (voir StoreLinks.astro).
-      # Le jour de la publication, poser les deux Variables du dépôt et
-      # redéployer suffit — rien à modifier dans le code.
+      # l'app n'est pas publiée : la landing annonce alors ce qui manque et
+      # n'émet AUCUN lien (voir StoreLinks.astro et src/lib/boutiques.ts).
+      # PUBLIC_ANDROID_APK_URL est la voie Android AVANT le Play Store : un
+      # téléchargement direct (asset de Release GitHub). Posée, elle remplace
+      # la pastille Play tant que celle-ci n'a pas d'URL.
+      # Le jour de la publication, poser la Variable du dépôt et redéployer
+      # suffit — rien à modifier dans le code.
       - name: Build & push landing
         uses: docker/build-push-action@v7
         with:
@@ -136,6 +139,7 @@ jobs:
             PUBLIC_GA_ID=${{ vars.PUBLIC_GA_ID }}
             PUBLIC_APP_STORE_URL=${{ vars.PUBLIC_APP_STORE_URL }}
             PUBLIC_PLAY_STORE_URL=${{ vars.PUBLIC_PLAY_STORE_URL }}
+            PUBLIC_ANDROID_APK_URL=${{ vars.PUBLIC_ANDROID_APK_URL }}
           tags: |
             ${{ env.LANDING_IMAGE }}:latest
             ${{ env.LANDING_IMAGE }}:${{ github.sha }}
