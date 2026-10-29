@@ -30,4 +30,15 @@ public record FarmResponse(
     List<String> productionFocus,
     String ninea,
     String rccm,
-    LocalDateTime logoUpdatedAt) {}
+    LocalDateTime logoUpdatedAt,
+    /** Pays de la ferme (ISO 3166-1 alpha-2). */
+    String country,
+    /**
+     * Comment s'appelle le champ fiscal dans ce pays — « NINEA » au Sénégal, « N° contribuable »
+     * ailleurs en zone XOF.
+     *
+     * <p>Résolu depuis le catalogue <b>à la lecture</b>, jamais stocké : même raison que le libellé
+     * d'une ligne de stock, qui ne porte pas non plus d'instantané. Il voyage avec la ferme pour
+     * que la facture imprimée n'ait aucun appel supplémentaire à faire.
+     */
+    String taxIdLabel) {}

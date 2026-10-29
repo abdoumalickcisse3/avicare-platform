@@ -51,6 +51,18 @@ public class Farm {
 
   @Column private Integer capacity;
 
+  /**
+   * Pays de la ferme (ISO 3166-1 alpha-2). Donnée de référence : le fuseau et le libellé du champ
+   * fiscal en découlent, par le catalogue `countries` (V67).
+   */
+  @Column(nullable = false)
+  private String country = "SN";
+
+  /**
+   * Valeur de secours uniquement : {@code FarmService} pose toujours le fuseau du pays à la
+   * création. Elle reste là pour qu'une ferme construite hors de ce chemin ne viole pas la
+   * contrainte NOT NULL.
+   */
   @Column(nullable = false)
   private String timezone = "Africa/Dakar";
 
