@@ -5,6 +5,7 @@ import com.avicare.identity.spi.SignupAlerter;
 import com.avicare.notification.api.WhatsAppOutboxFacade;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,6 +32,29 @@ public class SignupAlerterImpl implements SignupAlerter {
 
   private static final int EMAIL_MAX = 80;
   private static final int PHONE_MAX = 24;
+
+  /**
+   * Tout ce qui est invisible et pourtant structurant : contrôles C0/C1 (Cc), caractères de format
+   * et marques bidirectionnelles (Cf), séparateurs de ligne et de paragraphe (Zl, Zp).
+   *
+   * <p>{@code Character.isISOControl} ne voyait que les premiers. U+2028 est une fin de ligne pour
+   * certains clients et U+202E retourne le sens de lecture : ni l'un ni l'autre n'est un « ISO
+   * control », et tous deux cassent la structure d'un message.
+   */
+  private static final Pattern INVISIBLES = Pattern.compile("[\\p{Cc}\\p{Cf}\\p{Zl}\\p{Zp}]");
+
+  /**
+   * Les guillemets qui encadrent le nom, et les marques de mise en forme de WhatsApp.
+   *
+   * <p>Un délimiteur est dans le clavier de celui qui s'inscrit : s'il tape « » lui-même, il
+   * referme le champ et écrit la suite comme si elle venait de la plateforme. Un champ ne peut pas
+   * être délimité par un caractère que son contenu a le droit de porter.
+   */
+  private static final Pattern DELIMITEURS = Pattern.compile("[\u00AB\u00BB*_~`]");
+
+  /** Unicode, et non le {@code \\s} ASCII : une espace insécable est une espace. */
+  private static final Pattern BLANCS =
+      Pattern.compile("[\\s\\p{Z}]+", Pattern.UNICODE_CHARACTER_CLASS);
 
   private final AdminAuditService auditService;
   private final WhatsAppOutboxFacade whatsApp;
@@ -81,14 +105,15 @@ public class SignupAlerterImpl implements SignupAlerter {
     if (valeur == null || valeur.isBlank()) {
       return "—";
     }
-    StringBuilder sansControle = new StringBuilder(valeur.length());
-    valeur
-        .codePoints()
-        .forEach(c -> sansControle.appendCodePoint(Character.isISOControl(c) ? ' ' : c));
-    String plat = sansControle.toString().replaceAll("\\s+", " ").trim();
+    String plat = INVISIBLES.matcher(valeur).replaceAll(" ");
+    plat = DELIMITEURS.matcher(plat).replaceAll(" ");
+    plat = BLANCS.matcher(plat).replaceAll(" ").trim();
     if (plat.isEmpty()) {
       return "—";
     }
-    return plat.length() <= max ? plat : plat.substring(0, max) + "…";
+    // Tronquer au point de code et non au char : couper une paire de substitution en son milieu
+    // produit un caractère illisible, et un nom qui finit par « ? » n'inspire pas confiance.
+    int[] points = plat.codePoints().toArray();
+    return points.length <= max ? plat : new String(points, 0, max) + "…";
   }
 }

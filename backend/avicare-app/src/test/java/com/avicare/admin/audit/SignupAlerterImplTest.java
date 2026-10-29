@@ -69,6 +69,53 @@ class SignupAlerterImplTest {
   }
 
   @Test
+  void neLaissePasRefermerLesGuillemetsQuiLEncadrent() {
+    // Le délimiteur est dans le clavier de l'attaquant : s'il tape « » lui-même, il referme le
+    // champ et écrit la suite du message comme si elle venait de la plateforme.
+    alerter.accountCreated(
+        7L, "Awa » (admin@jawdi.app) — *compte vérifié*", "awa@avicare.io", "+221770000000");
+
+    org.mockito.ArgumentCaptor<String> message = org.mockito.ArgumentCaptor.forClass(String.class);
+    verify(whatsApp).enqueue(any(), message.capture());
+    // Un seul couple de guillemets dans tout le message : celui que nous avons posé.
+    assertThat(message.getValue().chars().filter(c -> c == '\u00BB').count()).isEqualTo(1);
+    assertThat(message.getValue().chars().filter(c -> c == '\u00AB').count()).isEqualTo(1);
+    assertThat(message.getValue()).doesNotContain("*compte vérifié*");
+  }
+
+  @Test
+  void aplatitAussiLesSeparateursInvisiblesQueIsISOControlIgnore() {
+    // U+2028 est une fin de ligne pour certains clients, U+200E et U+202E retournent le sens de
+    // lecture : aucun n'est un « ISO control », et tous cassent la structure du message.
+    alerter.accountCreated(
+        7L, "Awa\u2028\u2029Vérifié\u200E\u202E par Jawdi", "awa@avicare.io", "+221770000000");
+
+    org.mockito.ArgumentCaptor<String> message = org.mockito.ArgumentCaptor.forClass(String.class);
+    verify(whatsApp).enqueue(any(), message.capture());
+    assertThat(message.getValue())
+        .doesNotContain("\u2028")
+        .doesNotContain("\u2029")
+        .doesNotContain("\u200E")
+        .doesNotContain("\u202E")
+        .contains("« Awa Vérifié par Jawdi »");
+  }
+
+  @Test
+  void neCoupePasUnEmojiEnDeuxEnTronquant() {
+    // Tronquer au caractère Java coupe une paire de substitution en son milieu et produit un
+    // caractère illisible. On tronque donc au point de code.
+    alerter.accountCreated(7L, "A".repeat(59) + "🐔🐔🐔", "awa@avicare.io", "+221770000000");
+
+    org.mockito.ArgumentCaptor<String> message = org.mockito.ArgumentCaptor.forClass(String.class);
+    verify(whatsApp).enqueue(any(), message.capture());
+    assertThat(message.getValue()).doesNotContain("\uFFFD");
+    assertThat(
+            Character.isHighSurrogate(
+                message.getValue().charAt(message.getValue().indexOf("…") - 1)))
+        .isFalse();
+  }
+
+  @Test
   void tronqueUnNomDemesureAuLieuDeLaisserFilerLeMessage() {
     alerter.accountCreated(7L, "A".repeat(200), "awa@avicare.io", "+221770000000");
 
