@@ -14,5 +14,9 @@
   "dependencies": {
     "@astrojs/sitemap": "^3.7.4",
     "astro": "^7.3.8"
+  },
+  "devDependencies": {
+    "@iconify-json/simple-icons": "^1.2.101",
+    "astro-icon": "^1.2.0"
   }
 }

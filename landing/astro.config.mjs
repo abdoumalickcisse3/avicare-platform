@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from "astro/config";
 import sitemap from "@astrojs/sitemap";
+import icon from "astro-icon";
 
 export default defineConfig({
   site: process.env.PUBLIC_SITE_URL || "https://jawdi.app",
@@ -12,5 +13,8 @@ export default defineConfig({
   redirects: {
     "/tarifs": "/contact",
   },
-  integrations: [sitemap()],
+  // astro-icon lit les jeux d'icônes installés en dépendance (@iconify-json/*)
+  // et inline le SVG à la construction : aucun appel réseau au runtime, et
+  // seuls les glyphes réellement utilisés entrent dans la page.
+  integrations: [sitemap(), icon({ include: { "simple-icons": ["*"] } })],
 });

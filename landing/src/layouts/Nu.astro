@@ -1,0 +1,46 @@
+---
+/**
+ * Mise en page nue : même tête que `Base` — polices préchargées, SEO, mesure
+ * d'audience — mais **sans en-tête ni pied de page**.
+ *
+ * Pour les pages qui sont une destination et non une étape : on y arrive par
+ * un lien de bio, on y fait une chose, on repart. Une barre de navigation y
+ * proposerait de visiter un site qu'on n'est pas venu visiter, et mangerait
+ * le haut de l'écran, qui est précisément ce qu'on voit en premier.
+ */
+import Analytics from "../components/Analytics.astro";
+import SeoHead from "../components/SeoHead.astro";
+import outfit600 from "../fonts/outfit-600.woff2";
+import outfit700 from "../fonts/outfit-700.woff2";
+import "../styles/tokens.css";
+import "../styles/global.css";
+
+export interface Props {
+  title: string;
+  description: string;
+  canonical?: string;
+  jsonLd?: Record<string, unknown>;
+  image?: string;
+}
+
+const { title, description, canonical, jsonLd, image } = Astro.props;
+---
+
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="preload" as="font" type="font/woff2" href={outfit600} crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href={outfit700} crossorigin />
+    <SeoHead title={title} description={description} canonical={canonical} jsonLd={jsonLd} image={image} />
+    <Analytics />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
