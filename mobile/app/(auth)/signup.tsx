@@ -19,6 +19,7 @@ import { useRefreshSession } from '@/auth/useRefreshSession';
 import { useSignupMutation } from '@/store/api/authApi';
 import { useCreateFarmMutation } from '@/store/api/farmsApi';
 import { PhoneInput } from '@/phone/PhoneInput';
+import { splitE164 } from '@/phone/countries';
 
 const schema = z
   .object({
@@ -68,7 +69,12 @@ export default function SignupScreen() {
       }
       if (!orch.current.farmId) {
         const defaultName = v.firstName.trim() ? `Ferme de ${v.firstName.trim()}` : 'Ma ferme';
-        const farm = await createFarm({ name: defaultName }).unwrap();
+        // Le pays se déduit du numéro saisi juste au-dessus : l'information est déjà là, on ne
+        // la redemande pas. Elle reste corrigeable à l'étape « ferme » du wizard.
+        const farm = await createFarm({
+          name: defaultName,
+          country: splitE164(v.phone).country.iso,
+        }).unwrap();
         orch.current.farmId = farm.id;
         await refreshSession();
       }

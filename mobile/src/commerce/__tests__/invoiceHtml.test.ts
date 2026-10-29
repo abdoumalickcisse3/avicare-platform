@@ -153,4 +153,20 @@ describe('invoiceHtml', () => {
     expect(header).toContain('Ferme Complète');
     expect(header).not.toContain('Jawdi');
   });
+
+  it("nomme le champ fiscal selon le pays de la ferme", () => {
+    const html = invoiceHtml({
+      invoice: INVOICE,
+      issuer: { name: 'Ferme', ninea: '12345', taxIdLabel: 'N° contribuable' },
+    });
+
+    expect(html).toContain('N° contribuable : 12345');
+    expect(html).not.toContain('NINEA');
+  });
+
+  it("retombe sur NINEA quand la ferme n'a pas encore de pays", () => {
+    const html = invoiceHtml({ invoice: INVOICE, issuer: { name: 'Ferme', ninea: '12345' } });
+
+    expect(html).toContain('NINEA : 12345');
+  });
 });
