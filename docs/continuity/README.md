@@ -49,6 +49,30 @@ dispositif de secours silencieusement inactif est pire que pas de dispositif.
 5. **Faire l'exercice une fois** : elle ouvre la console, coupe un module en préventif, le remet.
    Vingt minutes qui valent tout le reste de ce dossier.
 
+## La clé de signature Android — à sauvegarder une fois
+
+Depuis le 2026-10-29, l'application Android est distribuée en APK (`mobile-v1.0.0`). EAS a généré
+sa **clé de signature** et la détient. C'est le seul élément de ce dossier dont la perte est
+**irréversible** :
+
+> Android n'installe une mise à jour par-dessus une application existante que si les deux sont
+> signées par la **même** clé. Perdue ou régénérée, chaque éleveur devra désinstaller pour
+> réinstaller — et une désinstallation efface la base locale **et la file de synchronisation
+> hors-ligne** de l'ouvrier. Autrement dit : les saisies faites au poulailler et pas encore parties
+> sont perdues, pour tout le monde, le même jour.
+
+**À faire une fois**, cinq minutes, depuis `mobile/` :
+
+```bash
+eas credentials -p android     # Keystore → Download / Export
+```
+
+Ranger le fichier et son mot de passe dans le gestionnaire de mots de passe — **pas dans le
+dépôt**, même privé. La commande est interactive : elle ne peut pas être faite à votre place.
+
+Tant que ce n'est pas fait, la seule copie vit chez EAS, et le compte EAS devient un point de
+défaillance unique de plus.
+
 ## Pourquoi aucune table dédiée
 
 La roadmap prévoyait une table `owner_heartbeat`. Le battement de cœur existait déjà : chaque
