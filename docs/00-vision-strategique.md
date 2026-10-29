@@ -126,6 +126,11 @@ production_units (table parente — colonnes communes)
 > restent (dormants) ; la monétisation (thèse **B2B2C canal** primaire + mobile money par cycle
 > secondaire) est différée. Les décisions D13-D16 restent la référence du mécanisme, pas de la
 > commercialisation courante. Cf. `docs/decisions/009-remove-self-serve-subscription.md`.
+>
+> **Amendement 2026-10-29 (ADR-019)** : la gratuité du pilote n'avait aucune borne écrite. Elle en a
+> une, non pas en date mais en **déclencheur** — dix fermes avec au moins une saisie dans les trente
+> derniers jours rouvrent la question du prix. Aucun prix n'est fixé.
+> Cf. `docs/decisions/019-declencheur-decision-prix.md`.
 
 ### Distinction fondamentale
 
