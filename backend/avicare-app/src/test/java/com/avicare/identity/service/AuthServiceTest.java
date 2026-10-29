@@ -48,6 +48,7 @@ class AuthServiceTest {
 
   private UserRepository userRepository;
   private RefreshTokenService refreshTokenService;
+  private com.avicare.identity.spi.SignupAlerter signupAlerter;
   private AuthService authService;
 
   @BeforeEach
@@ -72,6 +73,9 @@ class AuthServiceTest {
 
     userRepository = Mockito.mock(UserRepository.class);
     refreshTokenService = Mockito.mock(RefreshTokenService.class);
+    // Mocké et non neutralisé : ce que l'inscription raconte à l'astreinte est un comportement
+    // qu'on vérifie, pas un détail d'infrastructure.
+    signupAlerter = Mockito.mock(com.avicare.identity.spi.SignupAlerter.class);
     IdentityMapper mapper = Mappers.getMapper(IdentityMapper.class);
     // No-membership provider: A3-2 token-shape behavior is unchanged by tenancy.
     MembershipProvider membershipProvider = userId -> java.util.List.of();
@@ -98,7 +102,8 @@ class AuthServiceTest {
             new PhoneLookup("221"),
             mapper,
             membershipProvider,
-            loginAttempts);
+            loginAttempts,
+            signupAlerter);
   }
 
   /**
@@ -223,6 +228,50 @@ class AuthServiceTest {
 
     // The reconstructed principal proves the token is valid and carries the user identity.
     assertThat(jwtService.validateAccessToken(tokens.accessToken()).userId()).isEqualTo(1L);
+  }
+
+  @Test
+  void signup_previentLAstreinteDuNouveauCompte() {
+    when(userRepository.existsByEmailIgnoreCase("awa@avicare.io")).thenReturn(false);
+    when(userRepository.save(any(User.class)))
+        .thenAnswer(
+            inv -> {
+              User u = inv.getArgument(0);
+              u.setId(7L);
+              return u;
+            });
+    when(refreshTokenService.issue(7L)).thenReturn("refresh-raw");
+
+    authService.signup(
+        new SignupRequest("awa@avicare.io", "password123", "Awa Diop", "+2250102030405"));
+
+    // Le numéro part tel qu'il est stocké : son indicatif dit le pays, donc l'alerte n'a pas
+    // besoin d'un champ pays pour qu'on sache d'où vient la personne.
+    verify(signupAlerter).accountCreated(7L, "Awa Diop", "awa@avicare.io", "+2250102030405");
+  }
+
+  @Test
+  void signup_reussitMemeSiLAlerteEchoue() {
+    when(userRepository.existsByEmailIgnoreCase("awa@avicare.io")).thenReturn(false);
+    when(userRepository.save(any(User.class)))
+        .thenAnswer(
+            inv -> {
+              User u = inv.getArgument(0);
+              u.setId(7L);
+              return u;
+            });
+    when(refreshTokenService.issue(7L)).thenReturn("refresh-raw");
+    Mockito.doThrow(new IllegalStateException("passerelle injoignable"))
+        .when(signupAlerter)
+        .accountCreated(Mockito.anyLong(), any(), any(), any());
+
+    // Une inscription perdue parce qu'un WhatsApp n'est pas parti serait un client perdu pour
+    // une raison qui ne le regarde pas.
+    AuthTokens tokens =
+        authService.signup(
+            new SignupRequest("awa@avicare.io", "password123", "Awa Diop", "+2250102030405"));
+
+    assertThat(tokens.accessToken()).isNotBlank();
   }
 
   @Test

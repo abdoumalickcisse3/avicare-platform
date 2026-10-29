@@ -127,6 +127,11 @@ export default function SignupPage() {
         <Typography variant="body2" color="text.secondary">
           Rejoignez l&apos;élite de l&apos;aviculture moderne au Sénégal.
         </Typography>
+        {/* La page devient la porte publique : elle doit dire la borne de la gratuité, sinon
+            personne ne l'aura jamais lue (ADR-019). */}
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 600 }}>
+          Gratuit pendant la phase pilote — sans carte bancaire.
+        </Typography>
       </Box>
 
       {serverError && <Alert severity="error">{serverError}</Alert>}
