@@ -31,17 +31,26 @@ export interface Reseau {
 }
 
 export const RESEAUX: readonly Reseau[] = [
+  { cle: "linkedin", nom: "LinkedIn", url: "https://www.linkedin.com/company/jawdi" },
   {
-    cle: "linkedin",
-    nom: "LinkedIn",
-    url: "https://www.linkedin.com/company/jawdi",
+    cle: "facebook",
+    nom: "Facebook",
+    // URL en `profile.php?id=` : c'est la forme que Facebook donne avant
+    // qu'un nom d'utilisateur ne soit réclamé. Elle fonctionne, mais elle ne
+    // se retient pas et ne porte pas le nom de la marque — à remplacer par
+    // facebook.com/jawdiapp dès que la page y a droit.
+    url: "https://www.facebook.com/profile.php?id=61595912221916",
   },
-  { cle: "facebook", nom: "Facebook", url: "" },
-  { cle: "instagram", nom: "Instagram", url: "" },
-  { cle: "whatsapp", nom: "WhatsApp", url: "" },
-  { cle: "youtube", nom: "YouTube", url: "" },
-  { cle: "tiktok", nom: "TikTok", url: "" },
-  { cle: "x", nom: "X", url: "" },
+  { cle: "instagram", nom: "Instagram", url: "https://www.instagram.com/jawdiapp/" },
+  {
+    cle: "whatsapp",
+    nom: "WhatsApp",
+    // Le compte WhatsApp Business, c'est le numéro de contact lui-même.
+    url: "https://wa.me/221704208130",
+  },
+  { cle: "youtube", nom: "YouTube", url: "https://www.youtube.com/@jawdiapp" },
+  { cle: "tiktok", nom: "TikTok", url: "https://www.tiktok.com/@jawdiapp" },
+  { cle: "x", nom: "X", url: "https://x.com/jawdiapp" },
 ] as const;
 
 /** Ceux qui existent réellement, dans l'ordre déclaré. */
