@@ -41,5 +41,6 @@ it('creates the account + default-named farm, then routes to onboarding', async 
 
   await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/(onboarding)'));
   expect(mockSignup).toHaveBeenCalledTimes(1);
-  expect(mockCreateFarm).toHaveBeenCalledWith({ name: 'Ferme de Awa' });
+  // Le pays part avec la ferme, déduit du numéro saisi juste au-dessus — ici un sénégalais.
+  expect(mockCreateFarm).toHaveBeenCalledWith({ name: 'Ferme de Awa', country: 'SN' });
 });

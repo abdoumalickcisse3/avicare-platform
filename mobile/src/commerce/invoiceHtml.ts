@@ -55,6 +55,11 @@ export interface InvoiceIssuer {
   location?: string | null;
   ninea?: string | null;
   rccm?: string | null;
+  /**
+   * Nom du champ fiscal dans le pays de la ferme, résolu par le serveur.
+   * Absent sur une ferme enregistrée avant que le pays n'existe : on dit NINEA.
+   */
+  taxIdLabel?: string | null;
   /** Son logo en data URI, quand elle en a posé un (depuis le web). */
   logo?: string | null;
 }
@@ -98,7 +103,7 @@ export function invoiceHtml({
     .join('');
 
   const legal = [
-    issuer.ninea ? `NINEA : ${esc(issuer.ninea)}` : '',
+    issuer.ninea ? `${esc(issuer.taxIdLabel ?? 'NINEA')} : ${esc(issuer.ninea)}` : '',
     issuer.rccm ? `RC : ${esc(issuer.rccm)}` : '',
   ]
     .filter(Boolean)

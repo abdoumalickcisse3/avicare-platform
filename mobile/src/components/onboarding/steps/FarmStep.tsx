@@ -8,6 +8,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Bird, Check, Egg, Layers } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { tokens } from '@/theme';
+import { PaysField } from '@/components/PaysField';
+import { PAYS_DEFAUT } from '@/pays';
 import { FormField } from '@/components/field/FormField';
 import { useListFarmsQuery, useUpdateFarmMutation } from '@/store/api/farmsApi';
 import { useWizard } from '@/onboarding/wizardContext';
@@ -32,6 +34,7 @@ export function FarmStep() {
   const [location, setLocation] = useState('');
   const [capacity, setCapacity] = useState('');
   const [focus, setFocus] = useState<Focus>('broiler');
+  const [country, setCountry] = useState<string>(PAYS_DEFAUT);
   const [error, setError] = useState<string | null>(null);
   const [prefilledId, setPrefilledId] = useState<number | null>(null);
 
@@ -41,6 +44,8 @@ export function FarmStep() {
     setName(farm.name ?? '');
     setLocation(farm.location ?? '');
     setCapacity(farm.capacity != null ? String(farm.capacity) : '');
+    // Prérempli avec le pays déduit du numéro à l'inscription : c'est ici qu'on le corrige.
+    setCountry(farm.country ?? PAYS_DEFAUT);
     const f = farm.productionFocus ?? [];
     setFocus(f.includes('broiler') && f.includes('layer') ? 'mixed' : f.includes('layer') ? 'layer' : 'broiler');
   }
@@ -64,6 +69,7 @@ export function FarmStep() {
             location: location.trim() || undefined,
             capacity: capacity ? Number(capacity) : undefined,
             productionFocus: t,
+            country,
           },
         }).unwrap();
         return true;
@@ -72,7 +78,7 @@ export function FarmStep() {
         return false;
       }
     });
-  }, [farmId, valid, name, location, capacity, focus, updateFarm, registerNext]);
+  }, [farmId, valid, name, location, capacity, focus, country, updateFarm, registerNext]);
 
   return (
     <StepScaffold
@@ -89,6 +95,12 @@ export function FarmStep() {
           onChangeText={(t) => setCapacity(t.replace(/[^0-9]/g, ''))}
           placeholder="Ex. 5000"
           keyboardType="number-pad"
+        />
+
+        <PaysField
+          value={country}
+          onChange={setCountry}
+          hint="Détermine le fuseau horaire et le nom du champ fiscal sur vos factures"
         />
 
         <View>

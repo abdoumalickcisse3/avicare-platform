@@ -118,6 +118,7 @@ export default function FactureDetailScreen() {
           location: farm?.location,
           ninea: farm?.ninea,
           rccm: farm?.rccm,
+          taxIdLabel: farm?.taxIdLabel,
           logo: farmLogo,
         },
       });
