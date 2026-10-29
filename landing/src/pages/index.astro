@@ -1,4 +1,5 @@
 ---
+import { SAME_AS } from "../lib/reseaux";
 // Page d'accueil — ordre des sections identique au prototype
 // (docs/superpowers/specs/assets/landing-prototype.html, #p-home) :
 // Hero, Problème, StatsBand, Solution, PhotoBand, Comment ça marche,
@@ -24,6 +25,8 @@ const description =
   "Suivez vos bandes, vos coûts et vos ventes sur une seule plateforme. Réduisez la mortalité, maîtrisez le coût de l'aliment, connaissez votre marge. Gratuit pendant le pilote.";
 
 const siteUrl = Astro.site ? Astro.site.toString().replace(/\/$/, "") : "https://jawdi.app";
+const contactEmail = import.meta.env.PUBLIC_PARTNER_EMAIL || "contact@jawdi.app";
+const contactPhone = import.meta.env.PUBLIC_CONTACT_PHONE || "+221 70 420 81 30";
 
 const jsonLd = {
   "@context": "https://schema.org",
@@ -39,6 +42,20 @@ const jsonLd = {
       // l'URL colle toujours au fichier réellement livré dans dist/.
       logo: new URL(logo.src, siteUrl).toString(),
       description: "Logiciel de gestion d'élevage avicole pensé au Sénégal, pour l'Afrique de l'Ouest.",
+      // Les comptes sociaux officiels. `sameAs` est ce qui permet à un moteur
+      // de rattacher la page LinkedIn, la page Facebook et le site au MÊME
+      // organisme — sans lui, chacun est une entité isolée. La liste vient de
+      // lib/reseaux.ts : on n'y déclare que des comptes qui existent, car un
+      // `sameAs` mort abîme la confiance accordée au reste de la fiche.
+      ...(SAME_AS.length > 0 ? { sameAs: [...SAME_AS] } : {}),
+      contactPoint: {
+        "@type": "ContactPoint",
+        contactType: "customer support",
+        email: contactEmail,
+        telephone: contactPhone,
+        areaServed: "SN",
+        availableLanguage: ["fr"],
+      },
     },
     {
       "@type": "SoftwareApplication",
