@@ -61,7 +61,7 @@ export function InvoicePdfView({ invoiceId }: Props) {
     { skip: !farm?.logoUpdatedAt },
   );
 
-  const issuer = farm ?? { name: "—", location: null, ninea: null, rccm: null };
+  const issuer = farm ?? { name: "—", location: null, ninea: null, rccm: null, taxIdLabel: null };
 
   const handleDownload = async () => {
     if (!invoice) return;

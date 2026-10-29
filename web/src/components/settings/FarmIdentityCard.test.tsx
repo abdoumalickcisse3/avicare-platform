@@ -20,6 +20,8 @@ const FARM = {
   productionFocus: [],
   ninea: "008492019 2V2",
   rccm: null,
+  country: "SN",
+  taxIdLabel: "NINEA",
   logoUpdatedAt: null as string | null,
 };
 
@@ -76,6 +78,23 @@ describe("FarmIdentityCard", () => {
     renderWithProviders(<FarmIdentityCard farmId={1} />);
 
     expect(await screen.findByDisplayValue("008492019 2V2")).toBeInTheDocument();
+  });
+
+  it("nomme le champ fiscal selon le pays de la ferme", async () => {
+    // Une ferme ivoirienne n'a pas de NINEA : le libellé vient du serveur, qui le résout depuis
+    // le pays. L'écran ne reconstruit aucune table de pays.
+    mockFetch({ ...FARM, country: "CI", taxIdLabel: "N° contribuable" });
+    renderWithProviders(<FarmIdentityCard farmId={1} />);
+
+    expect(await screen.findByLabelText("N° contribuable")).toBeInTheDocument();
+    expect(screen.queryByLabelText("NINEA")).not.toBeInTheDocument();
+  });
+
+  it("retombe sur NINEA pour une ferme enregistrée avant que le pays n'existe", async () => {
+    mockFetch({ ...FARM, country: null as unknown as string, taxIdLabel: null as unknown as string });
+    renderWithProviders(<FarmIdentityCard farmId={1} />);
+
+    expect(await screen.findByLabelText("NINEA")).toBeInTheDocument();
   });
 
   it("refuse un fichier trop lourd sans rien envoyer au serveur", async () => {

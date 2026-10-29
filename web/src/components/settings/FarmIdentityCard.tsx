@@ -8,10 +8,13 @@ import {
   Card,
   CardContent,
   CircularProgress,
+  MenuItem,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
+
+import { PAYS_XOF } from "@/lib/pays";
 import { ImageUp, Trash2 } from "lucide-react";
 import {
   useDeleteFarmLogoMutation,
@@ -49,6 +52,7 @@ export function FarmIdentityCard({ farmId }: { farmId: number }) {
   const [saved, setSaved] = useState(false);
   const [ninea, setNinea] = useState<string | null>(null);
   const [rccm, setRccm] = useState<string | null>(null);
+  const [country, setCountry] = useState<string | null>(null);
 
   // Un `null` muet pendant le chargement donne l'impression d'un écran cassé :
   // l'en-tête s'affiche, et dessous il n'y a rien. On montre l'attente.
@@ -71,6 +75,13 @@ export function FarmIdentityCard({ farmId }: { farmId: number }) {
   // Les champs suivent la ferme jusqu'à la première frappe, puis l'utilisateur.
   const nineaValue = ninea ?? farm.ninea ?? "";
   const rccmValue = rccm ?? farm.rccm ?? "";
+  const countryValue = country ?? farm.country ?? "SN";
+  // Le serveur résout le libellé ; tant que l'utilisateur n'a pas enregistré son nouveau pays,
+  // on montre celui de la liste locale pour que le champ change sous ses yeux.
+  const taxLabel =
+    country && country !== farm.country
+      ? (PAYS_XOF.find((p) => p.iso === country)?.libelleFiscal ?? "Identifiant fiscal")
+      : (farm.taxIdLabel ?? "NINEA");
 
   const pick = async (file: File | undefined) => {
     setError(null);
@@ -108,6 +119,7 @@ export function FarmIdentityCard({ farmId }: { farmId: number }) {
           productionFocus: farm.productionFocus,
           ninea: nineaValue.trim() || null,
           rccm: rccmValue.trim() || null,
+          country: countryValue,
         },
       }).unwrap();
       setSaved(true);
@@ -210,7 +222,21 @@ export function FarmIdentityCard({ farmId }: { farmId: number }) {
 
         <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mt: 4 }}>
           <TextField
-            label="NINEA"
+            select
+            label="Pays"
+            value={countryValue}
+            onChange={(e) => setCountry(e.target.value)}
+            fullWidth
+            helperText="Détermine le fuseau horaire et le nom du champ fiscal"
+          >
+            {PAYS_XOF.map((p) => (
+              <MenuItem key={p.iso} value={p.iso}>
+                {p.nom}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            label={taxLabel}
             value={nineaValue}
             onChange={(e) => setNinea(e.target.value)}
             fullWidth

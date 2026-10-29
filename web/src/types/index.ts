@@ -49,6 +49,14 @@ export interface Farm {
   ninea: string | null;
   /** Registre du commerce, imprimé sur les factures. */
   rccm: string | null;
+  /** Pays de la ferme (ISO 3166-1 alpha-2). */
+  country: string | null;
+  /**
+   * Comment s'appelle le champ fiscal dans ce pays — « NINEA » au Sénégal,
+   * « N° contribuable » ailleurs. Résolu par le serveur à la lecture : aucun
+   * écran ne reconstruit la table des pays.
+   */
+  taxIdLabel: string | null;
   /**
    * Quand le logo a changé — `null` quand la ferme n'en a pas. Les octets ne
    * transitent jamais ici : cet horodatage sert à savoir qu'un logo existe et à
@@ -66,6 +74,8 @@ export interface FarmInput {
   productionFocus?: string[];
   ninea?: string | null;
   rccm?: string | null;
+  /** ISO 3166-1 alpha-2. Omis = inchangé côté serveur, jamais « remis au Sénégal ». */
+  country?: string | null;
 }
 
 /** Tenant-level role inside a farm (mirrors backend FarmRole enum). */

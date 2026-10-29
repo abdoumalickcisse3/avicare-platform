@@ -20,6 +20,8 @@ const baseFarm: Farm = {
   productionFocus: [],
   ninea: null,
   rccm: null,
+  country: "SN",
+  taxIdLabel: "NINEA",
   logoUpdatedAt: null,
 };
 

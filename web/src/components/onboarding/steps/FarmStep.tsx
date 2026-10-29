@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Box, Stack, TextField, Typography } from "@mui/material";
+import { Box, MenuItem, Stack, TextField, Typography } from "@mui/material";
+
+import { PAYS_DEFAUT, PAYS_XOF } from "@/lib/pays";
 import { Bird, Check, Egg, Layers } from "lucide-react";
 import { colors, radii } from "@/theme/tokens";
 import {
@@ -60,6 +62,7 @@ export function FarmStep() {
   const [location, setLocation] = useState("");
   const [capacity, setCapacity] = useState("");
   const [focus, setFocus] = useState<Focus>("broiler");
+  const [country, setCountry] = useState<string>(PAYS_DEFAUT);
   const [error, setError] = useState<string | null>(null);
   const [prefilledId, setPrefilledId] = useState<number | null>(null);
 
@@ -70,6 +73,9 @@ export function FarmStep() {
     setName(farm.name ?? "");
     setLocation(farm.location ?? "");
     setCapacity(farm.capacity != null ? String(farm.capacity) : "");
+    // Prérempli avec le pays déduit du numéro à l'inscription : c'est ici qu'on le corrige si la
+    // déduction était fausse — un éleveur ivoirien avec un numéro français, par exemple.
+    setCountry(farm.country ?? PAYS_DEFAUT);
     const f = farm.productionFocus ?? [];
     setFocus(
       f.includes("broiler") && f.includes("layer")
@@ -99,6 +105,7 @@ export function FarmStep() {
             location: location.trim() || undefined,
             capacity: capacity ? Number(capacity) : undefined,
             productionFocus: tokens,
+            country,
           },
         }).unwrap();
         return true;
@@ -107,7 +114,7 @@ export function FarmStep() {
         return false;
       }
     });
-  }, [farmId, valid, name, location, capacity, focus, updateFarm, registerNext]);
+  }, [farmId, valid, name, location, capacity, focus, country, updateFarm, registerNext]);
 
   return (
     <Box>
@@ -145,6 +152,22 @@ export function FarmStep() {
             fullWidth
             slotProps={{ htmlInput: { inputMode: "numeric" } }}
           />
+        </Field>
+
+        <Field label="Pays">
+          <TextField
+            select
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+            fullWidth
+            helperText="Détermine le fuseau horaire et le nom du champ fiscal sur vos factures"
+          >
+            {PAYS_XOF.map((p) => (
+              <MenuItem key={p.iso} value={p.iso}>
+                {p.nom}
+              </MenuItem>
+            ))}
+          </TextField>
         </Field>
 
         <Field label="Type de production">

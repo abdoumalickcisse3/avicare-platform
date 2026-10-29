@@ -62,6 +62,27 @@ describe("SignupPage (single-step)", () => {
     expect(m.signup).not.toHaveBeenCalled();
   });
 
+  it("déduit le pays du numéro saisi : un numéro ivoirien crée une ferme en CI", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<SignupPage />);
+    await user.type(screen.getByLabelText(/prénom/i), "Awa");
+    await user.type(screen.getByLabelText(/^nom$/i), "Diop");
+    await user.type(screen.getByLabelText(/adresse e-mail/i), "awa@example.com");
+    // L'éleveur choisit son pays dans le sélecteur d'indicatif, puis tape son numéro local.
+    // C'est ce choix — et non une devinette sur les chiffres — qui porte le pays : s'y fier a
+    // déjà coûté dix-huit alertes WhatsApp parties nulle part le 2026-10-02.
+    await user.click(screen.getByLabelText(/indicatif pays/i));
+    await user.click(await screen.findByRole("option", { name: /côte d'ivoire/i }));
+    await user.type(screen.getByLabelText(/téléphone/i), "0102030405");
+    await user.type(screen.getByLabelText("Mot de passe"), "password123");
+    await user.type(screen.getByLabelText(/confirmation/i), "password123");
+    await user.click(screen.getByRole("button", { name: /créer mon compte/i }));
+
+    await waitFor(() =>
+      expect(m.createFarm).toHaveBeenCalledWith({ name: "Ferme de Awa", country: "CI" }),
+    );
+  });
+
   it("creates the account and a default-named farm, then redirects to onboarding", async () => {
     const user = userEvent.setup();
     renderWithProviders(<SignupPage />);
@@ -72,7 +93,8 @@ describe("SignupPage (single-step)", () => {
     expect(m.signup).toHaveBeenCalledTimes(1);
     // Farm is provisioned with a default name derived from the first name;
     // the owner names/details it in the onboarding wizard.
-    expect(m.createFarm).toHaveBeenCalledWith({ name: "Ferme de Awa" });
+    // Le pays part avec la ferme, déduit du numéro saisi juste au-dessus — ici un sénégalais.
+    expect(m.createFarm).toHaveBeenCalledWith({ name: "Ferme de Awa", country: "SN" });
     expect(m.refresh).toHaveBeenCalled();
   });
 

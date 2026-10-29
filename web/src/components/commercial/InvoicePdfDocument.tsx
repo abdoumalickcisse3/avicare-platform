@@ -190,7 +190,7 @@ interface Props {
   invoice: Invoice;
   client?: Client;
   /** La ferme émettrice : son nom, son lieu et ses mentions légales. */
-  farm: Pick<Farm, "name" | "location" | "ninea" | "rccm">;
+  farm: Pick<Farm, "name" | "location" | "ninea" | "rccm" | "taxIdLabel">;
   /** Son logo en data URI, quand elle en a posé un. */
   logo?: string;
 }
@@ -201,7 +201,11 @@ export function InvoicePdfDocument({ invoice, client, farm, logo }: Props) {
     client?.displayName ?? (invoice.clientId ? `Client #${invoice.clientId}` : "Comptant");
   const due = dueState(invoice);
   const mark = imageSource(logo);
-  const legal = [farm.ninea && `NINEA : ${farm.ninea}`, farm.rccm && `RC : ${farm.rccm}`]
+  // Le libellé vient du serveur, qui le résout depuis le pays de la ferme : une facture
+  // ivoirienne dit « N° contribuable », pas « NINEA ». Repli sur NINEA pour une ferme
+  // enregistrée avant que le pays n'existe.
+  const taxLabel = farm.taxIdLabel ?? "NINEA";
+  const legal = [farm.ninea && `${taxLabel} : ${farm.ninea}`, farm.rccm && `RC : ${farm.rccm}`]
     .filter(Boolean)
     .join("   ·   ");
 
