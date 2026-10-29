@@ -20,4 +20,10 @@ public record UpdateFarmRequest(
     /** Identifiant fiscal, imprimé sur la facture. Remplacé tel quel, null l'efface. */
     @Size(max = 50) String ninea,
     /** Registre du commerce, imprimé sur la facture. Remplacé tel quel, null l'efface. */
-    @Size(max = 50) String rccm) {}
+    @Size(max = 50) String rccm,
+    /**
+     * Pays (ISO 3166-1 alpha-2). <b>Null = inchangé</b>, et surtout pas « remettre au Sénégal » :
+     * ce PUT remplace les champs omis, et un client qui ne connaît pas encore ce champ ramènerait
+     * toutes les fermes à `SN`.
+     */
+    @Size(max = 2) String country) {}

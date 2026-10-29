@@ -16,4 +16,11 @@ public record CreateFarmRequest(
     @Size(max = 50) String timezone,
     @Size(max = 3) String currency,
     /** Métier focus tokens (broiler/layer), Décision 17. Optional. */
-    List<String> productionFocus) {}
+    List<String> productionFocus,
+    /**
+     * Pays (ISO 3166-1 alpha-2), d'où découlent le fuseau et le libellé du champ fiscal.
+     *
+     * <p><b>Optionnel, et il doit le rester</b> : une app iOS déjà installée ne l'envoie pas, et la
+     * lui refuser enfermerait dehors des gens qui n'ont rien demandé. Absent, le pays vaut `SN`.
+     */
+    @Size(max = 2) String country) {}

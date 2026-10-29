@@ -37,6 +37,13 @@ public class FarmService {
   static final String FOCUS_CATEGORY = "farm";
 
   static final String FOCUS_KEY = "production_focus";
+
+  /** Catalogue des pays, semé par V67 : fuseau et libellé du champ fiscal par code ISO. */
+  static final String COUNTRIES_CATEGORY = "countries";
+
+  static final String DEFAULT_COUNTRY = "SN";
+  static final String DEFAULT_TIMEZONE = "Africa/Dakar";
+  static final String DEFAULT_TAX_ID_LABEL = "NINEA";
   static final Set<String> ALLOWED_FOCUS = Set.of("broiler", "layer");
 
   private final FarmRepository farmRepository;
@@ -55,9 +62,15 @@ public class FarmService {
     farm.setGpsLatitude(request.gpsLatitude());
     farm.setGpsLongitude(request.gpsLongitude());
     farm.setCapacity(request.capacity());
-    if (request.timezone() != null && !request.timezone().isBlank()) {
-      farm.setTimezone(request.timezone());
-    }
+    String pays = blankTo(request.country(), DEFAULT_COUNTRY);
+    farm.setCountry(pays);
+    // Le fuseau suit le pays, sauf si l'appelant en impose un : l'explicite gagne toujours sur le
+    // déduit. Sans cette ligne, le défaut posé en Java sur l'entité ferait rester toute ferme à
+    // l'heure de Dakar — y compris une ferme ivoirienne.
+    farm.setTimezone(
+        request.timezone() != null && !request.timezone().isBlank()
+            ? request.timezone()
+            : countryDefaults(pays).timezone());
     if (request.currency() != null && !request.currency().isBlank()) {
       farm.setCurrency(request.currency());
     }
@@ -110,6 +123,12 @@ public class FarmService {
     farm.setGpsLatitude(request.gpsLatitude());
     farm.setGpsLongitude(request.gpsLongitude());
     farm.setCapacity(request.capacity());
+    // Ce PUT remplace les champs omis — c'est écrit pour `ninea`. Le pays, lui, est NOT NULL :
+    // un client qui ne connaît pas encore ce champ ramènerait toutes les fermes au Sénégal.
+    // Absent vaut donc « inchangé », et le fuseau déjà choisi n'est pas réécrit derrière.
+    if (request.country() != null && !request.country().isBlank()) {
+      farm.setCountry(request.country());
+    }
     if (request.timezone() != null && !request.timezone().isBlank()) {
       farm.setTimezone(request.timezone());
     }
@@ -135,6 +154,31 @@ public class FarmService {
   }
 
   /** Map a farm to its response, enriched with its production focus (Décision 17). */
+  /**
+   * Ce qu'un pays décide, lu dans le catalogue.
+   *
+   * <p>Un code absent du catalogue n'est pas une erreur : le sélecteur de téléphone connaît seize
+   * pays quand la zone XOF en compte huit, et un éleveur ivoirien peut très bien porter un numéro
+   * français. On retombe alors sur les défauts plutôt que de refuser la création de sa ferme.
+   */
+  private CountryDefaults countryDefaults(String iso) {
+    Map<String, Object> value =
+        parametersFacade.resolve(null, null, COUNTRIES_CATEGORY, iso).orElse(Map.of());
+    return new CountryDefaults(
+        text(value.get("timezone"), DEFAULT_TIMEZONE),
+        text(value.get("tax_id_label"), DEFAULT_TAX_ID_LABEL));
+  }
+
+  private record CountryDefaults(String timezone, String taxIdLabel) {}
+
+  private static String text(Object value, String fallback) {
+    return value instanceof String s && !s.isBlank() ? s : fallback;
+  }
+
+  private static String blankTo(String value, String fallback) {
+    return value == null || value.isBlank() ? fallback : value;
+  }
+
   private FarmResponse respond(Farm farm) {
     FarmResponse b = tenancyMapper.toResponse(farm);
     return new FarmResponse(
@@ -154,7 +198,9 @@ public class FarmService {
         farm.getNinea(),
         farm.getRccm(),
         // L'horodatage seul, jamais les octets : voir FarmResponse.
-        farmLogoRepository.findUpdatedAt(farm.getId()).orElse(null));
+        farmLogoRepository.findUpdatedAt(farm.getId()).orElse(null),
+        farm.getCountry(),
+        countryDefaults(farm.getCountry()).taxIdLabel());
   }
 
   @SuppressWarnings("unchecked")
