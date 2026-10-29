@@ -7,7 +7,7 @@ const FARM = {
   name: "Ferme Complète",
   location: "Thiès",
   ninea: "008492019 2V2",
-  rccm: "SN-KLK-2021-A-1402",
+  rccm: "SN-KLK-2021-A-1402", taxIdLabel: null,
 };
 import { BRAND_MARK_PATHS } from "@/theme/brandMark";
 

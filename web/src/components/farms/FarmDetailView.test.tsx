@@ -34,6 +34,8 @@ const farm: Farm = {
   productionFocus: [],
   ninea: null,
   rccm: null,
+  country: "SN",
+  taxIdLabel: "NINEA",
   logoUpdatedAt: null,
 };
 

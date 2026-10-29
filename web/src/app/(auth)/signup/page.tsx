@@ -17,6 +17,7 @@ import {
 } from "@mui/material";
 import { useSignupMutation } from "@/store/api/authApi";
 import { useCreateFarmMutation } from "@/store/api/farmsApi";
+import { splitE164 } from "@/lib/phone/countries";
 import { useAppDispatch } from "@/store/hooks";
 import { setTokens } from "@/store/slices/authSlice";
 import { hasAccessToken } from "@/lib/auth";
@@ -106,7 +107,12 @@ export default function SignupPage() {
       // Refresh so the token carries the new OWNER membership.
       if (!orch.current.farmId) {
         const defaultName = v.firstName.trim() ? `Ferme de ${v.firstName.trim()}` : "Ma ferme";
-        const farm = await createFarm({ name: defaultName }).unwrap();
+        // Le pays se déduit du numéro saisi juste au-dessus : l'information est déjà là, on ne
+        // la redemande pas. Elle reste corrigeable à l'étape « ferme » du wizard.
+        const farm = await createFarm({
+          name: defaultName,
+          country: splitE164(v.phone).country.iso,
+        }).unwrap();
         orch.current.farmId = farm.id;
         await refreshSession();
       }
