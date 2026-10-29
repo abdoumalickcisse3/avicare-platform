@@ -22,10 +22,14 @@ ARG PUBLIC_CONTACT_PHONE=+221 70 475 69 96
 # préversion ne doit pas alimenter les statistiques de production.
 ARG PUBLIC_GA_ID=
 # Boutiques : volontairement sans défaut. Tant qu'elles sont vides, la landing
-# affiche « Bientôt sur l'App Store et Google Play » et n'émet aucun lien —
-# jamais de lien mort (voir src/components/StoreLinks.astro).
+# annonce ce qui manque et n'émet aucun lien — jamais de lien mort (voir
+# src/components/StoreLinks.astro et src/lib/boutiques.ts).
+# PUBLIC_ANDROID_APK_URL est la voie Android avant le Play Store : un
+# téléchargement direct. Posée, elle remplace la pastille Play tant que
+# celle-ci n'a pas d'URL.
 ARG PUBLIC_APP_STORE_URL=
 ARG PUBLIC_PLAY_STORE_URL=
+ARG PUBLIC_ANDROID_APK_URL=
 ENV PUBLIC_SITE_URL=$PUBLIC_SITE_URL \
     PUBLIC_APP_SIGNUP_URL=$PUBLIC_APP_SIGNUP_URL \
     PUBLIC_APP_LOGIN_URL=$PUBLIC_APP_LOGIN_URL \
@@ -33,7 +37,8 @@ ENV PUBLIC_SITE_URL=$PUBLIC_SITE_URL \
     PUBLIC_CONTACT_PHONE=$PUBLIC_CONTACT_PHONE \
     PUBLIC_GA_ID=$PUBLIC_GA_ID \
     PUBLIC_APP_STORE_URL=$PUBLIC_APP_STORE_URL \
-    PUBLIC_PLAY_STORE_URL=$PUBLIC_PLAY_STORE_URL
+    PUBLIC_PLAY_STORE_URL=$PUBLIC_PLAY_STORE_URL \
+    PUBLIC_ANDROID_APK_URL=$PUBLIC_ANDROID_APK_URL
 RUN npm run build
 
 # ---- Runtime: static files behind nginx ----

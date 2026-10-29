@@ -1,4 +1,5 @@
 ---
+import { etatBoutiques, phraseAVenir } from "../lib/boutiques";
 // Homepage "App mobile" section (inspired by fitsen's app block): a light card
 // with copy + store buttons on the left and a tilted coded phone on the right.
 import Highlight from "./Highlight.astro";
@@ -6,9 +7,7 @@ import { Image } from "astro:assets";
 import StoreLinks from "./StoreLinks.astro";
 import mobileHome from "../assets/screens/mobile-home.png";
 
-const appStoreUrl = import.meta.env.PUBLIC_APP_STORE_URL || "";
-const playStoreUrl = import.meta.env.PUBLIC_PLAY_STORE_URL || "";
-const storesLive = Boolean(appStoreUrl || playStoreUrl);
+const aVenir = phraseAVenir(etatBoutiques(import.meta.env));
 ---
 
 <section class="panel reveal">
@@ -21,7 +20,7 @@ const storesLive = Boolean(appStoreUrl || playStoreUrl);
         Dictez à <strong>Jawdi IA</strong>, travaillez hors-ligne — tout se synchronise dès que le
         réseau revient.
       </p>
-      {!storesLive && <p class="appsec-soon">Bientôt sur l'App Store et Google Play</p>}
+      {aVenir && <p class="appsec-soon">{aVenir}</p>}
       <StoreLinks rowClass="appsec-btns" />
     </div>
 
