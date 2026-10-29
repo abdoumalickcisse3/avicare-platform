@@ -3,230 +3,505 @@
  * Le portail des liens — la page qu'on met dans une bio Instagram, TikTok ou
  * WhatsApp, là où un seul lien est permis.
  *
- * Pourquoi chez nous et pas sur un service de « link in bio » : parce qu'une
- * page hébergée ailleurs travaille pour le référencement de l'autre. Ici, elle
- * nourrit jawdi.app, porte la marque, et ne disparaîtra pas le jour où un
- * service gratuit ferme.
+ * Dessiné dans Stitch (système « Agro-Terroir Solaire ») puis implémenté ici.
+ * Deux mises en page pour un seul contenu, et c'est délibéré :
  *
- * Elle est pensée pour un pouce : on arrive d'un téléphone, on vient chercher
- * UNE chose. Les actions qui font vivre le produit — essayer, télécharger,
- * écrire — passent donc avant la liste des réseaux.
+ * - **Au téléphone**, d'où vient la quasi-totalité du trafic d'une bio : une
+ *   colonne, la photo en haut qui fond dans le vert, les actions dans le
+ *   pouce. On vient chercher UNE chose.
+ * - **Sur un écran large**, où un lien de bio atterrit quand même (quelqu'un
+ *   qui ouvre LinkedIn au bureau) : deux colonnes, la photo tient toute la
+ *   hauteur à gauche, les liens à droite. Sans ça, la version mobile étirée
+ *   donnerait une colonne maigre perdue dans du vide.
+ *
+ * **Pas d'en-tête de navigation** : on n'est pas venu visiter un site.
+ *
+ * Les photos sont de vraies photos d'élevage ouest-africain, pas des images
+ * de banque : c'est ce qui fait qu'un éleveur se reconnaît en deux secondes.
  */
-import Base from "../layouts/Base.astro";
+import Nu from "../layouts/Nu.astro";
 import { Image } from "astro:assets";
-import logoVertical from "../assets/logo-compact-white.svg";
+import logoWhite from "../assets/logo-compact-white.svg";
+import eleveursTelephone from "../assets/eleveurs-telephone.jpg";
+import eleveurSaisie from "../assets/eleveur-saisie.jpg";
 import ReseauIcone from "../components/ReseauIcone.astro";
+import { Icon } from "astro-icon/components";
 import { RESEAUX_ACTIFS } from "../lib/reseaux";
-import { etatBoutiques, phraseAVenir } from "../lib/boutiques";
+import { etatBoutiques } from "../lib/boutiques";
 
 const signupUrl = import.meta.env.PUBLIC_APP_SIGNUP_URL || "#";
-const loginUrl = import.meta.env.PUBLIC_APP_LOGIN_URL || "#";
 const contactEmail = import.meta.env.PUBLIC_PARTNER_EMAIL || "contact@jawdi.app";
+const contactPhone = import.meta.env.PUBLIC_CONTACT_PHONE || "+221 70 420 81 30";
+const waHref = `https://wa.me/${contactPhone.replace(/\D/g, "")}`;
 const boutiques = etatBoutiques(import.meta.env);
-const aVenir = phraseAVenir(boutiques);
+
+// WhatsApp a sa propre carte, large, avec le numéro : le répéter en pastille
+// ronde au milieu des six autres ferait deux fois la même porte.
+const pastilles = RESEAUX_ACTIFS.filter((r) => r.cle !== "whatsapp");
 
 const title = "Tous les liens Jawdi — app, réseaux, contact";
 const description =
   "Télécharger l'application, démarrer gratuitement, suivre Jawdi sur les réseaux ou nous écrire : tous les liens officiels de Jawdi en une page.";
 ---
 
-<Base title={title} description={description} solidHeader>
-  <section class="portail">
-    <div class="carte">
-      <Image src={logoVertical} alt="Jawdi" width={520} height={185} class="marque" />
-      <p class="phrase">
-        La gestion d'élevage avicole pensée pour l'Afrique de l'Ouest — du poussin à la marge.
-      </p>
-
-      <div class="actions">
-        <a class="btn btn-cta btn-lg" href={signupUrl}>Commencer gratuitement</a>
-        {
-          boutiques.androidApk && (
-            <a class="btn btn-ghost" href={boutiques.androidApk}>
-              Télécharger pour Android
-            </a>
-          )
-        }
-        {
-          boutiques.appStore && (
-            <a class="btn btn-ghost" href={boutiques.appStore} target="_blank" rel="noopener">
-              Télécharger sur l'App Store
-            </a>
-          )
-        }
-        <a class="btn btn-ghost" href={loginUrl}>J'ai déjà un compte</a>
-      </div>
-      {aVenir && <p class="attente">{aVenir}</p>}
-
-      <h2 class="titre">Suivre Jawdi</h2>
-      <ul class="liste" aria-label="Comptes officiels de Jawdi">
-        {
-          RESEAUX_ACTIFS.map((r) => (
-            <li>
-              <a href={r.url} target="_blank" rel="me noopener">
-                <span class="rond">
-                  <ReseauIcone cle={r.cle} taille={20} />
-                </span>
-                <span class="nom">{r.nom}</span>
-                <span class="fleche" aria-hidden="true">
-                  ↗
-                </span>
-              </a>
-            </li>
-          ))
-        }
-      </ul>
-
-      <h2 class="titre">Nous écrire</h2>
-      <ul class="liste">
-        <li>
-          <a href={`mailto:${contactEmail}`}>
-            <span class="rond">@</span>
-            <span class="nom">{contactEmail}</span>
-            <span class="fleche" aria-hidden="true">↗</span>
-          </a>
-        </li>
-        <li>
-          <a href="/contact">
-            <span class="rond">✉</span>
-            <span class="nom">Formulaire de contact</span>
-            <span class="fleche" aria-hidden="true">→</span>
-          </a>
-        </li>
-      </ul>
-
-      <p class="pied">
-        <a href="/">jawdi.app</a> · <a href="/mentions-legales">Mentions légales</a> ·
-        <a href="/confidentialite">Confidentialité</a>
-      </p>
+<Nu title={title} description={description}>
+  <main class="portail">
+    <!-- La photo : bandeau en haut au téléphone, colonne pleine hauteur sur écran large. -->
+    <div class="visuel">
+      <Image
+        src={eleveursTelephone}
+        alt="Deux éleveurs consultent Jawdi sur un téléphone dans un poulailler de pondeuses"
+        widths={[560, 900, 1376]}
+        sizes="(min-width: 900px) 55vw, 100vw"
+        loading="eager"
+        class="visuel-img"
+      />
+      <div class="visuel-fondu" aria-hidden="true"></div>
+      <blockquote class="citation">
+        Une saisie par jour.<br /><span>La marge à la clôture.</span>
+      </blockquote>
     </div>
-  </section>
-</Base>
+
+    <div class="colonne">
+      <div class="contenu">
+        <Image src={logoWhite} alt="Jawdi" width={520} height={185} class="marque" />
+        <p class="promesse">Chaque bande, sa marge.</p>
+        <p class="sous">
+          La gestion d'élevage avicole pensée pour l'Afrique de l'Ouest — du poussin à la facture.
+        </p>
+
+        <a class="principal" href={signupUrl}>Commencer gratuitement</a>
+        <p class="mention">Gratuit pendant la phase pilote</p>
+
+        <div class="telechargements">
+          {
+            boutiques.androidApk ? (
+              <a class="secondaire" href={boutiques.androidApk}>
+                <Icon name="simple-icons:android" width={18} height={18} aria-hidden="true" />
+                Android
+              </a>
+            ) : (
+              <span class="secondaire attente-tel" title="Bientôt disponible">
+                <Icon name="simple-icons:android" width={18} height={18} aria-hidden="true" />
+                Android · bientôt
+              </span>
+            )
+          }
+          {
+            boutiques.appStore ? (
+              <a class="secondaire" href={boutiques.appStore} target="_blank" rel="noopener">
+                <Icon name="simple-icons:apple" width={18} height={18} aria-hidden="true" />
+                App Store
+              </a>
+            ) : (
+              <span class="secondaire attente-tel" title="En cours de validation par Apple">
+                <Icon name="simple-icons:apple" width={18} height={18} aria-hidden="true" />
+                iPhone · bientôt
+              </span>
+            )
+          }
+        </div>
+
+        <h2 class="section">Suivre Jawdi</h2>
+        <ul class="pastilles" aria-label="Comptes officiels de Jawdi">
+          {
+            pastilles.map((r) => (
+              <li>
+                <a href={r.url} target="_blank" rel="me noopener" aria-label={`Jawdi sur ${r.nom}`}>
+                  <ReseauIcone cle={r.cle} taille={20} />
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+
+        <a class="whatsapp" href={waHref} target="_blank" rel="noopener">
+          <span class="wa-rond"><ReseauIcone cle="whatsapp" taille={22} /></span>
+          <span class="wa-texte">
+            <strong>Écrivez-nous sur WhatsApp</strong>
+            <span class="wa-num">{contactPhone}</span>
+          </span>
+          <span class="wa-fleche" aria-hidden="true">→</span>
+        </a>
+
+        <!-- Second visuel : au téléphone seulement. Sur écran large, la photo
+             de gauche tient déjà ce rôle, et le répéter alourdirait. -->
+        <a class="bandeau" href={signupUrl} aria-label="Commencer gratuitement">
+          <Image
+            src={eleveurSaisie}
+            alt="Un éleveur saisit sa journée sur son téléphone devant ses pondeuses"
+            widths={[480, 928]}
+            sizes="(min-width: 900px) 0px, 100vw"
+            loading="lazy"
+            class="bandeau-img"
+          />
+          <span class="bandeau-texte">Une saisie par jour. La marge à la clôture.</span>
+        </a>
+
+        <p class="pied">
+          <a href="/">jawdi.app</a>
+          <span class="sep">·</span>
+          <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
+          <br />
+          <a href="/mentions-legales">Mentions légales</a>
+          <span class="sep">·</span>
+          <a href="/confidentialite">Confidentialité</a>
+        </p>
+      </div>
+    </div>
+  </main>
+</Nu>
 
 <style>
-  /* Fond sombre de la marque : la page s'ouvre souvent seule, sans contexte,
-     et doit se reconnaître en une demi-seconde. */
-  .portail {
-    min-height: 100vh;
-    padding: 96px 16px 56px;
-    background:
-      radial-gradient(120% 90% at 50% 0%, rgba(59, 139, 61, 0.28), transparent 60%),
-      linear-gradient(170deg, var(--earth-800) 0%, var(--earth) 100%);
+  /* Palette du système « Agro-Terroir Solaire » : vert forêt profond en fond,
+     ocre solaire pour l'action, menthe pour les accents discrets. */
+  /* Le corps prend le vert : sinon le fond clair du site apparaît sous la
+     page dès que le contenu est plus court que l'écran, ou pendant l'élan de
+     défilement sur iOS. */
+  :global(body) {
+    background: #083025;
   }
-  .carte {
-    max-width: 520px;
+
+  .portail {
+    --fond: #083025;
+    --surface: #0d3d30;
+    --ocre: #f2a31a;
+    --menthe: #a8e6cf;
+    --ecru: #f7f9f6;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: var(--fond);
+    color: var(--ecru);
+  }
+
+  /* ---------- Le visuel ---------- */
+  .visuel {
+    position: relative;
+    height: 42vh;
+    min-height: 240px;
+    overflow: hidden;
+  }
+  .visuel-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* Les deux visages sont au centre-haut : on cadre dessus quand ça rogne. */
+    object-position: 50% 35%;
+  }
+  /* Le fondu vers le fond : la photo ne s'arrête pas, elle devient la page. */
+  .visuel-fondu {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(8, 48, 37, 0) 35%, var(--fond) 100%);
+  }
+  .citation {
+    display: none;
+  }
+
+  /* ---------- La colonne ---------- */
+  .colonne {
+    padding: 0 20px 48px;
+  }
+  .contenu {
+    max-width: 420px;
     margin: 0 auto;
     text-align: center;
-    color: #eaf3e4;
+    /* Remonte sur le fondu de la photo : la marque chevauche l'image. */
+    margin-top: -56px;
+    position: relative;
   }
   .marque {
-    width: 190px;
+    width: 168px;
     height: auto;
     margin: 0 auto;
   }
-  .phrase {
-    margin: 18px auto 28px;
-    max-width: 38ch;
-    font-size: 15.5px;
+  .promesse {
+    margin: 14px 0 0;
+    font-size: 23px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--ecru);
+  }
+  .sous {
+    margin: 10px auto 26px;
+    max-width: 34ch;
+    font-size: 14.5px;
     line-height: 1.6;
-    color: #c7dcc0;
+    color: var(--menthe);
   }
-  .actions {
-    display: grid;
-    gap: 10px;
-  }
-  /* Bouton secondaire propre à cette page : sur ce fond, les variantes
-     claires du site deviennent illisibles. */
-  .btn-ghost {
-    display: inline-flex;
+
+  /* ---------- Actions ---------- */
+  .principal {
+    display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 52px;
-    padding: 0 20px;
-    border-radius: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.26);
-    background: rgba(255, 255, 255, 0.06);
-    color: #fff;
+    /* 56 px : la hauteur d'action du système, pensée pour un pouce. */
+    min-height: 56px;
+    border-radius: 999px;
+    background: var(--ocre);
+    color: #083025;
+    font-size: 16px;
+    font-weight: 800;
+    text-decoration: none;
+    box-shadow: 0 12px 32px -6px rgba(242, 163, 26, 0.3);
+    transition: transform 0.12s ease, filter 0.15s ease;
+  }
+  .principal:hover,
+  .principal:focus-visible {
+    filter: brightness(1.06);
+  }
+  .principal:active {
+    transform: scale(0.97);
+  }
+  .mention {
+    margin: 10px 0 0;
+    font-size: 12.5px;
+    color: rgba(247, 249, 246, 0.6);
+  }
+  .telechargements {
+    display: flex;
+    gap: 10px;
+    margin-top: 18px;
+  }
+  .secondaire {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    border-radius: 999px;
+    border: 1px solid rgba(168, 230, 207, 0.22);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--ecru);
+    font-size: 14px;
     font-weight: 600;
     text-decoration: none;
     transition: background-color 0.15s ease, border-color 0.15s ease;
   }
-  .btn-ghost:hover,
-  .btn-ghost:focus-visible {
-    background: rgba(255, 255, 255, 0.14);
-    border-color: rgba(255, 255, 255, 0.5);
+  .secondaire:hover,
+  .secondaire:focus-visible {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(168, 230, 207, 0.45);
   }
-  .attente {
-    margin-top: 14px;
-    font-family: var(--mono);
-    font-size: 12.5px;
-    color: #a9c6a0;
-  }
-  .titre {
-    margin: 40px 0 14px;
+  /* État d'attente : la plateforme se voit, mais rien ne se clique. Annoncer
+     « App Store » sans lien serait un lien mort ; ne rien montrer laisserait
+     croire que l'iPhone n'est pas servi. */
+  .attente-tel {
+    opacity: 0.55;
+    cursor: default;
     font-size: 13px;
+  }
+  .attente-tel:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(168, 230, 207, 0.22);
+  }
+
+  /* ---------- Réseaux ---------- */
+  .section {
+    margin: 36px 0 14px;
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: #8bc68b;
+    color: rgba(168, 230, 207, 0.75);
   }
-  .liste {
+  .pastilles {
     display: grid;
-    gap: 10px;
+    grid-template-columns: repeat(3, 56px);
+    justify-content: center;
+    gap: 12px;
     list-style: none;
     margin: 0;
     padding: 0;
   }
-  .liste a {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    /* 60px : une cible confortable pour un pouce, bien au-delà des 44px
-       minimum — cette page ne se consulte qu'au téléphone. */
-    min-height: 60px;
-    padding: 0 18px;
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    background: rgba(255, 255, 255, 0.05);
-    color: #fff;
-    text-decoration: none;
-    font-weight: 600;
-    transition: background-color 0.15s ease, transform 0.15s ease;
-  }
-  .liste a:hover,
-  .liste a:focus-visible {
-    background: rgba(255, 255, 255, 0.13);
-    transform: translateY(-1px);
-  }
-  .rond {
+  .pastilles a {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
-    flex: 0 0 36px;
+    width: 56px;
+    height: 56px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(168, 230, 207, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--ecru);
+    transition: background-color 0.15s ease, transform 0.12s ease;
   }
-  .nom {
-    flex: 1;
+  .pastilles a:hover,
+  .pastilles a:focus-visible {
+    background: rgba(59, 139, 61, 0.35);
+    transform: translateY(-2px);
+  }
+
+  /* ---------- WhatsApp ---------- */
+  .whatsapp {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 28px;
+    padding: 14px 16px;
+    border-radius: 24px;
+    border: 1px solid rgba(168, 230, 207, 0.16);
+    background: var(--surface);
+    color: var(--ecru);
     text-align: left;
+    text-decoration: none;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
   }
-  .fleche {
-    opacity: 0.55;
+  .whatsapp:hover,
+  .whatsapp:focus-visible {
+    border-color: rgba(59, 139, 61, 0.6);
+    background: #144a3c;
+  }
+  .wa-rond {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    border-radius: 999px;
+    background: #3b8b3d;
+    color: #fff;
+  }
+  .wa-texte {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
     font-size: 15px;
   }
-  .pied {
-    margin-top: 40px;
+  .wa-num {
+    font-family: var(--mono);
     font-size: 13px;
-    color: #a9c6a0;
+    color: var(--ocre);
+  }
+  .wa-fleche {
+    opacity: 0.5;
+  }
+
+  /* ---------- Bandeau photo ---------- */
+  .bandeau {
+    position: relative;
+    display: block;
+    margin-top: 24px;
+    border-radius: 24px;
+    overflow: hidden;
+    text-decoration: none;
+  }
+  .bandeau-img {
+    display: block;
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    object-position: 50% 30%;
+  }
+  .bandeau-texte {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: flex-end;
+    padding: 16px;
+    background: linear-gradient(to top, rgba(8, 48, 37, 0.92), rgba(8, 48, 37, 0.15));
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.3;
+    text-align: left;
+  }
+
+  .pied {
+    margin-top: 32px;
+    font-size: 12.5px;
+    line-height: 1.9;
+    color: rgba(168, 230, 207, 0.65);
   }
   .pied a {
-    color: #c7dcc0;
+    color: rgba(168, 230, 207, 0.9);
   }
-  @media (max-width: 420px) {
+  .sep {
+    padding: 0 6px;
+    opacity: 0.5;
+  }
+
+  /* ---------- Écran large : deux colonnes ---------- */
+  @media (min-width: 900px) {
     .portail {
-      padding-top: 80px;
+      display: grid;
+      grid-template-columns: 55% 45%;
+      min-height: 100vh;
+    }
+    .visuel {
+      height: 100vh;
+      min-height: 0;
+    }
+    /* Le cadrage se décale vers la droite de la photo : à 55 % de large, le
+       recadrage mangeait la seconde éleveuse, et une photo de deux personnes
+       qui n'en montre qu'une ne raconte plus la même chose. */
+    .visuel-img {
+      object-position: 62% 40%;
+    }
+    /* Le fondu part vers la droite, pour rejoindre la colonne sans couture. */
+    .visuel-fondu {
+      background:
+        linear-gradient(to right, rgba(8, 48, 37, 0) 55%, var(--fond) 100%),
+        linear-gradient(to bottom, rgba(8, 48, 37, 0.25), rgba(8, 48, 37, 0.55));
+    }
+    .citation {
+      display: block;
+      position: absolute;
+      left: 48px;
+      bottom: 48px;
+      max-width: 15ch;
+      margin: 0;
+      padding-left: 18px;
+      border-left: 3px solid var(--ocre);
+      font-size: 30px;
+      font-weight: 800;
+      line-height: 1.2;
+      color: #fff;
+      text-shadow: 0 2px 18px rgba(0, 0, 0, 0.45);
+    }
+    .citation span {
+      color: var(--menthe);
+    }
+    .colonne {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 40px;
+      overflow-y: auto;
+      max-height: 100vh;
+    }
+    .contenu {
+      margin-top: 0;
+    }
+    .marque {
+      width: 190px;
+    }
+    .promesse {
+      font-size: 27px;
+    }
+    /* Le bandeau photo ne sert qu'au téléphone : à gauche, la grande photo
+       dit déjà la même chose, et la répéter ferait bégayer la page. */
+    .pastilles {
+      grid-template-columns: repeat(6, 52px);
+      gap: 10px;
+    }
+    .pastilles a {
+      width: 52px;
+      height: 52px;
+    }
+    .bandeau {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .principal,
+    .pastilles a,
+    .secondaire,
+    .whatsapp {
+      transition: none;
     }
   }
 </style>
