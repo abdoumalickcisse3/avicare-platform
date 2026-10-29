@@ -50,6 +50,7 @@ public class AuthService {
   private final IdentityMapper identityMapper;
   private final MembershipProvider membershipProvider;
   private final com.avicare.identity.spi.LoginAttemptListener loginAttempts;
+  private final com.avicare.identity.spi.SignupAlerter signupAlerter;
 
   /** Create + persist a USER account (shared by signup and provisioning). */
   @Transactional
@@ -73,6 +74,16 @@ public class AuthService {
         createUser(request.fullName(), request.email(), request.phone(), request.password());
     log.info("New user registered: id={}", saved.getId());
     loginAttempts.accountCreated(saved.getEmail());
+    // Ceinture en plus du contrat : l'interface dit « ne lève jamais », mais une inscription
+    // perdue parce qu'un message n'est pas parti serait un client perdu pour une raison qui ne
+    // le regarde pas. Le coût de l'enveloppe est nul ; celui de la confiance ne l'est pas.
+    try {
+      signupAlerter.accountCreated(
+          saved.getId(), saved.getFullName(), saved.getEmail(), saved.getPhone());
+    } catch (RuntimeException e) {
+      log.warn(
+          "Signup alert failed for user {} — the account was created anyway", saved.getId(), e);
+    }
     return issueTokens(saved);
   }
 
