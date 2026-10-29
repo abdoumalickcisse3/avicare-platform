@@ -39,3 +39,9 @@ distribution qui passe par des canaux (coopératives, provendiers, couvoirs, vé
 - Superseded : le **volet friction** d'ADR-004 (bypass dev) — le provisioning complet couvre l'usage
   courant ; le flag `avicare.features.gating-enabled` + le garde-fou prod restent pour le dev.
 - Réversible : re-restreindre `provisionV1Modules` et remonter le self-serve rétablit le modèle payant.
+
+## Suite
+
+- **ADR 019** (`019-declencheur-decision-prix.md`, 2026-10-29) écrit le **déclencheur** qui rouvrira
+  la question du prix différée ici : dix fermes avec au moins une saisie dans les trente derniers
+  jours. Il ne fixe aucun prix et ne réactive aucun gating.
