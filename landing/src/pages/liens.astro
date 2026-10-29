@@ -1,0 +1,232 @@
+---
+/**
+ * Le portail des liens — la page qu'on met dans une bio Instagram, TikTok ou
+ * WhatsApp, là où un seul lien est permis.
+ *
+ * Pourquoi chez nous et pas sur un service de « link in bio » : parce qu'une
+ * page hébergée ailleurs travaille pour le référencement de l'autre. Ici, elle
+ * nourrit jawdi.app, porte la marque, et ne disparaîtra pas le jour où un
+ * service gratuit ferme.
+ *
+ * Elle est pensée pour un pouce : on arrive d'un téléphone, on vient chercher
+ * UNE chose. Les actions qui font vivre le produit — essayer, télécharger,
+ * écrire — passent donc avant la liste des réseaux.
+ */
+import Base from "../layouts/Base.astro";
+import { Image } from "astro:assets";
+import logoVertical from "../assets/logo-compact-white.svg";
+import ReseauIcone from "../components/ReseauIcone.astro";
+import { RESEAUX_ACTIFS } from "../lib/reseaux";
+import { etatBoutiques, phraseAVenir } from "../lib/boutiques";
+
+const signupUrl = import.meta.env.PUBLIC_APP_SIGNUP_URL || "#";
+const loginUrl = import.meta.env.PUBLIC_APP_LOGIN_URL || "#";
+const contactEmail = import.meta.env.PUBLIC_PARTNER_EMAIL || "contact@jawdi.app";
+const boutiques = etatBoutiques(import.meta.env);
+const aVenir = phraseAVenir(boutiques);
+
+const title = "Tous les liens Jawdi — app, réseaux, contact";
+const description =
+  "Télécharger l'application, démarrer gratuitement, suivre Jawdi sur les réseaux ou nous écrire : tous les liens officiels de Jawdi en une page.";
+---
+
+<Base title={title} description={description} solidHeader>
+  <section class="portail">
+    <div class="carte">
+      <Image src={logoVertical} alt="Jawdi" width={520} height={185} class="marque" />
+      <p class="phrase">
+        La gestion d'élevage avicole pensée pour l'Afrique de l'Ouest — du poussin à la marge.
+      </p>
+
+      <div class="actions">
+        <a class="btn btn-cta btn-lg" href={signupUrl}>Commencer gratuitement</a>
+        {
+          boutiques.androidApk && (
+            <a class="btn btn-ghost" href={boutiques.androidApk}>
+              Télécharger pour Android
+            </a>
+          )
+        }
+        {
+          boutiques.appStore && (
+            <a class="btn btn-ghost" href={boutiques.appStore} target="_blank" rel="noopener">
+              Télécharger sur l'App Store
+            </a>
+          )
+        }
+        <a class="btn btn-ghost" href={loginUrl}>J'ai déjà un compte</a>
+      </div>
+      {aVenir && <p class="attente">{aVenir}</p>}
+
+      <h2 class="titre">Suivre Jawdi</h2>
+      <ul class="liste" aria-label="Comptes officiels de Jawdi">
+        {
+          RESEAUX_ACTIFS.map((r) => (
+            <li>
+              <a href={r.url} target="_blank" rel="me noopener">
+                <span class="rond">
+                  <ReseauIcone cle={r.cle} taille={20} />
+                </span>
+                <span class="nom">{r.nom}</span>
+                <span class="fleche" aria-hidden="true">
+                  ↗
+                </span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+
+      <h2 class="titre">Nous écrire</h2>
+      <ul class="liste">
+        <li>
+          <a href={`mailto:${contactEmail}`}>
+            <span class="rond">@</span>
+            <span class="nom">{contactEmail}</span>
+            <span class="fleche" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li>
+          <a href="/contact">
+            <span class="rond">✉</span>
+            <span class="nom">Formulaire de contact</span>
+            <span class="fleche" aria-hidden="true">→</span>
+          </a>
+        </li>
+      </ul>
+
+      <p class="pied">
+        <a href="/">jawdi.app</a> · <a href="/mentions-legales">Mentions légales</a> ·
+        <a href="/confidentialite">Confidentialité</a>
+      </p>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* Fond sombre de la marque : la page s'ouvre souvent seule, sans contexte,
+     et doit se reconnaître en une demi-seconde. */
+  .portail {
+    min-height: 100vh;
+    padding: 96px 16px 56px;
+    background:
+      radial-gradient(120% 90% at 50% 0%, rgba(59, 139, 61, 0.28), transparent 60%),
+      linear-gradient(170deg, var(--earth-800) 0%, var(--earth) 100%);
+  }
+  .carte {
+    max-width: 520px;
+    margin: 0 auto;
+    text-align: center;
+    color: #eaf3e4;
+  }
+  .marque {
+    width: 190px;
+    height: auto;
+    margin: 0 auto;
+  }
+  .phrase {
+    margin: 18px auto 28px;
+    max-width: 38ch;
+    font-size: 15.5px;
+    line-height: 1.6;
+    color: #c7dcc0;
+  }
+  .actions {
+    display: grid;
+    gap: 10px;
+  }
+  /* Bouton secondaire propre à cette page : sur ce fond, les variantes
+     claires du site deviennent illisibles. */
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 52px;
+    padding: 0 20px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.26);
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
+  .btn-ghost:hover,
+  .btn-ghost:focus-visible {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+  .attente {
+    margin-top: 14px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: #a9c6a0;
+  }
+  .titre {
+    margin: 40px 0 14px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #8bc68b;
+  }
+  .liste {
+    display: grid;
+    gap: 10px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .liste a {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    /* 60px : une cible confortable pour un pouce, bien au-delà des 44px
+       minimum — cette page ne se consulte qu'au téléphone. */
+    min-height: 60px;
+    padding: 0 18px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background-color 0.15s ease, transform 0.15s ease;
+  }
+  .liste a:hover,
+  .liste a:focus-visible {
+    background: rgba(255, 255, 255, 0.13);
+    transform: translateY(-1px);
+  }
+  .rond {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+  }
+  .nom {
+    flex: 1;
+    text-align: left;
+  }
+  .fleche {
+    opacity: 0.55;
+    font-size: 15px;
+  }
+  .pied {
+    margin-top: 40px;
+    font-size: 13px;
+    color: #a9c6a0;
+  }
+  .pied a {
+    color: #c7dcc0;
+  }
+  @media (max-width: 420px) {
+    .portail {
+      padding-top: 80px;
+    }
+  }
+</style>
