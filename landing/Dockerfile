@@ -16,8 +16,8 @@ ARG PUBLIC_SITE_URL=https://jawdi.app
 # Phase collaborateurs : le CTA "Commencer gratuitement" mène à /contact.
 ARG PUBLIC_APP_SIGNUP_URL=/contact
 ARG PUBLIC_APP_LOGIN_URL=https://app.jawdi.app/login
-ARG PUBLIC_PARTNER_EMAIL=malick.cisse@nlogicsolutions.com
-ARG PUBLIC_CONTACT_PHONE=+221 70 475 69 96
+ARG PUBLIC_PARTNER_EMAIL=contact@jawdi.app
+ARG PUBLIC_CONTACT_PHONE=+221 70 420 81 30
 # Mesure d'audience : sans valeur, aucun script n'est émis. Pas de défaut ici — un build de
 # préversion ne doit pas alimenter les statistiques de production.
 ARG PUBLIC_GA_ID=

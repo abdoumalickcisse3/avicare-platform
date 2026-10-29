@@ -17,9 +17,9 @@ import Highlight from "../components/Highlight.astro";
 import SectionHead from "../components/SectionHead.astro";
 
 const partnerEmail =
-  import.meta.env.PUBLIC_PARTNER_EMAIL || "malick.cisse@nlogicsolutions.com";
-const contactPhone = import.meta.env.PUBLIC_CONTACT_PHONE || "+221 70 475 69 96";
-// wa.me exige le numéro international sans "+" ni espaces (ex. 221704756996).
+  import.meta.env.PUBLIC_PARTNER_EMAIL || "contact@jawdi.app";
+const contactPhone = import.meta.env.PUBLIC_CONTACT_PHONE || "+221 70 420 81 30";
+// wa.me exige le numéro international sans "+" ni espaces (ex. 221704208130).
 const waNumber = contactPhone.replace(/[^\d]/g, "");
 const waHref = `https://wa.me/${waNumber}`;
 const telHref = `tel:${contactPhone.replace(/[^+\d]/g, "")}`;
