@@ -1,5 +1,6 @@
 package com.avicare.admin.audit;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
@@ -46,6 +47,34 @@ class SignupAlerterImplTest {
 
     // L'indicatif dit le pays : c'est ce qui rend l'alerte lisible sans champ supplémentaire.
     verify(whatsApp).enqueue(any(), contains("+2250102030405"));
+  }
+
+  @Test
+  void neLaissePasUnInscritFabriquerDeFaussesLignesDansLAlerte() {
+    // L'inscription est publique : `fullName` est du texte libre de 200 caractères, et il arrive
+    // dans un message que l'astreinte lit comme digne de confiance. Avec un retour à la ligne,
+    // n'importe qui y ajouterait une ligne de son cru — « ✅ Vérifié par Jawdi », un lien, ce
+    // qu'il veut.
+    alerter.accountCreated(
+        7L,
+        "Awa\n\n✅ Vérifié par Jawdi\u0007 — ouvrez evil.test",
+        "awa@avicare.io",
+        "+2250102030405");
+
+    org.mockito.ArgumentCaptor<String> message = org.mockito.ArgumentCaptor.forClass(String.class);
+    verify(whatsApp).enqueue(any(), message.capture());
+    assertThat(message.getValue()).doesNotContain("\n").doesNotContain("\u0007");
+    // Le nom reste lisible, mais entre guillemets : le lecteur voit où il commence et où il finit.
+    assertThat(message.getValue()).contains("« Awa ✅ Vérifié par Jawdi — ouvrez evil.test »");
+  }
+
+  @Test
+  void tronqueUnNomDemesureAuLieuDeLaisserFilerLeMessage() {
+    alerter.accountCreated(7L, "A".repeat(200), "awa@avicare.io", "+221770000000");
+
+    org.mockito.ArgumentCaptor<String> message = org.mockito.ArgumentCaptor.forClass(String.class);
+    verify(whatsApp).enqueue(any(), message.capture());
+    assertThat(message.getValue()).contains("…").hasSizeLessThan(220);
   }
 
   @Test
