@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- **1 PR = 1 sujet.** PR1 = tâches 1-2 ; PR2 = tâche 3 ; PR3 = tâches 4-6 ; PR4 = tâche 7.
+- **1 PR = 1 sujet.** PR1 = tâche 1 (la tâche 2 s'est révélée sans objet) ; PR2 = tâche 3 ; PR3 = tâches 4-6 ; PR4 = tâche 7.
 - Migration Flyway numérotée **à l'ordre de fusion** (`V67` si rien n'est fusionné entre-temps) ; aucune migration déjà fusionnée n'est modifiée.
 - Périmètre pays = les huit de la zone XOF : `SN`, `CI`, `BJ`, `BF`, `ML`, `TG`, `NE`, `GW`. Les autres restent hors sujet (question de devise).
 - Fuseaux : `SN→Africa/Dakar`, `CI→Africa/Abidjan`, `BF→Africa/Ouagadougou`, `ML→Africa/Bamako`, `TG→Africa/Lome`, `GW→Africa/Bissau` (UTC+0) ; `BJ→Africa/Porto-Novo`, `NE→Africa/Niamey` (UTC+1).
@@ -37,7 +37,7 @@ Cinq conditions que la spec implique et qu'aucun chemin heureux n'exerce. Chaque
 
 ---
 
-## PR 1 — La gratuité est bornée
+## PR 1 — La gratuité reçoit un déclencheur
 
 ### Task 1: ADR-019 — le déclencheur de la décision de prix
 
@@ -66,37 +66,28 @@ git add docs/decisions/019-declencheur-decision-prix.md docs/decisions/009-remov
 git commit -m "docs(decisions): écrire le déclencheur de la décision de prix (ADR-019)"
 ```
 
-### Task 2: La landing borne la gratuité
+### Task 2: La landing borne la gratuité — **VÉRIFIÉ LE 2026-10-29 : RIEN À FAIRE**
 
-**Files:**
-- Modify: les composants et pages de `landing/src/` qui écrivent « gratuit » / « gratuitement » sans borne
-- Test: `cd landing && npm run build`
+Relevé avant d'écrire la moindre ligne : `grep -rniE "gratuit" landing/src` donne 20 occurrences, et
+**chaque page qui revendique la gratuité en donne déjà la borne** — « Gratuit pendant le pilote »
+(`Hero.astro:29`, `index.astro:24`), « Gratuit pendant la phase pilote » (`index.astro:53`),
+« Rejoignez le pilote gratuit » (`partenaires.astro:124`, `index.astro:157`), et la page `/tarifs`
+en porte quatre. Les seules occurrences sans borne sont le **libellé de bouton** « Commencer
+gratuitement » — un libellé n'est pas une promesse de durée, et sur chaque page qui le porte la
+borne est énoncée à côté. Les trois pages sans borne (`confidentialite`, `mentions-legales`,
+`contact`) ne revendiquent **aucune** gratuité.
 
-- [ ] **Step 1: Relever chaque occurrence**
+L'anti-objectif « écrire *gratuit* sans borne quelque part où un futur client le lira » est donc
+**déjà tenu** sur la landing. La tâche disparaît, et la PR 1 se réduit à l'ADR.
 
-Run: `grep -rni "gratuit" landing/src`
-Lister les occurrences **visibles par un visiteur** (les commentaires de code ne comptent pas).
+Ce qui reste utile, déplacé au chantier B (tâche 3) : la **page d'inscription web** ne dit rien de
+la gratuité (`grep` sur `web/src/app/(auth)/signup/page.tsx` : aucune mention). Elle devient la
+porte publique — c'est là qu'une ligne « Gratuit pendant la phase pilote » a un lecteur.
 
-- [ ] **Step 2: Borner chaque occurrence**
-
-Remplacer par une formulation qui porte la borne — « Gratuit pendant la phase pilote » — en gardant le ton de chaque emplacement (un bouton ne porte pas une phrase). Un appel à l'action trop court pour la borne la reçoit en texte d'accompagnement immédiat, jamais nulle part.
-
-- [ ] **Step 3: Construire la landing**
-
-Run: `cd landing && npm run build`
-Expected: build réussi (la CI des PR ne couvre pas ce dossier).
-
-- [ ] **Step 4: Commit**
+- [ ] **Step 1: Ouvrir la PR 1 (ADR seul), attendre les checks verts, fusionner en rebase**
 
 ```bash
-git add landing/src
-git commit -m "chore(landing): borner la gratuité à la phase pilote"
-```
-
-- [ ] **Step 5: Ouvrir la PR 1, attendre les checks verts, fusionner en rebase**
-
-```bash
-gh pr create --title "docs+landing: borner la gratuité à la phase pilote (ADR-019)" --body "..."
+gh pr create --title "docs(decisions): écrire le déclencheur de la décision de prix (ADR-019)" --body "..."
 gh pr checks --watch && gh pr merge --rebase --delete-branch
 ```
 
@@ -111,6 +102,7 @@ gh pr checks --watch && gh pr merge --rebase --delete-branch
 - Create: `backend/avicare-app/src/main/java/com/avicare/identity/spi/NoSignupAlerter.java`
 - Create: `backend/avicare-app/src/main/java/com/avicare/admin/audit/SignupAlerterImpl.java`
 - Modify: `backend/avicare-app/src/main/java/com/avicare/identity/service/AuthService.java` (injection + appel dans `signup`)
+- Modify: `web/src/app/(auth)/signup/page.tsx` (une ligne « Gratuit pendant la phase pilote » — la page devient la porte publique et n'en dit rien aujourd'hui)
 - Test: `backend/avicare-app/src/test/java/com/avicare/identity/service/AuthServiceTest.java`
 - Test: `backend/avicare-app/src/test/java/com/avicare/admin/audit/SignupAlerterImplTest.java` (créer)
 
