@@ -51,6 +51,35 @@ wait_backend_healthy() {
   return 1
 }
 
+# Le backend n'est pas la seule chose qu'on déploie.
+#
+# Jusqu'ici ce script n'attendait que la santé du backend. Une landing qui refuse de démarrer — un
+# nginx.conf invalide suffit — laissait le script annoncer un succès pendant que jawdi.app tombait,
+# sans retour arrière et sans que la CI vire au rouge. La landing et le web portent tous deux un
+# HEALTHCHECK dans leur image ; il suffisait de le lire.
+#
+# Volontairement plus court que pour le backend : un serveur de fichiers statiques démarre en
+# secondes, et s'il n'est pas sain en une minute il ne le sera pas.
+wait_service_healthy() {
+  local service="$1" timeout="${2:-60}"
+  local deadline=$((SECONDS + timeout)) cid status
+  while [ "$SECONDS" -lt "$deadline" ]; do
+    cid="$($COMPOSE ps -q "$service" 2>/dev/null || true)"
+    if [ -n "$cid" ]; then
+      status="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$cid" 2>/dev/null || echo unknown)"
+      # `none` : l'image ne déclare pas de HEALTHCHECK. On ne peut rien affirmer, on n'invente pas
+      # un échec — mais le conteneur doit au moins tourner.
+      if [ "$status" = "none" ]; then
+        [ "$(docker inspect --format '{{.State.Running}}' "$cid" 2>/dev/null)" = "true" ] && return 0
+      fi
+      [ "$status" = "healthy" ] && return 0
+      echo "  $service health: $status"
+    fi
+    sleep 3
+  done
+  return 1
+}
+
 # Optional image-tag override (CI passes the commit SHA for immutable deploys).
 NEW_TAG="${1:-}"
 use_tag "$NEW_TAG"
@@ -79,6 +108,22 @@ if ! wait_backend_healthy; then
   echo "NOTE: Flyway migrations only move forward; a rollback restores the old code, not the old schema." >&2
   exit 1
 fi
+# La vitrine et l'application web, une fois le backend sain. Un échec ici ne déclenche PAS de
+# retour arrière — la base a peut-être déjà migré — mais il fait échouer le job, ce qui est tout
+# l'enjeu : qu'un déploiement cassé ne soit jamais annoncé vert.
+DEGRADE=0
+for service in landing web; do
+  if ! wait_service_healthy "$service" 60; then
+    echo "ERROR: $service n'est pas devenu sain." >&2
+    $COMPOSE logs --tail=40 "$service" >&2 || true
+    DEGRADE=1
+  fi
+done
+if [ "$DEGRADE" = "1" ]; then
+  echo "ERROR: le backend est sain mais une façade publique ne l'est pas — le site est cassé." >&2
+  exit 1
+fi
+
 if [ -n "$NEW_TAG" ]; then
   echo "$NEW_TAG" > "$LAST_GOOD_FILE"
 fi
