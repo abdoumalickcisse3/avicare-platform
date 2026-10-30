@@ -158,6 +158,55 @@ class IntegrityCheckServiceTest {
     verify(alerter, never()).criticalFound(any(), any(), any(), any(), any());
   }
 
+  @Test
+  void letsACheckSayThatRecomputingItsFindingWouldMeanNothing() {
+    // Le type d'entité ne suffit pas à trancher : « stock_item » est recalculable, mais recalculer
+    // un stock NÉGATIF repose la valeur du dernier mouvement — négative elle aussi. Le bouton
+    // annoncerait « -105 -> -105 » et n'aurait rien fait. C'est le contrôle qui le sait, pas le
+    // type.
+    IntegrityCheckService service =
+        service(check("recalculable", null), nonRecomputable("stock_negative"));
+
+    assertThat(service.isRecomputable("recalculable")).isTrue();
+    assertThat(service.isRecomputable("stock_negative")).isFalse();
+  }
+
+  @Test
+  void treatsAnUnknownCheckAsRecomputable() {
+    // Une anomalie d'un contrôle retiré du code garde son comportement d'avant : on ne masque pas
+    // une action qui marchait hier au prétexte qu'on ne reconnaît plus la clé.
+    assertThat(service(check("client_balance", null)).isRecomputable("disparu")).isTrue();
+  }
+
+  private static IntegrityCheck nonRecomputable(String key) {
+    return new IntegrityCheck() {
+      @Override
+      public String key() {
+        return key;
+      }
+
+      @Override
+      public String label() {
+        return "Contrôle " + key;
+      }
+
+      @Override
+      public Severity severity() {
+        return Severity.CRITICAL;
+      }
+
+      @Override
+      public boolean recomputable() {
+        return false;
+      }
+
+      @Override
+      public List<FindingCandidate> run(LocalDateTime graceCutoff) {
+        return List.of();
+      }
+    };
+  }
+
   private static IntegrityFinding finding(String checkKey, String entityType, Long entityId) {
     IntegrityFinding finding = new IntegrityFinding();
     finding.setCheckKey(checkKey);

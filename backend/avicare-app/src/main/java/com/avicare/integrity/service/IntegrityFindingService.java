@@ -27,6 +27,7 @@ public class IntegrityFindingService {
   private final IntegrityFindingRepository repository;
   private final RecomputeService recomputeService;
   private final IntegrityAlerter alerter;
+  private final IntegrityCheckService checkService;
 
   @Transactional(readOnly = true)
   public Page<IntegrityFinding> openFindings(Pageable pageable) {
@@ -46,6 +47,7 @@ public class IntegrityFindingService {
   @Transactional
   public RecomputeResult preview(Long findingId) {
     IntegrityFinding finding = open(findingId);
+    refuseIfTheCheckSaysItWouldMeanNothing(finding);
     return recomputeService.recompute(finding.getEntityType(), finding.getEntityId(), true);
   }
 
@@ -59,6 +61,7 @@ public class IntegrityFindingService {
   public RecomputeResult applyRecompute(Long findingId, String reason, Long actorUserId) {
     requireReason(reason);
     IntegrityFinding finding = open(findingId);
+    refuseIfTheCheckSaysItWouldMeanNothing(finding);
     RecomputeResult preview =
         recomputeService.recompute(finding.getEntityType(), finding.getEntityId(), true);
     if (!preview.changesSomething()) {
@@ -106,6 +109,25 @@ public class IntegrityFindingService {
           "This finding was already closed as " + finding.getResolutionAction());
     }
     return finding;
+  }
+
+  /**
+   * Some findings have a recomputable entity type and nothing to gain from recomputing it.
+   *
+   * <p>A negative stock is the case: its type is {@code stock_item}, whose quantity <i>is</i>
+   * derived — but the figure a recompute puts back is the last movement's, which is negative too.
+   * The console hides the button for these; this is the rule itself, and the screen merely reflects
+   * it. A flag the front end chooses to honour is not a rule: refusing here is what makes it one.
+   */
+  private void refuseIfTheCheckSaysItWouldMeanNothing(IntegrityFinding finding) {
+    if (!checkService.isRecomputable(finding.getCheckKey())) {
+      throw new BusinessRuleException(
+          "RECOMPUTE_NOT_SUPPORTED",
+          "Recomputing a "
+              + finding.getCheckKey()
+              + " finding would put back the same figure — the correction is a decision, not an"
+              + " arithmetic operation");
+    }
   }
 
   private static void requireReason(String reason) {
