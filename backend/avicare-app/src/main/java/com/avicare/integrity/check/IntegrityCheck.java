@@ -23,6 +23,22 @@ public interface IntegrityCheck {
   Severity severity();
 
   /**
+   * Whether offering « Recalculer » on this check's findings means anything.
+   *
+   * <p>The entity type alone cannot decide it. {@code stock_item} is a recomputable type — the
+   * quantity is derived from the movement journal — yet recomputing a <b>negative</b> stock puts
+   * back the last movement's own figure, which is negative too: the console would report {@code
+   * -105 -> -105} and claim success having changed nothing. The check knows that; the type does
+   * not.
+   *
+   * <p>Default {@code true}: a new check inherits the behaviour its entity type already had, and
+   * only a check with a reason to say otherwise says otherwise.
+   */
+  default boolean recomputable() {
+    return true;
+  }
+
+  /**
    * Everything currently wrong.
    *
    * @param graceCutoff ignore anything touched after this instant. A farm in Dakar may well be

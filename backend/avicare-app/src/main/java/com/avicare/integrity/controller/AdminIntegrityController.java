@@ -138,7 +138,11 @@ public class AdminIntegrityController {
         finding.getDetectedAt(),
         finding.getLastSeenAt(),
         Duration.between(detected, LocalDateTime.now()).toDays(),
-        recomputeService.supports(finding.getEntityType()));
+        // Deux conditions, deux savoirs : le type dit s'il existe une valeur dérivée à
+        // recalculer, le contrôle dit si la recalculer voudrait dire quelque chose pour SON
+        // anomalie. Un stock négatif porte bien le type « stock_item » et n'en tire rien.
+        checkService.isRecomputable(finding.getCheckKey())
+            && recomputeService.supports(finding.getEntityType()));
   }
 
   /** The staff member behind the action — read the way the platform reads it (see JwtFilter). */

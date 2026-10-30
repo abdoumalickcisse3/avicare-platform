@@ -143,6 +143,20 @@ public class IntegrityCheckService {
     return List.copyOf(checks);
   }
 
+  /**
+   * Whether the console should offer the recompute button for this check's findings.
+   *
+   * <p>Unknown key — a check since removed from the code — stays {@code true}: its old findings
+   * keep the action they had, rather than losing it because nobody recognises the key any more.
+   */
+  public boolean isRecomputable(String checkKey) {
+    return checks.stream()
+        .filter(c -> c.key().equals(checkKey))
+        .map(IntegrityCheck::recomputable)
+        .findFirst()
+        .orElse(true);
+  }
+
   public String labelOf(String checkKey) {
     return checks.stream()
         .filter(c -> c.key().equals(checkKey))

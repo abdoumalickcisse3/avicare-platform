@@ -204,7 +204,102 @@ class IntegrityFlowIT {
         .toList();
   }
 
+  @Test
+  void findsAStockGoneNegativeAndRefusesToPretendItCanRecomputeIt() throws Exception {
+    String staff = staffToken("integrity:read", "integrity:recompute");
+    long farmId = aFarm("Ferme Négative");
+
+    // Les deux formes réellement rencontrées sur la ferme pilote.
+    long consommeADecouvert = aStockItemGoneNegative(farmId, 105); // sortie sur un stock à 0
+    long mouvementEfface = aStockItemNegativeWithoutMovement(farmId); // cascade d'un traitement
+
+    JsonNode report = data(postOk("/api/v1/admin/integrity/run", staff, null));
+    assertThat(report.get("failed").asInt())
+        .describedAs("every check must run against the real schema")
+        .isZero();
+
+    List<Long> flagged =
+        findings.findByCheckKeyAndResolvedAtIsNull("stock_negative").stream()
+            .map(com.avicare.integrity.domain.IntegrityFinding::getEntityId)
+            .toList();
+    assertThat(flagged).containsExactlyInAnyOrder(consommeADecouvert, mouvementEfface);
+
+    JsonNode finding = onlyFindingFor("stock_negative", staff);
+    assertThat(finding.get("severity").asText()).isEqualTo("CRITICAL");
+    assertThat(finding.get("expectedValue").asText()).isEqualTo("0");
+    assertThat(finding.get("farmId").asLong()).isEqualTo(farmId);
+
+    // Le cœur du sujet : le type d'entité est « stock_item », donc recalculable en général — mais
+    // recalculer CELLE-CI reposerait la valeur du dernier mouvement, négative elle aussi. Offrir le
+    // bouton serait promettre une correction qui n'en est pas une.
+    assertThat(finding.get("entityType").asText()).isEqualTo("stock_item");
+    assertThat(finding.get("recomputable").asBoolean()).isFalse();
+
+    // Et l'API tient la même ligne que l'écran : pas de bouton, pas d'aperçu.
+    mockMvc
+        .perform(
+            get("/api/v1/admin/integrity/findings/" + finding.get("id").asLong() + "/preview")
+                .header("Authorization", "Bearer " + staff))
+        .andExpect(status().isUnprocessableEntity());
+
+    // La ligne sans aucun mouvement est précisément l'angle mort de stock_current_quantity : son
+    // JOIN LATERAL l'écarte. Sans ce contrôle-ci, personne ne la voit.
+    assertThat(openFindingsFor(mouvementEfface)).isEmpty();
+
+    // Zéro mouvement est un diagnostic, pas une absence de donnée : l'astreinte le lit sans
+    // écrire de requête.
+    JsonNode details =
+        findings.findByCheckKeyAndResolvedAtIsNull("stock_negative").stream()
+            .filter(f -> f.getEntityId() == mouvementEfface)
+            .findFirst()
+            .map(
+                f -> {
+                  try {
+                    return objectMapper.readTree(objectMapper.writeValueAsString(f.getDetails()));
+                  } catch (Exception e) {
+                    throw new AssertionError(e);
+                  }
+                })
+            .orElseThrow();
+    assertThat(details.get("movements").asLong()).isZero();
+  }
+
   // --- fixture ---------------------------------------------------------------------------------
+
+  /** Une sortie passée sous zéro : le journal est cohérent, et pourtant le stock est faux. */
+  private long aStockItemGoneNegative(long farmId, int sortie) {
+    Long itemId =
+        jdbc.queryForObject(
+            """
+            INSERT INTO stock_items(farm_id, article_key, current_quantity, unit)
+            VALUES (:farmId, 'aliment-ponte', :apres, 'KG') RETURNING id
+            """,
+            new MapSqlParameterSource("farmId", farmId).addValue("apres", -sortie),
+            Long.class);
+    jdbc.update(
+        """
+        INSERT INTO stock_movements(stock_item_id, movement_type, movement_date, quantity,
+                                    quantity_before, quantity_after, reason)
+        VALUES (:id, 'OUT', CURRENT_DATE, :qty, 0, :apres, 'CONSUMPTION_LOT')
+        """,
+        new MapSqlParameterSource("id", itemId).addValue("qty", sortie).addValue("apres", -sortie));
+    return itemId;
+  }
+
+  /**
+   * Une quantité négative sans aucune ligne au journal — ce que laissait un traitement supprimé
+   * dont le mouvement partait en cascade (défaut corrigé depuis).
+   */
+  private long aStockItemNegativeWithoutMovement(long farmId) {
+    return jdbc.queryForObject(
+        """
+        INSERT INTO stock_items(farm_id, article_key, article_source, current_quantity,
+                                last_movement_at)
+        VALUES (:farmId, 'vigosine', 'TREATMENT', -0.030, NOW()) RETURNING id
+        """,
+        new MapSqlParameterSource("farmId", farmId),
+        Long.class);
+  }
 
   private long aFarm(String name) throws Exception {
     String token = signupAndLogin("owner-" + System.nanoTime());
