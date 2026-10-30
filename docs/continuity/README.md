@@ -70,6 +70,31 @@ eas credentials -p android     # Keystore → Download / Export
 Ranger le fichier et son mot de passe dans le gestionnaire de mots de passe — **pas dans le
 dépôt**, même privé. La commande est interactive : elle ne peut pas être faite à votre place.
 
+**Vérifier que c'est bien la bonne clé.** Un export qui réussit en rapportant une *autre* clé ne
+protège rien, et ne se voit pas : on l'apprend à la première mise à jour refusée, des mois plus
+tard, quand il est trop tard. L'APK publié le 2026-10-29 est signé par ce certificat — lu dans son
+bloc de signature, pas supposé :
+
+| | |
+|---|---|
+| Empreinte SHA-256 | `A6:82:23:0D:DC:27:57:ED:B6:47:4A:CA:C1:DF:23:6B:1F:3A:27:F8:72:52:72:AD:E3:56:2E:F6:1B:D2:31:7A` |
+| Numéro de série | `69E929B12959BE7B` |
+| Émis le | 2026-10-29 15:04:33 UTC, valide jusqu'au 2054-03-16 |
+
+Après l'export, comparer :
+
+```bash
+keytool -list -v -keystore <fichier-exporté>.jks | grep -i sha256
+```
+
+Les deux empreintes doivent être **identiques**. Si elles diffèrent, la clé qui signe les APK
+installés chez les éleveurs est encore ailleurs, et rien n'est sauvegardé.
+
+Un détail qui fait perdre une demi-heure : `keytool -printcert -jarfile <apk>` ne sort **rien** sur
+cet APK, et ce n'est pas un défaut. EAS ne pose pas de signature v1 (JAR), seulement le schéma v2,
+que `keytool` ne sait pas lire. L'empreinte ci-dessus vient du bloc v2 lui-même, recoupée avec
+`openssl x509 -fingerprint -sha256`.
+
 Tant que ce n'est pas fait, la seule copie vit chez EAS, et le compte EAS devient un point de
 défaillance unique de plus.
 
