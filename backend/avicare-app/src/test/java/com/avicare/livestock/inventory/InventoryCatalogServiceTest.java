@@ -1,9 +1,12 @@
 package com.avicare.livestock.inventory;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.Mockito.when;
 
+import com.avicare.livestock.domain.ArticleSource;
 import com.avicare.livestock.health.HealthCatalogService;
+import com.avicare.livestock.health.TreatmentDto;
 import com.avicare.parameters.api.ParametersFacade;
 import com.avicare.parameters.api.dto.CatalogEntryInfo;
 import java.util.List;
@@ -64,6 +67,50 @@ class InventoryCatalogServiceTest {
     assertThat(custom.custom()).isTrue();
     assertThat(custom.label()).isEqualTo("Mélange maison");
     assertThat(custom.typicalUnitPriceXof()).isNull();
+  }
+
+  /**
+   * ADR-020: a medication is one product with two catalog faces under the same key. The picker must
+   * therefore offer it <b>once</b>, and as the {@code INVENTORY} article — {@code stock_items} is
+   * unique per {@code (farm, source, key)}, so offering both faces would let the farmer open a
+   * second stock row and hold two balances for one bottle.
+   */
+  @Test
+  void listAllAvailableArticles_offersAMedicationOnce_asItsStockArticle() {
+    when(parametersFacade.listForFarm(7L, "inventory_items"))
+        .thenReturn(
+            List.of(
+                new CatalogEntryInfo(
+                    "inventory_items",
+                    "hepaturyl",
+                    Map.of("label", "Hepaturyl", "subcategory", "MEDICATION", "unit", "L"),
+                    true)));
+    when(healthCatalogService.listTreatments(7L))
+        .thenReturn(
+            List.of(
+                new TreatmentDto("hepaturyl", "Hepaturyl", null, null, 7, 3, List.of(), null, true),
+                new TreatmentDto(
+                    "amoxicillin_50",
+                    "Amoxicilline 50%",
+                    "amoxicillin",
+                    null,
+                    5,
+                    4,
+                    List.of(),
+                    null,
+                    false)));
+
+    List<InventoryCatalogItemDto> all = service.listAllAvailableArticles(7L);
+
+    assertThat(all)
+        .extracting(InventoryCatalogItemDto::articleKey, InventoryCatalogItemDto::articleSource)
+        .containsExactly(
+            tuple("hepaturyl", ArticleSource.INVENTORY),
+            tuple("amoxicillin_50", ArticleSource.TREATMENT));
+    assertThat(all)
+        .filteredOn(a -> a.articleKey().equals("hepaturyl"))
+        .singleElement()
+        .satisfies(a -> assertThat(a.unit()).isEqualTo("L"));
   }
 
   /**

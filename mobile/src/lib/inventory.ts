@@ -13,6 +13,7 @@ export const INVENTORY_SUBCATEGORY_LABELS: Record<string, string> = {
   CONSUMABLE: 'Consommable',
   EQUIPMENT: 'Équipement',
   PRODUCT: 'Produit',
+  MEDICATION: 'Médicament',
 };
 
 export const FEED_PHASE_LABELS: Record<FeedPhase, string> = {

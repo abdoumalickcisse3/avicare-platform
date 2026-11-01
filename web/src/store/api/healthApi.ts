@@ -94,37 +94,12 @@ export const healthApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [{ type: "HealthCatalog", id: "vaccines" }],
     }),
-    createTreatmentCatalog: build.mutation<
-      Treatment,
-      { farmId: number; key: string; value: Record<string, unknown> }
-    >({
-      query: ({ farmId, key, value }) => ({
-        url: `${base(farmId)}/catalog/treatments`,
-        method: "POST",
-        body: { key, value },
-      }),
-      transformResponse: (r: ApiEnvelope<Treatment>) => r.data,
-      invalidatesTags: [{ type: "HealthCatalog", id: "treatments" }],
-    }),
-    updateTreatmentCatalog: build.mutation<
-      Treatment,
-      { farmId: number; key: string; value: Record<string, unknown> }
-    >({
-      query: ({ farmId, key, value }) => ({
-        url: `${base(farmId)}/catalog/treatments`,
-        method: "POST",
-        body: { key, value },
-      }),
-      transformResponse: (r: ApiEnvelope<Treatment>) => r.data,
-      invalidatesTags: [{ type: "HealthCatalog", id: "treatments" }],
-    }),
-    deleteTreatmentCatalog: build.mutation<void, { farmId: number; key: string }>({
-      query: ({ farmId, key }) => ({
-        url: `${base(farmId)}/catalog/treatments/${key}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: [{ type: "HealthCatalog", id: "treatments" }],
-    }),
+    /*
+     * No treatment-catalog write bindings here on purpose (ADR-020): a medication is one product
+     * with two faces, and both are written through `saveMedication` /`deleteMedication` in
+     * `inventoryCatalogApi`. Writing this catalog alone was how farms ended up with a treatment
+     * they could never buy, receive or decrement.
+     */
     createProgram: build.mutation<
       VaccinationProgram,
       { farmId: number; key: string; value: Record<string, unknown> }
@@ -445,9 +420,6 @@ export const {
   useCreateVaccineMutation,
   useUpdateVaccineMutation,
   useDeleteVaccineMutation,
-  useCreateTreatmentCatalogMutation,
-  useUpdateTreatmentCatalogMutation,
-  useDeleteTreatmentCatalogMutation,
   useCreateProgramMutation,
   useUpdateProgramMutation,
   useDeleteProgramMutation,

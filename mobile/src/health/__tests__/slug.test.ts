@@ -1,21 +1,27 @@
 import { slugify } from '../slug';
 
 describe('slugify', () => {
-  it('lowercases and joins words with underscores', () => {
-    expect(slugify('Newcastle La Sota')).toBe('newcastle_la_sota');
+  /**
+   * The separator is a hyphen, exactly as `web/src/lib/slug.ts` derives it. It used to be an
+   * underscore here, which meant the same medication typed on the phone and on the web produced
+   * two keys, two catalog entries and two stock balances for one bottle — the duplication ADR-020
+   * exists to stop.
+   */
+  it('lowercases and joins words with hyphens, like the web', () => {
+    expect(slugify('Newcastle La Sota')).toBe('newcastle-la-sota');
   });
 
   it('strips accents so one medication does not become two', () => {
     // A key is what flocks, treatments and withdrawal snapshots point at. "Amoxicilline" typed
     // with and without an accent must land on the same entry.
-    expect(slugify('Amoxicillíne 50%')).toBe('amoxicilline_50');
+    expect(slugify('Amoxicillíne 50%')).toBe('amoxicilline-50');
   });
 
   it('collapses punctuation and spacing', () => {
-    expect(slugify('  Vitamine  A / D3 - E  ')).toBe('vitamine_a_d3_e');
+    expect(slugify('  Vitamine  A / D3 - E  ')).toBe('vitamine-a-d3-e');
   });
 
-  it('leaves no leading or trailing underscore', () => {
+  it('leaves no leading or trailing separator', () => {
     expect(slugify('!! Coccidiose !!')).toBe('coccidiose');
   });
 

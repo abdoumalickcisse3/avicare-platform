@@ -6,14 +6,17 @@ import { ArticleDialog } from "./ArticleDialog";
 
 let lastBody: Record<string, unknown> | null = null;
 let lastMethod = "";
+let lastUrl = "";
 
 beforeEach(() => {
   lastBody = null;
   lastMethod = "";
+  lastUrl = "";
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       lastMethod = input instanceof Request ? input.method : (init?.method ?? "GET");
+      lastUrl = input instanceof Request ? input.url : String(input);
       if (input instanceof Request) {
         try {
           lastBody = await input.clone().json();
@@ -55,6 +58,45 @@ describe("ArticleDialog", () => {
         typical_unit_price_xof: 6000,
       },
     });
+  });
+
+  /**
+   * ADR-020: a medication bought into stock must also reach the treatment form, which reads the
+   * health library. Declaring it as a medication therefore goes through the bridge route and
+   * carries the withdrawal delays — the field that protects the farmer's sale dates and the one
+   * the stock-only form could never ask for.
+   */
+  it("declares a medication through the bridge route, with its withdrawal delays", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ArticleDialog open onClose={vi.fn()} farmId={22} />);
+
+    await user.type(screen.getByLabelText("Libellé"), "Hepaturyl");
+    await user.click(screen.getByRole("combobox", { name: "Sous-catégorie" }));
+    await user.click(await screen.findByRole("option", { name: "Médicament" }));
+    await user.type(screen.getByLabelText("Unité"), "L");
+    await user.type(screen.getByLabelText("Prix moyen (XOF)"), "4500");
+    await user.type(screen.getByLabelText("Délai viande (jours)"), "7");
+    await user.type(screen.getByLabelText("Délai œufs (jours)"), "3");
+
+    await user.click(screen.getByRole("button", { name: /Enregistrer/i }));
+
+    await waitFor(() => expect(lastMethod).toBe("POST"));
+    expect(lastUrl).toContain("/farms/22/inventory/catalog/medications");
+    expect(lastBody).toEqual({
+      key: "hepaturyl",
+      label: "Hepaturyl",
+      unit: "L",
+      typicalUnitPriceXof: 4500,
+      routes: [],
+      withdrawalDaysMeat: 7,
+      withdrawalDaysEggs: 3,
+    });
+  });
+
+  it("asks for no withdrawal delay on an ordinary article", async () => {
+    renderWithProviders(<ArticleDialog open onClose={vi.fn()} farmId={1} />);
+
+    expect(screen.queryByLabelText("Délai viande (jours)")).not.toBeInTheDocument();
   });
 
   it("rejects creating an article whose slugified key already exists", async () => {

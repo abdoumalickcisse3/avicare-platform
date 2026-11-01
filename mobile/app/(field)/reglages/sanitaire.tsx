@@ -19,13 +19,17 @@ import { ArrowLeft, Copy, Pencil, Phone, Plus, Trash2 } from 'lucide-react-nativ
 import { fontFamily, tokens } from '@/theme';
 import { ActionBar } from '@/components/field/ActionBar';
 import { HealthCatalogSheet, confirmCatalogDelete } from '@/health/HealthCatalogSheet';
+import type { HealthCatalogSubmit } from '@/health/HealthCatalogSheet';
+import {
+  useDeleteMedicationMutation,
+  useSaveMedicationMutation,
+} from '@/store/api/inventoryCatalogApi';
 import { ProgramSheet, confirmProgramDelete } from '@/health/ProgramSheet';
 import { VeterinarianSheet, confirmVeterinarianRemoval } from '@/health/VeterinarianSheet';
 import {
   useCreateVeterinarianMutation,
   useDeactivateVeterinarianMutation,
   useDeleteProgramMutation,
-  useDeleteTreatmentCatalogMutation,
   useDeleteVaccineMutation,
   useGetProgramCatalogQuery,
   useGetTreatmentLibraryQuery,
@@ -33,7 +37,6 @@ import {
   useGetVeterinariansQuery,
   useUpdateVeterinarianMutation,
   useUpsertProgramMutation,
-  useUpsertTreatmentCatalogMutation,
   useUpsertVaccineMutation,
 } from '@/store/api/healthApi';
 import { useListBreedsQuery } from '@/store/api/breedsApi';
@@ -79,8 +82,10 @@ export default function HealthLibraryScreen() {
 
   const [upsertVaccine, { isLoading: savingVaccine }] = useUpsertVaccineMutation();
   const [deleteVaccine] = useDeleteVaccineMutation();
-  const [upsertTreatment, { isLoading: savingTreatment }] = useUpsertTreatmentCatalogMutation();
-  const [deleteTreatment] = useDeleteTreatmentCatalogMutation();
+  // A medication is one product with two faces (ADR-020): the bridge writes the medical sheet
+  // read by the treatment form AND the stock article the farmer buys and decrements against.
+  const [saveMedication, { isLoading: savingTreatment }] = useSaveMedicationMutation();
+  const [deleteTreatment] = useDeleteMedicationMutation();
   const [upsertProgram, { isLoading: savingProgram }] = useUpsertProgramMutation();
   const [deleteProgram] = useDeleteProgramMutation();
   const [createVet, { isLoading: creatingVet }] = useCreateVeterinarianMutation();
@@ -101,9 +106,12 @@ export default function HealthLibraryScreen() {
       "Vérifiez votre connexion. Si le problème persiste, votre rôle ne permet peut-être pas cette action.",
     );
 
-  const submitCatalog = (key: string, value: Record<string, unknown>) => {
-    const mutate = catalogSheet?.kind === 'vaccine' ? upsertVaccine : upsertTreatment;
-    mutate({ farmId: selectedFarmId, key, value })
+  const submitCatalog = (payload: HealthCatalogSubmit) => {
+    const call =
+      payload.kind === 'vaccine'
+        ? upsertVaccine({ farmId: selectedFarmId, key: payload.key, value: payload.value })
+        : saveMedication({ farmId: selectedFarmId, body: payload.body });
+    call
       .unwrap()
       .then(() => setCatalogSheet(null))
       .catch(failed('Enregistrement'));

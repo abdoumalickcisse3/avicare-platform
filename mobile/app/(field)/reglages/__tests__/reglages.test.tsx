@@ -18,6 +18,7 @@ jest.mock('@/store/api/healthApi', () => ({
   useGetTreatmentCatalogQuery: jest.fn(() => ({ data: [] })),
 }));
 
+import { useLocalSearchParams } from 'expo-router';
 import { useFarmAccess } from '@/auth/useSession';
 import ReglagesHub from '../index';
 import ReglagesCategory from '../[category]';
@@ -35,6 +36,23 @@ describe('Réglages', () => {
       expect(screen.getByText(name)).toBeTruthy();
     }
     expect(screen.getByLabelText('Gérer Lots')).toBeTruthy();
+  });
+
+  /**
+   * ADR-020: a medication is one product with two faces, and only the Sanitaire sheet can ask for
+   * the withdrawal delays. Declaring one here as an ordinary "Produit" is how a pilot farm ended
+   * up holding 3,5 L it could not select when recording a treatment, so the Stock screen says
+   * where a medication is declared instead of letting the trap close again.
+   */
+  it('sends medications to Sanitaire from the Stock catalog', async () => {
+    (useLocalSearchParams as jest.Mock).mockReturnValueOnce({ category: 'stock' });
+    await render(<ReglagesCategory />);
+    expect(screen.getByText(/médicament/i)).toBeTruthy();
+  });
+
+  it('says nothing about medications on an unrelated catalog', async () => {
+    await render(<ReglagesCategory />);
+    expect(screen.queryByText(/médicament/i)).toBeNull();
   });
 
   it('category screen renders the catalog manager for a declarative slug', async () => {

@@ -392,7 +392,7 @@ export function TreatmentDialog({
                 farmId={farmId}
                 open={open}
                 onChange={setConsumption}
-                sourceFilter="TREATMENT"
+                medicationsOnly
                 label="Décrémenter le médicament du stock"
               />
             )}

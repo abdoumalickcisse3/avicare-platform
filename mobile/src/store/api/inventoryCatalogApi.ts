@@ -7,7 +7,7 @@
  * Gated `module.inventory` on the backend; catalog writes are OWNER/MANAGER.
  */
 import { baseApi } from './baseApi';
-import type { InventoryCatalogItem, PlatformFeedFormula } from '@/types';
+import type { InventoryCatalogItem, Medication, MedicationWrite, PlatformFeedFormula } from '@/types';
 
 interface ApiEnvelope<T> {
   data: T;
@@ -65,10 +65,41 @@ export const inventoryCatalogApi = baseApi.injectEndpoints({
       transformResponse: (r: ApiEnvelope<InventoryCatalogItem[]>) => r.data,
       providesTags: [{ type: 'InventoryCatalog', id: 'ALL' }],
     }),
+    /**
+     * Declare a medication as one product (ADR-020) — the stock article and the medical sheet the
+     * treatment form reads, in one write. Invalidates the health catalog too: the treatment picker
+     * is fed by it, and the whole point is that the medication shows up there.
+     */
+    saveMedication: build.mutation<Medication, { farmId: number; body: MedicationWrite }>({
+      query: ({ farmId, body }) => ({
+        url: `${base(farmId)}/medications`,
+        method: 'POST',
+        body,
+      }),
+      transformResponse: (r: ApiEnvelope<Medication>) => r.data,
+      invalidatesTags: [
+        { type: 'InventoryCatalog', id: 'articles' },
+        { type: 'InventoryCatalog', id: 'ALL' },
+        { type: 'HealthCatalog', id: 'treatments' },
+      ],
+    }),
+    deleteMedication: build.mutation<void, { farmId: number; key: string }>({
+      query: ({ farmId, key }) => ({
+        url: `${base(farmId)}/medications/${encodeURIComponent(key)}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: [
+        { type: 'InventoryCatalog', id: 'articles' },
+        { type: 'InventoryCatalog', id: 'ALL' },
+        { type: 'HealthCatalog', id: 'treatments' },
+      ],
+    }),
   }),
 });
 
 export const {
+  useSaveMedicationMutation,
+  useDeleteMedicationMutation,
   useGetAllArticlesQuery,
   useGetInventoryArticlesQuery,
   useGetPlatformFormulasQuery,

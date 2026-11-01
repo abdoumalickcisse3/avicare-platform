@@ -16,10 +16,7 @@ import {
   TextField,
 } from "@mui/material";
 import type { Treatment } from "@/types";
-import {
-  useCreateTreatmentCatalogMutation,
-  useUpdateTreatmentCatalogMutation,
-} from "@/store/api/healthApi";
+import { useSaveMedicationMutation } from "@/store/api/inventoryCatalogApi";
 import { HEALTH_ROUTE_LABELS, routeLabel } from "@/lib/health";
 import { slugify } from "@/lib/slug";
 import { useToast } from "@/components/feedback/ToastProvider";
@@ -31,6 +28,8 @@ const schema = z.object({
   routes: z.array(z.string()),
   withdrawalMeat: z.string().regex(/^\d*$/, "Entier").optional(),
   withdrawalEggs: z.string().regex(/^\d*$/, "Entier").optional(),
+  unit: z.string().optional(),
+  price: z.string().regex(/^\d*$/, "Montant entier").optional(),
 });
 type FormValues = z.infer<typeof schema>;
 
@@ -55,14 +54,21 @@ export function TreatmentLibraryDialog({
   existingKeys = [],
 }: Props) {
   const { showToast } = useToast();
-  const [createTreatment, { isLoading: creating }] = useCreateTreatmentCatalogMutation();
-  const [updateTreatment, { isLoading: updating }] = useUpdateTreatmentCatalogMutation();
+  const [saveMedication, { isLoading: saving }] = useSaveMedicationMutation();
   const isEdit = treatment != null;
   const source = treatment ?? cloneFrom;
 
   const { control, handleSubmit, reset, setError } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { label: "", molecule: "", routes: [], withdrawalMeat: "", withdrawalEggs: "" },
+    defaultValues: {
+      label: "",
+      molecule: "",
+      routes: [],
+      withdrawalMeat: "",
+      withdrawalEggs: "",
+      unit: "",
+      price: "",
+    },
   });
 
   const wasOpen = useRef(false);
@@ -76,25 +82,35 @@ export function TreatmentLibraryDialog({
           source?.withdrawalDaysMeat != null ? String(source.withdrawalDaysMeat) : "",
         withdrawalEggs:
           source?.withdrawalDaysEggs != null ? String(source.withdrawalDaysEggs) : "",
+        unit: "",
+        price: "",
       });
     }
     wasOpen.current = open;
   }, [open, source, reset]);
 
   const onSubmit = async (values: FormValues) => {
-    const value: Record<string, unknown> = { label: values.label };
-    if (values.molecule) value.molecule = values.molecule;
-    if (values.routes.length) value.routes = values.routes;
-    if (values.withdrawalMeat) value.withdrawal_days_meat = Number(values.withdrawalMeat);
-    if (values.withdrawalEggs) value.withdrawal_days_eggs = Number(values.withdrawalEggs);
     const key = isEdit ? treatment!.key : slugify(values.label);
     if (!isEdit && existingKeys.includes(key)) {
       setError("label", { message: "Un traitement avec ce nom existe déjà" });
       return;
     }
     try {
-      if (isEdit) await updateTreatment({ farmId, key, value }).unwrap();
-      else await createTreatment({ farmId, key, value }).unwrap();
+      // One product, two faces (ADR-020): writing the medical sheet alone left the farmer with a
+      // treatment they could never buy, receive or decrement — so the stock article goes with it.
+      await saveMedication({
+        farmId,
+        body: {
+          key,
+          label: values.label,
+          molecule: values.molecule || undefined,
+          routes: values.routes,
+          withdrawalDaysMeat: values.withdrawalMeat ? Number(values.withdrawalMeat) : undefined,
+          withdrawalDaysEggs: values.withdrawalEggs ? Number(values.withdrawalEggs) : undefined,
+          unit: values.unit || undefined,
+          typicalUnitPriceXof: values.price ? Number(values.price) : undefined,
+        },
+      }).unwrap();
       showToast(isEdit ? "Traitement modifié" : "Traitement créé", "success");
       onClose();
     } catch (e) {
@@ -174,11 +190,33 @@ export function TreatmentLibraryDialog({
                 )}
               />
             </Box>
+            <Box sx={{ display: "flex", gap: 2 }}>
+              <Controller
+                name="unit"
+                control={control}
+                render={({ field }) => (
+                  <TextField {...field} label="Unité de stock" placeholder="L, flacon, sachet…" fullWidth />
+                )}
+              />
+              <Controller
+                name="price"
+                control={control}
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    label="Prix moyen (XOF)"
+                    fullWidth
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                  />
+                )}
+              />
+            </Box>
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={onClose}>Annuler</Button>
-          <Button type="submit" variant="contained" disabled={creating || updating}>
+          <Button type="submit" variant="contained" disabled={saving}>
             Enregistrer
           </Button>
         </DialogActions>

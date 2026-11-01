@@ -10,8 +10,11 @@
  * - **Create and edit are the same call.** The backend upserts on the key, so editing reuses the
  *   entry's existing key and only creating derives one from the label. Re-deriving on edit would
  *   create a second entry and orphan everything pointing at the first.
- * - **The value map is snake_case.** It is stored as platform catalog JSON, not as a typed
- *   column, and the readers expect `withdrawal_days_meat`, not `withdrawalDaysMeat`.
+ * - **The two kinds submit differently.** A vaccine is a catalog entry, so it emits a snake_case
+ *   value map (`withdrawal_days_meat`, not `withdrawalDaysMeat`) — it is stored as platform
+ *   catalog JSON, not as a typed column. A medication is one product with two faces (ADR-020), so
+ *   it emits a typed body the bridge writes to both: the medical sheet the treatment form reads
+ *   AND the stock article the farmer buys, receives and decrements against.
  */
 import { useEffect, useState } from 'react';
 import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -20,7 +23,7 @@ import { KeyboardSafeSheet, sheetBounds } from '@/components/ui';
 import { FormField } from '@/components/field/FormField';
 import { HEALTH_ROUTE_LABELS, routeLabel } from '@/lib/health';
 import { slugify } from './slug';
-import type { Treatment, Vaccine } from '@/types';
+import type { MedicationWrite, Treatment, Vaccine } from '@/types';
 
 export type HealthCatalogSheetProps = {
   open: boolean;
@@ -31,8 +34,13 @@ export type HealthCatalogSheetProps = {
   existingKeys: string[];
   saving: boolean;
   onClose: () => void;
-  onSubmit: (key: string, value: Record<string, unknown>) => void;
+  onSubmit: (payload: HealthCatalogSubmit) => void;
 };
+
+/** A vaccine writes one catalog entry; a medication writes both of its faces. */
+export type HealthCatalogSubmit =
+  | { kind: 'vaccine'; key: string; value: Record<string, unknown> }
+  | { kind: 'treatment'; body: MedicationWrite };
 
 export function HealthCatalogSheet({
   open,
@@ -49,6 +57,8 @@ export function HealthCatalogSheet({
   const [routes, setRoutes] = useState<string[]>([]);
   const [meatDays, setMeatDays] = useState('');
   const [eggDays, setEggDays] = useState('');
+  const [unit, setUnit] = useState('');
+  const [price, setPrice] = useState('');
 
   // Edge-triggered on opening, so typing is never overwritten by a refetch behind the sheet.
   useEffect(() => {
@@ -70,6 +80,8 @@ export function HealthCatalogSheet({
         ? String((entry as Treatment).withdrawalDaysEggs)
         : '',
     );
+    setUnit('');
+    setPrice('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, entry?.key]);
 
@@ -87,20 +99,23 @@ export function HealthCatalogSheet({
 
   const submit = () => {
     if (!canSubmit) return;
-    const value: Record<string, unknown> = { label: trimmed };
 
     if (kind === 'vaccine') {
+      // snake_case: this is catalog JSON, and the readers expect these exact names.
+      const value: Record<string, unknown> = { label: trimmed };
       if (disease.trim()) value.disease = disease.trim();
       if (routes[0]) value.route = routes[0];
-    } else {
-      if (molecule.trim()) value.molecule = molecule.trim();
-      if (routes.length > 0) value.routes = routes;
-      // snake_case: this is catalog JSON, and the readers expect these exact names.
-      if (/^\d+$/.test(meatDays)) value.withdrawal_days_meat = Number(meatDays);
-      if (/^\d+$/.test(eggDays)) value.withdrawal_days_eggs = Number(eggDays);
+      onSubmit({ kind: 'vaccine', key, value });
+      return;
     }
 
-    onSubmit(key, value);
+    const body: MedicationWrite = { key, label: trimmed, routes };
+    if (molecule.trim()) body.molecule = molecule.trim();
+    if (/^\d+$/.test(meatDays)) body.withdrawalDaysMeat = Number(meatDays);
+    if (/^\d+$/.test(eggDays)) body.withdrawalDaysEggs = Number(eggDays);
+    if (unit.trim()) body.unit = unit.trim();
+    if (/^\d+$/.test(price)) body.typicalUnitPriceXof = Number(price);
+    onSubmit({ kind: 'treatment', body });
   };
 
   const isVaccine = kind === 'vaccine';
@@ -187,6 +202,21 @@ export function HealthCatalogSheet({
                 onChangeText={setEggDays}
                 keyboardType="number-pad"
                 placeholder="2"
+              />
+              <FormField
+                label="Unité de stock"
+                value={unit}
+                onChangeText={setUnit}
+                placeholder="L, flacon, sachet…"
+                maxLength={20}
+                helperText="Ce médicament devient aussi un article de stock, achetable et décomptable."
+              />
+              <FormField
+                label="Prix moyen (XOF)"
+                value={price}
+                onChangeText={setPrice}
+                keyboardType="number-pad"
+                placeholder="4500"
               />
             </>
           )}

@@ -58,7 +58,8 @@ const platformProgram: VaccinationProgram = {
 
 const customProgram: VaccinationProgram = {
   ...platformProgram,
-  key: 'mon_programme',
+  // A farm-created key is derived by `slugify`, which hyphenates exactly as the web does.
+  key: 'mon-programme',
   label: 'Mon programme',
   custom: true,
 };
@@ -104,7 +105,7 @@ describe('ProgramSheet', () => {
 
     await press(screen.getByLabelText('Enregistrer'));
 
-    expect(onSubmit).toHaveBeenCalledWith('mon_programme', expect.anything());
+    expect(onSubmit).toHaveBeenCalledWith(customProgram.key, expect.anything());
   });
 
   it('adds and removes schedule steps, keeping at least one', async () => {
@@ -153,7 +154,7 @@ describe('ProgramSheet', () => {
 
     await press(screen.getByLabelText('Enregistrer'));
 
-    expect(onSubmit).toHaveBeenCalledWith('standard_ponte', {
+    expect(onSubmit).toHaveBeenCalledWith('standard-ponte', {
       label: 'Standard ponte',
       species: 'POULTRY',
       breed_keys: ['cobb500'],

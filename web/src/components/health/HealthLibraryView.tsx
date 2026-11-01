@@ -26,13 +26,13 @@ import { useHealthGating } from "@/hooks/useHealthGating";
 import {
   useDeactivateVeterinarianMutation,
   useDeleteVaccineMutation,
-  useDeleteTreatmentCatalogMutation,
   useDeleteProgramMutation,
   useGetProgramsQuery,
   useGetTreatmentCatalogQuery,
   useGetVaccinesQuery,
   useGetVeterinariansQuery,
 } from "@/store/api/healthApi";
+import { useDeleteMedicationMutation } from "@/store/api/inventoryCatalogApi";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { apiErrorMessage } from "@/lib/apiError";
 import { ageLabel, humanizeKey, routeLabel } from "@/lib/health";
@@ -264,7 +264,7 @@ function TreatmentsTab({
     { farmId: farmId as number },
     { skip: !enabled || !farmId },
   );
-  const [deleteTreatment] = useDeleteTreatmentCatalogMutation();
+  const [deleteTreatment] = useDeleteMedicationMutation();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Treatment | null>(null);
   const [cloneSource, setCloneSource] = useState<Treatment | null>(null);
