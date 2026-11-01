@@ -201,6 +201,9 @@ class InventoryFlowIT {
   void medication_declaredOnce_showsUpInTheTreatmentLibraryAndAsASingleStockArticle()
       throws Exception {
     FarmSession session = createFarmSession();
+    // The stock face is gated on module.inventory, the medical one on module.health.advanced.
+    enableModule(session.token(), session.farmId(), "module.inventory");
+    enableModule(session.token(), session.farmId(), "module.health.advanced");
 
     mockMvc
         .perform(
@@ -260,6 +263,13 @@ class InventoryFlowIT {
     return createFarmSession().farmId();
   }
 
+  /**
+   * Signs up an owner, creates their farm, and logs in <b>again</b>.
+   *
+   * <p>The second login is not redundant: the first token is minted before the farm exists, so it
+   * carries no membership for it and every farm-scoped route answers 403 — the same trap that once
+   * made farm creation on mobile return 403 everywhere.
+   */
   private FarmSession createFarmSession() throws Exception {
     String email = "t" + System.nanoTime() + "@inv.io";
     mockMvc
@@ -298,7 +308,34 @@ class InventoryFlowIT {
             .andReturn()
             .getResponse()
             .getContentAsString();
-    return new FarmSession(objectMapper.readTree(json).get("data").get("id").asLong(), token);
+    return new FarmSession(
+        objectMapper.readTree(json).get("data").get("id").asLong(), login(email));
+  }
+
+  private String login(String email) throws Exception {
+    return objectMapper
+        .readTree(
+            mockMvc
+                .perform(
+                    post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"" + email + "\",\"password\":\"password123\"}"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString())
+        .get("data")
+        .get("accessToken")
+        .asText();
+  }
+
+  private void enableModule(String access, long farmId, String moduleKey) throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/farms/" + farmId + "/subscription/modules")
+                .header("Authorization", "Bearer " + access)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"moduleKey\":\"" + moduleKey + "\",\"mode\":\"HARD\"}"))
+        .andExpect(status().isCreated());
   }
 
   /**
