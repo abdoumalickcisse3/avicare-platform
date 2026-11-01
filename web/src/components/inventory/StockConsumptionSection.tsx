@@ -17,17 +17,21 @@ import {
   useGetAllArticlesQuery,
 } from "@/store/api/inventoryCatalogApi";
 import { useGetStockItemsQuery } from "@/store/api/inventoryStockApi";
-import { findStockByArticle, formatQty } from "@/lib/inventory";
+import { findStockByArticle, formatQty, isMedicationArticle } from "@/lib/inventory";
 import { colors } from "@/theme/tokens";
-import type { ArticleSource, InventoryCatalogItem, StockConsumption } from "@/types";
+import type { InventoryCatalogItem, StockConsumption } from "@/types";
 
 interface Props {
   farmId: number;
   /** Whether the host dialog is open (gates the queries). */
   open: boolean;
   onChange: (value: StockConsumption | null) => void;
-  /** Restrict the article picker (e.g. only medications for treatments). */
-  sourceFilter?: ArticleSource;
+  /**
+   * Restrict the article picker to medications (for the treatment dialog). Judged on the article
+   * itself, not on which catalog defines it: a medication the farm bought is an `INVENTORY`
+   * article, and filtering on the source hid exactly the ones that held stock (ADR-020).
+   */
+  medicationsOnly?: boolean;
   /** Label of the toggle, defaults to a generic one. */
   label?: string;
 }
@@ -45,7 +49,7 @@ export function StockConsumptionSection({
   farmId,
   open,
   onChange,
-  sourceFilter,
+  medicationsOnly = false,
   label = "Décrémenter du stock",
 }: Props) {
   const [enabled, setEnabled] = useState(false);
@@ -68,8 +72,8 @@ export function StockConsumptionSection({
   );
 
   const options = useMemo(
-    () => (sourceFilter ? articles.filter((a) => a.articleSource === sourceFilter) : articles),
-    [articles, sourceFilter],
+    () => (medicationsOnly ? articles.filter(isMedicationArticle) : articles),
+    [articles, medicationsOnly],
   );
 
   const quantity = qty ? Number(qty.replace(",", ".")) : NaN;

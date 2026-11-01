@@ -600,6 +600,29 @@ export interface AvailableFeedFormulas {
 }
 
 /** A stockable article from the inventory catalog (mirrors web `InventoryCatalogItem`). */
+/**
+ * One medication, as declared through the medication bridge (ADR-020): the stock fields the farmer
+ * buys against and the medical fields the treatment form reads, under a single key.
+ */
+export interface MedicationWrite {
+  key: string;
+  label: string;
+  unit?: string;
+  typicalUnitPriceXof?: number;
+  molecule?: string;
+  routes: string[];
+  withdrawalDaysMeat?: number;
+  withdrawalDaysEggs?: number;
+}
+
+export interface Medication extends MedicationWrite {
+  /**
+   * Whether the medical sheet was stored. False when the farm lacks `module.health.advanced`: only
+   * the stock article exists, and the medication will not appear in the treatment form.
+   */
+  medicalSheetWritten: boolean;
+}
+
 export interface InventoryCatalogItem {
   articleKey: string;
   articleSource: ArticleSource;

@@ -1,5 +1,5 @@
 import { baseApi } from "./baseApi";
-import type { InventoryCatalogItem, PlatformFormula } from "@/types";
+import type { InventoryCatalogItem, Medication, MedicationWrite, PlatformFormula } from "@/types";
 
 interface ApiEnvelope<T> {
   data: T;
@@ -72,6 +72,35 @@ export const inventoryCatalogApi = baseApi.injectEndpoints({
         { type: "InventoryCatalog", id: "platform-formulas" },
       ],
     }),
+    /**
+     * Declare a medication as one product (ADR-020) — the stock article and the medical sheet the
+     * treatment form reads, in one write. Invalidates the health catalog too: the treatment picker
+     * is fed by it, and the whole point is that the medication shows up there.
+     */
+    saveMedication: build.mutation<Medication, { farmId: number; body: MedicationWrite }>({
+      query: ({ farmId, body }) => ({
+        url: `/api/v1/farms/${farmId}/inventory/catalog/medications`,
+        method: "POST",
+        body,
+      }),
+      transformResponse: (r: ApiEnvelope<Medication>) => r.data,
+      invalidatesTags: [
+        { type: "InventoryCatalog", id: "articles" },
+        { type: "InventoryCatalog", id: "all" },
+        { type: "HealthCatalog", id: "treatments" },
+      ],
+    }),
+    deleteMedication: build.mutation<void, { farmId: number; key: string }>({
+      query: ({ farmId, key }) => ({
+        url: `/api/v1/farms/${farmId}/inventory/catalog/medications/${encodeURIComponent(key)}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: [
+        { type: "InventoryCatalog", id: "articles" },
+        { type: "InventoryCatalog", id: "all" },
+        { type: "HealthCatalog", id: "treatments" },
+      ],
+    }),
     deleteArticle: build.mutation<void, { farmId: number; key: string }>({
       query: ({ farmId, key }) => ({
         url: `/api/v1/farms/${farmId}/catalog/inventory_items/${key}`,
@@ -94,4 +123,6 @@ export const {
   useCreateArticleMutation,
   useUpdateArticleMutation,
   useDeleteArticleMutation,
+  useSaveMedicationMutation,
+  useDeleteMedicationMutation,
 } = inventoryCatalogApi;

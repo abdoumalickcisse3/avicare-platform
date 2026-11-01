@@ -191,9 +191,76 @@ class InventoryFlowIT {
     assertThat(supplierService.listForFarm(farmA)).isEmpty();
   }
 
+  /**
+   * ADR-020 end to end: the bug this fixes was a farm holding 3,5 L of a hepatoprotector it could
+   * not select when recording a treatment, because the treatment form reads the health library
+   * while a bought product only ever landed in the article catalog. One write must now surface on
+   * both faces — and leave a single stock article behind, not one per face.
+   */
+  @Test
+  void medication_declaredOnce_showsUpInTheTreatmentLibraryAndAsASingleStockArticle()
+      throws Exception {
+    FarmSession session = createFarmSession();
+
+    mockMvc
+        .perform(
+            post("/api/v1/farms/" + session.farmId() + "/inventory/catalog/medications")
+                .header("Authorization", "Bearer " + session.token())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"key":"hepaturyl","label":"Hepaturyl","unit":"L",
+                     "typicalUnitPriceXof":4500,"molecule":"sorbitol",
+                     "routes":["DRINKING_WATER"],"withdrawalDaysMeat":7,"withdrawalDaysEggs":3}"""))
+        .andExpect(status().isCreated());
+
+    // The treatment form's list — the one the farmer could not find the product in.
+    String treatments =
+        mockMvc
+            .perform(
+                org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(
+                        "/api/v1/farms/" + session.farmId() + "/health/catalog/treatments")
+                    .header("Authorization", "Bearer " + session.token()))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    var sheet =
+        objectMapper
+            .readTree(treatments)
+            .get("data")
+            .valueStream()
+            .filter(t -> "hepaturyl".equals(t.get("key").asText()))
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("medication absent from the treatment library"));
+    assertThat(sheet.get("withdrawalDaysMeat").asInt()).isEqualTo(7);
+    assertThat(sheet.get("withdrawalDaysEggs").asInt()).isEqualTo(3);
+
+    // And exactly one stockable article for it, carrying the stock-side unit and price.
+    List<InventoryCatalogItemDto> articles =
+        inventoryCatalogService.listAllAvailableArticles(session.farmId());
+    assertThat(articles)
+        .filteredOn(a -> a.articleKey().equals("hepaturyl"))
+        .singleElement()
+        .satisfies(
+            a -> {
+              assertThat(a.articleSource()).isEqualTo(ArticleSource.INVENTORY);
+              assertThat(a.subcategory()).isEqualTo("MEDICATION");
+              assertThat(a.unit()).isEqualTo("L");
+              assertThat(a.typicalUnitPriceXof()).isEqualTo(4500);
+            });
+  }
+
   // --- helpers --------------------------------------------------------
 
+  /** A signed-up owner with a farm, and the token to act as them. */
+  private record FarmSession(long farmId, String token) {}
+
   private long createFarm() throws Exception {
+    return createFarmSession().farmId();
+  }
+
+  private FarmSession createFarmSession() throws Exception {
     String email = "t" + System.nanoTime() + "@inv.io";
     mockMvc
         .perform(
@@ -231,7 +298,7 @@ class InventoryFlowIT {
             .andReturn()
             .getResponse()
             .getContentAsString();
-    return objectMapper.readTree(json).get("data").get("id").asLong();
+    return new FarmSession(objectMapper.readTree(json).get("data").get("id").asLong(), token);
   }
 
   /**

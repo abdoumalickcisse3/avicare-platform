@@ -61,6 +61,24 @@ export default function ReglagesCategoryScreen() {
         {/* `sanitaire` never reaches here: `reglages/sanitaire.tsx` is a static route and Expo
             Router resolves it before this `[category]` sibling. The read-only library that used
             to live here has been replaced by that screen, which can also edit. */}
+        {/* Un médicament est un produit à deux faces (ADR-020) : l'article de stock ET la fiche
+            médicale qui porte les délais d'attente. Cet éditeur générique ne sait pas demander
+            ces délais, donc la déclaration passe par Sanitaire — sinon le médicament existe au
+            stock et reste absent du formulaire de traitement, qui est le piège d'origine. */}
+        {slug === 'stock' && (
+          <Pressable
+            onPress={() => router.push('/(field)/reglages/sanitaire')}
+            accessibilityRole="button"
+            accessibilityLabel="Déclarer un médicament dans Sanitaire"
+            style={styles.note}
+          >
+            <Syringe size={18} color={tokens.colors.primary[700]} />
+            <Text style={styles.noteText}>
+              Un médicament se déclare dans Réglages › Sanitaire, avec ses délais d&apos;attente :
+              il devient alors un article de stock et un traitement enregistrable.
+            </Text>
+          </Pressable>
+        )}
         {config ? (
           <ManagedCatalogList farmId={selectedFarmId} config={config} />
         ) : (

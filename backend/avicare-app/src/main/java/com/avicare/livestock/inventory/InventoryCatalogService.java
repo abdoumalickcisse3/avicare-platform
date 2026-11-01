@@ -7,6 +7,8 @@ import com.avicare.parameters.api.dto.CatalogEntryInfo;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -58,10 +60,24 @@ public class InventoryCatalogService {
         .toList();
   }
 
-  /** The full list of stockable articles: inventory items ∪ medications. */
+  /**
+   * The full list of stockable articles: inventory items ∪ medications, <b>one entry per key</b>.
+   *
+   * <p>A medication declared through {@link MedicationCatalogService} exists on both faces under
+   * the same key, and the {@code INVENTORY} one wins (ADR-020): {@code stock_items} is unique per
+   * {@code (farm, source, key)}, so offering both would let the farmer open a second stock row and
+   * hold two balances for one physical bottle. A treatment with no stock article of its own — a
+   * platform molecule, or a farm medication predating the bridge — is still offered, so nothing
+   * already stocked becomes unnameable.
+   */
   public List<InventoryCatalogItemDto> listAllAvailableArticles(Long farmId) {
+    List<InventoryCatalogItemDto> inventory = listInventoryArticles(farmId);
+    Set<String> stockArticleKeys =
+        inventory.stream().map(InventoryCatalogItemDto::articleKey).collect(Collectors.toSet());
     return Stream.concat(
-            listInventoryArticles(farmId).stream(), listMedicationArticles(farmId).stream())
+            inventory.stream(),
+            listMedicationArticles(farmId).stream()
+                .filter(m -> !stockArticleKeys.contains(m.articleKey())))
         .toList();
   }
 

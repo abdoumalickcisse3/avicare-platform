@@ -14,4 +14,14 @@ describe("slugify", () => {
   it("returns empty string for empty input", () => {
     expect(slugify("")).toBe("");
   });
+  /**
+   * The same label typed on the phone must produce the same key (ADR-020) — mobile's slugify used
+   * an underscore, so one medication became two catalog entries and two stock balances.
+   */
+  it("agrees with the mobile slug on a multi-word medication", () => {
+    expect(slugify("AMINE TOTALE")).toBe("amine-totale");
+  });
+  it("caps the length the catalog column accepts", () => {
+    expect(slugify("a".repeat(200))).toHaveLength(100);
+  });
 });

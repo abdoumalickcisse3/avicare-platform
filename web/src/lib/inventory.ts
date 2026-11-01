@@ -58,7 +58,23 @@ export const INVENTORY_SUBCATEGORY_LABELS: Record<string, string> = {
   CONSUMABLE: "Consommable",
   EQUIPMENT: "Équipement",
   PRODUCT: "Produit",
+  MEDICATION: "Médicament",
 };
+
+/**
+ * Whether an article is a medication, and so can be the subject of a treatment (ADR-020).
+ *
+ * <p>Two shapes qualify: a stock article declared as {@code MEDICATION} through the medication
+ * bridge, and a bare {@code TREATMENT}-source article — a platform molecule, or a farm medication
+ * predating the bridge. Filtering on the source alone, as the treatment dialog used to, hid every
+ * medication the farm had actually bought and stocked.
+ */
+export function isMedicationArticle(article: {
+  articleSource?: string;
+  subcategory?: string | null;
+}): boolean {
+  return article.subcategory === "MEDICATION" || article.articleSource === "TREATMENT";
+}
 
 interface BadgeMeta {
   label: string;
