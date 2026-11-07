@@ -8,6 +8,7 @@ import com.avicare.livestock.domain.UnitStatus;
 import com.avicare.livestock.dto.request.CreatePoultryBatchRequest;
 import com.avicare.livestock.dto.request.SetChickCostRequest;
 import com.avicare.livestock.dto.response.PoultryBatchResponse;
+import com.avicare.livestock.poultry.GrowthReferenceService;
 import com.avicare.livestock.poultry.PoultryBatchCreate;
 import com.avicare.livestock.poultry.PoultryBatchService;
 import com.avicare.livestock.repository.LifecycleEventRepository;
@@ -46,6 +47,7 @@ public class PoultryBatchController {
   private final PoultryBatchService poultryBatchService;
   private final LifecycleEventRepository lifecycleEventRepository;
   private final FinanceFacade financeFacade;
+  private final GrowthReferenceService growthReferenceService;
 
   @GetMapping
   @PreAuthorize(READ)
@@ -118,7 +120,7 @@ public class PoultryBatchController {
                 row -> ((Number) row[0]).longValue(), row -> -((Number) row[1]).longValue()));
   }
 
-  static PoultryBatchResponse toResponse(PoultryBatch b, long deaths, Long chickPurchaseCostXof) {
+  PoultryBatchResponse toResponse(PoultryBatch b, long deaths, Long chickPurchaseCostXof) {
     return new PoultryBatchResponse(
         b.getId(),
         b.getFarmId(),
@@ -131,6 +133,7 @@ public class PoultryBatchController {
         (int) deaths,
         b.getTargetWeightG(),
         b.getTargetAgeDays(),
-        chickPurchaseCostXof);
+        chickPurchaseCostXof,
+        growthReferenceService.expectedCurve(b));
   }
 }
