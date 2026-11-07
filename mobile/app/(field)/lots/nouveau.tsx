@@ -16,10 +16,14 @@ import { ActionBar } from '@/components/field/ActionBar';
 import { useListBreedsQuery } from '@/store/api/breedsApi';
 import { useCreateBatchMutation } from '@/store/api/poultryBatchesApi';
 import { selectSelectedFarmId } from '@/store/slices/selectionSlice';
-import { targetsForBreed } from '@/constants/breedDefaults';
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+/** '' when the breed carries no default — never invent a number client-side. */
+function targetField(value: number | null | undefined): string {
+  return value != null ? String(value) : '';
 }
 
 export default function CreerBandeScreen() {
@@ -36,26 +40,26 @@ export default function CreerBandeScreen() {
   const [count, setCount] = useState('');
   const [date, setDate] = useState(today());
   const [chickUnitPrice, setChickUnitPrice] = useState('');
-  const [targetWeightG, setTargetWeightG] = useState('2000');
-  const [targetAgeDays, setTargetAgeDays] = useState('42');
+  // Empty until a breed resolves: the target weight/age come from its profile
+  // (`defaultTargetWeightG`/`defaultTargetAgeDays`), never a hardcoded value here.
+  const [targetWeightG, setTargetWeightG] = useState('');
+  const [targetAgeDays, setTargetAgeDays] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (broilerBreeds.length > 0 && breedId == null) {
       const first = broilerBreeds[0]!;
       setBreedId(first.id);
-      const targets = targetsForBreed(first.code);
-      setTargetWeightG(String(targets.targetWeightG));
-      setTargetAgeDays(String(targets.targetAgeDays));
+      setTargetWeightG(targetField(first.defaultTargetWeightG));
+      setTargetAgeDays(targetField(first.defaultTargetAgeDays));
     }
   }, [broilerBreeds, breedId]);
 
   function selectBreed(id: number) {
     setBreedId(id);
     const breed = broilerBreeds.find((b) => b.id === id);
-    const targets = targetsForBreed(breed?.code);
-    setTargetWeightG(String(targets.targetWeightG));
-    setTargetAgeDays(String(targets.targetAgeDays));
+    setTargetWeightG(targetField(breed?.defaultTargetWeightG));
+    setTargetAgeDays(targetField(breed?.defaultTargetAgeDays));
   }
 
   if (selectedFarmId === null) {
@@ -79,8 +83,8 @@ export default function CreerBandeScreen() {
           name: name.trim() || undefined,
           startDate: date,
           initialCount: Number(count),
-          targetWeightG: Number(targetWeightG) || undefined,
-          targetAgeDays: Number(targetAgeDays) || undefined,
+          ...(targetWeightG ? { targetWeightG: Number(targetWeightG) } : {}),
+          ...(targetAgeDays ? { targetAgeDays: Number(targetAgeDays) } : {}),
           ...(Number(chickUnitPrice) > 0 ? { chickUnitPriceXof: Number(chickUnitPrice) } : {}),
         },
       }).unwrap();

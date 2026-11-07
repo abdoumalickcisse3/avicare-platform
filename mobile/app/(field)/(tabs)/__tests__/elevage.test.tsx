@@ -29,6 +29,7 @@ const healthyBatch: PoultryBatch = {
   targetWeightG: null,
   targetAgeDays: 42,
   chickPurchaseCostXof: null,
+  expectedCurve: [],
 };
 
 const sickBatch: PoultryBatch = {

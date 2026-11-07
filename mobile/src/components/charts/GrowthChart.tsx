@@ -33,27 +33,37 @@ function smoothPath(pts: Array<{ x: number; y: number }>): string {
 
 export function GrowthChart({
   data,
-  target,
+  expectedCurve,
   color = tokens.colors.primary[600],
 }: {
   data: GrowthPoint[];
-  /** Optional target: reference line from (0,0) to (targetAge, targetWeightG). */
-  target?: { age: number; weightG: number } | null;
+  /**
+   * Server-computed growth reference (`PoultryBatchResponse.expectedCurve`) — never computed
+   * client-side. Empty means the breed's profile carries no validated reference (rustic/local
+   * breeds) or the batch has no target: draw no dashed line at all, exactly as the server chose
+   * to send nothing. A straight line from (0,0) to a single target once overstated the real
+   * weight by roughly double in the first fortnight for a slow-growing breed.
+   */
+  expectedCurve: GrowthPoint[];
   color?: string;
 }) {
   const { line, area, ref, dot } = useMemo(() => {
     if (data.length === 0) return { line: '', area: '', ref: '', dot: null as null | { x: number; y: number } };
-    const maxAge = Math.max(target?.age ?? 0, ...data.map((d) => d.age), 1);
-    const maxW = Math.max(target?.weightG ?? 0, ...data.map((d) => d.weightG), 1);
+    const maxAge = Math.max(...data.map((d) => d.age), ...expectedCurve.map((d) => d.age), 1);
+    const maxW = Math.max(...data.map((d) => d.weightG), ...expectedCurve.map((d) => d.weightG), 1);
     const sx = (age: number) => PAD + (age / maxAge) * (W - 2 * PAD);
     const sy = (w: number) => H - PAD - (w / maxW) * (H - 2 * PAD);
     const pts = data.map((d) => ({ x: sx(d.age), y: sy(d.weightG) }));
     const line = smoothPath(pts);
     const last = pts[pts.length - 1]!;
     const area = `${line} L${last.x},${H - PAD} L${pts[0]!.x},${H - PAD} Z`;
-    const ref = target ? `M${sx(0)},${sy(0)} L${sx(target.age)},${sy(target.weightG)}` : '';
+    const refPts = expectedCurve
+      .slice()
+      .sort((a, b) => a.age - b.age)
+      .map((p) => ({ x: sx(p.age), y: sy(p.weightG) }));
+    const ref = smoothPath(refPts);
     return { line, area, ref, dot: last };
-  }, [data, target]);
+  }, [data, expectedCurve]);
 
   if (data.length < 2) {
     return (

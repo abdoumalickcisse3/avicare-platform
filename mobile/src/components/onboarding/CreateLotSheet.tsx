@@ -74,6 +74,13 @@ export function CreateLotSheet({
   async function submit() {
     if (!valid || breedId == null) return;
     setError(null);
+    // Sent, never shown: this sheet is deliberately compact (onboarding), and layer flocks have
+    // no such field at all (ponte is piloted by laying rate, not weight/age — ProductionUnitInput
+    // carries no target). For a broiler, though, leaving it unset means no growth reference and
+    // no score on the lot's very first day — the exact path this plan's farmer takes (declare a
+    // breed, then create a band from onboarding). `/lots/nouveau` offers editable target fields
+    // for whoever wants to tune them later.
+    const breed = options.find((b) => b.id === breedId);
     const body = {
       breedId,
       name: name.trim() || undefined,
@@ -81,6 +88,12 @@ export function CreateLotSheet({
       initialCount: Number(count),
       ...(kind === 'broiler' && Number(chickUnitPrice) > 0
         ? { chickUnitPriceXof: Number(chickUnitPrice) }
+        : {}),
+      ...(kind === 'broiler' && breed?.defaultTargetWeightG != null
+        ? { targetWeightG: breed.defaultTargetWeightG }
+        : {}),
+      ...(kind === 'broiler' && breed?.defaultTargetAgeDays != null
+        ? { targetAgeDays: breed.defaultTargetAgeDays }
         : {}),
     };
     try {

@@ -54,3 +54,28 @@ describe('navigation mirrors the web sidebar', () => {
     expect(labels).toEqual(expect.arrayContaining(['Poulets de chair', 'Œufs']));
   });
 });
+
+describe('Souches — déclaration de souche, gardée par le RÔLE (OWNER/MANAGER), pas une permission', () => {
+  const allowAll = () => true;
+
+  it("l'écran Souches n'est pas accessible à FARMER", () => {
+    expect(getDrawerItems(false, allowAll, [], 'FARMER').some((i) => i.id === 'souches')).toBe(false);
+  });
+
+  it("n'est pas accessible à VETERINARIAN non plus", () => {
+    expect(getDrawerItems(false, allowAll, [], 'VETERINARIAN').some((i) => i.id === 'souches')).toBe(false);
+  });
+
+  it('est accessible à MANAGER et à OWNER', () => {
+    expect(getDrawerItems(false, allowAll, [], 'MANAGER').some((i) => i.id === 'souches')).toBe(true);
+    expect(getDrawerItems(false, allowAll, [], 'OWNER').some((i) => i.id === 'souches')).toBe(true);
+  });
+
+  it("reste accessible à l'ADMIN plateforme même sans rôle de ferme connu", () => {
+    expect(getDrawerItems(true, allowAll, []).some((i) => i.id === 'souches')).toBe(true);
+  });
+
+  it('ne dépend pas de la permission settings:read/settings:write — un FARMER à qui on l’accorderait à la main reste exclu', () => {
+    expect(getDrawerItems(false, allowAll, [], 'FARMER').some((i) => i.id === 'souches')).toBe(false);
+  });
+});
