@@ -2,6 +2,7 @@ package com.avicare.livestock.dto.response;
 
 import com.avicare.livestock.domain.UnitStatus;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * HTTP view of a broiler batch.
@@ -13,6 +14,12 @@ import java.time.LocalDate;
  * batch itself) — {@code null} means no chick-purchase cost has been recorded yet. Resolved only on
  * single-batch reads ({@code get}/{@code create}/the new correction endpoint), never on the list
  * endpoint, to avoid an N+1 lookup the list screen does not need.
+ *
+ * <p>{@code expectedCurve} is the server-computed growth reference ({@code GrowthReferenceService})
+ * — never {@code null}, an empty list when there is nothing to draw. It is served here rather than
+ * on {@code /performance} because both clients already read {@code targetWeightG}/{@code
+ * targetAgeDays} from this resource to draw their line, and this resource exists even for a batch
+ * with no weighing yet.
  */
 public record PoultryBatchResponse(
     Long id,
@@ -26,4 +33,5 @@ public record PoultryBatchResponse(
     int deaths,
     Integer targetWeightG,
     Integer targetAgeDays,
-    Long chickPurchaseCostXof) {}
+    Long chickPurchaseCostXof,
+    List<ExpectedWeightPoint> expectedCurve) {}
