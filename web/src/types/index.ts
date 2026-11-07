@@ -187,6 +187,18 @@ export interface AccountSetting {
 
 export type BatchStatus = "PLANNED" | "ACTIVE" | "CLOSED" | "CANCELLED";
 
+/**
+ * The breed's production family (mirrors backend BreedProfile) — drives default targets and
+ * whether a validated growth reference exists. `BROILER_RUSTIC` has no growth reference; the two
+ * `LAYER_*` profiles have no weight/age targets at all in this release (ponte is piloted by laying
+ * rate, out of scope here).
+ */
+export type BreedProfile =
+  | "BROILER_FAST"
+  | "BROILER_RUSTIC"
+  | "LAYER_INDUSTRIAL"
+  | "LAYER_RUSTIC";
+
 /** A breed reference (mirrors backend BreedResponse). */
 export interface Breed {
   id: number;
@@ -195,8 +207,35 @@ export interface Breed {
   name: string;
   /** broiler | layer for poultry (may be null for typeless breeds). */
   type: string | null;
+  /** Null for legacy/non-poultry breeds that never got a profile assigned. */
+  profile: BreedProfile | null;
+  /**
+   * Resolved server-side from the breed's profile — null when the profile itself is null, or for
+   * the two layer profiles (no targets declared for ponte in this release). Never invent a number
+   * here: these live only in the backend catalog.
+   */
+  defaultTargetWeightG: number | null;
+  defaultTargetAgeDays: number | null;
   farmId: number | null;
   active: boolean;
+}
+
+/**
+ * Declare a breed the catalogue does not have (Goliath, Kuroiler, "locale améliorée"...), mirrors
+ * backend DeclareBreedRequest. Send a name, never a code: the code is computed server-side
+ * (slugify), and a divergent client-side slugify once created two catalog entries for one product.
+ * `species` defaults to POULTRY server-side when omitted.
+ */
+export interface DeclareBreedInput {
+  name: string;
+  profile: BreedProfile;
+  species?: string;
+}
+
+/** One point of the server-computed growth reference curve, in grams at a given age in days. */
+export interface ExpectedWeightPoint {
+  ageDays: number;
+  weightG: number;
 }
 
 /** A broiler batch (mirrors backend PoultryBatchResponse). */
@@ -222,6 +261,13 @@ export interface PoultryBatch {
    * cost recorded yet.
    */
   chickPurchaseCostXof: number | null;
+  /**
+   * Server-computed growth reference (never null, an empty array when there is nothing to draw:
+   * a rustic breed profile, or no target declared). The client must never compute its own — a
+   * client-side straight-line interpolation once contradicted the server's own performance score.
+   * Populated only on single-batch reads (list endpoint sends `[]` to avoid an N+1).
+   */
+  expectedCurve: ExpectedWeightPoint[];
 }
 
 export interface CreateBatchInput {

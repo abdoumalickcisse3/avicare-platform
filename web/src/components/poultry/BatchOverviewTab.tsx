@@ -214,16 +214,14 @@ export function BatchOverviewTab({
               Courbe de croissance
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              Poids moyen (g) réel vs objectif souche
+              {batch.expectedCurve.length > 0
+                ? "Poids moyen (g) réel vs référence de croissance"
+                : "Poids moyen (g) réel — aucune référence pour cette souche"}
             </Typography>
             {wLoading ? (
               <Skeleton variant="rectangular" height={280} sx={{ borderRadius: 2 }} />
             ) : (
-              <GrowthChart
-                weighings={weighings ?? []}
-                targetWeightG={batch.targetWeightG}
-                targetAgeDays={batch.targetAgeDays}
-              />
+              <GrowthChart weighings={weighings ?? []} expectedCurve={batch.expectedCurve} />
             )}
           </CardContent>
         </Card>

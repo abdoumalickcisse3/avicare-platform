@@ -23,7 +23,6 @@ import { useGetBreedsQuery } from "@/store/api/breedsApi";
 import { useCreateBatchMutation } from "@/store/api/poultryBatchesApi";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { apiErrorMessage } from "@/lib/apiError";
-import { targetsForBreed } from "@/constants/breedDefaults";
 import { colors } from "@/theme/tokens";
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -36,8 +35,8 @@ const schema = z.object({
     .string()
     .regex(/^\d+$/, "Effectif requis")
     .refine((v) => Number(v) > 0, "Effectif requis"),
-  targetWeightG: z.string().regex(/^\d+$/, "Nombre invalide"),
-  targetAgeDays: z.string().regex(/^\d+$/, "Nombre invalide"),
+  targetWeightG: z.string().regex(/^\d*$/, "Nombre invalide").optional().or(z.literal("")),
+  targetAgeDays: z.string().regex(/^\d*$/, "Nombre invalide").optional().or(z.literal("")),
   chickUnitPriceXof: z.string().regex(/^\d*$/, "Nombre entier requis").optional().or(z.literal("")),
 });
 
@@ -48,8 +47,10 @@ const DEFAULTS: BatchForm = {
   breedId: "",
   startDate: today(),
   initialCount: "",
-  targetWeightG: "2000",
-  targetAgeDays: "42",
+  // Vide jusqu'au choix d'une souche : le poids/âge cible viennent de son profil
+  // (`defaultTargetWeightG`/`defaultTargetAgeDays`), jamais d'une valeur en dur ici.
+  targetWeightG: "",
+  targetAgeDays: "",
   chickUnitPriceXof: "",
 };
 
@@ -95,9 +96,14 @@ export function CreateBatchDialog({
 
   const onBreedChange = (breedId: number) => {
     const breed = poultryBreeds.find((b) => b.id === breedId);
-    const targets = targetsForBreed(breed?.code);
-    setValue("targetWeightG", String(targets.targetWeightG));
-    setValue("targetAgeDays", String(targets.targetAgeDays));
+    setValue(
+      "targetWeightG",
+      breed?.defaultTargetWeightG != null ? String(breed.defaultTargetWeightG) : "",
+    );
+    setValue(
+      "targetAgeDays",
+      breed?.defaultTargetAgeDays != null ? String(breed.defaultTargetAgeDays) : "",
+    );
   };
 
   const onSubmit = async (values: BatchForm) => {
@@ -109,8 +115,8 @@ export function CreateBatchDialog({
           name: values.name || undefined,
           startDate: values.startDate,
           initialCount: Number(values.initialCount),
-          targetWeightG: Number(values.targetWeightG),
-          targetAgeDays: Number(values.targetAgeDays),
+          ...(values.targetWeightG ? { targetWeightG: Number(values.targetWeightG) } : {}),
+          ...(values.targetAgeDays ? { targetAgeDays: Number(values.targetAgeDays) } : {}),
           ...(Number(values.chickUnitPriceXof) > 0
             ? { chickUnitPriceXof: Number(values.chickUnitPriceXof) }
             : {}),

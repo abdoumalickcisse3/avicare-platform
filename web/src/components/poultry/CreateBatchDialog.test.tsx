@@ -7,12 +7,12 @@ import { CreateBatchDialog } from "./CreateBatchDialog";
 const today = new Date().toISOString().slice(0, 10);
 
 describe("CreateBatchDialog", () => {
-  it("renders the create form with smart default targets and today's date", () => {
+  it("n'invente aucune cible avant qu'une souche soit choisie", () => {
     renderWithProviders(<CreateBatchDialog open onClose={vi.fn()} farmId={1} />);
     expect(screen.getByText(/créer un nouveau lot/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/date d'arrivée/i)).toHaveValue(today);
-    expect(screen.getByLabelText(/poids cible/i)).toHaveValue(2000);
-    expect(screen.getByLabelText(/âge cible/i)).toHaveValue(42);
+    expect(screen.getByLabelText(/poids cible/i)).toHaveValue(null);
+    expect(screen.getByLabelText(/âge cible/i)).toHaveValue(null);
   });
 
   it("requires a breed and an initial count", async () => {
@@ -29,7 +29,42 @@ describe("CreateBatchDialog", () => {
 // ── coût d'achat des poussins ────────────────────────────────────────────────
 
 const BREEDS = [
-  { id: 1, species: "POULTRY", code: "cobb_500", name: "Cobb 500", type: "broiler", farmId: null, active: true },
+  {
+    id: 1,
+    species: "POULTRY",
+    code: "cobb_500",
+    name: "Cobb 500",
+    type: "broiler",
+    profile: "BROILER_FAST",
+    defaultTargetWeightG: 2100,
+    defaultTargetAgeDays: 42,
+    farmId: null,
+    active: true,
+  },
+  {
+    id: 2,
+    species: "POULTRY",
+    code: "goliath",
+    name: "Goliath",
+    type: "broiler",
+    profile: "BROILER_RUSTIC",
+    defaultTargetWeightG: 2000,
+    defaultTargetAgeDays: 90,
+    farmId: null,
+    active: true,
+  },
+  {
+    id: 3,
+    species: "POULTRY",
+    code: "locale_amelioree",
+    name: "Locale améliorée (ponte)",
+    type: "layer",
+    profile: "LAYER_RUSTIC",
+    defaultTargetWeightG: null,
+    defaultTargetAgeDays: null,
+    farmId: null,
+    active: true,
+  },
 ];
 
 const CREATED_BATCH = {
@@ -44,6 +79,7 @@ const CREATED_BATCH = {
   targetWeightG: 2000,
   targetAgeDays: 42,
   chickPurchaseCostXof: null,
+  expectedCurve: [],
 };
 
 function respond(data: unknown) {
@@ -120,5 +156,44 @@ describe("CreateBatchDialog — coût d'achat des poussins", () => {
 
     await waitFor(() => expect(lastMethod).toBe("POST"));
     expect(lastBody).not.toHaveProperty("chickUnitPriceXof");
+  });
+});
+
+// ── cibles pré-remplies depuis le profil de la souche ───────────────────────
+
+describe("CreateBatchDialog — cibles depuis le profil de la souche", () => {
+  beforeEach(() => {
+    setupFetch();
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("pré-remplit les cibles depuis le profil de la souche choisie", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<CreateBatchDialog open onClose={vi.fn()} farmId={1} />);
+
+    const breedSelect = await screen.findByRole("combobox", { name: /souche de volaille/i });
+    await user.click(breedSelect);
+    await user.click(await screen.findByRole("option", { name: "Goliath" }));
+
+    expect(screen.getByLabelText(/poids cible/i)).toHaveValue(2000);
+    expect(screen.getByLabelText(/âge cible/i)).toHaveValue(90);
+  });
+
+  it("laisse les cibles vides quand la souche choisie n'en a aucune", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<CreateBatchDialog open onClose={vi.fn()} farmId={1} />);
+
+    const breedSelect = await screen.findByRole("combobox", { name: /souche de volaille/i });
+    await user.click(breedSelect);
+    await user.click(await screen.findByRole("option", { name: "Cobb 500" }));
+    expect(screen.getByLabelText(/poids cible/i)).toHaveValue(2100);
+
+    await user.click(breedSelect);
+    await user.click(await screen.findByRole("option", { name: "Locale améliorée (ponte)" }));
+
+    expect(screen.getByLabelText(/poids cible/i)).toHaveValue(null);
+    expect(screen.getByLabelText(/âge cible/i)).toHaveValue(null);
   });
 });
