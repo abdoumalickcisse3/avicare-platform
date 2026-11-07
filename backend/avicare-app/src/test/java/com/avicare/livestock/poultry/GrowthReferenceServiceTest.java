@@ -61,8 +61,11 @@ class GrowthReferenceServiceTest {
 
     List<ExpectedWeightPoint> curve = service.expectedCurve(batch);
 
-    // cible 2100 g à 42 j : au 7e jour la forme donne ~5,5 % du gain, pas 1/6
-    assertThat(pointAt(curve, 7).weightG()).isLessThan(500);
+    // Cible 2100 g à 42 j : la forme calibrée donne 153 g au 7e jour (~5,5 % du gain). Le seuil
+    // est 200, pas 500 : une droite naïve entre le poussin (40 g) et la cible donnerait
+    // 40 + (2100-40)*7/42 ≈ 383 g, qui passerait aussi sous 500 — l'assertion ne prouverait alors
+    // rien. Sous 200, seule la forme calibrée (pas une régression vers la droite) peut passer.
+    assertThat(pointAt(curve, 7).weightG()).isLessThan(200);
   }
 
   @Test
@@ -113,5 +116,21 @@ class GrowthReferenceServiceTest {
     List<ExpectedWeightPoint> curve = service.expectedCurve(batch);
 
     assertThat(curve).isEmpty();
+  }
+
+  @Test
+  void une_cible_hors_du_pas_de_7_jours_est_tout_de_meme_le_dernier_point() {
+    // 90 n'est pas un multiple de 7 (le pas d'échantillonnage) : la boucle s'arrêterait à 84 sans
+    // l'ajout systématique du point final, et un lot à croissance lente (90 j) ne verrait jamais
+    // sa cible dessinée.
+    breedHasProfile(BreedProfile.BROILER_FAST);
+    PoultryBatch batch = batch(2100, 90);
+
+    List<ExpectedWeightPoint> curve = service.expectedCurve(batch);
+
+    assertThat(pointAt(curve, 84)).isNotNull();
+    ExpectedWeightPoint last = curve.get(curve.size() - 1);
+    assertThat(last.ageDays()).isEqualTo(90);
+    assertThat(last.weightG()).isEqualTo(2100);
   }
 }
