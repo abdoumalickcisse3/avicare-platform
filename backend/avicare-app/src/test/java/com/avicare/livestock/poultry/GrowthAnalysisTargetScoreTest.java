@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import com.avicare.livestock.domain.GrowthPerformance;
 import com.avicare.livestock.domain.PoultryBatch;
 import com.avicare.livestock.domain.WeighingSample;
+import com.avicare.livestock.repository.BreedRepository;
 import com.avicare.livestock.repository.DailyRecordRepository;
 import com.avicare.livestock.repository.GrowthPerformanceRepository;
 import com.avicare.livestock.repository.LifecycleEventRepository;
@@ -34,6 +35,7 @@ class GrowthAnalysisTargetScoreTest {
   private PoultryBatchRepository poultryBatchRepository;
   private DailyRecordRepository dailyRecordRepository;
   private LifecycleEventRepository lifecycleEventRepository;
+  private BreedRepository breedRepository;
   private GrowthAnalysisService service;
 
   @BeforeEach
@@ -43,6 +45,7 @@ class GrowthAnalysisTargetScoreTest {
     poultryBatchRepository = Mockito.mock(PoultryBatchRepository.class);
     dailyRecordRepository = Mockito.mock(DailyRecordRepository.class);
     lifecycleEventRepository = Mockito.mock(LifecycleEventRepository.class);
+    breedRepository = Mockito.mock(BreedRepository.class);
     @SuppressWarnings("unchecked")
     ObjectProvider<GrowthAnalysisService> self = Mockito.mock(ObjectProvider.class);
     service =
@@ -52,6 +55,7 @@ class GrowthAnalysisTargetScoreTest {
             poultryBatchRepository,
             dailyRecordRepository,
             lifecycleEventRepository,
+            breedRepository,
             self);
 
     lenient()
