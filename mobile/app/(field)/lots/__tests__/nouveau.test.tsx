@@ -26,8 +26,42 @@ jest.mock('react-redux', () => ({
 jest.mock('@/store/api/breedsApi', () => ({
   useListBreedsQuery: jest.fn(() => ({
     data: [
-      { id: 1, species: 'POULTRY', code: 'RIR', name: 'Ross 308', type: 'broiler', farmId: null, active: true },
-      { id: 2, species: 'POULTRY', code: 'LEG', name: 'Leghorn', type: 'layer', farmId: null, active: true },
+      {
+        id: 1,
+        species: 'POULTRY',
+        code: 'RIR',
+        name: 'Ross 308',
+        type: 'broiler',
+        profile: 'BROILER_FAST',
+        defaultTargetWeightG: 2300,
+        defaultTargetAgeDays: 35,
+        farmId: null,
+        active: true,
+      },
+      {
+        id: 2,
+        species: 'POULTRY',
+        code: 'LEG',
+        name: 'Leghorn',
+        type: 'layer',
+        profile: 'LAYER_INDUSTRIAL',
+        defaultTargetWeightG: null,
+        defaultTargetAgeDays: null,
+        farmId: null,
+        active: true,
+      },
+      {
+        id: 3,
+        species: 'POULTRY',
+        code: 'rustic',
+        name: 'Locale rustique',
+        type: 'broiler',
+        profile: 'BROILER_RUSTIC',
+        defaultTargetWeightG: null,
+        defaultTargetAgeDays: null,
+        farmId: null,
+        active: true,
+      },
     ],
   })),
 }));
@@ -61,5 +95,40 @@ describe('Nouvelle bande', () => {
     expect(mockCreateBatch).toHaveBeenCalledTimes(1);
     const body = mockCreateBatch.mock.calls[0]?.[0].body;
     expect(body).not.toHaveProperty('chickUnitPriceXof');
+  });
+
+  it('pré-remplit les cibles depuis le profil de la souche choisie par défaut, sans valeur en dur', async () => {
+    await render(<CreerBandeScreen />);
+    // Ross 308 is first in the list and selected automatically.
+    expect(screen.getByLabelText('Poids cible (g)').props.value).toBe('2300');
+    expect(screen.getByLabelText('Âge cible (jours)').props.value).toBe('35');
+  });
+
+  it('change les champs cible quand une autre souche est choisie', async () => {
+    await render(<CreerBandeScreen />);
+    await press(screen.getByLabelText('Locale rustique'));
+    // No default declared for this profile: left empty rather than inventing a number.
+    expect(screen.getByLabelText('Poids cible (g)').props.value).toBe('');
+    expect(screen.getByLabelText('Âge cible (jours)').props.value).toBe('');
+  });
+
+  it("envoie les cibles du profil de la souche sélectionnée, pas un lot sans cible", async () => {
+    await render(<CreerBandeScreen />);
+    await type(screen.getByLabelText('Effectif'), '500');
+    await press(screen.getByLabelText('Créer le lot'));
+    expect(mockCreateBatch).toHaveBeenCalledWith({
+      farmId: 7,
+      body: expect.objectContaining({ targetWeightG: 2300, targetAgeDays: 35 }),
+    });
+  });
+
+  it('omet les champs cible quand la souche choisie n\'en déclare aucun', async () => {
+    await render(<CreerBandeScreen />);
+    await press(screen.getByLabelText('Locale rustique'));
+    await type(screen.getByLabelText('Effectif'), '500');
+    await press(screen.getByLabelText('Créer le lot'));
+    const body = mockCreateBatch.mock.calls[0]?.[0].body;
+    expect(body).not.toHaveProperty('targetWeightG');
+    expect(body).not.toHaveProperty('targetAgeDays');
   });
 });

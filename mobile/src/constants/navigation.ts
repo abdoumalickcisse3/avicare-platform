@@ -40,6 +40,7 @@ import {
   Wheat,
   type LucideIcon,
 } from 'lucide-react-native';
+import { canManageFarm } from '@/auth/roles';
 
 export type NavItem = {
   id: string;
@@ -52,6 +53,13 @@ export type NavItem = {
   requiredPermission?: string;
   /** Visible only to a platform ADMIN / farm OWNER (Fermes). */
   adminOnly?: boolean;
+  /**
+   * Gated by ROLE, not by permission (`canManageFarm`) — mirrors a backend endpoint that itself
+   * guards with `@farmAccess.hasRole(farmId, OWNER, MANAGER)` rather than `hasPermission`. A
+   * `requiredPermission` alone would be the wrong guard here: a FARMER granted the matching
+   * permission by hand would still take a 403 from the backend.
+   */
+  ownerManagerOnly?: boolean;
   /** Élevage focus filter: hidden unless the farm's focus includes this token. */
   focusToken?: 'broiler' | 'layer';
   /** Eligible for the bottom tab bar. */
@@ -154,11 +162,26 @@ export const DRAWER_ITEMS: NavItem[] = [
     ],
   },
   { id: 'reglages', label: 'Réglages', icon: Cog, route: '/(field)/reglages', requiredPermission: 'settings:read', ready: true },
+  /**
+   * Déclarer une souche absente du catalogue (Goliath, Kuroiler, locale améliorée...) — a
+   * top-level leaf, not nested under `reglages`: OWNER reaches it from the drawer (hamburger),
+   * MANAGER has no `reglages` tab at all (`ROLE_TAB_IDS`) and only ever sees top-level drawer
+   * items via the Menu tab's flat "NAVIGATION" list, which does not render nested children.
+   */
+  { id: 'souches', label: 'Souches', icon: Bird, route: '/(field)/reglages/souches', ownerManagerOnly: true, ready: true },
 ];
 
-/** Web `childVisible`: permission + focus (module always active per ADR-009). */
-function isVisible(item: NavItem, isAdmin: boolean, can: (p: string) => boolean, focus: string[]): boolean {
+/** Web `childVisible`: permission + focus (module always active per ADR-009), plus the one
+ *  role-gated item (`ownerManagerOnly`) that mirrors a backend `hasRole` guard. */
+function isVisible(
+  item: NavItem,
+  isAdmin: boolean,
+  can: (p: string) => boolean,
+  focus: string[],
+  farmRole?: string,
+): boolean {
   if (item.adminOnly) return isAdmin;
+  if (item.ownerManagerOnly && !canManageFarm(farmRole, isAdmin)) return false;
   if (item.requiredPermission && !can(item.requiredPermission)) return false;
   if (item.focusToken && focus.length > 0 && !focus.includes(item.focusToken)) return false;
   return true;
@@ -184,9 +207,12 @@ export function getDrawerItems(
   isAdmin: boolean,
   can: (p: string) => boolean,
   focus: string[] = [],
+  farmRole?: string,
 ): NavItem[] {
-  return DRAWER_ITEMS.filter((i) => isVisible(i, isAdmin, can, focus))
-    .map((i) => (i.children ? { ...i, children: i.children.filter((c) => isVisible(c, isAdmin, can, focus)) } : i))
+  return DRAWER_ITEMS.filter((i) => isVisible(i, isAdmin, can, focus, farmRole))
+    .map((i) =>
+      i.children ? { ...i, children: i.children.filter((c) => isVisible(c, isAdmin, can, focus, farmRole)) } : i,
+    )
     .filter((i) => !i.children || i.children.length > 0);
 }
 
@@ -219,6 +245,7 @@ export const SCREEN_TO_TAB: Record<string, string> = {
   reglages: 'reglages',
   '[category]': 'reglages',
   ponte: 'reglages',
+  souches: 'reglages',
   '[clientId]': 'commerce',
   '[itemId]': 'stocks',
   '[id]': 'commerce',

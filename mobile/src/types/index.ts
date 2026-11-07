@@ -28,6 +28,13 @@ export interface Member {
 /** Broiler batch status (mirrors the web `BatchStatus`). */
 export type BatchStatus = 'PLANNED' | 'ACTIVE' | 'CLOSED' | 'CANCELLED';
 
+/** One point of the server-computed growth reference curve, in grams at a given age in days
+ *  (mirrors the web `ExpectedWeightPoint`). */
+export interface ExpectedWeightPoint {
+  ageDays: number;
+  weightG: number;
+}
+
 /** A broiler batch (mirrors the web `PoultryBatch`). */
 export interface PoultryBatch {
   id: number;
@@ -45,6 +52,13 @@ export interface PoultryBatch {
   targetAgeDays: number | null;
   /** Resolved from the farm's expense ledger, not stored on the batch. `null` = not recorded yet. */
   chickPurchaseCostXof: number | null;
+  /**
+   * Server-computed growth reference (never null, an empty array when there is nothing to draw:
+   * a rustic breed profile, or no target declared). The client must never compute its own — a
+   * client-side straight-line interpolation once contradicted the server's own performance score.
+   * Populated only on single-batch reads (list endpoint sends `[]` to avoid an N+1).
+   */
+  expectedCurve: ExpectedWeightPoint[];
 }
 
 /** A weighing sample point (mirrors the web `WeighingSample`). */

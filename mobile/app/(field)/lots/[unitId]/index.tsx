@@ -96,7 +96,14 @@ export default function LotDetailScreen() {
     () => (weighings ?? []).slice().sort((a, b) => a.ageDays - b.ageDays).map((w) => ({ age: w.ageDays, weightG: w.avgWeightG })),
     [weighings],
   );
-  const target = batch?.targetAgeDays && batch?.targetWeightG ? { age: batch.targetAgeDays, weightG: batch.targetWeightG } : null;
+  // Server-computed, never recomputed here: a client-side straight line from (0,0) to a single
+  // target once overstated the real weight by roughly double in the first fortnight for a
+  // slow-growing breed. Empty means the breed's profile carries no validated reference.
+  const expectedCurve = useMemo(
+    () => (batch?.expectedCurve ?? []).map((p) => ({ age: p.ageDays, weightG: p.weightG })),
+    [batch?.expectedCurve],
+  );
+  const hasReference = expectedCurve.length > 0;
 
   const closed = batch?.status === 'CLOSED';
   const tabs = tabsFor(closed);
@@ -183,13 +190,15 @@ export default function LotDetailScreen() {
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Croissance du lot</Text>
               <View style={styles.legendRow}>
-                <Text style={styles.cardSub}>Poids moyen vs cible</Text>
+                <Text style={styles.cardSub}>
+                  {hasReference ? 'Poids moyen vs référence de croissance' : 'Poids moyen — aucune référence pour cette souche'}
+                </Text>
                 <View style={styles.legend}>
                   <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: tokens.colors.primary[600] }]} /><Text style={styles.legendText}>Réel</Text></View>
-                  {target && <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: tokens.colors.neutral[400] }]} /><Text style={styles.legendText}>Cible</Text></View>}
+                  {hasReference && <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: tokens.colors.neutral[400] }]} /><Text style={styles.legendText}>Cible</Text></View>}
                 </View>
               </View>
-              <GrowthChart data={growth} target={target} />
+              <GrowthChart data={growth} expectedCurve={expectedCurve} />
             </View>
 
             {/* Maturity forecast (mirrors the web "Prévision" gradient card). */}

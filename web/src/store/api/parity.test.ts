@@ -291,11 +291,6 @@ const KNOWN_DIVERGENCES: { url: string; side: "web" | "mobile"; why: string }[] 
     why: "Abonnement retiré du produit (ADR-009) ; binding dormant, à supprimer avec le reste.",
   },
   {
-    url: "/api/v1/farms/:x/breeds",
-    side: "web",
-    why: "Déclaration de souche (spec locales-ameliorees, Tâche 6) ; câblage mobile prévu Tâche 7 — supprimer cette ligne quand il atterrit.",
-  },
-  {
     url: "/api/v1/farms/:x/assistant/interpret",
     side: "mobile",
     why: "Dictée vocale : fonction du terrain, elle n'a pas de sens sur un poste de bureau.",

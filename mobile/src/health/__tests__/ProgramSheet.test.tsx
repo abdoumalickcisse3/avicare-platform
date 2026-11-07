@@ -18,8 +18,30 @@ const type = async (el: Parameters<typeof fireEvent.changeText>[0], text: string
 };
 
 const breeds: Breed[] = [
-  { id: 1, species: 'POULTRY', code: 'cobb500', name: 'Cobb 500', type: 'broiler', farmId: null, active: true },
-  { id: 2, species: 'POULTRY', code: 'isa_brown', name: 'ISA Brown', type: 'layer', farmId: null, active: true },
+  {
+    id: 1,
+    species: 'POULTRY',
+    code: 'cobb500',
+    name: 'Cobb 500',
+    type: 'broiler',
+    profile: 'BROILER_FAST',
+    defaultTargetWeightG: 2300,
+    defaultTargetAgeDays: 35,
+    farmId: null,
+    active: true,
+  },
+  {
+    id: 2,
+    species: 'POULTRY',
+    code: 'isa_brown',
+    name: 'ISA Brown',
+    type: 'layer',
+    profile: 'LAYER_INDUSTRIAL',
+    defaultTargetWeightG: null,
+    defaultTargetAgeDays: null,
+    farmId: null,
+    active: true,
+  },
 ];
 
 const vaccines: Vaccine[] = [

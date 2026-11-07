@@ -30,12 +30,12 @@ export default function MenuScreen() {
   const router = useRouter();
   const selectedFarmId = useSelector(selectSelectedFarmId);
   const { data: farms } = useListFarmsQuery();
-  const { isAdmin, can } = useFarmAccess();
+  const { isAdmin, can, farmRole } = useFarmAccess();
   const sync = useSyncStatus();
   const [advancesOpen, setAdvancesOpen] = useState(false);
   const selectedFarm = farms?.find((f) => f.id === selectedFarmId);
   const farmName = selectedFarm?.name ?? 'Ferme';
-  const sections = getDrawerItems(isAdmin, can, selectedFarm?.productionFocus ?? []);
+  const sections = getDrawerItems(isAdmin, can, selectedFarm?.productionFocus ?? [], farmRole);
 
   const logout = async () => {
     await signOut();

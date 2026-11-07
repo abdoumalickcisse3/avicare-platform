@@ -16,8 +16,33 @@ const mockCreateUnit = jest.fn((_args: { farmId: number; body: Record<string, un
 jest.mock('@/store/api/breedsApi', () => ({
   useListBreedsQuery: () => ({
     data: [
-      { id: 9, name: 'Cobb 500', type: 'broiler', species: 'POULTRY' },
-      { id: 10, name: 'ISA Brown', type: 'layer', species: 'POULTRY' },
+      {
+        id: 9,
+        name: 'Cobb 500',
+        type: 'broiler',
+        species: 'POULTRY',
+        profile: 'BROILER_FAST',
+        defaultTargetWeightG: 2300,
+        defaultTargetAgeDays: 35,
+      },
+      {
+        id: 10,
+        name: 'ISA Brown',
+        type: 'layer',
+        species: 'POULTRY',
+        profile: 'LAYER_INDUSTRIAL',
+        defaultTargetWeightG: null,
+        defaultTargetAgeDays: null,
+      },
+      {
+        id: 11,
+        name: 'Locale rustique',
+        type: 'broiler',
+        species: 'POULTRY',
+        profile: 'BROILER_RUSTIC',
+        defaultTargetWeightG: null,
+        defaultTargetAgeDays: null,
+      },
     ],
   }),
 }));
@@ -75,5 +100,45 @@ describe('CreateLotSheet', () => {
     await render(<CreateLotSheet visible kind="layer" farmId={1} onClose={jest.fn()} />);
 
     expect(screen.queryByLabelText('Prix par poussin (FCFA, optionnel)')).toBeNull();
+  });
+
+  it("la feuille d'inscription envoie les cibles du profil, pas un lot sans cible", async () => {
+    await render(<CreateLotSheet visible kind="broiler" farmId={1} onClose={jest.fn()} />);
+
+    await press(screen.getByLabelText('Cobb 500'));
+    await type(screen.getByLabelText('Effectif'), '500');
+    await press(screen.getByLabelText('Créer le lot'));
+
+    expect(mockCreateBatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        farmId: 1,
+        body: expect.objectContaining({ targetWeightG: 2300, targetAgeDays: 35 }),
+      }),
+    );
+  });
+
+  it("omet les cibles quand la souche choisie n'en déclare aucune (pas de valeur inventée)", async () => {
+    await render(<CreateLotSheet visible kind="broiler" farmId={1} onClose={jest.fn()} />);
+
+    await press(screen.getByLabelText('Locale rustique'));
+    await type(screen.getByLabelText('Effectif'), '500');
+    await press(screen.getByLabelText('Créer le lot'));
+
+    const body = mockCreateBatch.mock.calls[0]?.[0].body;
+    expect(body).not.toHaveProperty('targetWeightG');
+    expect(body).not.toHaveProperty('targetAgeDays');
+  });
+
+  it('ne tente jamais de cible pour un lot de ponte (sans champ visible)', async () => {
+    await render(<CreateLotSheet visible kind="layer" farmId={1} onClose={jest.fn()} />);
+
+    await press(screen.getByLabelText('ISA Brown'));
+    await type(screen.getByLabelText('Effectif'), '200');
+    await press(screen.getByLabelText('Créer le lot'));
+
+    expect(mockCreateUnit).toHaveBeenCalled();
+    const body = mockCreateUnit.mock.calls[0]?.[0].body;
+    expect(body).not.toHaveProperty('targetWeightG');
+    expect(body).not.toHaveProperty('targetAgeDays');
   });
 });
