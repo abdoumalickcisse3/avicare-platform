@@ -7,10 +7,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.avicare.common.api.exception.ValidationException;
+import com.avicare.common.security.principal.UserRole;
+import com.avicare.identity.domain.User;
 import com.avicare.livestock.domain.Breed;
 import com.avicare.livestock.repository.BreedRepository;
 import com.avicare.livestock.service.BreedWriteService;
+import com.avicare.tenancy.domain.Farm;
+import jakarta.persistence.EntityManager;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -51,22 +56,47 @@ class BreedWriteServiceIT {
 
   @Autowired private BreedWriteService service;
   @Autowired private BreedRepository breedRepository;
+  @Autowired private EntityManager em;
 
-  private static final long FARM_A = 101L;
-  private static final long FARM_B = 202L;
+  private Long farmA;
+  private Long farmB;
+
+  /** {@code breeds.farm_id} is `REFERENCES farms(id)` (V5) — a bare long fails the FK. */
+  private Long createFarm(String label) {
+    User user = new User();
+    user.setEmail("breedwrite." + label + "." + System.nanoTime() + "@test.io");
+    user.setPasswordHash("$2a$12$aaaabbbbccccddddeeeeffff");
+    user.setFullName("BreedWrite Test " + label);
+    user.setRole(UserRole.USER);
+    em.persist(user);
+    em.flush();
+
+    Farm farm = new Farm();
+    farm.setName("BreedWrite Farm " + label + " " + System.nanoTime());
+    farm.setCreatedBy(user.getId());
+    em.persist(farm);
+    em.flush();
+    return farm.getId();
+  }
+
+  @BeforeEach
+  void setUp() {
+    farmA = createFarm("A");
+    farmB = createFarm("B");
+  }
 
   @Test
   void une_souche_declaree_est_visible_par_la_ferme() {
-    Breed declared = service.declare(FARM_A, POULTRY, "Souche de la ferme A", BROILER_RUSTIC);
+    Breed declared = service.declare(farmA, POULTRY, "Souche de la ferme A", BROILER_RUSTIC);
 
-    List<Breed> visible = breedRepository.findVisible(POULTRY, List.of(FARM_A), true);
+    List<Breed> visible = breedRepository.findVisible(POULTRY, List.of(farmA), true);
 
     assertThat(visible).extracting(Breed::getCode).contains(declared.getCode());
   }
 
   @Test
   void un_nom_deja_au_catalogue_plateforme_renvoie_la_ligne_plateforme() {
-    Breed b = service.declare(FARM_A, POULTRY, "Goliath", BROILER_RUSTIC);
+    Breed b = service.declare(farmA, POULTRY, "Goliath", BROILER_RUSTIC);
 
     assertThat(b.getFarmId()).isNull();
     assertThat(b.getCode()).isEqualTo("goliath");
@@ -74,8 +104,8 @@ class BreedWriteServiceIT {
 
   @Test
   void le_meme_nom_sous_deux_profils_donne_deux_souches() {
-    Breed chair = service.declare(FARM_A, POULTRY, "Ma race", BROILER_RUSTIC);
-    Breed ponte = service.declare(FARM_A, POULTRY, "Ma race", LAYER_RUSTIC);
+    Breed chair = service.declare(farmA, POULTRY, "Ma race", BROILER_RUSTIC);
+    Breed ponte = service.declare(farmA, POULTRY, "Ma race", LAYER_RUSTIC);
 
     assertThat(ponte.getId()).isNotEqualTo(chair.getId());
     assertThat(chair.getType()).isEqualTo("broiler");
@@ -84,15 +114,15 @@ class BreedWriteServiceIT {
 
   @Test
   void une_seconde_declaration_identique_ne_cree_rien() {
-    Breed first = service.declare(FARM_A, POULTRY, "Souche répétée", BROILER_RUSTIC);
-    Breed second = service.declare(FARM_A, POULTRY, "Souche répétée", BROILER_RUSTIC);
+    Breed first = service.declare(farmA, POULTRY, "Souche répétée", BROILER_RUSTIC);
+    Breed second = service.declare(farmA, POULTRY, "Souche répétée", BROILER_RUSTIC);
 
     assertThat(second.getId()).isEqualTo(first.getId());
   }
 
   @Test
   void un_nom_vide_apres_slug_est_refuse() {
-    assertThatThrownBy(() -> service.declare(FARM_A, POULTRY, "— ??? —", BROILER_RUSTIC))
+    assertThatThrownBy(() -> service.declare(farmA, POULTRY, "— ??? —", BROILER_RUSTIC))
         .isInstanceOf(ValidationException.class);
   }
 
@@ -104,13 +134,13 @@ class BreedWriteServiceIT {
     existing.setName("Ma race");
     existing.setType("broiler");
     existing.setProfile(BROILER_RUSTIC);
-    existing.setFarmId(FARM_B);
+    existing.setFarmId(farmB);
     existing.setActive(true);
     breedRepository.save(existing);
 
-    Breed declared = service.declare(FARM_A, POULTRY, "Ma race", BROILER_RUSTIC);
+    Breed declared = service.declare(farmA, POULTRY, "Ma race", BROILER_RUSTIC);
 
-    assertThat(declared.getFarmId()).isEqualTo(FARM_A);
+    assertThat(declared.getFarmId()).isEqualTo(farmA);
     assertThat(declared.getId()).isNotEqualTo(existing.getId());
   }
 
