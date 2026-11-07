@@ -8,7 +8,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
 import java.util.Map;
 import lombok.Getter;
@@ -24,9 +23,7 @@ import org.hibernate.type.SqlTypes;
  * {@link ProductionUnit}.
  */
 @Entity
-@Table(
-    name = "breeds",
-    uniqueConstraints = @UniqueConstraint(columnNames = {"species", "code", "farm_id"}))
+@Table(name = "breeds")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -53,6 +50,11 @@ public class Breed {
 
   @Column(name = "catalog_item_id")
   private Long catalogItemId;
+
+  /** Famille de cibles par défaut / référence de croissance (V69). Null = non renseigné. */
+  @Enumerated(EnumType.STRING)
+  @Column(name = "profile")
+  private BreedProfile profile;
 
   @Column(name = "farm_id")
   private Long farmId;
