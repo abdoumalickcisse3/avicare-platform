@@ -19,7 +19,10 @@ import java.util.List;
  * — never {@code null}, an empty list when there is nothing to draw. It is served here rather than
  * on {@code /performance} because both clients already read {@code targetWeightG}/{@code
  * targetAgeDays} from this resource to draw their line, and this resource exists even for a batch
- * with no weighing yet.
+ * with no weighing yet. Same rule as {@code chickPurchaseCostXof} just above: resolved only on
+ * single-batch reads ({@code get}/{@code create}/{@code setChickCost}) — {@code List.of()} on the
+ * list endpoint, which does not draw a chart and would otherwise pay one extra breed lookup per
+ * batch for nothing.
  */
 public record PoultryBatchResponse(
     Long id,

@@ -7,6 +7,7 @@ import com.avicare.livestock.domain.PoultryBatch;
 import com.avicare.livestock.domain.UnitStatus;
 import com.avicare.livestock.dto.request.CreatePoultryBatchRequest;
 import com.avicare.livestock.dto.request.SetChickCostRequest;
+import com.avicare.livestock.dto.response.ExpectedWeightPoint;
 import com.avicare.livestock.dto.response.PoultryBatchResponse;
 import com.avicare.livestock.poultry.GrowthReferenceService;
 import com.avicare.livestock.poultry.PoultryBatchCreate;
@@ -57,7 +58,7 @@ public class PoultryBatchController {
     Map<Long, Long> deathsByUnit = deathsFor(batches.stream().map(PoultryBatch::getId).toList());
     return ApiResponse.of(
         batches.stream()
-            .map(b -> toResponse(b, deathsByUnit.getOrDefault(b.getId(), 0L), null))
+            .map(b -> toListResponse(b, deathsByUnit.getOrDefault(b.getId(), 0L)))
             .toList());
   }
 
@@ -120,7 +121,28 @@ public class PoultryBatchController {
                 row -> ((Number) row[0]).longValue(), row -> -((Number) row[1]).longValue()));
   }
 
+  /**
+   * Single-batch reads ({@code get}/{@code create}/{@code setChickCost}): resolves {@code
+   * expectedCurve} too, same as {@code chickPurchaseCostXof} just above it.
+   */
   PoultryBatchResponse toResponse(PoultryBatch b, long deaths, Long chickPurchaseCostXof) {
+    return toResponse(b, deaths, chickPurchaseCostXof, growthReferenceService.expectedCurve(b));
+  }
+
+  /**
+   * List endpoint: {@code List.of()} rather than resolving the curve — same N+1 avoidance as {@code
+   * chickPurchaseCostXof}'s {@code null} on this path (see {@link PoultryBatchResponse}'s javadoc),
+   * and the chart is only drawn on the single-batch detail view by both clients.
+   */
+  private PoultryBatchResponse toListResponse(PoultryBatch b, long deaths) {
+    return toResponse(b, deaths, null, List.of());
+  }
+
+  private PoultryBatchResponse toResponse(
+      PoultryBatch b,
+      long deaths,
+      Long chickPurchaseCostXof,
+      List<ExpectedWeightPoint> expectedCurve) {
     return new PoultryBatchResponse(
         b.getId(),
         b.getFarmId(),
@@ -134,6 +156,6 @@ public class PoultryBatchController {
         b.getTargetWeightG(),
         b.getTargetAgeDays(),
         chickPurchaseCostXof,
-        growthReferenceService.expectedCurve(b));
+        expectedCurve);
   }
 }
