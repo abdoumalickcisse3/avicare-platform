@@ -5,6 +5,7 @@ import com.avicare.common.security.principal.AvicarePrincipal;
 import com.avicare.livestock.domain.Breed;
 import com.avicare.livestock.domain.Species;
 import com.avicare.livestock.dto.response.BreedResponse;
+import com.avicare.livestock.service.BreedProfileDefaults;
 import com.avicare.livestock.service.BreedService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class BreedController {
 
   private final BreedService breedService;
+  private final BreedProfileDefaults breedProfileDefaults;
 
   @GetMapping
   public ApiResponse<List<BreedResponse>> list(
@@ -37,17 +39,7 @@ public class BreedController {
                 ? breedService.listAll(species, activeOnly)
                 : breedService.listVisible(species, activeOnly, principal.accessibleFarmIds()))
             : breedService.listVisible(species, activeOnly, List.of());
-    return ApiResponse.of(breeds.stream().map(BreedController::toResponse).toList());
-  }
-
-  private static BreedResponse toResponse(Breed b) {
-    return new BreedResponse(
-        b.getId(),
-        b.getSpecies(),
-        b.getCode(),
-        b.getName(),
-        b.getType(),
-        b.getFarmId(),
-        b.isActive());
+    return ApiResponse.of(
+        breeds.stream().map(b -> BreedResponse.of(b, breedProfileDefaults)).toList());
   }
 }
