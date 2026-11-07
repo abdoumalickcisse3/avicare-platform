@@ -2,9 +2,12 @@ package com.avicare.livestock.poultry;
 
 import com.avicare.common.api.exception.NotFoundException;
 import com.avicare.common.api.exception.ValidationException;
+import com.avicare.livestock.domain.Breed;
+import com.avicare.livestock.domain.BreedProfile;
 import com.avicare.livestock.domain.GrowthPerformance;
 import com.avicare.livestock.domain.PoultryBatch;
 import com.avicare.livestock.domain.WeighingSample;
+import com.avicare.livestock.repository.BreedRepository;
 import com.avicare.livestock.repository.DailyRecordRepository;
 import com.avicare.livestock.repository.GrowthPerformanceRepository;
 import com.avicare.livestock.repository.LifecycleEventRepository;
@@ -53,6 +56,7 @@ public class GrowthAnalysisService {
   private final PoultryBatchRepository poultryBatchRepository;
   private final DailyRecordRepository dailyRecordRepository;
   private final LifecycleEventRepository lifecycleEventRepository;
+  private final BreedRepository breedRepository;
 
   // Self-reference resolved lazily through the Spring proxy so that self.getObject().insertX(...)
   // actually goes through AOP (REQUIRES_NEW). ObjectProvider defers the lookup, so it does not
@@ -177,6 +181,7 @@ public class GrowthAnalysisService {
 
     BigDecimal cumulativeFeedKg = dailyRecordRepository.sumFeedKgUpTo(batchId, date);
     BigDecimal cumulativeWaterL = dailyRecordRepository.sumWaterLUpTo(batchId, date);
+    BreedProfile breedProfile = breedProfileOf(batch);
 
     GrowthPerformance perf =
         growthPerformanceRepository
@@ -194,8 +199,8 @@ public class GrowthAnalysisService {
     // which would shrink the live weight the feed actually built and inflate the ratio.
     long liveBirds = batch.getInitialCount() + lifecycleEventRepository.sumMortalityDelta(batchId);
     perf.setFeedConversionRatio(fcr(cumulativeFeedKg, currentWeightG, (int) liveBirds));
-    perf.setForecastedTargetDate(forecast(batch, currentWeightG, date));
-    perf.setPerformanceScore(score(batch, currentWeightG, ageDays));
+    perf.setForecastedTargetDate(forecast(batch, currentWeightG, date, breedProfile));
+    perf.setPerformanceScore(score(batch, currentWeightG, ageDays, breedProfile));
     perf.setComputedAt(java.time.LocalDateTime.now());
     return growthPerformanceRepository.save(perf);
   }
@@ -218,6 +223,19 @@ public class GrowthAnalysisService {
     return poultryBatchRepository
         .findById(batchId)
         .orElseThrow(() -> NotFoundException.of("PoultryBatch", batchId));
+  }
+
+  /**
+   * The batch breed's profile, or {@code null} if the batch carries no breed, the breed row is
+   * gone, or the breed was never assigned a profile (legacy/non-poultry rows) — in every one of
+   * those cases, behaviour is unchanged from before this profile existed.
+   */
+  private BreedProfile breedProfileOf(PoultryBatch batch) {
+    Long breedId = batch.getBreedId();
+    if (breedId == null) {
+      return null;
+    }
+    return breedRepository.findById(breedId).map(Breed::getProfile).orElse(null);
   }
 
   private static int ageDays(PoultryBatch batch, LocalDate date) {
@@ -269,7 +287,13 @@ public class GrowthAnalysisService {
     return BroilerGrowthCurve.weightAt(targetWeight, targetAge, ageDays, DAY_OLD_CHICK_WEIGHT_G);
   }
 
-  private static String score(PoultryBatch batch, BigDecimal currentWeightG, int ageDays) {
+  private static String score(
+      PoultryBatch batch, BigDecimal currentWeightG, int ageDays, BreedProfile breedProfile) {
+    if (breedProfile != null && !breedProfile.hasGrowthReference()) {
+      // Rustic breed: no validated growth reference to compare against (spec §7.1). No verdict,
+      // not a guessed one.
+      return null;
+    }
     Double target = targetWeightAt(batch, ageDays);
     if (currentWeightG == null || target == null || target <= 0) {
       return null;
@@ -281,8 +305,18 @@ public class GrowthAnalysisService {
     return ratio >= 0.95 ? SCORE_ON_TARGET : SCORE_BEHIND;
   }
 
-  /** Project the date the batch reaches its target weight, from the current GMQ. */
-  private static LocalDate forecast(PoultryBatch batch, BigDecimal currentWeightG, LocalDate date) {
+  /**
+   * Project the date the batch reaches its target weight, from the current GMQ. Left {@code null}
+   * for a rustic breed: this is a straight-line GMQ extrapolation, not a curve, but it is just as
+   * much an invented date — and it leaves the farm through {@code LivestockFacadeImpl.cycleOf()}
+   * into {@code BatchCycleInfo}, the delivery window shown to a feed supplier on the partner
+   * portal.
+   */
+  private static LocalDate forecast(
+      PoultryBatch batch, BigDecimal currentWeightG, LocalDate date, BreedProfile breedProfile) {
+    if (breedProfile != null && !breedProfile.hasGrowthReference()) {
+      return null;
+    }
     Integer targetWeight = batch.getTargetWeightG();
     int ageDays = ageDays(batch, date);
     BigDecimal gmq = gmq(currentWeightG, ageDays);
