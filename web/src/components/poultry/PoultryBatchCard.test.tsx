@@ -17,6 +17,7 @@ const batch: PoultryBatch = {
   targetWeightG: 2100,
   targetAgeDays: 42,
   chickPurchaseCostXof: null,
+  expectedCurve: [],
 };
 
 describe("PoultryBatchCard", () => {

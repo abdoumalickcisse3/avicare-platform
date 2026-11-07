@@ -1,5 +1,5 @@
 import { baseApi } from "./baseApi";
-import type { Breed } from "@/types";
+import type { Breed, DeclareBreedInput } from "@/types";
 
 interface ApiEnvelope<T> {
   data: T;
@@ -18,7 +18,20 @@ export const breedsApi = baseApi.injectEndpoints({
       transformResponse: (r: ApiEnvelope<Breed[]>) => r.data,
       providesTags: ["Breed"],
     }),
+    /**
+     * Declares a breed the catalogue does not have. Gated OWNER/MANAGER by role on the backend
+     * (`FarmBreedController` — `@farmAccess.hasRole(#farmId, OWNER, MANAGER)`), not by permission.
+     */
+    declareBreed: build.mutation<Breed, { farmId: number; body: DeclareBreedInput }>({
+      query: ({ farmId, body }) => ({
+        url: `/api/v1/farms/${farmId}/breeds`,
+        method: "POST",
+        body,
+      }),
+      transformResponse: (r: ApiEnvelope<Breed>) => r.data,
+      invalidatesTags: ["Breed"],
+    }),
   }),
 });
 
-export const { useGetBreedsQuery } = breedsApi;
+export const { useGetBreedsQuery, useDeclareBreedMutation } = breedsApi;

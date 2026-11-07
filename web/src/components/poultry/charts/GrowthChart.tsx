@@ -11,25 +11,20 @@ import {
 } from "recharts";
 import { Box, Typography } from "@mui/material";
 import { colors } from "@/theme/tokens";
-import type { WeighingSample } from "@/types";
-
-const CHICK_WEIGHT_G = 40;
+import type { ExpectedWeightPoint, WeighingSample } from "@/types";
 
 interface GrowthChartProps {
   weighings: WeighingSample[];
-  targetWeightG: number | null;
-  targetAgeDays: number | null;
+  /**
+   * Server-computed growth reference ({@code PoultryBatchResponse.expectedCurve}) — never
+   * computed client-side. An empty array means the breed's profile has no validated reference
+   * (rustic/local breeds) or the batch has no target: draw no reference line at all rather than
+   * guess one, exactly as the server chose to send nothing.
+   */
+  expectedCurve: ExpectedWeightPoint[];
 }
 
-/** Linear target weight at a given age, from a day-old chick to the batch target. */
-function targetAt(age: number, targetWeightG: number, targetAgeDays: number): number {
-  if (age >= targetAgeDays) return targetWeightG;
-  return Math.round(
-    CHICK_WEIGHT_G + ((targetWeightG - CHICK_WEIGHT_G) * age) / targetAgeDays,
-  );
-}
-
-export function GrowthChart({ weighings, targetWeightG, targetAgeDays }: GrowthChartProps) {
+export function GrowthChart({ weighings, expectedCurve }: GrowthChartProps) {
   if (weighings.length === 0) {
     return (
       <Box sx={{ height: 280, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -41,18 +36,16 @@ export function GrowthChart({ weighings, targetWeightG, targetAgeDays }: GrowthC
   }
 
   const realByAge = new Map(weighings.map((w) => [w.ageDays, Math.round(w.avgWeightG)]));
-  const ages = new Set<number>([0, ...realByAge.keys()]);
-  if (targetWeightG && targetAgeDays) ages.add(targetAgeDays);
+  const targetByAge = new Map(expectedCurve.map((p) => [p.ageDays, p.weightG]));
+  const ages = new Set<number>([0, ...realByAge.keys(), ...targetByAge.keys()]);
+  const hasReference = expectedCurve.length > 0;
 
   const data = [...ages]
     .sort((a, b) => a - b)
     .map((age) => ({
       age,
       real: realByAge.get(age) ?? null,
-      target:
-        targetWeightG && targetAgeDays
-          ? targetAt(age, targetWeightG, targetAgeDays)
-          : null,
+      target: targetByAge.get(age) ?? null,
     }));
 
   return (
@@ -70,15 +63,17 @@ export function GrowthChart({ weighings, targetWeightG, targetAgeDays }: GrowthC
           formatter={(v) => [`${v} g`, ""]}
           labelFormatter={(l) => `Jour ${l}`}
         />
-        <Line
-          type="monotone"
-          dataKey="target"
-          name="Cible"
-          stroke={colors.neutral[400]}
-          strokeDasharray="5 5"
-          dot={false}
-          connectNulls
-        />
+        {hasReference && (
+          <Line
+            type="monotone"
+            dataKey="target"
+            name="Cible"
+            stroke={colors.neutral[400]}
+            strokeDasharray="5 5"
+            dot={false}
+            connectNulls
+          />
+        )}
         <Line
           type="monotone"
           dataKey="real"
