@@ -1,0 +1,706 @@
+---
+// Enquête terrain — le questionnaire des 200 éleveurs (cf. docs/13-enquete-200-eleveurs.md).
+//
+// Contraintes de conception, toutes issues de l'étude de marché :
+//  - la page doit être LÉGÈRE : les répondants paient leur data et beaucoup sont en réseau
+//    instable. Pas de framework, pas de dépendance, un seul script.
+//  - un bloc par écran, avec une barre de progression : 28 champs d'un coup font fuir.
+//  - les réponses sont gardées dans le navigateur à chaque frappe : une coupure réseau au
+//    septième écran ne doit pas renvoyer l'éleveur au premier.
+//  - le lieu et le MOIS des prix sont obligatoires : un prix sans région ni date ne vaut rien.
+//  - la mortalité se demande en NOMBRE de sujets, jamais en pourcentage (les deux se
+//    contredisent lourdement dans la littérature).
+//  - « website » est un piège à robots : invisible pour une personne, irrésistible pour un
+//    script. Rempli, le serveur jette la réponse sans le dire.
+import Base from "../layouts/Base.astro";
+
+const apiUrl = import.meta.env.PUBLIC_API_URL || "https://app.jawdi.app";
+
+const title = "Enquête — Ce que coûte vraiment produire un poulet | Jawdi";
+const description =
+  "7 minutes sur votre dernière bande. En échange, vous recevez le coût de production moyen de votre région et le prix de l'aliment relevé ce mois-ci.";
+---
+
+<Base title={title} description={description} solidHeader>
+  <section class="qhero">
+    <div class="inner">
+      <span class="pill">Enquête terrain · Sénégal · Côte d'Ivoire · Bénin</span>
+      <h1>Ce que coûte vraiment produire un poulet, en 2026.</h1>
+      <p class="sub">
+        Personne ne le sait. Le dernier chiffre sérieux au Sénégal date de <strong>2008</strong>.
+        Sept minutes de questions sur votre dernière bande, et nous le saurons — ensemble.
+      </p>
+      <p class="give">
+        <strong>Ce que vous recevez :</strong> sous quatre semaines, par WhatsApp, une page avec le
+        coût de production moyen de votre région et le prix de l'aliment relevé ce mois-ci.
+        Un seul message.
+      </p>
+    </div>
+  </section>
+
+  <section class="form-wrap">
+    <div class="progress" aria-hidden="true"><span id="bar"></span></div>
+    <p class="steps"><span id="stepnum">1</span> / 8</p>
+
+    <form id="q" novalidate>
+      <!-- piège à robots : jamais affiché, jamais rempli par une personne -->
+      <div class="hp" aria-hidden="true">
+        <label for="website">Ne remplissez pas ce champ</label>
+        <input type="text" id="website" name="website" tabindex="-1" autocomplete="off" />
+      </div>
+
+      <fieldset class="step" data-step="1">
+        <legend>Où êtes-vous ?</legend>
+        <p class="why">Un prix d'aliment sans région ne veut rien dire : il va du simple au double.</p>
+
+        <label for="country">Pays <b>*</b></label>
+        <select id="country" required>
+          <option value="">Choisissez…</option>
+          <option value="SN">Sénégal</option>
+          <option value="CI">Côte d'Ivoire</option>
+          <option value="BJ">Bénin</option>
+          <option value="ML">Mali</option>
+          <option value="BF">Burkina Faso</option>
+          <option value="TG">Togo</option>
+          <option value="NE">Niger</option>
+          <option value="GN">Guinée</option>
+          <option value="CM">Cameroun</option>
+          <option value="XX">Autre</option>
+        </select>
+
+        <label for="region">Région ou département <b>*</b></label>
+        <input type="text" id="region" required maxlength="120" placeholder="Thiès, Abidjan, Atlantique…" />
+
+        <label for="commune">Commune ou ville la plus proche</label>
+        <input type="text" id="commune" maxlength="120" />
+
+        <label for="referrer">Qui vous a envoyé ce lien ?</label>
+        <input type="text" id="referrer" maxlength="200" placeholder="un nom, ou le nom du groupe" />
+      </fieldset>
+
+      <fieldset class="step" data-step="2" hidden>
+        <legend>Votre élevage</legend>
+
+        <label for="flockType">Vous élevez <b>*</b></label>
+        <select id="flockType" required>
+          <option value="">Choisissez…</option>
+          <option value="BROILER">Des poulets de chair</option>
+          <option value="LAYER">Des poules pondeuses</option>
+          <option value="BOTH">Les deux</option>
+          <option value="HATCHERY">Des poussins (reproduction)</option>
+        </select>
+
+        <label for="currentBirds">Combien de sujets avez-vous aujourd'hui ? <b>*</b></label>
+        <input type="number" id="currentBirds" required min="0" max="5000000" inputmode="numeric" />
+        <p class="why">Le nombre exact. « Moins de 500 » cache la différence entre 20 et 499.</p>
+
+        <label for="batches">Combien de bandes mises en place ces 12 derniers mois ?</label>
+        <input type="number" id="batches" min="0" max="100" inputmode="numeric" />
+
+        <label for="startedYear">Depuis quelle année élevez-vous ?</label>
+        <input type="number" id="startedYear" min="1900" max="2100" inputmode="numeric" placeholder="2021" />
+
+        <label for="workers">Combien de personnes travaillent sur la ferme, vous compris ?</label>
+        <input type="number" id="workers" min="0" max="10000" inputmode="numeric" />
+      </fieldset>
+
+      <fieldset class="step" data-step="3" hidden>
+        <legend>Votre dernière bande</legend>
+        <p class="why big">
+          Les questions qui suivent sont les plus importantes de toute l'enquête.
+          Prenez votre cahier si vous l'avez sous la main.
+        </p>
+
+        <label for="batchMonth">Mois de la mise en place</label>
+        <input type="month" id="batchMonth" />
+
+        <label for="birdsPlaced">Combien de sujets avez-vous mis en place ?</label>
+        <input type="number" id="birdsPlaced" min="0" max="5000000" inputmode="numeric" />
+
+        <label for="chickPrice">Prix payé par poussin (FCFA)</label>
+        <input type="number" id="chickPrice" min="0" step="1" inputmode="numeric" />
+
+        <label for="birdsDied">Combien de sujets sont morts ?</label>
+        <input type="number" id="birdsDied" min="0" max="5000000" inputmode="numeric" />
+        <p class="why">Un nombre de sujets, pas un pourcentage.</p>
+
+        <label for="feedBags">Combien de sacs de 50 kg avez-vous consommés en tout ?</label>
+        <input type="number" id="feedBags" min="0" max="200000" inputmode="numeric" />
+
+        <label for="bagPrice">Prix payé pour le dernier sac (FCFA)</label>
+        <input type="number" id="bagPrice" min="0" step="1" inputmode="numeric" />
+
+        <label for="bagBrand">Marque de cet aliment</label>
+        <input type="text" id="bagBrand" maxlength="120" placeholder="Sedima, NMA, aliment maison…" />
+
+        <label for="bagMonth">Mois de cet achat</label>
+        <input type="month" id="bagMonth" />
+      </fieldset>
+
+      <fieldset class="step" data-step="4" hidden>
+        <legend>Chez qui vous achetez</legend>
+
+        <label for="supplier">Chez qui achetez-vous votre aliment ?</label>
+        <input type="text" id="supplier" maxlength="200" placeholder="le nom du provendier ou du revendeur" />
+
+        <label for="terms">Vous payez</label>
+        <select id="terms">
+          <option value="">Choisissez…</option>
+          <option value="CASH">Comptant</option>
+          <option value="CREDIT">À crédit</option>
+        </select>
+
+        <div id="creditBlock" hidden>
+          <label for="creditDays">En combien de jours remboursez-vous ?</label>
+          <input type="number" id="creditDays" min="0" max="3650" inputmode="numeric" />
+
+          <label for="creditMore">Payez-vous plus cher qu'au comptant ?</label>
+          <select id="creditMore">
+            <option value="">Je ne sais pas</option>
+            <option value="true">Oui</option>
+            <option value="false">Non</option>
+          </select>
+        </div>
+
+        <label for="rawPrices">Si vous achetez des matières premières, les derniers prix payés</label>
+        <textarea id="rawPrices" maxlength="1000" rows="3" placeholder="maïs 320 F/kg, son 9 000 F le sac…"></textarea>
+      </fieldset>
+
+      <fieldset class="step" data-step="5" hidden>
+        <legend>À qui vous vendez</legend>
+
+        <label for="buyer">Votre principal acheteur</label>
+        <select id="buyer">
+          <option value="">Choisissez…</option>
+          <option value="RESELLER">Un bana-bana / revendeur</option>
+          <option value="SHOPKEEPER">Le boutiquier du quartier</option>
+          <option value="RESTAURANT">Un restaurant ou un hôtel</option>
+          <option value="INDIVIDUALS">Des particuliers</option>
+          <option value="WHOLESALER">Un grossiste</option>
+          <option value="SUPERMARKET">Une grande surface</option>
+          <option value="OTHER">Autre</option>
+        </select>
+
+        <label for="saleUnit">Votre dernière vente portait sur</label>
+        <select id="saleUnit">
+          <option value="">Choisissez…</option>
+          <option value="EGG_TRAY">Un plateau de 30 œufs</option>
+          <option value="LIVE_BIRD">Un poulet vif</option>
+        </select>
+
+        <label for="salePrice">Prix de cette dernière vente (FCFA)</label>
+        <input type="number" id="salePrice" min="0" step="1" inputmode="numeric" />
+
+        <label for="saleMonth">Mois de cette vente</label>
+        <input type="month" id="saleMonth" />
+
+        <label for="delay">En combien de jours êtes-vous payé ?</label>
+        <select id="delay">
+          <option value="">Choisissez…</option>
+          <option value="IMMEDIATE">Tout de suite</option>
+          <option value="UNDER_WEEK">Moins d'une semaine</option>
+          <option value="ONE_TO_FOUR_WEEKS">1 à 4 semaines</option>
+          <option value="OVER_MONTH">Plus d'un mois</option>
+          <option value="VARIES">Ça dépend</option>
+        </select>
+      </fieldset>
+
+      <fieldset class="step" data-step="6" hidden>
+        <legend>Quand ça va mal</legend>
+
+        <label for="firstCall">Qui appelez-vous en premier ?</label>
+        <select id="firstCall">
+          <option value="">Choisissez…</option>
+          <option value="VET">Un vétérinaire</option>
+          <option value="FEED_TECHNICIAN">Le technicien du provendier</option>
+          <option value="WHATSAPP_GROUP">Un groupe WhatsApp</option>
+          <option value="NEIGHBOUR">Un voisin éleveur</option>
+          <option value="NOBODY">Personne, je me débrouille</option>
+        </select>
+
+        <label for="incidentCost">La dernière fois, combien ça vous a coûté ? (FCFA)</label>
+        <input type="number" id="incidentCost" min="0" step="1" inputmode="numeric" placeholder="0 si rien" />
+      </fieldset>
+
+      <fieldset class="step" data-step="7" hidden>
+        <legend>Comment vous suivez, et ce que ça vaut</legend>
+
+        <label for="records">Aujourd'hui vous notez</label>
+        <select id="records">
+          <option value="">Choisissez…</option>
+          <option value="NOTEBOOK">Sur un cahier</option>
+          <option value="MEMORY">De tête</option>
+          <option value="SPREADSHEET">Sur Excel</option>
+          <option value="APP">Sur une application</option>
+          <option value="NOTHING">Rien du tout</option>
+        </select>
+
+        <label for="wtp">Pour un outil qui vous dit où vous perdez de l'argent, vous paieriez par bande</label>
+        <select id="wtp">
+          <option value="">Choisissez…</option>
+          <option value="NOTHING">Rien</option>
+          <option value="UNDER_5K">Moins de 5 000 F</option>
+          <option value="FROM_5K_TO_15K">5 000 à 15 000 F</option>
+          <option value="FROM_15K_TO_30K">15 000 à 30 000 F</option>
+          <option value="OVER_30K">Plus de 30 000 F</option>
+          <option value="ONLY_IF_OTHERS_PAY">Seulement si quelqu'un d'autre paie</option>
+        </select>
+
+        <label for="quit">Avez-vous déjà arrêté une bande en cours, ou arrêté l'élevage ?</label>
+        <select id="quit">
+          <option value="">Choisissez…</option>
+          <option value="true">Oui</option>
+          <option value="false">Non</option>
+        </select>
+
+        <div id="quitBlock" hidden>
+          <label for="quitReason">Pourquoi, en une phrase ?</label>
+          <textarea id="quitReason" maxlength="1000" rows="2"></textarea>
+        </div>
+      </fieldset>
+
+      <fieldset class="step" data-step="8" hidden>
+        <legend>Pour recevoir les résultats</legend>
+
+        <label for="phone">Votre numéro WhatsApp</label>
+        <input type="tel" id="phone" maxlength="32" placeholder="+221 …" autocomplete="tel" />
+        <p class="consent">
+          Il sert à vous envoyer <strong>un seul message</strong> : le coût de production moyen de
+          votre région et le prix de l'aliment de ce mois-ci. Il n'est ni revendu, ni publié,
+          ni utilisé pour autre chose.
+        </p>
+
+        <label for="interview">Accepteriez-vous un entretien de 45 minutes pour aller plus loin ?</label>
+        <select id="interview">
+          <option value="">Choisissez…</option>
+          <option value="true">Oui</option>
+          <option value="false">Non</option>
+        </select>
+      </fieldset>
+
+      <p class="err" id="err" role="alert" hidden></p>
+
+      <div class="nav">
+        <button type="button" id="prev" class="btn ghost" hidden>Retour</button>
+        <button type="button" id="next" class="btn">Continuer</button>
+        <button type="submit" id="send" class="btn send" hidden>Envoyer mes réponses</button>
+      </div>
+    </form>
+
+    <div id="done" hidden>
+      <div class="tick">✓</div>
+      <h2>C'est enregistré. Merci.</h2>
+      <p>
+        Vous venez d'ajouter une ligne à un chiffre que personne ne détient encore.
+        Si vous avez laissé votre numéro, vous recevrez la page de résultats sous quatre semaines.
+      </p>
+      <p class="share">
+        Plus nous serons nombreux, plus le chiffre sera juste —
+        <a href="/enquete/resultats">voir où en sont les résultats</a>.
+      </p>
+    </div>
+  </section>
+</Base>
+
+<script define:vars={{ apiUrl }}>
+  const form = document.getElementById("q");
+  const steps = [...document.querySelectorAll(".step")];
+  const bar = document.getElementById("bar");
+  const stepnum = document.getElementById("stepnum");
+  const prev = document.getElementById("prev");
+  const next = document.getElementById("next");
+  const send = document.getElementById("send");
+  const err = document.getElementById("err");
+  const done = document.getElementById("done");
+  const STORE = "jawdi-enquete-v1";
+
+  let at = 0;
+
+  const val = (id) => {
+    const el = document.getElementById(id);
+    return el && el.value.trim() !== "" ? el.value.trim() : null;
+  };
+  const num = (id) => (val(id) === null ? null : Number(val(id)));
+  const bool = (id) => (val(id) === null ? null : val(id) === "true");
+  // <input type="month"> donne "2026-10" ; le serveur attend une date.
+  const month = (id) => (val(id) === null ? null : val(id) + "-01");
+
+  // --- reprise après coupure -------------------------------------------
+  const fields = [...form.querySelectorAll("input,select,textarea")].filter((e) => e.id);
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORE) || "{}");
+    fields.forEach((f) => {
+      if (saved[f.id] !== undefined && f.id !== "website") f.value = saved[f.id];
+    });
+  } catch (e) {
+    /* stockage indisponible : on continue sans reprise */
+  }
+  const remember = () => {
+    try {
+      const snap = {};
+      fields.forEach((f) => (snap[f.id] = f.value));
+      localStorage.setItem(STORE, JSON.stringify(snap));
+    } catch (e) {
+      /* rien à faire : la saisie continue, elle n'est juste pas reprise */
+    }
+  };
+  form.addEventListener("input", remember);
+  form.addEventListener("change", remember);
+
+  // --- champs conditionnels --------------------------------------------
+  const toggle = (selectId, blockId, when) => {
+    const s = document.getElementById(selectId);
+    const b = document.getElementById(blockId);
+    const apply = () => (b.hidden = s.value !== when);
+    s.addEventListener("change", apply);
+    apply();
+  };
+  toggle("terms", "creditBlock", "CREDIT");
+  toggle("quit", "quitBlock", "true");
+
+  // --- navigation -------------------------------------------------------
+  const show = (i) => {
+    steps.forEach((s, k) => (s.hidden = k !== i));
+    at = i;
+    stepnum.textContent = String(i + 1);
+    bar.style.width = ((i + 1) / steps.length) * 100 + "%";
+    prev.hidden = i === 0;
+    next.hidden = i === steps.length - 1;
+    send.hidden = i !== steps.length - 1;
+    err.hidden = true;
+    window.scrollTo({ top: form.offsetTop - 90, behavior: "smooth" });
+  };
+
+  const valid = () => {
+    for (const el of steps[at].querySelectorAll("[required]")) {
+      if (!el.value || el.value.trim() === "") {
+        err.textContent = "Cette réponse est nécessaire pour que votre chiffre soit utilisable.";
+        err.hidden = false;
+        el.focus();
+        return false;
+      }
+    }
+    return true;
+  };
+
+  next.addEventListener("click", () => valid() && show(at + 1));
+  prev.addEventListener("click", () => show(at - 1));
+
+  // --- envoi ------------------------------------------------------------
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!valid()) return;
+    send.disabled = true;
+    send.textContent = "Envoi…";
+
+    const payload = {
+      website: document.getElementById("website").value,
+      where: {
+        country: val("country"),
+        region: val("region"),
+        commune: val("commune"),
+        referrer: val("referrer"),
+      },
+      flock: {
+        type: val("flockType"),
+        currentBirds: num("currentBirds"),
+        batchesLast12Months: num("batches"),
+        startedYear: num("startedYear"),
+        workers: num("workers"),
+      },
+      lastBatch: {
+        month: month("batchMonth"),
+        birdsPlaced: num("birdsPlaced"),
+        chickPrice: num("chickPrice"),
+        birdsDied: num("birdsDied"),
+        feedBags: num("feedBags"),
+        lastBagPrice: num("bagPrice"),
+        lastBagBrand: val("bagBrand"),
+        lastBagMonth: month("bagMonth"),
+      },
+      buying: {
+        feedSupplier: val("supplier"),
+        paymentTerms: val("terms"),
+        creditDays: num("creditDays"),
+        creditCostsMore: bool("creditMore"),
+        rawMaterialPrices: val("rawPrices"),
+      },
+      selling: {
+        mainBuyer: val("buyer"),
+        lastSalePrice: num("salePrice"),
+        lastSaleUnit: val("saleUnit"),
+        lastSaleMonth: month("saleMonth"),
+        paymentDelay: val("delay"),
+      },
+      trouble: {
+        firstCall: val("firstCall"),
+        lastIncidentCost: num("incidentCost"),
+      },
+      tool: {
+        recordKeeping: val("records"),
+        willingnessToPay: val("wtp"),
+        hasQuit: bool("quit"),
+        quitReason: val("quitReason"),
+      },
+      contact: {
+        phone: val("phone"),
+        acceptsInterview: bool("interview"),
+      },
+    };
+
+    try {
+      const res = await fetch(apiUrl + "/api/v1/public/survey", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      try {
+        localStorage.removeItem(STORE);
+      } catch (e) {
+        /* sans importance */
+      }
+      form.hidden = true;
+      document.querySelector(".progress").hidden = true;
+      document.querySelector(".steps").hidden = true;
+      done.hidden = false;
+      window.scrollTo({ top: done.offsetTop - 120, behavior: "smooth" });
+    } catch (e) {
+      err.textContent =
+        "L'envoi n'a pas abouti. Vos réponses sont gardées sur ce téléphone : réessayez quand le réseau revient.";
+      err.hidden = false;
+      send.disabled = false;
+      send.textContent = "Envoyer mes réponses";
+    }
+  });
+
+  show(0);
+</script>
+
+<style>
+  .qhero {
+    background: var(--earth);
+    color: #fff;
+    padding: 112px 20px 56px;
+  }
+  .qhero .inner {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  .pill {
+    display: inline-block;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--sun);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 999px;
+    padding: 6px 14px;
+    margin-bottom: 20px;
+  }
+  .qhero h1 {
+    font-family: var(--disp);
+    font-size: clamp(28px, 5vw, 44px);
+    line-height: 1.12;
+    margin: 0 0 16px;
+  }
+  .qhero .sub {
+    font-size: 17px;
+    line-height: 1.65;
+    color: rgba(255, 255, 255, 0.86);
+    margin: 0 0 20px;
+  }
+  .qhero .give {
+    background: rgba(242, 163, 26, 0.14);
+    border-left: 3px solid var(--sun);
+    border-radius: 0 10px 10px 0;
+    padding: 14px 16px;
+    font-size: 15px;
+    line-height: 1.6;
+    margin: 0;
+    color: #fff;
+  }
+
+  .form-wrap {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 36px 20px 96px;
+  }
+  .progress {
+    height: 5px;
+    background: var(--line);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .progress span {
+    display: block;
+    height: 100%;
+    width: 12.5%;
+    background: var(--leaf);
+    transition: width 0.25s ease;
+  }
+  .steps {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-faint);
+    margin: 8px 0 26px;
+  }
+
+  fieldset {
+    border: 0;
+    padding: 0;
+    margin: 0;
+  }
+  legend {
+    font-family: var(--disp);
+    font-size: clamp(21px, 3.6vw, 27px);
+    font-weight: 700;
+    color: var(--earth-800);
+    margin-bottom: 18px;
+    padding: 0;
+  }
+  label {
+    display: block;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ink);
+    margin: 20px 0 7px;
+  }
+  label b {
+    color: var(--sun-600);
+  }
+  input,
+  select,
+  textarea {
+    width: 100%;
+    font: inherit;
+    font-size: 16px; /* 16px ou plus : en dessous, iOS zoome au focus */
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 13px;
+  }
+  input:focus,
+  select:focus,
+  textarea:focus {
+    outline: 2px solid var(--leaf);
+    outline-offset: 1px;
+    border-color: var(--leaf);
+  }
+  textarea {
+    resize: vertical;
+  }
+  .why {
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    margin: 7px 0 0;
+  }
+  .why.big {
+    background: var(--leaf-050);
+    border-left: 3px solid var(--leaf);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 14px;
+    font-size: 14.5px;
+    color: var(--earth-800);
+    margin-bottom: 4px;
+  }
+  .consent {
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    background: var(--stone);
+    border-radius: 8px;
+    padding: 11px 13px;
+    margin: 9px 0 0;
+  }
+  .hp {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+  .err {
+    margin: 18px 0 0;
+    padding: 11px 13px;
+    border-radius: 8px;
+    background: #fdecec;
+    color: #96221f;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .nav {
+    display: flex;
+    gap: 10px;
+    margin-top: 32px;
+  }
+  .btn {
+    font: inherit;
+    font-weight: 600;
+    font-size: 16px;
+    border: 0;
+    border-radius: 10px;
+    padding: 14px 22px;
+    cursor: pointer;
+    background: var(--sun);
+    color: #241a05;
+    flex: 1;
+  }
+  .btn:hover {
+    background: var(--sun-600);
+  }
+  .btn.ghost {
+    background: transparent;
+    color: var(--ink-soft);
+    border: 1px solid var(--line);
+    flex: 0 0 auto;
+  }
+  .btn.send {
+    background: var(--leaf);
+    color: #fff;
+  }
+  .btn.send:hover {
+    background: var(--earth-600);
+  }
+  .btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+  /* La feuille globale donne un display aux boutons, ce qui écrase l'attribut hidden du
+     navigateur. On le rétablit par spécificité plutôt que par !important. */
+  .btn[hidden] {
+    display: none;
+  }
+
+  #done {
+    text-align: center;
+    padding: 24px 0;
+  }
+  #done .tick {
+    width: 58px;
+    height: 58px;
+    margin: 0 auto 18px;
+    border-radius: 50%;
+    background: var(--leaf-100);
+    color: var(--earth-600);
+    font-size: 28px;
+    line-height: 58px;
+  }
+  #done h2 {
+    font-family: var(--disp);
+    color: var(--earth-800);
+    margin: 0 0 12px;
+  }
+  #done p {
+    color: var(--ink-soft);
+    line-height: 1.65;
+    max-width: 480px;
+    margin: 0 auto 10px;
+  }
+  #done .share a {
+    color: var(--leaf);
+  }
+</style>

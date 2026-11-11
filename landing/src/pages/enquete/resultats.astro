@@ -1,0 +1,293 @@
+---
+// Résultats de l'enquête — la contrepartie promise aux répondants, publique.
+//
+// Cette page est le premier service de Jawdi, livré avant la plateforme : personne au Sénégal
+// ne publie le coût de production d'un poulet ni le prix de l'aliment. Elle n'existe que grâce
+// aux réponses, et elle le dit.
+//
+// Règle d'honnêteté, appliquée CÔTÉ SERVEUR et affichée ici : en dessous de cinq réponses dans
+// une région, c'est le chiffre du PAYS qui est publié, et l'étiquette le signale. Chaque
+// moyenne porte son effectif. Un chiffre précis sans son effectif est exactement l'erreur que
+// cette enquête existe pour corriger.
+import Base from "../../layouts/Base.astro";
+
+const apiUrl = import.meta.env.PUBLIC_API_URL || "https://app.jawdi.app";
+
+const title = "Résultats de l'enquête — coût de production et prix de l'aliment | Jawdi";
+const description =
+  "Coût partiel de production et prix du sac d'aliment, par région, construits avec les éleveurs du Sénégal, de Côte d'Ivoire et du Bénin. Chaque moyenne avec son effectif.";
+---
+
+<Base title={title} description={description} solidHeader>
+  <section class="rhero">
+    <div class="inner">
+      <span class="pill">Résultats en construction</span>
+      <h1>Ce que les éleveurs ont déjà dit.</h1>
+      <p class="sub">
+        Construit réponse après réponse, avec les éleveurs eux-mêmes. Chaque moyenne est affichée
+        avec le nombre de réponses derrière elle — un chiffre sans son effectif ne vaut rien.
+      </p>
+      <p class="count" id="count">Chargement…</p>
+      <a class="cta" href="/enquete">Ajouter ma réponse — 7 minutes</a>
+    </div>
+  </section>
+
+  <section class="body">
+    <p class="state" id="state" hidden></p>
+
+    <div id="areas" class="areas"></div>
+
+    <div class="notes">
+      <h2>Comment lire ces chiffres</h2>
+      <p>
+        <strong>Le coût affiché est partiel, et volontairement.</strong> Il compte le poussin et
+        l'aliment, divisés par les sujets sortis vivants. Il ne compte ni la main-d'œuvre, ni le
+        vétérinaire, ni le chauffage, ni le bâtiment. Sur la seule mesure sénégalaise complète
+        disponible, poussin et aliment pèsent environ 89&nbsp;% du total&nbsp;: ce chiffre est
+        donc un <em>plancher</em>, jamais un prix de revient.
+      </p>
+      <p>
+        <strong>En dessous de cinq réponses, une région emprunte le chiffre de son pays</strong>,
+        et c'est écrit sur la carte. Un pays n'emprunte jamais à un autre.
+      </p>
+      <p>
+        <strong>La mortalité est calculée sur les effectifs</strong> — sujets morts rapportés aux
+        sujets mis en place sur toute la zone — et non comme la moyenne des taux de chaque ferme.
+      </p>
+    </div>
+  </section>
+</Base>
+
+<script define:vars={{ apiUrl }}>
+  const countEl = document.getElementById("count");
+  const stateEl = document.getElementById("state");
+  const areasEl = document.getElementById("areas");
+
+  const COUNTRIES = {
+    SN: "Sénégal",
+    CI: "Côte d'Ivoire",
+    BJ: "Bénin",
+    ML: "Mali",
+    BF: "Burkina Faso",
+    TG: "Togo",
+    NE: "Niger",
+    GN: "Guinée",
+    CM: "Cameroun",
+    XX: "Autre",
+  };
+
+  const fcfa = (v) =>
+    v === null || v === undefined
+      ? "—"
+      : new Intl.NumberFormat("fr-FR").format(Math.round(Number(v))) + " F";
+
+  const line = (label, value, n) => `
+    <div class="row">
+      <span class="k">${label}</span>
+      <span class="v">${value}</span>
+      <span class="n">${n ? n + (n > 1 ? " réponses" : " réponse") : "—"}</span>
+    </div>`;
+
+  const card = (a) => `
+    <article class="card">
+      <header>
+        <h3>${a.region}</h3>
+        <span class="cy">${COUNTRIES[a.country] || a.country}</span>
+      </header>
+      ${
+        a.basedOnCountry
+          ? `<p class="borrowed">Moins de 5 réponses dans cette région : le chiffre affiché est
+             celui du pays, calculé sur ${a.sampleSize} réponse${a.sampleSize > 1 ? "s" : ""}.</p>`
+          : ""
+      }
+      ${line("Sac d'aliment 50 kg", fcfa(a.feedBagPrice), a.feedBagSampleSize)}
+      ${line("Poussin d'un jour", fcfa(a.chickPrice), a.chickPriceSampleSize)}
+      ${line("Coût partiel par sujet", fcfa(a.partialCostPerBird), a.partialCostSampleSize)}
+      ${line(
+        "Mortalité",
+        a.mortalityPercent === null || a.mortalityPercent === undefined
+          ? "—"
+          : String(a.mortalityPercent).replace(".", ",") + " %",
+        a.mortalitySampleSize,
+      )}
+    </article>`;
+
+  fetch(apiUrl + "/api/v1/public/survey/results")
+    .then((r) => {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    })
+    .then((body) => {
+      const data = body.data || body;
+      const total = data.totalResponses || 0;
+      countEl.textContent =
+        total === 0
+          ? "Aucune réponse pour l'instant."
+          : total + (total > 1 ? " réponses collectées" : " réponse collectée");
+
+      if (!data.areas || data.areas.length === 0) {
+        stateEl.textContent =
+          "La collecte vient de commencer. Les moyennes s'afficheront ici dès les premières réponses — et votre région n'aura son propre chiffre qu'à partir de cinq.";
+        stateEl.hidden = false;
+        return;
+      }
+      areasEl.innerHTML = data.areas.map(card).join("");
+    })
+    .catch(() => {
+      countEl.textContent = "";
+      stateEl.textContent =
+        "Les résultats ne sont pas joignables pour le moment. Réessayez dans un instant.";
+      stateEl.hidden = false;
+    });
+</script>
+
+<style>
+  .rhero {
+    background: var(--earth);
+    color: #fff;
+    padding: 112px 20px 56px;
+  }
+  .rhero .inner {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  .pill {
+    display: inline-block;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--sun);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 999px;
+    padding: 6px 14px;
+    margin-bottom: 20px;
+  }
+  .rhero h1 {
+    font-family: var(--disp);
+    font-size: clamp(28px, 5vw, 44px);
+    line-height: 1.12;
+    margin: 0 0 16px;
+  }
+  .rhero .sub {
+    font-size: 17px;
+    line-height: 1.65;
+    color: rgba(255, 255, 255, 0.86);
+    margin: 0 0 18px;
+  }
+  .count {
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--sun);
+    margin: 0 0 22px;
+  }
+  .cta {
+    display: inline-block;
+    background: var(--sun);
+    color: #241a05;
+    font-weight: 600;
+    border-radius: 10px;
+    padding: 13px 22px;
+    text-decoration: none;
+  }
+  .cta:hover {
+    background: var(--sun-600);
+  }
+
+  .body {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 44px 20px 96px;
+  }
+  .state {
+    background: var(--leaf-050);
+    border-left: 3px solid var(--leaf);
+    border-radius: 0 10px 10px 0;
+    padding: 16px 18px;
+    color: var(--earth-800);
+    line-height: 1.6;
+    margin: 0 0 32px;
+  }
+  .areas {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+    gap: 16px;
+  }
+  /* Les cartes sont construites en JavaScript après le rendu : elles ne portent donc pas
+     l'attribut de portée qu'Astro ajoute au balisage statique, et un style scopé ne les
+     atteindrait pas. On garde la portée sur .areas, qui est dans le balisage, et on ouvre
+     explicitement ses descendants. */
+  .areas :global(.card) {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px 18px 10px;
+    background: var(--paper);
+  }
+  .areas :global(.card header) {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .areas :global(.card h3) {
+    font-family: var(--disp);
+    font-size: 19px;
+    color: var(--earth-800);
+    margin: 0;
+  }
+  .areas :global(.card .cy) {
+    font-size: 12px;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .areas :global(.borrowed) {
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: #8a5a10;
+    background: var(--sun-050);
+    border-radius: 8px;
+    padding: 9px 11px;
+    margin: 0 0 12px;
+  }
+  .areas :global(.row) {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2px 10px;
+    padding: 9px 0;
+    border-top: 1px solid var(--line-soft);
+  }
+  .areas :global(.row .k) {
+    font-size: 14px;
+    color: var(--ink-soft);
+  }
+  .areas :global(.row .v) {
+    font-family: var(--mono);
+    font-size: 15px;
+    color: var(--earth-800);
+    text-align: right;
+  }
+  .areas :global(.row .n) {
+    grid-column: 1 / -1;
+    font-size: 11.5px;
+    color: var(--ink-faint);
+  }
+
+  .notes {
+    margin-top: 48px;
+    border-top: 1px solid var(--line);
+    padding-top: 28px;
+  }
+  .notes h2 {
+    font-family: var(--disp);
+    font-size: 22px;
+    color: var(--earth-800);
+    margin: 0 0 14px;
+  }
+  .notes p {
+    color: var(--ink-soft);
+    line-height: 1.7;
+    margin: 0 0 14px;
+    max-width: 70ch;
+  }
+</style>
