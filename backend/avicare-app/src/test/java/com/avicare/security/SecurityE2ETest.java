@@ -1,6 +1,7 @@
 package com.avicare.security;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -86,6 +87,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -258,6 +260,38 @@ class SecurityE2ETest {
   void noToken_isUnauthorized() throws Exception {
     mockMvc
         .perform(get("/api/v1/test/farms/42/secure"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.code").value("AUTHENTICATION_FAILED"));
+  }
+
+  /**
+   * The field survey is the one place on the platform that answers without a token, and the one
+   * place that <b>writes</b> without one. Both sides of that are pinned here: the door is open, and
+   * it is open on this path only.
+   */
+  @Test
+  void surveyResults_areReadableWithoutAnyToken() throws Exception {
+    mockMvc.perform(get("/api/v1/public/survey/results")).andExpect(status().isOk());
+  }
+
+  @Test
+  void surveySubmission_acceptsAnAnswerWithoutAnyToken() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/public/survey")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"where":{"country":"SN","region":"Thiès"},
+                     "flock":{"type":"BROILER","currentBirds":450}}
+                    """))
+        .andExpect(status().isCreated());
+  }
+
+  @Test
+  void nothingElseUnderPublic_isOpen() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/public/anything-else"))
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.code").value("AUTHENTICATION_FAILED"));
   }
