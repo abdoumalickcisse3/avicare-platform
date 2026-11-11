@@ -78,6 +78,13 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/subscription/plans")
                     .permitAll()
+                    // The field survey. Everything else that is open here is either a way in
+                    // (auth) or documentation; this is the one path that WRITES without a token,
+                    // so the prefix is deliberately narrow and reserved: nothing but the survey
+                    // may ever be mounted under /public. Three layers stand in front of it —
+                    // the rate limiter below, a honeypot field, and a daily cap per address.
+                    .requestMatchers("/api/v1/public/survey", "/api/v1/public/survey/**")
+                    .permitAll()
                     .requestMatchers("/swagger-ui/**", "/v3/api-docs/**")
                     .permitAll()
                     // The portal is its own realm. Saying "authenticated" here would let a

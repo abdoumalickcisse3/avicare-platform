@@ -74,6 +74,7 @@ import com.avicare.partner.service.PartnerService;
 import com.avicare.subscription.repository.SubscriptionChangeRequestRepository;
 import com.avicare.subscription.repository.SubscriptionModuleRepository;
 import com.avicare.subscription.repository.SubscriptionRepository;
+import com.avicare.survey.repository.SurveyResponseRepository;
 import com.avicare.tenancy.repository.FarmLogoRepository;
 import com.avicare.tenancy.repository.FarmRepository;
 import com.avicare.tenancy.repository.UserFarmRepository;
@@ -118,6 +119,7 @@ class FarmerPartnerControllerIT {
   @MockitoBean private UserRepository userRepository;
   @MockitoBean private RefreshTokenRepository refreshTokenRepository;
   @MockitoBean private FarmRepository farmRepository;
+  @MockitoBean private SurveyResponseRepository surveyResponseRepository;
   @MockitoBean private FarmLogoRepository farmLogoRepository;
   @MockitoBean private com.avicare.notification.push.PushDeviceRepository pushDeviceRepository;
   @MockitoBean private com.avicare.livestock.closure.UnitClosureRepository unitClosureRepository;
