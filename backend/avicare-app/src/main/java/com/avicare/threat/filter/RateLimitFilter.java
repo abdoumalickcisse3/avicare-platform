@@ -50,6 +50,13 @@ public class RateLimitFilter extends OncePerRequestFilter {
     PASSWORD_RESET(5, Duration.ofHours(1)),
     /** Back-office: generous for a human, obviously wrong for a scraper. */
     ADMIN(30, Duration.ofMinutes(1)),
+    /**
+     * Field survey submissions — the only write on the platform that needs no token. Five an hour
+     * is far above what one honest respondent does (they answer once) and far below what makes
+     * stuffing the averages worthwhile. Reading the results is deliberately <i>not</i> this route:
+     * that page is meant to be shown around, cooperatives included, and they share one connection.
+     */
+    SURVEY(5, Duration.ofHours(1)),
     /** Everything else: high enough that the mobile app syncing never notices. */
     DEFAULT(100, Duration.ofMinutes(1));
 
@@ -79,6 +86,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
       }
       if (path.startsWith("/api/v1/admin")) {
         return ADMIN;
+      }
+      // Exact match, not a prefix: /api/v1/public/survey/results sits underneath and must stay on
+      // the generous default, or showing the figures to a cooperative would lock them all out.
+      if (path.equals("/api/v1/public/survey")) {
+        return SURVEY;
       }
       return DEFAULT;
     }
