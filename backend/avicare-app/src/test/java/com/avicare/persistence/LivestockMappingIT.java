@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.avicare.common.security.principal.UserRole;
 import com.avicare.identity.domain.User;
 import com.avicare.livestock.domain.Breed;
+import com.avicare.livestock.domain.BreedProfile;
 import com.avicare.livestock.domain.LifecycleEvent;
 import com.avicare.livestock.domain.Species;
 import com.avicare.livestock.repository.BreedRepository;
@@ -25,10 +26,11 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 /**
  * Proves the V5 livestock-socle migration runs on a clean PostgreSQL (on top of V1–V4) and that the
  * livestock JPA mappings agree with the schema (Hibernate {@code ddl-auto=validate}). Checks the
- * breeds seeded from the A4 catalog, a LifecycleEvent round-trip, and that the parent {@code
- * production_units} table exists with its key columns. {@code ProductionUnit} is abstract (its only
- * table is the parent until a species subclass lands in B1), so no instance is persisted here.
- * CI-only on dev machines where Testcontainers can't reach Docker (see project memory).
+ * seeded platform breeds — the five mirrored from the A4 catalog and the rustic strains V69 seeds
+ * directly — a LifecycleEvent round-trip, and that the parent {@code production_units} table exists
+ * with its key columns. {@code ProductionUnit} is abstract (its only table is the parent until a
+ * species subclass lands in B1), so no instance is persisted here. CI-only on dev machines where
+ * Testcontainers can't reach Docker (see project memory).
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -51,13 +53,46 @@ class LivestockMappingIT {
   @Autowired private LifecycleEventRepository lifecycleEventRepository;
   @Autowired private EntityManager em;
 
+  /**
+   * This test used to freeze the count at five and require every breed to carry a catalogue row.
+   * V69 seeds the rustic strains straight into {@code breeds} with {@code catalog_item_id NULL}, so
+   * both assertions described a schema that no longer exists — and neither was worth keeping: the
+   * next spec that adds a strain would break a count assertion while teaching nothing.
+   *
+   * <p>What must hold is the invariant this sprint exists for: no platform breed without a family.
+   * A breed with no profile has no reference curve to serve, which is exactly the silence a farmer
+   * met when their typed strain produced no growth curve at all.
+   */
   @Test
-  void poultryBreedsSeededFromCatalog() {
+  void everyPlatformPoultryBreedDeclaresItsFamily() {
     var poultry = breedRepository.findBySpecies(Species.POULTRY);
-    assertThat(poultry).hasSize(5);
-    assertThat(poultry).allSatisfy(b -> assertThat(b.getCatalogItemId()).isNotNull());
+
+    assertThat(poultry).isNotEmpty().allSatisfy(b -> assertThat(b.getProfile()).isNotNull());
+
+    // The five V5 breeds still mirror `catalog_items`, and still resolve by code.
     assertThat(breedRepository.findBySpeciesAndCodeAndFarmId(Species.POULTRY, "cobb_500", null))
-        .isPresent();
+        .get()
+        .satisfies(
+            b -> {
+              assertThat(b.getCatalogItemId()).isNotNull();
+              assertThat(b.getProfile()).isEqualTo(BreedProfile.BROILER_FAST);
+            });
+
+    // The rustic strains are seeded directly, carry no catalogue row, and are the reason a rustic
+    // flock stops being measured against an industrial curve.
+    assertThat(poultry)
+        .filteredOn(b -> b.getProfile() == BreedProfile.BROILER_RUSTIC)
+        .isNotEmpty()
+        .allSatisfy(b -> assertThat(b.getCatalogItemId()).isNull());
+
+    // One code, two families. A farmer raising "locale améliorée" for eggs must be able to pick it
+    // too, so `uq_breeds_identity` keeps the profile in the key. A later "cleanup" that narrows
+    // that index back to (species, code, farm_id) would silently delete the layer option — this
+    // assertion is what stops it.
+    assertThat(poultry)
+        .filteredOn(b -> "locale_amelioree".equals(b.getCode()))
+        .extracting(Breed::getProfile)
+        .containsExactlyInAnyOrder(BreedProfile.BROILER_RUSTIC, BreedProfile.LAYER_RUSTIC);
   }
 
   @Test
