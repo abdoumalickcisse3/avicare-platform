@@ -55,4 +55,41 @@ class RateLimitFilterSurveyTest {
           .isEqualTo(200);
     }
   }
+
+  /**
+   * A ceiling matched on the raw URI is a ceiling with a side door: a trailing slash, a path
+   * parameter or a percent-encoded letter all reach the same controller while reading as a
+   * different string. The cap is therefore decided on the normalised path.
+   */
+  @Test
+  @DisplayName("a trailing slash does not buy a fresh allowance")
+  void trailingSlashIsTheSameRoute() throws Exception {
+    for (int i = 1; i <= 5; i++) {
+      assertThat(statusAfterCalling("POST", "/api/v1/public/survey")).isEqualTo(200);
+    }
+
+    assertThat(statusAfterCalling("POST", "/api/v1/public/survey/")).isEqualTo(429);
+  }
+
+  @Test
+  @DisplayName("a path parameter does not buy a fresh allowance")
+  void pathParameterIsTheSameRoute() throws Exception {
+    for (int i = 1; i <= 5; i++) {
+      assertThat(statusAfterCalling("POST", "/api/v1/public/survey")).isEqualTo(200);
+    }
+
+    assertThat(statusAfterCalling("POST", "/api/v1/public/survey;jsessionid=0123456789"))
+        .isEqualTo(429);
+  }
+
+  @Test
+  @DisplayName("a percent-encoded letter does not buy a fresh allowance")
+  void percentEncodingIsTheSameRoute() throws Exception {
+    for (int i = 1; i <= 5; i++) {
+      assertThat(statusAfterCalling("POST", "/api/v1/public/survey")).isEqualTo(200);
+    }
+
+    // %73 is 's' — "/api/v1/public/%73urvey"
+    assertThat(statusAfterCalling("POST", "/api/v1/public/%73urvey")).isEqualTo(429);
+  }
 }

@@ -76,6 +76,18 @@ const description =
     XX: "Autre",
   };
 
+  // Les cartes sont assemblées en innerHTML : tout ce qui vient du serveur est échappé avant
+  // d'y entrer. Le serveur refuse déjà les noms de lieu porteurs de balises, mais une page
+  // publique ne doit pas dépendre d'une seule barrière — si celle du serveur cède un jour, ce
+  // n'est pas le navigateur du visiteur qui doit payer.
+  const esc = (v) =>
+    String(v ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
   const fcfa = (v) =>
     v === null || v === undefined
       ? "—"
@@ -91,8 +103,8 @@ const description =
   const card = (a) => `
     <article class="card">
       <header>
-        <h3>${a.region}</h3>
-        <span class="cy">${COUNTRIES[a.country] || a.country}</span>
+        <h3>${esc(a.region)}</h3>
+        <span class="cy">${esc(COUNTRIES[a.country] || a.country)}</span>
       </header>
       ${
         a.basedOnCountry
@@ -107,7 +119,7 @@ const description =
         "Mortalité",
         a.mortalityPercent === null || a.mortalityPercent === undefined
           ? "—"
-          : String(a.mortalityPercent).replace(".", ",") + " %",
+          : esc(String(a.mortalityPercent).replace(".", ",")) + " %",
         a.mortalitySampleSize,
       )}
     </article>`;

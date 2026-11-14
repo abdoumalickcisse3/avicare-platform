@@ -103,6 +103,35 @@ class SurveyServiceTest {
     verify(repository, never()).save(any());
   }
 
+  /**
+   * The results endpoint answers without a token, so the work it costs is whatever a stranger
+   * decides to ask for. Reading the table on every call would hand that lever away; the figures are
+   * recomputed on a timer instead, and only the first caller in the window pays for it.
+   */
+  @Test
+  @DisplayName("repeated reads of the results cost one table read, not one each")
+  void resultsAreRecomputedOnATimerNotPerCall() {
+    org.mockito.Mockito.when(repository.findAll()).thenReturn(java.util.List.of());
+
+    for (int i = 0; i < 25; i++) {
+      service.results();
+    }
+
+    verify(repository, org.mockito.Mockito.times(1)).findAll();
+  }
+
+  @Test
+  @DisplayName("a fresh answer is not kept out of the figures by the cache")
+  void recordingAnAnswerInvalidatesTheCache() {
+    org.mockito.Mockito.when(repository.findAll()).thenReturn(java.util.List.of());
+
+    service.results();
+    service.record(submission(null), "41.82.100.7");
+    service.results();
+
+    verify(repository, org.mockito.Mockito.times(2)).findAll();
+  }
+
   @Test
   @DisplayName("a robot stopped by the honeypot never even costs a count query")
   void honeypotShortCircuitsBeforeCounting() {

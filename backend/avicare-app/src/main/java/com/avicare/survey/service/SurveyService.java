@@ -8,8 +8,11 @@ import com.avicare.survey.repository.SurveyResponseRepository;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.HexFormat;
+import java.util.concurrent.atomic.AtomicReference;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -131,11 +134,32 @@ public class SurveyService {
     }
 
     repository.save(answer);
+    published.set(null);
   }
+
+  /**
+   * How long the published figures may stand before being recomputed.
+   *
+   * <p>The results are read without a token, so the work they cost is whatever a stranger asks for.
+   * Recomputing per call would hand that lever away; on a timer, the table is read at most once a
+   * minute however hard the page is refreshed, and a new answer invalidates it anyway — so nobody
+   * sees a stale figure after their own submission.
+   */
+  private static final Duration RESULTS_FRESHNESS = Duration.ofMinutes(1);
+
+  private final AtomicReference<Published> published = new AtomicReference<>();
+
+  private record Published(SurveyResults results, Instant computedAt) {}
 
   @Transactional(readOnly = true)
   public SurveyResults results() {
-    return SurveyResults.compute(repository.findAll(), PUBLICATION_FLOOR);
+    Published current = published.get();
+    if (current != null && current.computedAt().isAfter(Instant.now().minus(RESULTS_FRESHNESS))) {
+      return current.results();
+    }
+    SurveyResults fresh = SurveyResults.compute(repository.findAll(), PUBLICATION_FLOOR);
+    published.set(new Published(fresh, Instant.now()));
+    return fresh;
   }
 
   private static String trimmed(String value) {
