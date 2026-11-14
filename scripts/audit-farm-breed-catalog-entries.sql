@@ -12,6 +12,11 @@
 -- rendre un verdict de croissance tiré au sort. La sortie sert à PRÉVENIR les fermes concernées,
 -- pour qu'elles redéclarent leur souche depuis le nouvel écran.
 --
+-- AVANT OU APRÈS V69. Le script se lit sur les deux schémas : `to_jsonb(b) ->> 'profile'` vaut
+-- NULL tant que la colonne n'existe pas, et la vraie valeur ensuite. Référencer `b.profile`
+-- directement empêcherait la requête de seulement compiler avant la migration — or c'est
+-- justement là qu'elle doit tourner.
+--
 -- QUAND. À jouer sur la production AVANT la fusion, en lecture seule :
 --
 --   ssh deploy@<VPS>
@@ -38,7 +43,7 @@ SELECT
         SELECT 1 FROM breeds b
         WHERE b.farm_id = fci.farm_id
           AND b.code = fci.key
-          AND b.profile IS NOT NULL
+          AND to_jsonb(b) ->> 'profile' IS NOT NULL
     )                                           AS deja_redeclaree
 FROM farm_catalog_items fci
 JOIN farms f ON f.id = fci.farm_id
@@ -66,7 +71,7 @@ WHERE fci.category = 'breeds'
         SELECT 1 FROM breeds b
         WHERE b.farm_id = fci.farm_id
           AND b.code = fci.key
-          AND b.profile IS NOT NULL
+          AND to_jsonb(b) ->> 'profile' IS NOT NULL
   )
 GROUP BY f.id, f.name
 ORDER BY souches_a_redeclarer DESC, f.name;
