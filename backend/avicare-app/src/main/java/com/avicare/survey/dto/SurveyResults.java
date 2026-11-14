@@ -36,13 +36,31 @@ public record SurveyResults(int totalResponses, int floor, List<AreaAverages> ar
           if (countryAnswers.size() < floor) {
             return;
           }
-          groupBy(countryAnswers, SurveyResponse::getRegion)
-              .forEach(
-                  (region, regionAnswers) ->
-                      areas.add(
-                          regionAnswers.size() >= floor
-                              ? averages(country, region, regionAnswers, false)
-                              : averages(country, region, countryAnswers, true)));
+          Map<String, List<SurveyResponse>> byRegion =
+              groupBy(countryAnswers, SurveyResponse::getRegion);
+
+          // The floor alone does not protect a lone respondent. Publish a region of nine and hand
+          // the country figure of ten to the tenth, and that tenth person's prices come back by
+          // subtraction. So the fallback is offered only when what is left of the country, once
+          // the separately published regions are set aside, is itself a crowd.
+          int remainder =
+              countryAnswers.size()
+                  - byRegion.values().stream()
+                      .filter(answers1 -> answers1.size() >= floor)
+                      .mapToInt(List::size)
+                      .sum();
+          boolean fallbackIsSafe = remainder >= floor;
+
+          byRegion.forEach(
+              (region, regionAnswers) -> {
+                if (regionAnswers.size() >= floor) {
+                  areas.add(averages(country, region, regionAnswers, false));
+                } else if (fallbackIsSafe) {
+                  areas.add(averages(country, region, countryAnswers, true));
+                }
+                // Otherwise the region is simply absent: there is no figure that can be published
+                // about it without publishing the person.
+              });
         });
 
     areas.sort(Comparator.comparing(AreaAverages::country).thenComparing(AreaAverages::region));
