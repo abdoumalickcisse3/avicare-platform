@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.util.UrlPathHelper;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -74,7 +75,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
           .build();
     }
 
-    static Route of(String path) {
+    static Route of(String method, String path) {
       if (path.startsWith("/api/v1/auth/login") || path.startsWith("/api/v1/partner/auth/login")) {
         return LOGIN;
       }
@@ -87,13 +88,30 @@ public class RateLimitFilter extends OncePerRequestFilter {
       if (path.startsWith("/api/v1/admin")) {
         return ADMIN;
       }
-      // Exact match, not a prefix: /api/v1/public/survey/results sits underneath and must stay on
-      // the generous default, or showing the figures to a cooperative would lock them all out.
-      if (path.equals("/api/v1/public/survey")) {
+      // Writes under the survey prefix only. Reading the results sits underneath and stays on the
+      // generous default — showing the figures to a cooperative must not lock them all out.
+      if (!"GET".equals(method) && path.startsWith("/api/v1/public/survey")) {
         return SURVEY;
       }
       return DEFAULT;
     }
+  }
+
+  /**
+   * Decodes the path and drops path parameters before the route is chosen.
+   *
+   * <p>Matched on the raw URI, a ceiling has a side door: {@code /api/v1/public/survey/}, {@code
+   * …/survey;jsessionid=…} and {@code …/%73urvey} all reach the same controller while reading as
+   * three different strings, and each would have drawn its own allowance.
+   */
+  private static final UrlPathHelper PATHS = new UrlPathHelper();
+
+  private static String normalisedPath(HttpServletRequest request) {
+    String path = PATHS.getPathWithinApplication(request);
+    while (path.length() > 1 && path.endsWith("/")) {
+      path = path.substring(0, path.length() - 1);
+    }
+    return path;
   }
 
   private final ThreatDetectionService threatDetection;
@@ -116,7 +134,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
   protected void doFilterInternal(
       HttpServletRequest request, HttpServletResponse response, FilterChain chain)
       throws ServletException, IOException {
-    Route route = Route.of(request.getRequestURI());
+    Route route = Route.of(request.getMethod(), normalisedPath(request));
     String ip = ClientIp.of(request);
     Bucket bucket = buckets.computeIfAbsent(route.name() + "|" + ip, key -> route.newBucket());
 

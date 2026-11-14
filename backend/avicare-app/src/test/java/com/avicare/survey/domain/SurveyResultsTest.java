@@ -78,6 +78,12 @@ class SurveyResultsTest {
     List<SurveyResponse> answers =
         List.of(
             answer("SN", "Thiès", 17000),
+            answer("SN", "Thiès", 17000),
+            answer("SN", "Thiès", 17000),
+            answer("SN", "Thiès", 17000),
+            answer("SN", "Thiès", 17000),
+            answer("CI", "Abidjan", 30000),
+            answer("CI", "Abidjan", 30000),
             answer("CI", "Abidjan", 30000),
             answer("CI", "Abidjan", 30000),
             answer("CI", "Abidjan", 30000));
@@ -87,10 +93,44 @@ class SurveyResultsTest {
     AreaAverages thies =
         results.areas().stream().filter(a -> "Thiès".equals(a.region())).findFirst().orElseThrow();
 
-    // Thiès falls back to Senegal's figure — which is Thiès alone — never to Côte d'Ivoire's.
-    assertThat(thies.basedOnCountry()).isTrue();
     assertThat(thies.feedBagPrice()).isEqualByComparingTo("17000");
-    assertThat(thies.sampleSize()).isEqualTo(1);
+  }
+
+  @Test
+  @DisplayName("a country under the floor publishes nothing at all")
+  void countryUnderFloorPublishesNothing() {
+    // Three answers in one country. Falling back to the country figure would publish an average
+    // computed on three people — and with one answer, the "average" IS that person's price list.
+    List<SurveyResponse> answers =
+        List.of(
+            answer("SN", "Thiès", 17000),
+            answer("SN", "Dakar", 20000),
+            answer("SN", "Kaolack", 19000));
+
+    SurveyResults results = SurveyResults.compute(answers, FLOOR);
+
+    assertThat(results.areas()).isEmpty();
+    assertThat(results.totalResponses()).isEqualTo(3);
+  }
+
+  @Test
+  @DisplayName("a thin region in a country that reaches the floor still gets the country figure")
+  void thinRegionInAWellCoveredCountryStillPublishes() {
+    List<SurveyResponse> answers =
+        List.of(
+            answer("SN", "Dakar", 20000),
+            answer("SN", "Dakar", 20000),
+            answer("SN", "Dakar", 20000),
+            answer("SN", "Dakar", 20000),
+            answer("SN", "Thiès", 20000));
+
+    SurveyResults results = SurveyResults.compute(answers, FLOOR);
+
+    AreaAverages thies =
+        results.areas().stream().filter(a -> "Thiès".equals(a.region())).findFirst().orElseThrow();
+
+    assertThat(thies.basedOnCountry()).isTrue();
+    assertThat(thies.sampleSize()).isEqualTo(5);
   }
 
   @Test

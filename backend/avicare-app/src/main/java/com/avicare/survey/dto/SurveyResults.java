@@ -29,14 +29,21 @@ public record SurveyResults(int totalResponses, int floor, List<AreaAverages> ar
 
     List<AreaAverages> areas = new ArrayList<>();
     byCountry.forEach(
-        (country, countryAnswers) ->
-            groupBy(countryAnswers, SurveyResponse::getRegion)
-                .forEach(
-                    (region, regionAnswers) ->
-                        areas.add(
-                            regionAnswers.size() >= floor
-                                ? averages(country, region, regionAnswers, false)
-                                : averages(country, region, countryAnswers, true))));
+        (country, countryAnswers) -> {
+          // A country below the floor publishes nothing, not even through the fallback. With one
+          // answer, the "average" is that person's own price list, handed to anyone who asks —
+          // the fallback is there to thicken a thin region, never to disclose a lone respondent.
+          if (countryAnswers.size() < floor) {
+            return;
+          }
+          groupBy(countryAnswers, SurveyResponse::getRegion)
+              .forEach(
+                  (region, regionAnswers) ->
+                      areas.add(
+                          regionAnswers.size() >= floor
+                              ? averages(country, region, regionAnswers, false)
+                              : averages(country, region, countryAnswers, true)));
+        });
 
     areas.sort(Comparator.comparing(AreaAverages::country).thenComparing(AreaAverages::region));
     return new SurveyResults(answers.size(), floor, List.copyOf(areas));
