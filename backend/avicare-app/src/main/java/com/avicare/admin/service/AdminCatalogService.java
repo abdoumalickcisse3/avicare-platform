@@ -7,11 +7,15 @@ import com.avicare.common.api.exception.BusinessRuleException;
 import com.avicare.common.api.exception.ConflictException;
 import com.avicare.common.api.exception.NotFoundException;
 import com.avicare.common.api.exception.ValidationException;
+import com.avicare.livestock.domain.BreedProfile;
+import com.avicare.livestock.domain.Species;
+import com.avicare.livestock.service.BreedWriteService;
 import com.avicare.parameters.domain.CatalogItem;
 import com.avicare.parameters.repository.CatalogItemRepository;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
@@ -48,8 +52,24 @@ public class AdminCatalogService {
 
   private static final String LABEL = "label";
 
+  /**
+   * The one category whose rows are not only reference data: a breed must also exist as a real row
+   * farms can select, or the console pretends to add something nobody can use.
+   */
+  private static final String BREEDS = "breeds";
+
+  private static final String PROFILE = "profile";
+
   private final CatalogItemRepository catalogItems;
   private final AdminAuditService auditService;
+
+  /**
+   * Reached directly rather than through {@code LivestockFacade}, as the execution plan for this
+   * feature specifies and as {@link BreedWriteService}'s own documentation anticipates. Widening
+   * the facade would pull a new dependency into every {@code @DataJpaTest} slice that imports it —
+   * a failure this project has already paid for once.
+   */
+  private final BreedWriteService breedWriteService;
 
   @Transactional(readOnly = true)
   public List<AdminCatalogCategory> categories() {
@@ -80,6 +100,11 @@ public class AdminCatalogService {
           "Une entrée existe déjà pour " + request.category() + " / " + request.key() + ".");
     }
 
+    // Before anything is written: a breed entry that does not name its family is refused outright,
+    // because the alternative is guessing one — and a guessed profile hands an invented growth
+    // curve to a farmer.
+    BreedProfile profile = BREEDS.equals(request.category()) ? breedProfileOf(value) : null;
+
     CatalogItem item = new CatalogItem();
     item.setCategory(request.category());
     item.setKey(request.key());
@@ -94,6 +119,7 @@ public class AdminCatalogService {
         saved.getId(),
         null,
         Map.of("category", saved.getCategory(), "key", saved.getKey()));
+    materialiseBreed(profile, value, saved.getKey());
     return toRow(saved);
   }
 
@@ -106,6 +132,7 @@ public class AdminCatalogService {
     CatalogItem item = load(id);
     refuseReadOnly(item.getCategory());
     Map<String, Object> value = validValue(request.value());
+    BreedProfile profile = BREEDS.equals(item.getCategory()) ? breedProfileOf(value) : null;
 
     Map<String, Object> previous = new LinkedHashMap<>(item.getValue());
     boolean wasActive = item.isActive();
@@ -128,7 +155,48 @@ public class AdminCatalogService {
             previous,
             "previousActive",
             wasActive));
+    materialiseBreed(profile, value, item.getKey());
     return toRow(item);
+  }
+
+  /**
+   * Turns a {@code breeds} catalogue row into a breed every farm can select. Idempotent: {@link
+   * BreedWriteService#declare} returns the existing breed when one already matches, so correcting a
+   * label does not leave a second row behind.
+   */
+  private void materialiseBreed(BreedProfile profile, Map<String, Object> value, String key) {
+    if (profile == null) {
+      return;
+    }
+    breedWriteService.declare(null, Species.POULTRY, breedNameOf(value, key), profile);
+  }
+
+  /**
+   * The production family a breed belongs to. Required, and never inferred: it decides the default
+   * targets and whether a reference growth curve exists at all, so a wrong guess is worse than a
+   * refusal.
+   */
+  private static BreedProfile breedProfileOf(Map<String, Object> value) {
+    Object raw = value.get(PROFILE);
+    if (raw == null || raw.toString().isBlank()) {
+      throw new ValidationException(
+          "BREED_PROFILE_REQUIRED",
+          "Une souche doit déclarer son profil de production (BROILER_FAST, BROILER_RUSTIC,"
+              + " LAYER_INDUSTRIAL, LAYER_RUSTIC) : sans lui, aucune cible ni courbe ne peut être"
+              + " servie.");
+    }
+    try {
+      return BreedProfile.valueOf(raw.toString().trim().toUpperCase(Locale.ROOT));
+    } catch (IllegalArgumentException unknown) {
+      throw new ValidationException(
+          "BREED_PROFILE_UNKNOWN", "Profil de production inconnu : « " + raw + " ».");
+    }
+  }
+
+  /** The label is what a farmer reads in the selector; the key is only a fallback. */
+  private static String breedNameOf(Map<String, Object> value, String key) {
+    Object label = value.get(LABEL);
+    return label instanceof String s && !s.isBlank() ? s.trim() : key;
   }
 
   private void refuseReadOnly(String category) {
