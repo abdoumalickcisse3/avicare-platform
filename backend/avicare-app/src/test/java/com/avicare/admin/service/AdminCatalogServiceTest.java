@@ -33,6 +33,10 @@ import org.mockito.quality.Strictness;
 @MockitoSettings(strictness = Strictness.LENIENT)
 class AdminCatalogServiceTest {
 
+  // Décor en `expense_categories` plutôt qu'en `breeds` : écrire dans `breeds` matérialise
+  // désormais une vraie souche et exige un profil de production, ce qui n'a rien à voir avec
+  // ce que ces tests vérifient. La matérialisation a ses propres tests.
+
   @Mock CatalogItemRepository catalogItems;
   @Mock AdminAuditService auditService;
 
@@ -114,7 +118,8 @@ class AdminCatalogServiceTest {
 
     AdminCatalogItemRow row =
         service.create(
-            request("breeds", "ross_308", Map.of("label", "Ross 308", "type", "broiler")));
+            request(
+                "expense_categories", "ross_308", Map.of("label", "Ross 308", "type", "broiler")));
 
     assertThat(saved().getKey()).isEqualTo("ross_308");
     assertThat(row.label()).isEqualTo("Ross 308");
@@ -124,9 +129,11 @@ class AdminCatalogServiceTest {
 
   @Test
   void refusesAKeyThatAlreadyExists() {
-    when(catalogItems.existsByCategoryAndKeyAndLocale("breeds", "cobb_500", null)).thenReturn(true);
+    when(catalogItems.existsByCategoryAndKeyAndLocale("expense_categories", "cobb_500", null))
+        .thenReturn(true);
 
-    assertThatThrownBy(() -> service.create(request("breeds", "cobb_500", Map.of("label", "X"))))
+    assertThatThrownBy(
+            () -> service.create(request("expense_categories", "cobb_500", Map.of("label", "X"))))
         .isInstanceOf(ConflictException.class);
     verify(catalogItems, never()).save(any());
   }
@@ -136,7 +143,8 @@ class AdminCatalogServiceTest {
     when(catalogItems.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
     service.create(
-        new UpsertCatalogItemRequest("breeds", "ross_308", "  ", Map.of("label", "R"), true));
+        new UpsertCatalogItemRequest(
+            "expense_categories", "ross_308", "  ", Map.of("label", "R"), true));
 
     // The partial unique index keys on locale IS NULL; an empty string would slip past it.
     assertThat(saved().getLocale()).isNull();
@@ -162,9 +170,9 @@ class AdminCatalogServiceTest {
   @Test
   void keepsThePreviousContentInTheAuditEntry() {
     CatalogItem existing =
-        item(9L, "breeds", "cobb_500", Map.of("label", "Cobb 500", "type", "broiler"));
+        item(9L, "expense_categories", "cobb_500", Map.of("label", "Cobb 500", "type", "broiler"));
 
-    service.update(9L, request("breeds", "cobb_500", Map.of("label", "Cobb 500 Plus")));
+    service.update(9L, request("expense_categories", "cobb_500", Map.of("label", "Cobb 500 Plus")));
 
     assertThat(existing.getValue()).containsEntry("label", "Cobb 500 Plus");
     // Without the previous value the trail says something changed, not what.
@@ -174,12 +182,12 @@ class AdminCatalogServiceTest {
 
   @Test
   void deactivatesRatherThanDeletes() {
-    CatalogItem existing = item(9L, "breeds", "cobb_500", Map.of("label", "Cobb 500"));
+    CatalogItem existing = item(9L, "expense_categories", "cobb_500", Map.of("label", "Cobb 500"));
 
     service.update(
         9L,
         new UpsertCatalogItemRequest(
-            "breeds", "cobb_500", null, Map.of("label", "Cobb 500"), false));
+            "expense_categories", "cobb_500", null, Map.of("label", "Cobb 500"), false));
 
     // Flocks reference this by key with no foreign key to stop a delete; deactivation is the only
     // safe withdrawal.
@@ -189,13 +197,16 @@ class AdminCatalogServiceTest {
 
   @Test
   void refusesAnEmptyOrMislabelledValue() {
-    item(9L, "breeds", "cobb_500", Map.of("label", "Cobb 500"));
+    item(9L, "expense_categories", "cobb_500", Map.of("label", "Cobb 500"));
 
-    assertThatThrownBy(() -> service.update(9L, request("breeds", "cobb_500", Map.of())))
+    assertThatThrownBy(
+            () -> service.update(9L, request("expense_categories", "cobb_500", Map.of())))
         .isInstanceOf(ValidationException.class)
         .hasMessageContaining("vide");
     // A numeric label would parse and store, then render as "42" in every screen.
-    assertThatThrownBy(() -> service.update(9L, request("breeds", "cobb_500", Map.of("label", 42))))
+    assertThatThrownBy(
+            () ->
+                service.update(9L, request("expense_categories", "cobb_500", Map.of("label", 42))))
         .isInstanceOf(ValidationException.class)
         .hasMessageContaining("libellé");
   }
