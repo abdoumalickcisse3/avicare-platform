@@ -30,4 +30,31 @@ public record AreaAverages(
     BigDecimal partialCostPerBird,
     int partialCostSampleSize,
     BigDecimal mortalityPercent,
-    int mortalitySampleSize) {}
+    int mortalitySampleSize) {
+
+  /**
+   * Flattens the four figures an area publishes. Each arrives already floored — a value withheld
+   * for being too thin comes through as {@code null} while keeping its honest count, so the page
+   * can say "we are not telling you" rather than invent a zero.
+   */
+  AreaAverages(
+      String country,
+      String region,
+      int sampleSize,
+      boolean basedOnCountry,
+      SurveyResults.Figures figures) {
+    this(
+        country,
+        region,
+        sampleSize,
+        basedOnCountry,
+        figures.feedBag().value(),
+        figures.feedBag().sampleSize(),
+        figures.chick().value(),
+        figures.chick().sampleSize(),
+        figures.partialCost().value(),
+        figures.partialCost().sampleSize(),
+        figures.mortality().value(),
+        figures.mortality().sampleSize());
+  }
+}

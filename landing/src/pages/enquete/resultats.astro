@@ -99,12 +99,17 @@ const description =
       ? "—"
       : new Intl.NumberFormat("fr-FR").format(Math.round(Number(v))) + " F";
 
-  const line = (label, value, n) => `
+  // Une valeur retenue par le seuil ne s'accompagne d'aucun effectif : afficher « 2 réponses »
+  // à côté d'un tiret dirait au lecteur combien de personnes il reste à deviner.
+  const line = (label, value, n) => {
+    const shown = value !== "—" && n > 0;
+    return `
     <div class="row">
       <span class="k">${label}</span>
       <span class="v">${value}</span>
-      <span class="n">${n ? n + (n > 1 ? " réponses" : " réponse") : "—"}</span>
+      <span class="n">${shown ? n + (n > 1 ? " réponses" : " réponse") : "pas encore assez de réponses"}</span>
     </div>`;
+  };
 
   const card = (a) => `
     <article class="card">
