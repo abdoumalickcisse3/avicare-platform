@@ -24,7 +24,6 @@ import { humanizeKey } from '@/lib/health';
 
 const CATEGORY_NAMES: Record<string, string> = {
   stock: 'Stock',
-  lots: 'Lots',
   sanitaire: 'Sanitaire',
   ventes: 'Ventes',
   comptabilite: 'Comptabilité',

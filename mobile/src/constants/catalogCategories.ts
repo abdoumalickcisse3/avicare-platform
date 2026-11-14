@@ -6,33 +6,17 @@ export interface CatalogField {
   const?: string;
 }
 export interface CategoryConfig {
-  slug: 'stock' | 'lots' | 'ventes' | 'comptabilite' | 'creneaux' | 'calibres';
+  slug: 'stock' | 'ventes' | 'comptabilite' | 'creneaux' | 'calibres';
   backendCategory: string;
   title: string;
   labelField: string;
   fields: CatalogField[];
 }
 
+// `breeds` n'est volontairement pas ici : une souche se déclare depuis l'écran « Souches », qui
+// demande son profil de production. Le gestionnaire générique ne le demandait pas et créait des
+// souches sans cible ni courbe — deux écrans pour une même donnée, dont un qui mentait.
 export const CATALOG_CATEGORIES: CategoryConfig[] = [
-  {
-    slug: 'lots',
-    backendCategory: 'breeds',
-    title: 'Lots',
-    labelField: 'label',
-    fields: [
-      { name: 'label', label: 'Nom', kind: 'text' },
-      {
-        name: 'type',
-        label: 'Type',
-        kind: 'select',
-        options: [
-          { value: 'broiler', label: 'Chair' },
-          { value: 'layer', label: 'Ponte' },
-        ],
-      },
-      { name: 'species', label: 'Espèce', kind: 'text', const: 'poultry' },
-    ],
-  },
   {
     slug: 'stock',
     backendCategory: 'inventory_items',

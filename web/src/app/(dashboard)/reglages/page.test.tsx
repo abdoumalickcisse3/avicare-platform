@@ -9,7 +9,7 @@ describe("SettingsHubPage", () => {
     expect(screen.getByRole("heading", { name: "Réglages" })).toBeInTheDocument();
     [
       "Stock",
-      "Lots",
+      "Souches",
       "Sanitaire",
       "Ventes",
       "Comptabilité",
