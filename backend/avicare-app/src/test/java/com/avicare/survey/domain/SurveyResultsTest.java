@@ -142,6 +142,57 @@ class SurveyResultsTest {
     assertThat(results.areas().getFirst().feedBagPrice()).isEqualByComparingTo("20000");
   }
 
+  /**
+   * A region can clear the floor on answers and still be a single person on one question. The floor
+   * is therefore applied to every figure separately, not once to the card.
+   */
+  @Test
+  @DisplayName(
+      "a figure only two people answered is withheld, even in a region that cleared the floor")
+  void aFigureAnsweredByTooFewIsWithheld() {
+    List<SurveyResponse> answers = new java.util.ArrayList<>();
+    for (int i = 0; i < 4; i++) {
+      SurveyResponse silent = answer("SN", "Dakar", 0);
+      silent.setLastBagPrice(null);
+      answers.add(silent);
+    }
+    answers.add(answer("SN", "Dakar", 20000));
+    answers.add(answer("SN", "Dakar", 20000));
+
+    SurveyResults results = SurveyResults.compute(answers, FLOOR);
+
+    AreaAverages dakar = results.areas().getFirst();
+    assertThat(dakar.sampleSize()).isEqualTo(6);
+    assertThat(dakar.feedBagPrice()).isNull();
+  }
+
+  @Test
+  @DisplayName("a figure whose remainder is one person is withheld from the country fallback")
+  void perFigureRemainderIsCheckedToo() {
+    List<SurveyResponse> answers = new java.util.ArrayList<>();
+    for (int i = 0; i < 5; i++) {
+      answers.add(answer("SN", "Dakar", 20000));
+    }
+    // Un seul répondant hors de Dakar a donné un prix : pays 6 − Dakar 5 = 1.
+    answers.add(answer("SN", "Thiès", 31000));
+    SurveyResponse silentThies = answer("SN", "Thiès", 0);
+    silentThies.setLastBagPrice(null);
+    answers.add(silentThies);
+    for (int i = 0; i < 3; i++) {
+      SurveyResponse silent = answer("SN", "Kaolack", 0);
+      silent.setLastBagPrice(null);
+      answers.add(silent);
+    }
+
+    SurveyResults results = SurveyResults.compute(answers, FLOOR);
+
+    AreaAverages thies =
+        results.areas().stream().filter(a -> "Thiès".equals(a.region())).findFirst().orElseThrow();
+
+    assertThat(thies.basedOnCountry()).isTrue();
+    assertThat(thies.feedBagPrice()).isNull();
+  }
+
   @Test
   @DisplayName("the fallback stands when several thin regions hide each other")
   void fallbackStandsWhenThinRegionsCoverEachOther() {
