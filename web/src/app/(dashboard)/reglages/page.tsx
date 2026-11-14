@@ -38,9 +38,10 @@ const CATEGORIES: SettingCategory[] = [
     icon: Package,
   },
   {
-    slug: "lots",
-    name: "Lots",
-    description: "Souches et races de volaille (chair, ponte).",
+    slug: "souches",
+    name: "Souches",
+    description:
+      "Les souches que vous élevez, y compris les locales améliorées que le catalogue ne connaît pas.",
     icon: Bird,
   },
   {

@@ -35,7 +35,7 @@ interface SettingCategory {
 /** 5 settings categories (legacy ARCHITECTURE §7.13), same order as the web. */
 const CATEGORIES: SettingCategory[] = [
   { slug: 'stock', name: 'Stock', description: 'Aliments, consommables, équipements, produits.', icon: Package },
-  { slug: 'lots', name: 'Lots', description: 'Souches et races de volaille (chair, ponte).', icon: Bird },
+  { slug: 'souches', name: 'Souches', description: 'Vos souches, locales améliorées comprises.', icon: Bird },
   { slug: 'sanitaire', name: 'Sanitaire', description: 'Catalogue des vaccins et des traitements.', icon: Syringe },
   { slug: 'ponte', name: 'Ponte', description: 'Créneaux de ramassage, calibres, plateaux.', icon: Egg },
   { slug: 'ventes', name: 'Ventes', description: 'Circuits de distribution.', icon: ShoppingCart },

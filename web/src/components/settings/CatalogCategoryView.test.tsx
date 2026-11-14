@@ -23,8 +23,8 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe("CatalogCategoryView", () => {
   it("renders the manager for a configured slug", async () => {
-    renderWithProviders(<CatalogCategoryView slug="lots" />);
-    expect(await screen.findByText("Souches et races de volaille (chair, ponte).")).toBeInTheDocument();
+    renderWithProviders(<CatalogCategoryView slug="stock" />);
+    expect(await screen.findByText("Articles de stock : aliments, consommables, équipements, produits.")).toBeInTheDocument();
   });
   it("renders a coming-soon placeholder for an unconfigured slug", () => {
     renderWithProviders(<CatalogCategoryView slug="inexistant" />);

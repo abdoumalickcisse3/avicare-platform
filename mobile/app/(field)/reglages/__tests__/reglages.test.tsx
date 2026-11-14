@@ -32,10 +32,10 @@ describe('Réglages', () => {
 
   it('hub lists the five settings categories', async () => {
     await render(<ReglagesHub />);
-    for (const name of ['Stock', 'Lots', 'Sanitaire', 'Ventes', 'Comptabilité']) {
+    for (const name of ['Stock', 'Souches', 'Sanitaire', 'Ventes', 'Comptabilité']) {
       expect(screen.getByText(name)).toBeTruthy();
     }
-    expect(screen.getByLabelText('Gérer Lots')).toBeTruthy();
+    expect(screen.getByLabelText('Gérer Souches')).toBeTruthy();
   });
 
   /**

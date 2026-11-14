@@ -3,9 +3,31 @@ import { screen, within } from "@testing-library/react";
 import { renderWithProviders } from "@/test/render";
 import { setTokens } from "@/store/slices/authSlice";
 import { CatalogManager } from "./CatalogManager";
-import { getCategoryConfig } from "@/constants/catalogCategories";
+import { getCategoryConfig, type CategoryConfig } from "@/constants/catalogCategories";
 
-const LOTS = getCategoryConfig("lots")!;
+// Décor local plutôt qu'une vraie catégorie : ces tests portent sur le composant, pas sur le
+// contenu du catalogue, et les attacher à une catégorie réelle les cassait dès qu'elle bougeait.
+const LOTS: CategoryConfig = {
+  slug: "essai",
+  backendCategory: "essai_items",
+  title: "Essai",
+  description: "Décor de test.",
+  labelField: "label",
+  fields: [
+    { name: "label", label: "Nom", type: "text", required: true },
+    {
+      name: "type",
+      label: "Type",
+      type: "select",
+      required: true,
+      options: [
+        { value: "broiler", label: "Chair" },
+        { value: "layer", label: "Ponte" },
+      ],
+    },
+    { name: "species", label: "Espèce", type: "text", const: "poultry" },
+  ],
+};
 
 function makeJwt(payload: unknown): string {
   const b64 = btoa(JSON.stringify(payload)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
@@ -23,8 +45,8 @@ beforeEach(() => {
     lastMethod = input instanceof Request ? input.method : (init?.method ?? "GET");
     if (lastMethod === "DELETE") return new Response(null, { status: 204 });
     return respond([
-      { category: "breeds", key: "cobb_500", value: { label: "Cobb 500", type: "broiler" }, custom: false },
-      { category: "breeds", key: "ma-race", value: { label: "Ma Race", type: "layer" }, custom: true },
+      { category: "essai_items", key: "cobb_500", value: { label: "Cobb 500", type: "broiler" }, custom: false },
+      { category: "essai_items", key: "ma-race", value: { label: "Ma Race", type: "layer" }, custom: true },
     ]);
   }));
 });

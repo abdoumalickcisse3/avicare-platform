@@ -3,9 +3,31 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "@/test/render";
 import { CatalogEntryDialog } from "./CatalogEntryDialog";
-import { getCategoryConfig } from "@/constants/catalogCategories";
+import { getCategoryConfig, type CategoryConfig } from "@/constants/catalogCategories";
 
-const LOTS = getCategoryConfig("lots")!;
+// Décor local plutôt qu'une vraie catégorie : ces tests portent sur le composant, pas sur le
+// contenu du catalogue, et les attacher à une catégorie réelle les cassait dès qu'elle bougeait.
+const LOTS: CategoryConfig = {
+  slug: "essai",
+  backendCategory: "essai_items",
+  title: "Essai",
+  description: "Décor de test.",
+  labelField: "label",
+  fields: [
+    { name: "label", label: "Nom", type: "text", required: true },
+    {
+      name: "type",
+      label: "Type",
+      type: "select",
+      required: true,
+      options: [
+        { value: "broiler", label: "Chair" },
+        { value: "layer", label: "Ponte" },
+      ],
+    },
+    { name: "species", label: "Espèce", type: "text", const: "poultry" },
+  ],
+};
 const STOCK = getCategoryConfig("stock")!;
 
 function respond(data: unknown) {
@@ -20,7 +42,7 @@ beforeEach(() => {
     if (input instanceof Request) {
       try { lastBody = await input.clone().json(); } catch { /* */ }
     }
-    return respond({ category: "breeds", key: "x", value: {}, custom: true });
+    return respond({ category: "essai_items", key: "x", value: {}, custom: true });
   }));
 });
 afterEach(() => vi.unstubAllGlobals());
@@ -47,7 +69,7 @@ describe("CatalogEntryDialog", () => {
   it("edits an existing entry: keeps the key and preserves unknown value fields", async () => {
     const user = userEvent.setup();
     const entry = {
-      category: "breeds",
+      category: "essai_items",
       key: "ross_308",
       value: { label: "Ross 308", type: "broiler", species: "poultry", extra: "keepme" },
       custom: false,

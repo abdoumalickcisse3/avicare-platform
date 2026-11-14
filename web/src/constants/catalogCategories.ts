@@ -17,28 +17,10 @@ export interface CategoryConfig {
   fields: FieldDescriptor[];
 }
 
+// `breeds` n'est volontairement pas ici : une souche se déclare depuis /reglages/souches, qui
+// demande son profil de production. Le gestionnaire générique ne le demandait pas et créait des
+// souches sans cible ni courbe — deux écrans pour une même donnée, dont un qui mentait.
 export const CATALOG_CATEGORIES: CategoryConfig[] = [
-  {
-    slug: "lots",
-    backendCategory: "breeds",
-    title: "Lots",
-    description: "Souches et races de volaille (chair, ponte).",
-    labelField: "label",
-    fields: [
-      { name: "label", label: "Nom", type: "text", required: true },
-      {
-        name: "type",
-        label: "Type",
-        type: "select",
-        required: true,
-        options: [
-          { value: "broiler", label: "Chair" },
-          { value: "layer", label: "Ponte" },
-        ],
-      },
-      { name: "species", label: "Espèce", type: "text", const: "poultry" },
-    ],
-  },
   {
     slug: "comptabilite",
     backendCategory: "expense_categories",

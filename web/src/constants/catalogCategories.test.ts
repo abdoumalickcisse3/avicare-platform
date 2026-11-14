@@ -2,11 +2,14 @@ import { describe, expect, it } from "vitest";
 import { getCategoryConfig, CATALOG_CATEGORIES } from "./catalogCategories";
 
 describe("catalogCategories", () => {
-  it("maps lots to the breeds backend category", () => {
-    const cfg = getCategoryConfig("lots");
-    expect(cfg?.backendCategory).toBe("breeds");
-    expect(cfg?.fields.some((f) => f.name === "type" && f.type === "select")).toBe(true);
-    expect(cfg?.fields.some((f) => f.name === "species" && f.const === "poultry")).toBe(true);
+  // Le gestionnaire générique écrivait dans `breeds` sans jamais demander le profil de
+  // production : il créait des souches sans cible ni courbe, pendant que l'écran « Souches »
+  // faisait le vrai travail juste à côté. Un seul des deux peut dire la vérité.
+  it("aucune catégorie du gestionnaire générique n'écrit dans breeds", () => {
+    expect(CATALOG_CATEGORIES.map((c) => c.backendCategory)).not.toContain("breeds");
+  });
+  it("le slug lots n'existe plus", () => {
+    expect(getCategoryConfig("lots")).toBeUndefined();
   });
   it("maps comptabilite to expense_categories", () => {
     expect(getCategoryConfig("comptabilite")?.backendCategory).toBe("expense_categories");
