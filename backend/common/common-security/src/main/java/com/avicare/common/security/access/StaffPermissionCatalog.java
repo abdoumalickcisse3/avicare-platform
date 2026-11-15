@@ -24,7 +24,8 @@ public final class StaffPermissionCatalog {
           Map.entry("partners", "Partenaires"),
           Map.entry("flags", "Coupures d'urgence"),
           Map.entry("integrity", "Intégrité des données"),
-          Map.entry("security", "Sécurité"));
+          Map.entry("security", "Sécurité"),
+          Map.entry("survey", "Enquête terrain"));
 
   /** Resources in a stable display order. */
   public static final List<ResourceDef> RESOURCES =
@@ -41,7 +42,8 @@ public final class StaffPermissionCatalog {
               "partners",
               "flags",
               "integrity",
-              "security")
+              "security",
+              "survey")
           .stream()
           .map(
               r ->

@@ -36,6 +36,9 @@ import type {
   FarmPurgePreview,
   StaffCatalogResource,
   StaffMemberRow,
+  SurveyAnswerRow,
+  SurveyAnswersArgs,
+  SurveyIntake,
   FarmHealthRow,
   TemporaryPassword,
 } from "@/types";
@@ -76,7 +79,7 @@ const baseQueryWithReauth = createReauthBaseQuery({
 export const adminApi = createApi({
   reducerPath: "adminApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["AdminMe", "AdminFarm", "AdminUser", "AdminPartner", "AdminStaff", "AdminCatalog", "AdminCompliance", "AdminMetrics", "AdminAnnouncement", "AdminAssistant", "AdminTrace", "AdminFlag", "AdminIntegrity", "AdminSecurity"],
+  tagTypes: ["AdminMe", "AdminFarm", "AdminUser", "AdminPartner", "AdminStaff", "AdminCatalog", "AdminCompliance", "AdminMetrics", "AdminAnnouncement", "AdminAssistant", "AdminTrace", "AdminFlag", "AdminIntegrity", "AdminSecurity", "AdminSurvey"],
   endpoints: (build) => ({
     /** Staff sign-in reuses the ordinary auth endpoint; the console then checks /admin/me. */
     adminLogin: build.mutation<AuthTokens, { email: string; password: string }>({
@@ -372,6 +375,29 @@ export const adminApi = createApi({
         return `/api/v1/admin/traces?${params.toString()}`;
       },
       providesTags: ["AdminTrace"],
+    }),
+    /**
+     * The field survey, read for the back-office. Two reads and not one: the summary is what the
+     * screen opens on, and the answers are what it then pages through — asking for both in one
+     * payload would mean recomputing the whole summary on every page turn.
+     */
+    getSurveyIntake: build.query<SurveyIntake, void>({
+      query: () => "/api/v1/admin/survey/intake",
+      transformResponse: (r: Envelope<SurveyIntake>) => r.data,
+      providesTags: ["AdminSurvey"],
+    }),
+    searchSurveyAnswers: build.query<Paged<SurveyAnswerRow>, SurveyAnswersArgs | void>({
+      query: (args) => {
+        const params = new URLSearchParams();
+        if (args?.country) params.set("country", args.country);
+        if (args?.region) params.set("region", args.region);
+        if (args?.flockType) params.set("flockType", args.flockType);
+        if (args?.interviewOnly) params.set("interviewOnly", "true");
+        params.set("page", String(args?.page ?? 0));
+        params.set("size", String(args?.size ?? 50));
+        return `/api/v1/admin/survey/answers?${params.toString()}`;
+      },
+      providesTags: ["AdminSurvey"],
     }),
     getTrace: build.query<RequestTraceDetail, { id: number }>({
       query: ({ id }) => `/api/v1/admin/traces/${id}`,
@@ -683,4 +709,6 @@ export const {
   useGetSecurityOverviewQuery,
   useBlockIpMutation,
   useUnblockIpMutation,
+  useGetSurveyIntakeQuery,
+  useSearchSurveyAnswersQuery,
 } = adminApi;

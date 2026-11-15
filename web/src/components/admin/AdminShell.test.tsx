@@ -95,6 +95,30 @@ describe("AdminShell", () => {
     expect(screen.getByRole("link", { name: /pilotage/i })).toBeInTheDocument();
   });
 
+  it("opens the survey only to survey:read, and never on staff:manage", async () => {
+    const user = userEvent.setup();
+    // The answers carry phone numbers of people who are not customers: managing the staff is
+    // deliberately not enough to read them.
+    mockMe(["staff:manage"]);
+    render();
+
+    await user.click(await screen.findByRole("button", { name: /plateforme/i }));
+
+    expect(await screen.findByRole("menuitem", { name: /personnel/i })).toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: /enquête/i })).not.toBeInTheDocument();
+  });
+
+  it("shows the survey entry to whoever holds survey:read", async () => {
+    const user = userEvent.setup();
+    mockMe(["survey:read"]);
+    render();
+
+    await user.click(await screen.findByRole("button", { name: /plateforme/i }));
+
+    expect(await screen.findByRole("menuitem", { name: /enquête/i })).toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: /personnel/i })).not.toBeInTheDocument();
+  });
+
   it("marks the group holding the current page", async () => {
     mockPathname = "/console/securite";
     mockMe(["*"], true);

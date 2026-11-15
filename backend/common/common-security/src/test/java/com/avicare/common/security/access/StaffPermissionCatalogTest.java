@@ -51,6 +51,7 @@ class StaffPermissionCatalogTest {
     assertThat(StaffPermissionCatalog.isValid(StaffPermissionConstants.IMPERSONATE)).isTrue();
     assertThat(StaffPermissionCatalog.isValid(StaffPermissionConstants.PARTNERS_PROSPECT)).isTrue();
     assertThat(StaffPermissionCatalog.isValid(StaffPermissionConstants.STAFF_MANAGE)).isTrue();
+    assertThat(StaffPermissionCatalog.isValid(StaffPermissionConstants.SURVEY_READ)).isTrue();
 
     assertThat(StaffPermissionCatalog.RESOURCES)
         .hasSameSizeAs(StaffPermissionConstants.RESOURCE_VERBS.entrySet())
