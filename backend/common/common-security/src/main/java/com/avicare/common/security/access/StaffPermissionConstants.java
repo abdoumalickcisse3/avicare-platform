@@ -56,6 +56,13 @@ public final class StaffPermissionConstants {
   public static final String PARTNERS_PROSPECT = "partners:prospect";
 
   /**
+   * Read the field survey answers, phone numbers included. Its own permission and not {@code
+   * metrics:read}: these are people who are not customers and never agreed to be in a product, so
+   * handing their answers to a staff member is a deliberate grant.
+   */
+  public static final String SURVEY_READ = "survey:read";
+
+  /**
    * Verbs assignable per resource, the source of truth for validation.
    *
    * <p>{@code Map.ofEntries} rather than {@code Map.of}: the latter caps at ten pairs, and this map
@@ -76,5 +83,6 @@ public final class StaffPermissionConstants {
           Map.entry("partners", List.of("read", "write", "users", "attach", "prospect")),
           Map.entry("flags", List.of("manage")),
           Map.entry("integrity", List.of("read", "recompute")),
-          Map.entry("security", List.of("read", "manage")));
+          Map.entry("security", List.of("read", "manage")),
+          Map.entry("survey", List.of("read")));
 }

@@ -2094,3 +2094,94 @@ export interface ClosureSummary {
   /** The batch's feed could not be fully priced: its cost is understated. */
   valuationIncomplete: boolean;
 }
+
+// --- Enquête terrain (console) ---------------------------------------------
+
+/**
+ * One survey answer, as the respondent typed it.
+ *
+ * The enums arrive as the server's own names (`BROILER`, `CREDIT`, …) and are translated at the
+ * screen: the back-office speaks the backend's vocabulary, so a row read here and a row read in a
+ * psql session say the same thing.
+ */
+export interface SurveyAnswerRow {
+  id: number;
+  receivedAt: string | null;
+  country: string;
+  region: string;
+  commune: string | null;
+  referrer: string | null;
+  flockType: string;
+  currentBirds: number | null;
+  batchesLast12Months: number | null;
+  startedYear: number | null;
+  workers: number | null;
+  lastBatchMonth: string | null;
+  birdsPlaced: number | null;
+  chickPrice: number | null;
+  birdsDied: number | null;
+  feedBags: number | null;
+  lastBagPrice: number | null;
+  lastBagBrand: string | null;
+  lastBagMonth: string | null;
+  feedSupplier: string | null;
+  paymentTerms: string | null;
+  creditDays: number | null;
+  creditCostsMore: boolean | null;
+  rawMaterialPrices: string | null;
+  mainBuyer: string | null;
+  lastSalePrice: number | null;
+  lastSaleUnit: string | null;
+  lastSaleMonth: string | null;
+  paymentDelay: string | null;
+  firstCall: string | null;
+  lastIncidentCost: number | null;
+  recordKeeping: string | null;
+  willingnessToPay: string | null;
+  hasQuit: boolean | null;
+  quitReason: string | null;
+  phone: string | null;
+  acceptsInterview: boolean | null;
+}
+
+/** Answers per country, biggest first. */
+export interface SurveyCountryCount {
+  country: string;
+  answers: number;
+}
+
+/** One area and how many answers it still needs before its own figures are published. */
+export interface SurveyAreaProgress {
+  country: string;
+  region: string;
+  answers: number;
+  missingBeforePublication: number;
+}
+
+/** Who passed the link on, as the respondent typed it. */
+export interface SurveyReferrerCount {
+  referrer: string;
+  answers: number;
+}
+
+/** How the collection stands: volume, origin, relays, distance to publication. */
+export interface SurveyIntake {
+  total: number;
+  withPhone: number;
+  acceptingInterview: number;
+  lastAnswerOn: string | null;
+  publicationFloor: number;
+  countries: SurveyCountryCount[];
+  areas: SurveyAreaProgress[];
+  referrers: SurveyReferrerCount[];
+}
+
+/** Filters of the answers table. Every field is optional: no filter means every answer. */
+export interface SurveyAnswersArgs {
+  country?: string;
+  region?: string;
+  flockType?: string;
+  interviewOnly?: boolean;
+  page?: number;
+  size?: number;
+}
