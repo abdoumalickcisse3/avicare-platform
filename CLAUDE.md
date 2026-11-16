@@ -163,7 +163,8 @@ gonfler : « rejoué en local » n'est pas « rejoué en production ».
 - Refresh token : source de vérité = table `refresh_tokens` (colonne `token`, révocation via `revoked_at`),
   cache révocations Redis. **Rotation + logout/logout-all : voir doc 05.**
 - Endpoints publics (déjà actés dans `common-security` `SecurityConfig`) :
-  `/actuator/health/**`, `/actuator/info`, `/api/v1/auth/**`, `/swagger-ui/**`, `/v3/api-docs/**` ; tout le reste authentifié.
+  `/actuator/health/**`, `/actuator/info`, `/api/v1/auth/**`, `/swagger`, `/swagger/**`, `/swagger-ui/**`, `/v3/api-docs/**` ; tout le reste authentifié.
+  En prod ces deux derniers ne sont routés que sur `admin.{DOMAIN}`, derrière un `basic_auth` Caddy (cf. `infra/DEPLOY.md`).
 - Access token en header `Bearer` ; refresh token en cookie `httpOnly SameSite=Lax Secure` (prod).
 
 ## ✅ Checklist pré-merge (Sprint A3+, complète A2)

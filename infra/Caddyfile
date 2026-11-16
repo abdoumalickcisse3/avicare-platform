@@ -53,8 +53,10 @@ app.{$DOMAIN} {
 	encode zstd gzip
 	import app_headers
 
-	# Backend: REST API, actuator, OpenAPI/Swagger.
-	@backend path /api/* /actuator/* /v3/api-docs* /swagger-ui*
+	# Backend : API REST et actuator. Ni le contrat OpenAPI ni la console Swagger ne sont
+	# routés ici : ils cartographient toutes les routes et « Try it out » écrit en base.
+	# Ils vivent sur l'hôte du back-office, derrière un mot de passe (voir plus bas).
+	@backend path /api/* /actuator/*
 	handle @backend {
 		reverse_proxy backend:8080 {
 			import retry_upstream
@@ -74,8 +76,10 @@ partner.{$DOMAIN} {
 	encode zstd gzip
 	import app_headers
 
-	# Backend: REST API, actuator, OpenAPI/Swagger.
-	@backend path /api/* /actuator/* /v3/api-docs* /swagger-ui*
+	# Backend : API REST et actuator. Ni le contrat OpenAPI ni la console Swagger ne sont
+	# routés ici : ils cartographient toutes les routes et « Try it out » écrit en base.
+	# Ils vivent sur l'hôte du back-office, derrière un mot de passe (voir plus bas).
+	@backend path /api/* /actuator/*
 	handle @backend {
 		reverse_proxy backend:8080 {
 			import retry_upstream
@@ -97,8 +101,39 @@ admin.{$DOMAIN} {
 	encode zstd gzip
 	import app_headers
 
-	# Backend: REST API, actuator, OpenAPI/Swagger.
-	@backend path /api/* /actuator/* /v3/api-docs* /swagger-ui*
+	# Contrat OpenAPI et console Swagger : ici et nulle part ailleurs, et jamais sans mot de passe.
+	#
+	# Un sous-domaine est une adresse, pas une serrure — la même raison qui vaut pour Jaeger plus
+	# bas. Ce qui est en jeu est plus gros ici : la page liste toutes les routes et sait les
+	# appeler, sur la base de production.
+	#
+	# Le hash bcrypt vient de l'environnement, jamais de ce fichier :
+	#   docker run --rm caddy:2-alpine caddy hash-password --plaintext '<mot de passe>'
+	# docker-compose.prod.yml refuse de démarrer si SWAGGER_UI_PASSWORD_HASH manque, donc un
+	# déploiement sans mot de passe échoue au lieu d'ouvrir la page.
+	#
+	# Trois chemins, parce que la console est servie en trois morceaux : /swagger est l'adresse
+	# que l'on tape, /swagger-ui/* porte les fichiers vers lesquels elle redirige, et
+	# /v3/api-docs est le contrat que la page télécharge ensuite. En protéger deux sur trois ne
+	# protège rien.
+	@swagger path /swagger /swagger/* /swagger-ui* /v3/api-docs*
+	handle @swagger {
+		basic_auth {
+			{$SWAGGER_UI_USER} {$SWAGGER_UI_PASSWORD_HASH}
+		}
+
+		# L'adresse demandée (/swagger/index.html) mène au même endroit que /swagger.
+		rewrite /swagger/index.html /swagger-ui/index.html
+
+		reverse_proxy backend:8080 {
+			import retry_upstream
+		}
+	}
+
+	# Backend : API REST et actuator. Ni le contrat OpenAPI ni la console Swagger ne sont
+	# routés ici : ils cartographient toutes les routes et « Try it out » écrit en base.
+	# Ils vivent sur l'hôte du back-office, derrière un mot de passe (voir plus bas).
+	@backend path /api/* /actuator/*
 	handle @backend {
 		reverse_proxy backend:8080 {
 			import retry_upstream

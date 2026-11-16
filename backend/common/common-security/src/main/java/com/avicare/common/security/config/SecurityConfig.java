@@ -85,7 +85,15 @@ public class SecurityConfig {
                     // the rate limiter below, a honeypot field, and a daily cap per address.
                     .requestMatchers("/api/v1/public/survey", "/api/v1/public/survey/**")
                     .permitAll()
-                    .requestMatchers("/swagger-ui/**", "/v3/api-docs/**")
+                    // Le contrat et la console. `/swagger` est l'adresse que l'on tape, et elle
+                    // doit être ouverte ici aussi : sans elle Spring refuse la requête avec un
+                    // 401 avant que springdoc n'ait pu rediriger vers /swagger-ui, et la page
+                    // paraît cassée alors que seule la porte d'entrée manquait.
+                    //
+                    // Ouvert ici ne veut pas dire ouvert à tous : en production ces chemins ne
+                    // sont routés que sur l'hôte du back-office, derrière un mot de passe du
+                    // reverse proxy (infra/Caddyfile).
+                    .requestMatchers("/swagger", "/swagger/**", "/swagger-ui/**", "/v3/api-docs/**")
                     .permitAll()
                     // The portal is its own realm. Saying "authenticated" here would let a
                     // partner token through anywhere the per-farm check does not apply — and

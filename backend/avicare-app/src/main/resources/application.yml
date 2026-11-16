@@ -129,7 +129,18 @@ springdoc:
   api-docs:
     path: /v3/api-docs
   swagger-ui:
-    path: /swagger-ui.html
+    # L'adresse de la console. `/swagger` redirige vers /swagger-ui/index.html, où vivent
+    # réellement les fichiers : les deux chemins doivent donc être routés ensemble par le
+    # reverse proxy, sinon la redirection tombe sur le front Next.js et rend un 404.
+    path: /swagger
+    # Les opérations dans l'ordre du contrôleur plutôt qu'alphabétique, et les tags triés :
+    # une page de 200 routes se lit par groupe, pas par ordre des lettres.
+    operations-sorter: method
+    tags-sorter: alpha
+    display-request-duration: true
+    # La console n'affiche pas son propre contrat (`/v3/api-docs` comme définition), ce qui
+    # évite une entrée « springdoc » parasite dans le sélecteur.
+    disable-swagger-default-url: true
 
 # Jawdi IA — assistant LLM. `api-key` is intentionally NOT declared here: it is
 # supplied only via the ANTHROPIC_API_KEY env var in prod (relaxed-binds to

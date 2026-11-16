@@ -288,6 +288,36 @@ class SecurityE2ETest {
         .andExpect(status().isCreated());
   }
 
+  /**
+   * The published contract, checked where the public surface is checked.
+   *
+   * <p>Two failures hide behind a page that merely loads. The contract can come back <b>empty</b> —
+   * springdoc answers 200 with no paths at all when it cannot read the controllers, and production
+   * did exactly that for months without anyone noticing. And it can come back without a security
+   * scheme, which costs the console its <i>Authorize</i> button and makes every protected route
+   * untestable. Both are asserted on their content, not on the status code.
+   *
+   * <p>Who may reach this is a separate question, answered by the reverse proxy and pinned by
+   * {@link com.avicare.config.SwaggerIsLockedInProductionTest}: in production these paths are
+   * routed on the back-office host only, behind a password.
+   */
+  @Test
+  void openApiContract_isServedAndActuallyDescribesTheApi() throws Exception {
+    mockMvc
+        .perform(get("/v3/api-docs"))
+        .andExpect(status().isOk())
+        // A contract with no paths is the failure that looks like a success.
+        .andExpect(jsonPath("$.paths").isNotEmpty())
+        .andExpect(jsonPath("$.paths['/api/v1/auth/login']").exists())
+        .andExpect(jsonPath("$.components.securitySchemes['bearer-jwt'].scheme").value("bearer"));
+  }
+
+  @Test
+  void swaggerConsole_isServed() throws Exception {
+    // `/swagger` is the address; springdoc answers it with a redirect to where the files live.
+    mockMvc.perform(get("/swagger")).andExpect(status().is3xxRedirection());
+  }
+
   @Test
   void nothingElseUnderPublic_isOpen() throws Exception {
     mockMvc

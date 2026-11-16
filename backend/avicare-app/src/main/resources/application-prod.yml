@@ -64,9 +64,17 @@ notifications:
   scan:
     manual-trigger-enabled: ${NOTIF_SCAN_MANUAL_TRIGGER:false}
 
-# The API contract and the Swagger UI are not served in production (they map every route).
+# Le contrat et la console SONT servis en production, et c'est un choix, pas un oubli : ils
+# cartographient toutes les routes et « Try it out » écrit en base réelle.
+#
+# Ce qui les protège n'est pas ici mais dans infra/Caddyfile : seul l'hôte du back-office les
+# route, et seulement derrière un basic_auth dont le hash vient de l'environnement. Les hôtes
+# éleveur et partenaire ne les routent pas du tout — la page n'existe pas pour eux.
+#
+# Cette répartition est fragile par nature (un fichier décide, un autre protège), d'où
+# SwaggerIsLockedInProductionTest, qui lit le Caddyfile et refuse que les deux divergent.
 springdoc:
   api-docs:
-    enabled: false
+    enabled: true
   swagger-ui:
-    enabled: false
+    enabled: true
