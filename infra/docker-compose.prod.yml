@@ -216,6 +216,10 @@ services:
       # Interface Jaeger : identifiant et mot de passe HACHÉ (bcrypt), jamais en clair.
       JAEGER_UI_USER: ${JAEGER_UI_USER:-admin}
       JAEGER_UI_PASSWORD_HASH: ${JAEGER_UI_PASSWORD_HASH:?set JAEGER_UI_PASSWORD_HASH in .env}
+      # Console Swagger (back-office uniquement) : même règle, même format de hash. Le `:?`
+      # fait échouer le déploiement si le hash manque — mieux qu'une page ouverte à tous.
+      SWAGGER_UI_USER: ${SWAGGER_UI_USER:-admin}
+      SWAGGER_UI_PASSWORD_HASH: ${SWAGGER_UI_PASSWORD_HASH:?set SWAGGER_UI_PASSWORD_HASH in .env}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data

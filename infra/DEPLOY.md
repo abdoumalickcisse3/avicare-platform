@@ -170,6 +170,22 @@ Restore: `./scripts/restore-db.sh ~/avicare-backups/avicare_avicare_<stamp>.sql.
   the file under `set -u`: unquoted, bash reads `$2` as a positional parameter and the deploy
   stops on `$2: unbound variable`.
 - **DNS**: needs a public A record `jaeger.{DOMAIN}` -> this VPS, like the other names.
+
+### API contract and Swagger console
+
+- **URL**: `https://admin.{DOMAIN}/swagger` (and `/swagger/index.html`, rewritten to the same
+  page). Served **only** on the back-office host: the farmer app and the partner portal do not
+  route `/swagger*` or `/v3/api-docs*` at all, so the page does not exist for them.
+- **Basic auth**, for the same reason as Jaeger and then some: the page maps every route and
+  its *Try it out* writes to the production database. Set `SWAGGER_UI_USER` and
+  `SWAGGER_UI_PASSWORD_HASH` in `.env` — the hash is **required**, the deploy fails without it:
+  `docker run --rm caddy:2-alpine caddy hash-password --plaintext '<password>'`
+  **Wrap the hash in single quotes**, same `set -u` trap as above.
+- **Signing in to the API itself**: `POST /api/v1/auth/login`, copy `accessToken`, click
+  *Authorize*, paste it alone (no `Bearer ` prefix — the UI adds it).
+- **No new DNS**: it rides on the existing `admin.{DOMAIN}` record.
+- `SwaggerIsLockedInProductionTest` fails the build if a future edit routes these paths on
+  another host, or drops the password on this one.
 - **Turn it off** without rebuilding: empty `TRACING_JAVA_OPTS` in `.env`, or set
   `OTEL_SDK_DISABLED=true`, then `./deploy.sh`. The backend runs either way — the OTLP exporter
   fails silently when nothing listens.
