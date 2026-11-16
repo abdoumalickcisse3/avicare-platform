@@ -19,6 +19,13 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
+# Identifiants de signature EAS.
+# Les clés elles-mêmes sont déjà couvertes au-dessus (*.jks, *.p8, *.p12), mais
+# credentials.json porte en clair les MOTS DE PASSE du keystore Android : ignorer
+# le coffre et versionner sa combinaison ne protège rien.
+credentials.json
+credentials/
+
 # Metro
 .metro-health-check*
 
