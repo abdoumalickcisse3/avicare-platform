@@ -12,11 +12,11 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/sitemap": "^3.7.4",
-    "astro": "^7.3.8"
+    "@astrojs/sitemap": "^3.7.5",
+    "astro": "^7.4.12"
   },
   "devDependencies": {
-    "@iconify-json/simple-icons": "^1.2.101",
+    "@iconify-json/simple-icons": "^1.2.102",
     "astro-icon": "^1.2.0"
   }
 }
